@@ -22,7 +22,9 @@ import java.util.Map.Entry;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -37,6 +39,7 @@ import jd.parser.html.HTMLSearch;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -50,6 +53,11 @@ public class NewgroundsCom extends antiDDoSForHost {
         super(wrapper);
         this.enablePremium("https://www.newgrounds.com/passport/signup/new");
         setConfigElements();
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
     }
 
     private void setConfigElements() {
@@ -73,7 +81,7 @@ public class NewgroundsCom extends antiDDoSForHost {
     }
 
     /* 2020-10-26: Not handled by hostplugin anymore! */
-    private static final String ARTLINK = "https?://(?:\\w+\\.)?newgrounds\\.com/art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+";
+    private static final String ARTLINK = "(?i)https?://(?:\\w+\\.)?newgrounds\\.com/art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -91,11 +99,11 @@ public class NewgroundsCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, null);
+        return requestFileInformation(link, null, false);
     }
 
     @SuppressWarnings("deprecation")
-    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
             link.setName(this.getFID(link));
         }
@@ -127,18 +135,18 @@ public class NewgroundsCom extends antiDDoSForHost {
             title = title + " by " + artist;
         }
         String ext = null;
-        final boolean checkForFilesize;
+        final boolean allowCheckForFilesize;
         String url_filename = null;
         if (link.getDownloadURL().matches(ARTLINK)) {
             /* 2020-02-03: Such URLs are handled by the crawler from now on as they can lead to multiple pictures. */
-            url_filename = new Regex(link.getDownloadURL(), "/view/(.+)").getMatch(0).replace("/", "_");
-            checkForFilesize = true;
+            url_filename = new Regex(link.getDownloadURL(), "(?i)/view/(.+)").getMatch(0).replace("/", "_");
+            allowCheckForFilesize = true;
             dllink = br.getRegex("id=\"dim_the_lights\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\"<img src=\\\\\"(https?:[^<>\"]*?)\\\\\"").getMatch(0);
                 if (dllink != null) {
                     dllink = dllink.replace("\\", "");
-                    final String id = new Regex(dllink, "images/\\d+/(\\d+)").getMatch(0);
+                    final String id = new Regex(dllink, "(?i)images/\\d+/(\\d+)").getMatch(0);
                     if (addID2Filename && title != null && id != null) {
                         title = title + "_" + id;
                     }
@@ -149,12 +157,12 @@ public class NewgroundsCom extends antiDDoSForHost {
             /*
              * 2017-02-02: Do not check for filesize as only 1 download per minute is possible --> Accessing directurls makes no sense here.
              */
-            checkForFilesize = false;
+            allowCheckForFilesize = false;
             final String fid = this.getFID(link);
             url_filename = fid;
             // filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             final String embedController = br.getRegex("embedController\\s*\\(\\s*\\[\\s*\\{\\s*\"url\"\\s*:\\s*\"(https?:.*?)\"").getMatch(0);
-            if (link.getDownloadURL().contains("/audio/listen/")) {
+            if (StringUtils.containsIgnoreCase(link.getDownloadURL(), "/audio/listen/")) {
                 if (title != null) {
                     title = Encoding.htmlDecode(title).trim();
                     if (addID2Filename) {
@@ -214,7 +222,7 @@ public class NewgroundsCom extends antiDDoSForHost {
         if (title != null) {
             link.setFinalFileName(this.applyFilenameExtension(title, ext));
         }
-        if (dllink != null && checkForFilesize) {
+        if (dllink != null && allowCheckForFilesize && !isDownload) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
@@ -264,7 +272,7 @@ public class NewgroundsCom extends antiDDoSForHost {
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, account);
+        requestFileInformation(link, account, true);
         if (requiresAccount(br)) {
             throw new AccountRequiredException();
         } else if (dllink == null) {
@@ -311,9 +319,14 @@ public class NewgroundsCom extends antiDDoSForHost {
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
             final Cookies cookies = account.loadCookies("");
-            if (cookies != null) {
+            final Cookies userCookies = account.loadUserCookies();
+            if (cookies != null || userCookies != null) {
                 logger.info("Attempting cookie login");
-                br.setCookies(cookies);
+                if (userCookies != null) {
+                    br.setCookies(userCookies);
+                } else {
+                    br.setCookies(cookies);
+                }
                 if (!force) {
                     /* Don't validate cookies */
                     return;
@@ -322,12 +335,23 @@ public class NewgroundsCom extends antiDDoSForHost {
                 if (this.isLoggedin(br)) {
                     logger.info("Cookie login successful");
                     /* Refresh cookie timestamp */
-                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    if (userCookies == null) {
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                    }
                     return;
                 } else {
-                    logger.info("Cookie login failed");
-                    br.clearCookies(null);
-                    account.clearCookies("");
+                    if (userCookies != null) {
+                        logger.info("User Cookie login failed");
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearCookies(null);
+                        account.clearCookies("");
+                    }
                 }
             }
             logger.info("Performing full login");

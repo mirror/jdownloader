@@ -42,7 +42,6 @@ public class ThisAVCom extends PluginForHost {
     private static final String  DEFAULT_EXTENSION = ".mp4";
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = -1;
     private String               dllink            = null;
 
     @Override
@@ -66,23 +65,23 @@ public class ThisAVCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String videoID = this.getFID(link);
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + DEFAULT_EXTENSION);
+            link.setName(videoID + DEFAULT_EXTENSION);
         }
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("error404")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.getURL().contains(videoID)) {
+            /* E.g. redirect to mainpage */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title = br.getRegex("<title>([^<>\"]*?) - ").getMatch(0);
         if (title != null) {
             title = Encoding.htmlDecode(title.trim());
-            String filename = title;
-            if (!filename.endsWith(DEFAULT_EXTENSION)) {
-                filename += DEFAULT_EXTENSION;
-            }
-            link.setFinalFileName(filename);
+            link.setFinalFileName(this.applyFilenameExtension(title, DEFAULT_EXTENSION));
         }
         String mpdUrl = br.getRegex("<source src=\"([^\"]+)\"[^>]+label=('|\")HD\\2").getMatch(0);
         if (mpdUrl == null) {
@@ -158,7 +157,7 @@ public class ThisAVCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

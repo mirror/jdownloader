@@ -56,7 +56,7 @@ import jd.plugins.hoster.UploadBoyCom;
 public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
     private static final String[] domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "subyshare.com", "brupload.net", "powvideo.net", "youwatch.org", "salefiles.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "mixshared.com", "novafile.com", "novafile.org", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "clicknupload.org", "isra.cloud", "world-files.com", "katfile.com", "filefox.cc", "cosmobox.org", "userupload.net", "tstorage.info", "fastfile.cc", "datanodes.to", "filestore.me", "ezvn.net", "filoz.net", "rapidbytez.com" };
     /* This list contains all hosts which need special Patterns (see below) - all other XFS hosts have the same folder patterns! */
-    private static final String[] specialDomains = { "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com", "file.al", "send.cm", "takefile.link" };
+    private static final String[] specialDomains = { "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com", "file.al", "send.cm", "10gb.vn", "takefile.link" };
 
     public static String[] getAnnotationNames() {
         return getAllDomains();
@@ -120,6 +120,8 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         ret.add("https?://(?:www\\.)?file\\.al/public/\\d+/.+");
         /* send.cm */
         ret.add("https?://(?:www\\.)?(send\\.cm|sendit\\.cloud)/s/.+");
+        /* 10gb.vn */
+        ret.add("https?://(?:www\\.)?10gb\\.vn/(f/[a-z0-9]{32}|users/.+)");
         ret.add("https?://(?:www\\.)?takefile\\.link/folder/[a-f0-9\\-]+");
         for (String[] takeFileVirtual : TakefileLink.getVirtualPluginDomains()) {
             ret.add("https?://" + Pattern.quote(takeFileVirtual[0]) + "/folder/[a-f0-9\\-]+");
@@ -201,11 +203,13 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 loginCheckCounter++;
             }
         } while (loginCheckCounter <= maxLoginCheck);
-        final String fpName = getPackagename(param, this.br);
-        FilePackage fp = null;
-        if (fpName != null) {
-            fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName).trim());
+        final String packagename = getPackagename(param, this.br);
+        final FilePackage fp = FilePackage.getInstance();
+        if (packagename != null) {
+            fp.setName(Encoding.htmlDecode(packagename).trim());
+        } else {
+            /* Fallback */
+            fp.setName(br._getURL().getPath());
         }
         final ArrayList<String> dupes = new ArrayList<String>();
         dupes.add(param.getCryptedUrl());
@@ -255,15 +259,15 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
     }
 
     protected String regexPackagenameFromURL(final String url) {
-        String fpName = new Regex(url, "(folder/\\d+/|f/[a-z0-9]+/|go/[a-z0-9]+/)[^/]+/(.+)").getMatch(1); // name
+        String fpName = new Regex(url, "(?i)(folder/\\d+/|f/[a-z0-9]+/|go/[a-z0-9]+/)[^/]+/(.+)").getMatch(1); // name
         if (fpName == null) {
-            fpName = new Regex(url, "(folder/\\d+/|f/[a-z0-9]+/|go/[a-z0-9]+/)(.+)").getMatch(1); // id
+            fpName = new Regex(url, "(?i)(folder/\\d+/|f/[a-z0-9]+/|go/[a-z0-9]+/)(.+)").getMatch(1); // id
             if (fpName == null) {
-                fpName = new Regex(url, "users/[a-z0-9_]+/[^/]+/(.+)").getMatch(0); // name
+                fpName = new Regex(url, "(?i)users/[a-z0-9_]+/[^/]+/(.+)").getMatch(0); // name
                 if (fpName == null) {
-                    fpName = new Regex(url, "users/[a-z0-9_]+/(.+)").getMatch(0); // id
+                    fpName = new Regex(url, "(?i)users/[a-z0-9_]+/(.+)").getMatch(0); // id
                     if (fpName == null) {
-                        fpName = new Regex(url, "/s/[^/]+/([^/]+)").getMatch(0); // name, send.cm
+                        fpName = new Regex(url, "(?i)/s/[^/]+/([^/]+)").getMatch(0); // name, send.cm
                     }
                 }
             }
@@ -302,16 +306,17 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
     private ArrayList<DownloadLink> parsePage(final ArrayList<String> dupes, final FilePackage fp, final CryptedLink param) throws PluginException {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         int numberofNewItems = 0;
-        String[] links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(br.getHost(true)) + "/[a-z0-9]{12}(?:/.*?)?)\\1").getColumn(1);
+        final String pathPattern = "/[a-z0-9]{12}(?:\\.html|/.*?)?";
+        String[] links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(br.getHost(true)) + pathPattern + ")\\1").getColumn(1);
         if (links == null || links.length == 0) {
-            links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(br.getHost(false)) + "/[a-z0-9]{12}(?:/.*?)?)\\1").getColumn(1);
+            links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(br.getHost(false)) + pathPattern + ")\\1").getColumn(1);
         }
         if (links == null || links.length == 0) {
             /* Final attempt: Don't care about domain in links [e.g. uploadboy.com]. */
             links = br.getRegex("href=(\"|')(https?://(?:www\\.)?[^/]+/[a-z0-9]{12}(?:/.*?)?)\\1").getColumn(1);
         }
         if (links != null && links.length > 0) {
-            String html = br.toString();
+            String html = br.getRequest().getHtmlCode();
             html = html.replaceAll("</?font[^>]*>", "");
             html = html.replaceAll("</?b[^>]*>", "");
             // file.al, ex-load.com
@@ -416,16 +421,25 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
             }
         }
         /* These should only be shown when its a /user/ decrypt task */
-        final String cleanedUpAddedFolderLink = new Regex(param.getCryptedUrl(), "https?://[^/]+/(.+)").getMatch(0);
+        final String currentFolderPath = new Regex(param.getCryptedUrl(), "(?i)https?://[^/]+/(.+)").getMatch(0);
         String folders[] = br.getRegex("folder.?\\.gif.*?<a href=\"(.+?" + Pattern.quote(br.getHost(true)) + "[^\"]+users/[^\"]+)").getColumn(0);
         if (folders == null || folders.length == 0) {
             folders = br.getRegex("folder.?\\.gif.*?<a href=\"(.+?" + Pattern.quote(br.getHost(false)) + "[^\"]+users/[^\"]+)").getColumn(0);
+            if (folders == null || folders.length == 0) {
+                /* 2024-06-28: New attempt */
+                folders = br.getRegex("\"([^\"]*/users/[^\"']+)").getColumn(0);
+            }
         }
         if (folders != null && folders.length > 0) {
             for (final String folderlink : folders) {
-                final String cleanedUpFoundFolderLink = new Regex(folderlink, "https?://[^/]+/(.+)").getMatch(0);
+                final String path;
+                if (folderlink.startsWith("/")) {
+                    path = folderlink;
+                } else {
+                    path = new Regex(folderlink, "https?://[^/]+/(.+)").getMatch(0);
+                }
                 /* Make sure that we're not grabbing the parent folder but only the folder that the user has added + eventual subfolders! */
-                final boolean folderIsChildFolder = cleanedUpFoundFolderLink.length() > cleanedUpAddedFolderLink.length();
+                final boolean folderIsChildFolder = path.length() > currentFolderPath.length();
                 if (this.canHandle(folderlink) && !dupes.contains(folderlink) && folderIsChildFolder) {
                     numberofNewItems++;
                     final DownloadLink dlfolder = createDownloadlink(folderlink);
