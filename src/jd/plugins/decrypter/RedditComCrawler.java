@@ -350,11 +350,10 @@ public class RedditComCrawler extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlListing(final Map<String, Object> entries, FilePackage fp) throws Exception {
         /* https://www.reddit.com/dev/api/#fullnames */
         final ArrayList<DownloadLink> crawledItems = new ArrayList<DownloadLink>();
-        final List<Object> items = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/children");
+        final List<Map<String, Object>> items = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "data/children");
         final RedditConfig cfg = PluginJsonConfig.get(RedditConfig.class);
         int numberofSkippedItems = 0;
-        for (final Object itemO : items) {
-            final Map<String, Object> post = (Map<String, Object>) itemO;
+        for (final Map<String, Object> post : items) {
             final String kind = (String) post.get("kind");
             final Map<String, Object> data = (Map<String, Object>) post.get("data");
             final String postID = (String) data.get("id");
@@ -474,14 +473,23 @@ public class RedditComCrawler extends PluginForDecrypt {
                             final String url = Encoding.htmlOnlyDecode(mp4);
                             final String filenameFromURL = Plugin.getFileNameFromURL(url);
                             final DownloadLink direct = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
-                            if (filenameFromURL != null && StringUtils.endsWithCaseInsensitive(filenameFromURL, ".gif")) {
-                                /*
-                                 * Filename from URL contains .gif extension but this is a .mp4 file
-                                 *
-                                 * -> Correct that but keep .gif to signal source of the mp4
-                                 */
-                                direct.setFinalFileName(this.applyFilenameExtension(filenameFromURL, ".gif.mp4"));
-                                direct.setProperty(RedditCom.PROPERTY_VIDEO_SOURCE, "gif");
+                            if (filenameFromURL != null) {
+                                final String serverFilenameWithoutExt;
+                                if (filenameFromURL.contains(".")) {
+                                    serverFilenameWithoutExt = filenameFromURL.substring(0, filenameFromURL.lastIndexOf("."));
+                                } else {
+                                    serverFilenameWithoutExt = filenameFromURL;
+                                }
+                                direct.setProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT, serverFilenameWithoutExt);
+                                if (StringUtils.endsWithCaseInsensitive(filenameFromURL, ".gif")) {
+                                    /*
+                                     * Filename from URL contains .gif extension but this is a .mp4 file
+                                     *
+                                     * -> Correct that but keep .gif to signal source of the mp4
+                                     */
+                                    direct.setFinalFileName(this.applyFilenameExtension(filenameFromURL, ".gif.mp4"));
+                                    direct.setProperty(RedditCom.PROPERTY_VIDEO_SOURCE, "gif");
+                                }
                             }
                             direct.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_video);
                             direct.setAvailable(true);
@@ -499,6 +507,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                         final String videoID = new Regex(hls_url, PATTERN_SELFHOSTED_VIDEO).getMatch(0);
                         if (videoID != null) {
                             final DownloadLink video = this.createDownloadlink(generateRedditSelfhostedVideoURL(videoID));
+                            video.setProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT, videoID);
                             video.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_video);
                             final Object fallback_url = reddit_video_preview.get("fallback_url");
                             if (fallback_url != null) {
@@ -699,18 +708,18 @@ public class RedditComCrawler extends PluginForDecrypt {
                  * wants this, this is impossible and we'll select another filename scheme.
                  */
                 int numberofTextItemsWithoutOriginalFilenameHints = 0;
-                int numberofRedditItems = 0;
+                // int numberofRedditItems = 0;
                 for (final DownloadLink thisCrawledLink : thisCrawledLinks) {
                     final String type = thisCrawledLink.getStringProperty(RedditCom.PROPERTY_TYPE);
                     if (type != null && thisCrawledLink.getAvailableStatus() == AvailableStatus.TRUE) {
-                        numberofRedditItems++;
+                        // numberofRedditItems++;
                         if (StringUtils.equalsIgnoreCase(type, RedditCom.PROPERTY_TYPE_text) && !thisCrawledLink.hasProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT)) {
                             numberofTextItemsWithoutOriginalFilenameHints++;
                         }
                     }
                 }
                 final boolean isSingleTextItem;
-                if (numberofRedditItems > 0 && numberofTextItemsWithoutOriginalFilenameHints == numberofRedditItems) {
+                if (numberofTextItemsWithoutOriginalFilenameHints > 0) {
                     isSingleTextItem = true;
                 } else {
                     isSingleTextItem = false;
