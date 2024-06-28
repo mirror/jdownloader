@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -40,6 +41,13 @@ import jd.plugins.decrypter.VimmNetCrawler;
 public class VimmNet extends PluginForHost {
     public VimmNet(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -107,7 +115,6 @@ public class VimmNet extends PluginForHost {
             link.setName(this.getLinkID(link) + EXT_DEFAULT);
         }
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -129,11 +136,15 @@ public class VimmNet extends PluginForHost {
              */
             final String originalFileExtension = preGivenFilename.substring(preGivenFilename.lastIndexOf("."));
             final String newFileEnding;
-            if (formatFileExtension.equalsIgnoreCase(originalFileExtension) || StringUtils.endsWithCaseInsensitive(formatFileExtension, originalFileExtension)) {
+            if (formatFileExtension.equalsIgnoreCase(originalFileExtension)) {
                 /* New extension == current extension */
                 newFileEnding = originalFileExtension;
             } else {
-                newFileEnding = formatFileExtension + originalFileExtension;
+                if (formatFileExtension.endsWith(originalFileExtension)) {
+                    newFileEnding = formatFileExtension;
+                } else {
+                    newFileEnding = formatFileExtension + originalFileExtension;
+                }
             }
             if (!preGivenFilename.endsWith(newFileEnding)) {
                 filename = preGivenFilename.replaceFirst(Pattern.quote(originalFileExtension) + "$", newFileEnding);

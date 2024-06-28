@@ -41,6 +41,13 @@ public class VimmNetCrawler extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
@@ -70,7 +77,6 @@ public class VimmNetCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        br.setFollowRedirects(true);
         final String contentid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final String contenturl = "https://" + this.getHost() + "/vault/" + contentid;
         br.getPage(contenturl);
