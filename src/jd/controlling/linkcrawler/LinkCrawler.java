@@ -1248,7 +1248,7 @@ public class LinkCrawler {
                     if (fileName.indexOf(".") < 0) {
                         fileName = fileName + "." + ext;
                     } else if (allowFileExtensionCorrection) {
-                        fileName = Plugin.getCorrectOrApplyFileNameExtension(fileName, "." + ext);
+                        fileName = Plugin.correctOrApplyFileNameExtension(fileName, "." + ext);
                     }
                 }
                 link.setFinalFileName(fileName);

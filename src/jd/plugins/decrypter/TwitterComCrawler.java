@@ -534,7 +534,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 filename = originalFilename;
             } else {
                 /* E.g. .txt file filename which is supposed to look like filename of related media file(s). */
-                filename = Plugin.getCorrectOrApplyFileNameExtension(relatedOriginalFilename, ext);
+                filename = Plugin.correctOrApplyFileNameExtension(relatedOriginalFilename, ext);
             }
         } else if (scheme == FilenameScheme.ORIGINAL_WITH_TWEET_ID) {
             filename = tweetID;

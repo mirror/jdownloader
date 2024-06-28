@@ -450,17 +450,9 @@ public abstract class Plugin implements ActionListener {
         return getFileNameFromURL(new URL(url));
     }
 
-    public String correctOrApplyFileNameExtension(final String filenameOrg, final String newExtension) {
-        return getCorrectOrApplyFileNameExtension(filenameOrg, newExtension);
-    }
-
     public String correctOrApplyFileNameExtension(final String filenameOrg, final URLConnectionAdapter connection) {
         final String extNew = getExtensionFromMimeType(connection);
-        return getCorrectOrApplyFileNameExtension(filenameOrg, extNew);
-    }
-
-    public static String getCorrectOrApplyFileNameExtension(final String filenameOrg, String newExtension) {
-        return correctOrApplyFileNameExtension(filenameOrg, newExtension, false);
+        return correctOrApplyFileNameExtension(filenameOrg, extNew);
     }
 
     /**
@@ -476,7 +468,7 @@ public abstract class Plugin implements ActionListener {
      *
      * @return Filename with new extension
      */
-    public static String correctOrApplyFileNameExtension(final String filenameOrg, String newExtension, final boolean force) {
+    public static String correctOrApplyFileNameExtension(final String filenameOrg, String newExtension) {
         if (StringUtils.isEmpty(filenameOrg) || StringUtils.isEmpty(newExtension)) {
             return filenameOrg;
         }
@@ -503,11 +495,6 @@ public abstract class Plugin implements ActionListener {
         final String currentFileExtension = lastIndex < filenameOrg.length() ? filenameOrg.substring(lastIndex) : null;
         if (StringUtils.isEmpty(currentFileExtension)) {
             return filenameOrg;
-        }
-        if (force) {
-            /* Replace extension without any further checks. */
-            final String filenameWithoutExtension = filenameOrg.substring(0, lastIndex);
-            return filenameWithoutExtension + newExtension;
         }
         final CompiledFiletypeExtension filetypeOld = CompiledFiletypeFilter.getExtensionsFilterInterface(currentFileExtension);
         if (filetypeOld == null) {
