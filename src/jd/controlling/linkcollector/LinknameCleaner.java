@@ -191,6 +191,8 @@ public class LinknameCleaner {
         if (allowCleanup && org.jdownloader.settings.staticreferences.CFG_GENERAL.CLEAN_UP_PACKAGENAMES.isEnabled()) {
             // still wanted by users, so please do not simply remove this
             // TODO: maybe add own cleanup replace map that does this via pattern/replace or add those to package name replace map
+            // TODO: Review this to avoid double-spaces caused by this cleanup, see:
+            // https://board.jdownloader.org/showpost.php?p=536087&postcount=37
             final StringBuilder sb = new StringBuilder();
             char[] cs = ret.toCharArray();
             char lastChar = 'a';
