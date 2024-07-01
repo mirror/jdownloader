@@ -70,10 +70,11 @@ public class RecurbateCom extends PluginForHost {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser brnew = new Browser();
+        final Browser brnew = super.createNewBrowserInstance();
         brnew.setFollowRedirects(true);
         final String customUserAgent = PluginJsonConfig.get(RecurbateComConfig.class).getCustomUserAgent();
         if (!StringUtils.isEmpty(customUserAgent) && !StringUtils.equalsIgnoreCase(customUserAgent, "JDDEFAULT")) {
+            /* Set user defined User-Agent. */
             brnew.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, customUserAgent);
         }
         return brnew;
@@ -275,9 +276,11 @@ public class RecurbateCom extends PluginForHost {
              */
             final String officialHighspeedDownloadlink = br.getRegex("(/video/\\d+/download/?)").getMatch(0);
             if (officialHighspeedDownloadlink != null) {
+                /* Official download */
                 dllink = officialHighspeedDownloadlink;
                 logger.info("Found highspeed downloadurl: " + officialHighspeedDownloadlink);
             } else {
+                /* Stream download */
                 logger.info("Failed to find highspeed downloadurl -> Trying to download stream");
                 final String token = br.getRegex("data-token\\s*=\\s*\"([^\"]+)\"\\s*data-video-id").getMatch(0);
                 if (token == null) {
@@ -314,10 +317,8 @@ public class RecurbateCom extends PluginForHost {
                     dllink = hlsURL;
                 }
             }
-            if (Encoding.isHtmlEntityCoded(dllink)) {
-                /* Fix encoding */
-                dllink = Encoding.htmlOnlyDecode(dllink);
-            }
+            /* Fix encoding */
+            dllink = Encoding.htmlOnlyDecode(dllink);
         }
         try {
             if (StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
@@ -394,35 +395,34 @@ public class RecurbateCom extends PluginForHost {
                 /* Do not validate cookies */
                 return false;
             }
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                /* 2024-06-12: debug-test */
-                br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-                br.getHeaders().put("Accept-Encoding", "gzip, deflate, br, zstd");
-                br.getHeaders().put("Accept-Language", "de-DE,de;q=0.9,en;q=0.8,en-US;q=0.7");
-                br.getHeaders().put("Cache-Control", "max-age=0");
-                br.getHeaders().put("Priority", "u=0, i");
-                // br.getHeaders().put("Referer", "https://recu.me/username/video/12345678/play");
-                br.getHeaders().put("Sec-Ch-Ua", "\"Google Chrome\";v=\"125\", \"Chromium\";v=\"125\", \"Not.A/Brand\";v=\"24\"");
-                br.getHeaders().put("Sec-Ch-Ua-Arch", "\"x86\"");
-                br.getHeaders().put("Sec-Ch-Ua-Bitness", "\"64\"");
-                br.getHeaders().put("Sec-Ch-Ua-Full-Version", "\"125.0.6422.142\"");
-                br.getHeaders().put("Sec-Ch-Ua-Full-Version-List", "\"Google Chrome\";v=\"125.0.6422.142\", \"Chromium\";v=\"125.0.6422.142\", \"Not.A/Brand\";v=\"24.0.0.0\"");
-                br.getHeaders().put("Sec-Ch-Ua-Mobile", "?0");
-                br.getHeaders().put("Sec-Ch-Ua-Model", "\"\"");
-                br.getHeaders().put("Sec-Ch-Ua-Platform", "\"Windows\"");
-                br.getHeaders().put("Sec-Ch-Ua-Platform-Version", "\"10.0.0\"");
-                br.getHeaders().put("Sec-Fetch-Dest", "document");
-                br.getHeaders().put("Sec-Fetch-Mode", "navigate");
-                br.getHeaders().put("Sec-Fetch-Site", "same-origin");
-                br.getHeaders().put("Sec-Fetch-User", "?1");
-                br.getHeaders().put("Upgrade-Insecure-Requests", "1");
-            }
+            // if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            // /* 2024-06-12: debug-test */
+            // br.getHeaders().put("Accept",
+            // "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+            // br.getHeaders().put("Accept-Encoding", "gzip, deflate, br, zstd");
+            // br.getHeaders().put("Accept-Language", "de-DE,de;q=0.9,en;q=0.8,en-US;q=0.7");
+            // br.getHeaders().put("Cache-Control", "max-age=0");
+            // br.getHeaders().put("Priority", "u=0, i");
+            // // br.getHeaders().put("Referer", "https://recu.me/username/video/12345678/play");
+            // br.getHeaders().put("Sec-Ch-Ua", "\"Google Chrome\";v=\"125\", \"Chromium\";v=\"125\", \"Not.A/Brand\";v=\"24\"");
+            // br.getHeaders().put("Sec-Ch-Ua-Arch", "\"x86\"");
+            // br.getHeaders().put("Sec-Ch-Ua-Bitness", "\"64\"");
+            // br.getHeaders().put("Sec-Ch-Ua-Full-Version", "\"125.0.6422.142\"");
+            // br.getHeaders().put("Sec-Ch-Ua-Full-Version-List", "\"Google Chrome\";v=\"125.0.6422.142\",
+            // \"Chromium\";v=\"125.0.6422.142\", \"Not.A/Brand\";v=\"24.0.0.0\"");
+            // br.getHeaders().put("Sec-Ch-Ua-Mobile", "?0");
+            // br.getHeaders().put("Sec-Ch-Ua-Model", "\"\"");
+            // br.getHeaders().put("Sec-Ch-Ua-Platform", "\"Windows\"");
+            // br.getHeaders().put("Sec-Ch-Ua-Platform-Version", "\"10.0.0\"");
+            // br.getHeaders().put("Sec-Fetch-Dest", "document");
+            // br.getHeaders().put("Sec-Fetch-Mode", "navigate");
+            // br.getHeaders().put("Sec-Fetch-Site", "same-origin");
+            // br.getHeaders().put("Sec-Fetch-User", "?1");
+            // br.getHeaders().put("Upgrade-Insecure-Requests", "1");
+            // }
             br.getPage(checkURL);
             checkForIPBlocked(br, null, account);
-            if (this.isLoggedin(br)) {
-                logger.info("User cookie login successful");
-                return true;
-            } else {
+            if (!this.isLoggedin(br)) {
                 logger.info("Cookie login failed");
                 if (account.hasEverBeenValid()) {
                     throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
@@ -430,6 +430,8 @@ public class RecurbateCom extends PluginForHost {
                     throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                 }
             }
+            logger.info("User cookie login successful");
+            return true;
         }
     }
 
@@ -481,6 +483,7 @@ public class RecurbateCom extends PluginForHost {
             }
         } else {
             /* This should never happen */
+            logger.warning("Failed to find account-plan");
             account.setType(AccountType.UNKNOWN);
         }
         ai.setStatus("Plan: " + plan);

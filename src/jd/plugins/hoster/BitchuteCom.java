@@ -16,14 +16,17 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
+import jd.http.requests.PostRequest;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -43,16 +46,11 @@ public class BitchuteCom extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
-    /* DEV NOTES */
-    // other:
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_extension = ".mp4";
     /* Connection stuff */
-    private static final boolean free_resume       = true;
+    private static final boolean free_resume    = true;
     /* 2020-05-06: Chunkload not possible anymore */
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
+    private static final int     free_maxchunks = 1;
+    private String               dllink         = null;
 
     @Override
     public String getAGBLink() {
@@ -79,56 +77,36 @@ public class BitchuteCom extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        final String fid = this.getFID(link);
+        final String extDefault = ".mp4";
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + default_extension);
+            link.setName(fid + extDefault);
         }
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        br.postPageRaw("https://api.bitchute.com/api/beta9/video", "{\"video_id\":\"" + fid + "\"}");
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("(?i)>\\s*Channel Blocked\\s*<")) {
-            if (br.containsHTML("(?i)>\\s*The parent channel of this video is blocked")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("(?i)>\\s*This video is unavailable at your location due to the following restrictions")) {
-            if (isDownload) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
-            } else {
-                /* Video is online but cannot be downloaded. */
-                return AvailableStatus.TRUE;
-            }
         }
-        String title = br.getRegex("class=\"page-title\">([^<>\"]+)<").getMatch(0);
-        if (StringUtils.isEmpty(dllink)) {
-            dllink = br.getRegex("<source src=(?:\"|\\')(https?://[^<>\"\\']*?)(?:\"|\\')[^>]*?type=(?:\"|\\')(?:video/)?(?:mp4|flv)(?:\"|\\')").getMatch(0);
+        String title = entries.get("video_name").toString();
+        final String description = (String) entries.get("description");
+        if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
+            link.setComment(description);
         }
-        if (title != null) {
-            String filename = Encoding.htmlDecode(title);
-            filename = filename.trim();
-            String ext;
-            if (!StringUtils.isEmpty(dllink)) {
-                ext = getFileNameExtensionFromString(dllink, default_extension);
-                if (ext != null && !ext.matches("\\.(?:flv|mp4)")) {
-                    ext = default_extension;
-                }
-            } else {
-                ext = default_extension;
-            }
-            if (!filename.endsWith(ext)) {
-                filename += ext;
-            }
-            link.setFinalFileName(filename);
-        }
+        link.setFinalFileName(this.applyFilenameExtension(title, extDefault));
         if (!StringUtils.isEmpty(dllink)) {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(this.dllink);
                 handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
             } finally {
                 try {
@@ -159,6 +137,17 @@ public class BitchuteCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, true);
+        final String fid = this.getFID(link);
+        final Map<String, Object> postdata = new HashMap<String, Object>();
+        postdata.put("video_id", fid);
+        final PostRequest req = br.createJSonPostRequest("https://api.bitchute.com/api/beta/video/media", postdata);
+        req.getHeaders().put("Content-Type", "application/json");
+        req.getHeaders().put("Origin", "https://www.bitchute.com");
+        req.getHeaders().put("Priority", "u=1, i");
+        req.getHeaders().put("Referer", "https://www.bitchute.com/");
+        br.getPage(req);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        dllink = (String) entries.get("media_url");
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -169,7 +158,7 @@ public class BitchuteCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

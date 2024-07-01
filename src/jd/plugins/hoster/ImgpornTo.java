@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class ThotdriveCom extends YetiShareCore {
-    public ThotdriveCom(PluginWrapper wrapper) {
+public class ImgpornTo extends YetiShareCore {
+    public ImgpornTo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
     }
@@ -44,8 +44,20 @@ public class ThotdriveCom extends YetiShareCore {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "thotdrive.com" });
+        ret.add(new String[] { "imgporn.to", "thotdrive.com" });
         return ret;
+    }
+
+    @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("thotdrive.com"); // 2024-07-01
+        return deadDomains;
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {
@@ -100,5 +112,10 @@ public class ThotdriveCom extends YetiShareCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public boolean supports_availablecheck_over_info_page(final DownloadLink link) {
+        return false;
     }
 }

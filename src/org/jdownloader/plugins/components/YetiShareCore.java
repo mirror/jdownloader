@@ -450,7 +450,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                         dl = jd.plugins.BrowserAdapter.openDownload(br, link, contenturl, this.isResumeable(link, account), this.getMaxChunks(account));
                         con = dl.getConnection();
                     } else {
-                        br.openGetConnection(contenturl);
+                        con = br.openGetConnection(contenturl);
                     }
                     if (this.looksLikeDownloadableContent(con)) {
                         logger.info("Direct download");

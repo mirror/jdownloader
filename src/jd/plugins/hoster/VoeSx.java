@@ -228,7 +228,7 @@ public class VoeSx extends XFileSharingProBasic {
         br.setFollowRedirects(true);
         boolean fallBackFileName = true;
         try {
-            br.getPage(this.getMainPage(link) + "/e/" + this.getFUIDFromURL(link));
+            getPage(this.getMainPage(link) + "/e/" + this.getFUIDFromURL(link));
             if (this.isOffline(link, br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -284,71 +284,69 @@ public class VoeSx extends XFileSharingProBasic {
     protected String getDllinkViaOfficialVideoDownload(final Browser br, final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
         if (returnFilesize) {
             return null;
-        } else {
-            logger.info("[DownloadMode] Trying to find official video downloads");
-            String continueLink = br.getRegex("(?:\"|')(/dl\\?op=download_orig[^\"\\']+)").getMatch(0);
-            if (continueLink == null) {
-                /* 2023-10-07 */
-                continueLink = br.getRegex("(?:\"|')((https?://[^/]+)?/[a-z0-9]{12}/download)").getMatch(0);
-            }
-            if (continueLink == null) {
-                /* No official download available */
-                logger.info("Failed to find any official video downloads");
-                return null;
-            }
-            final String streamDownloadlink = getDllinkVideohost(link, account, br, br.getRequest().getHtmlCode());
-            final DownloadMode mode = this.getPreferredDownloadModeFromConfig();
-            if (streamDownloadlink != null && (mode == DownloadMode.STREAM || mode == DownloadMode.AUTO) && Boolean.TRUE.equals(requiresCaptchaForOfficialVideoDownload())) {
-                /*
-                 * User wants to download stream. Obtaining an official downloadlink would require the user to enter a captcha -> Skip that.
-                 */
-                return null;
-            }
-            if (br.containsHTML("&embed=&adb=")) {
-                /* 2022-08-24: This might give us more download-speed, not sure though. */
-                continueLink += "&embed=&adb=0";
-            }
-            this.getPage(br, continueLink);
-            final Form dlform = br.getFormbyActionRegex("(?i).+/download$");
-            if (dlform != null) {
-                try {
-                    reCaptchaSiteurlWorkaround = br.getURL();
-                    this.handleCaptcha(link, br, dlform);
-                } finally {
-                    reCaptchaSiteurlWorkaround = null;
-                }
-                this.submitForm(br, dlform);
-            }
-            String dllink = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
-            if (StringUtils.isEmpty(dllink)) {
-                /*
-                 * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a
-                 * result.
-                 */
-                dllink = br.getRegex("(?i)>\\s*Download Link\\s*</td>\\s*<td><a href=\"(https?://[^\"]+)\"").getMatch(0);
-                if (dllink == null) {
-                    /* 2023-10-07 */
-                    dllink = br.getRegex("<a href=\"(http[^\"]+)\"[^>]*class=\"btn btn-primary\" target=\"_blank\"").getMatch(0);
-                    if (dllink == null) {
-                        /* 2023-11-21 */
-                        dllink = br.getRegex("\"(https?://[^/]+/engine/download/[^\"]+)\"").getMatch(0);
-                    }
-                }
-                if (dllink != null) {
-                    dllink = Encoding.htmlOnlyDecode(dllink);
-                }
-            }
-            if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find dllink via official video download");
-            } else {
-                logger.info("Successfully found dllink via official video download");
-                final String filesizeBytesStr = br.getRegex("File Size \\(bytes\\)</td>\\s*<td>\\s*(\\d+)\\s*<").getMatch(0);
-                if (filesizeBytesStr != null) {
-                    link.setVerifiedFileSize(Long.parseLong(filesizeBytesStr));
-                }
-            }
-            return dllink;
         }
+        logger.info("[DownloadMode] Trying to find official video downloads");
+        String continueLink = br.getRegex("(?:\"|')(/dl\\?op=download_orig[^\"\\']+)").getMatch(0);
+        if (continueLink == null) {
+            /* 2023-10-07 */
+            continueLink = br.getRegex("(?:\"|')((https?://[^/]+)?/[a-z0-9]{12}/download)").getMatch(0);
+        }
+        if (continueLink == null) {
+            /* No official download available */
+            logger.info("Failed to find any official video downloads");
+            return null;
+        }
+        final String streamDownloadlink = getDllinkVideohost(link, account, br, br.getRequest().getHtmlCode());
+        final DownloadMode mode = this.getPreferredDownloadModeFromConfig();
+        if (streamDownloadlink != null && (mode == DownloadMode.STREAM || mode == DownloadMode.AUTO) && Boolean.TRUE.equals(requiresCaptchaForOfficialVideoDownload())) {
+            /*
+             * User wants to download stream. Obtaining an official downloadlink would require the user to enter a captcha -> Skip that.
+             */
+            return null;
+        }
+        if (br.containsHTML("&embed=&adb=")) {
+            /* 2022-08-24: This might give us more download-speed, not sure though. */
+            continueLink += "&embed=&adb=0";
+        }
+        getPage(br, continueLink);
+        final Form dlform = br.getFormbyActionRegex("(?i).+/download$");
+        if (dlform != null) {
+            try {
+                reCaptchaSiteurlWorkaround = br.getURL();
+                this.handleCaptcha(link, br, dlform);
+            } finally {
+                reCaptchaSiteurlWorkaround = null;
+            }
+            this.submitForm(br, dlform);
+        }
+        String dllink = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
+        if (StringUtils.isEmpty(dllink)) {
+            /*
+             * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
+             */
+            dllink = br.getRegex("(?i)>\\s*Download Link\\s*</td>\\s*<td><a href=\"(https?://[^\"]+)\"").getMatch(0);
+            if (dllink == null) {
+                /* 2023-10-07 */
+                dllink = br.getRegex("<a href=\"(http[^\"]+)\"[^>]*class=\"btn btn-primary\" target=\"_blank\"").getMatch(0);
+                if (dllink == null) {
+                    /* 2023-11-21 */
+                    dllink = br.getRegex("\"(https?://[^/]+/engine/download/[^\"]+)\"").getMatch(0);
+                }
+            }
+            if (dllink != null) {
+                dllink = Encoding.htmlOnlyDecode(dllink);
+            }
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            logger.warning("Failed to find dllink via official video download");
+        } else {
+            logger.info("Successfully found dllink via official video download");
+            final String filesizeBytesStr = br.getRegex("File Size \\(bytes\\)</td>\\s*<td>\\s*(\\d+)\\s*<").getMatch(0);
+            if (filesizeBytesStr != null) {
+                link.setVerifiedFileSize(Long.parseLong(filesizeBytesStr));
+            }
+        }
+        return dllink;
     }
 
     @Override
@@ -399,6 +397,16 @@ public class VoeSx extends XFileSharingProBasic {
                 }
             }
         };
+    }
+
+    @Override
+    protected void getPage(final Browser ibr, final String page) throws Exception {
+        super.getPage(ibr, page);
+        final String redirect = ibr.getRegex("else \\{\\s*window\\.location\\.href = '(https?://[^\"\\']+)';").getMatch(0);
+        if (redirect != null) {
+            logger.info("Handle special js redirect: " + redirect);
+            super.getPage(ibr, redirect);
+        }
     }
 
     @Override

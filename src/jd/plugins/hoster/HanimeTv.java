@@ -20,10 +20,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,14 +36,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HanimeTv extends PluginForHost {
     public HanimeTv(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -70,17 +78,15 @@ public class HanimeTv extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
-    /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        return 0;
+    }
+
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -97,16 +103,16 @@ public class HanimeTv extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String fid = this.getFID(link);
         if (!link.isNameSet()) {
             /* Fallback */
-            link.setName(this.getFID(link).replace("-", " ") + ".mp4");
+            link.setName(fid.replace("-", " ").trim() + ".mp4");
         }
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!this.canHandle(br.getURL())) {
+        } else if (!br.getURL().contains(fid)) {
             /* E.g. redirect to "https://hanime.tv/404" */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -116,45 +122,51 @@ public class HanimeTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(link, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (!attemptStoredDownloadurlDownload(link, directlinkproperty)) {
-            if (true) {
-                /* 2021-09-30: Unfinished plugin */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            /* This step is probably skippable. */
-            br.getPage("/downloads/" + Encoding.Base64Encode(this.getFID(link)));
-            /* TODO: Requires signed API request */
-            final Browser brc = br.cloneBrowser();
-            brc.getHeaders().put("x-session-token", "");
-            brc.getHeaders().put("x-signature", "TODO");
-            brc.getHeaders().put("x-signature-version", "web2");
-            brc.getHeaders().put("x-time", Long.toString(System.currentTimeMillis()));
-            brc.getHeaders().put("x-token", "null");
-            brc.getPage("https://members.hanime.tv/rapi/v7/downloads?id=" + Encoding.urlEncode(Encoding.Base64Encode(this.getFID(link))) + "&kind=requestlinks&captcha_kind=saved_download_token&captcha_token=TODO&captcha_expires=TODO&loc=https://hanime.tv");
-            /* TODO */
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
-            String dllink = (String) entries.get("TODO");
-            if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find final downloadurl");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-                }
-            }
-            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+    private void doFree(final DownloadLink link, final String directlinkproperty) throws Exception, PluginException {
+        if (true) {
+            /* 2021-09-30: Unfinished plugin */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String fid = this.getFID(link);
+        final String fidB64Encoded = Encoding.Base64Encode(fid);
+        /* This step is probably skippable. */
+        br.getPage("/downloads/" + fidB64Encoded);
+        /* TODO: Requires signed API request */
+        final Browser brc = br.cloneBrowser();
+        brc.getHeaders().put("x-session-token", "");
+        brc.getHeaders().put("x-signature", "TODO");
+        brc.getHeaders().put("x-signature-version", "web2");
+        brc.getHeaders().put("x-time", Long.toString(System.currentTimeMillis()));
+        brc.getHeaders().put("x-token", "null");
+        final UrlQuery query = new UrlQuery();
+        query.add("id", Encoding.urlEncode(fidB64Encoded));
+        query.add("kind", "requestlinks");
+        query.add("captcha_token", "TODO");
+        query.add("captcha_expires", "");
+        query.add("loc", Encoding.urlEncode("https://hanime.tv"));
+        brc.getPage("https://members.hanime.tv/rapi/v7/downloads?" + query.toString());
+        /* TODO */
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.getRequest().getHtmlCode());
+        String dllink = (String) entries.get("TODO");
+        if (StringUtils.isEmpty(dllink)) {
+            logger.warning("Failed to find final downloadurl");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(link, null));
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            }
+        }
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
         dl.startDownload();
     }
 
@@ -163,33 +175,9 @@ public class HanimeTv extends PluginForHost {
         return true;
     }
 
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty) throws Exception {
-        final String url = link.getStringProperty(directlinkproperty);
-        if (StringUtils.isEmpty(url)) {
-            return false;
-        }
-        try {
-            final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, FREE_RESUME, FREE_MAXCHUNKS);
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                return true;
-            } else {
-                brc.followConnection(true);
-                throw new IOException();
-            }
-        } catch (final Throwable e) {
-            logger.log(e);
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable ignore) {
-            }
-            return false;
-        }
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override
