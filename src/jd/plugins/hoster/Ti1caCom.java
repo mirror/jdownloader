@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -28,8 +30,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ti1ca.com" }, urls = { "https?://(?:www\\.)?ti1ca\\.com/[a-z0-9]+\\-[^<>\"]*?\\.html" })
 public class Ti1caCom extends PluginForHost {
@@ -43,9 +43,8 @@ public class Ti1caCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME    = true;
+    private static final int     FREE_MAXCHUNKS = 0;
 
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
@@ -62,7 +61,7 @@ public class Ti1caCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Le fichier n'existe pas ou|>Le fichier a été supprimé")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">\\s*Le fichier n'existe pas ou|>\\s*Le fichier a été supprimé")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("title=\"Téléchargez\\s*(.*?)\"").getMatch(0);
@@ -70,13 +69,18 @@ public class Ti1caCom extends PluginForHost {
             filename = new Regex(link.getDownloadURL(), "ti1ca\\.com/[a-z0-9]+\\-([^<>\"]*?)\\.html").getMatch(0);
         }
         String filesize = br.getRegex("octets\">([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            filename = filename.replace("-", " ");
+            link.setName(Encoding.htmlDecode(filename.trim()));
+        } else {
+            logger.warning("Failed to find filename");
         }
-        filename = filename.replace("-", " ");
-        filesize = filesize.replace("Mo", "MB");
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            filesize = filesize.replace("Mo", "MB");
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else {
+            logger.warning("Failed to find filesize");
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -134,7 +138,7 @@ public class Ti1caCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

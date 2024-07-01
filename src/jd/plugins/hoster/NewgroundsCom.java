@@ -65,15 +65,21 @@ public class NewgroundsCom extends antiDDoSForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "Filename_id", "Add id to file name?").setDefaultValue(true));
     }
 
-    /* DEV NOTES */
-    // Tags:
-    // protocol: no https
-    // other:
-    /* Connection stuff */
-    private static final boolean free_resume    = true;
-    private static final int     free_maxchunks = 0;
-    private String               dllink         = null;
-    private boolean              server_issues  = false;
+    private String  dllink        = null;
+    private boolean server_issues = false;
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        if (link.getPluginPatternMatcher().matches(ARTLINK)) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
 
     @Override
     public String getAGBLink() {
@@ -280,15 +286,11 @@ public class NewgroundsCom extends antiDDoSForHost {
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
-        final int chunks;
         if (!link.getPluginPatternMatcher().matches(ARTLINK)) {
             // avoid 429, You're making too many requests. Wait a bit before trying again
             sleep(30 * 1000l, link);
-            chunks = 1;
-        } else {
-            chunks = free_maxchunks;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, chunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 429) {
@@ -365,8 +367,24 @@ public class NewgroundsCom extends antiDDoSForHost {
             loginform.put("password", Encoding.urlEncode(account.getPass()));
             loginform.put("remember", "1");
             br.submitForm(loginform);
+            Form twofaform = null;
+            if (!isLoggedin(br) && (twofaform = br.getFormbyActionRegex(".*/passport/appsession.*")) != null) {
+                final String twoFACode = this.getTwoFACode(account, "\\d{6}");
+                twofaform.put("code", twoFACode);
+                twofaform.put("username", Encoding.urlEncode(account.getUser()));
+                twofaform.put("password", Encoding.urlEncode(account.getPass()));
+                twofaform.put("remember", "1");
+                logger.info("Submitting 2FA code");
+                br.submitForm(twofaform);
+            }
             if (!isLoggedin(br)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (twofaform != null) {
+                    /* Invalid 2FA code */
+                    throw new AccountInvalidException(org.jdownloader.gui.translate._GUI.T.jd_gui_swing_components_AccountDialog_2FA_login_invalid());
+                } else {
+                    /* Invalid login credentials */
+                    throw new AccountInvalidException();
+                }
             }
             account.saveCookies(br.getCookies(br.getHost()), "");
         }

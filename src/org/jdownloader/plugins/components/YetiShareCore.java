@@ -469,6 +469,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                     }
                     /* No direct download */
                     br.followConnection(true);
+                    this.runPostRequestTask(br);
                     dl = null;
                     /* Try again if we are unsure whether or not we are logged in. */
                     if (account == null || hasGoneThroughVerifiedLoginOnce) {

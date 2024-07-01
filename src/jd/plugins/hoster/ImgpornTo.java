@@ -17,10 +17,15 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -117,5 +122,45 @@ public class ImgpornTo extends YetiShareCore {
     @Override
     public boolean supports_availablecheck_over_info_page(final DownloadLink link) {
         return false;
+    }
+
+    @Override
+    protected void requestFileDetailsNewYetiShare(final Browser br, final String fileID) throws Exception {
+        /* 2023-07-06: "p=true" has been added for wrzucaj.pl but that shouldn't affect other websites. */
+        postPage(br, "/ajax/_account_file_details.ajax.php", "u=" + fileID);
+        final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String html = root.get("html").toString();
+        /* Small workaround to have this html code available in our current browser instance. */
+        br.getRequest().setHtmlCode(html);
+    }
+
+    @Override
+    protected String getContinueLink(final Browser br) throws Exception {
+        final Regex filedl = br.getRegex("triggerFileDownload\\((\\d+),\\s*'([a-f0-9]{64})");
+        if (filedl.patternFind()) {
+            final String fileid = filedl.getMatch(0);
+            final String fileHash = filedl.getMatch(1);
+            /* The hash we have here is not the real file hash! */
+            // this.getDownloadLink().setSha256Hash(fileHash);
+            return "/page/direct_download.php?fileId=" + fileid + "&fileHash=" + fileHash;
+        }
+        String continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+        if (continue_link == null) {
+            continue_link = br.getRegex("class=\\'btn btn\\-free\\'[^>]*href=\\'([^<>\"\\']*?)\\'>").getMatch(0);
+        }
+        if (continue_link == null) {
+            continue_link = br.getRegex("<div class=\"captchaPageTable\">\\s*<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        }
+        if (continue_link == null) {
+            continue_link = br.getRegex("(https?://[^/]+/[^<>\"\\':]*pt=[^<>\"\\']*)(?:\"|\\')").getMatch(0);
+        }
+        if (continue_link == null) {
+            continue_link = getDllink(br);
+        }
+        if (continue_link != null) {
+            return Encoding.htmlOnlyDecode(continue_link);
+        } else {
+            return super.getContinueLink(br);
+        }
     }
 }
