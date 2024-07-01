@@ -262,11 +262,12 @@ public class TorboxApp extends PluginForHost {
         final boolean enableNotifications = true;
         if (enableNotifications) {
             long highestNotificationTimestamp = 0;
+            List<Map<String, Object>> notifications = null;
             try {
                 final long timestampNotificationsDisplayed = account.getLongProperty(PROPERTY_ACCOUNT_NOTIFICATIONS_DISPLAYED_UNTIL_TIMESTAMP, 0);
                 final Request req_notifications = br.createGetRequest(API_BASE + "/notifications/mynotifications");
                 /* Note: 2024-06-13: There is no serverside limit of number of notofications that can be returned here. */
-                final List<Map<String, Object>> notifications = (List<Map<String, Object>>) this.callAPI(req_notifications, account, null);
+                notifications = (List<Map<String, Object>>) this.callAPI(req_notifications, account, null);
                 int counterDisplayed = 0;
                 for (final Map<String, Object> notification : notifications) {
                     final long notification_created_at = TimeFormatter.getMilliSeconds(notification.get("created_at").toString(), "yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.ENGLISH);
@@ -296,14 +297,16 @@ public class TorboxApp extends PluginForHost {
             } finally {
                 /* Save this timestamp so we are able to know to which time we've already displayed notifications. */
                 account.setProperty(PROPERTY_ACCOUNT_NOTIFICATIONS_DISPLAYED_UNTIL_TIMESTAMP, highestNotificationTimestamp);
-                try {
-                    /* Clear all notifications ("mark as read") */
-                    final Request req_clear_all_notifications = br.createGetRequest(API_BASE + "/notifications/clear");
-                    this.callAPI(req_clear_all_notifications, account, null);
-                    // final Object req_clear_allnotofications_answer = this.callAPI(req_clear_all_notifications, account, null);
-                } catch (final Exception e) {
-                    logger.log(e);
-                    logger.info("Clearing notifications API request failed");
+                if (notifications != null && notifications.size() > 0) {
+                    try {
+                        /* Clear all notifications ("mark as read") */
+                        final Request req_clear_all_notifications = br.createGetRequest(API_BASE + "/notifications/clear");
+                        this.callAPI(req_clear_all_notifications, account, null);
+                        // final Object req_clear_allnotofications_answer = this.callAPI(req_clear_all_notifications, account, null);
+                    } catch (final Exception e) {
+                        logger.log(e);
+                        logger.info("Clearing notifications API request failed");
+                    }
                 }
             }
         }
@@ -373,6 +376,10 @@ public class TorboxApp extends PluginForHost {
             return;
         }
         // TODO: Add better errorhandling
+        /*
+         * List of possible error codes/strings: </br>
+         * https://www.postman.com/wamy-dev/workspace/torbox/collection/29572726-4244cdaf-ece6-4b6d-a2ca-463a3af48f54
+         */
         // final Object error = entries.get("error");
         final String errormsg = entries.get("detail").toString();
         if (link != null) {

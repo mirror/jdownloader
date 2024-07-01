@@ -28,6 +28,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -46,11 +47,14 @@ public class BitchuteCom extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
-    /* Connection stuff */
-    private static final boolean free_resume    = true;
-    /* 2020-05-06: Chunkload not possible anymore */
-    private static final int     free_maxchunks = 1;
-    private String               dllink         = null;
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        return 1;
+    }
 
     @Override
     public String getAGBLink() {
@@ -82,39 +86,21 @@ public class BitchuteCom extends PluginForHost {
         if (!link.isNameSet()) {
             link.setName(fid + extDefault);
         }
-        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.postPageRaw("https://api.bitchute.com/api/beta9/video", "{\"video_id\":\"" + fid + "\"}");
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 503) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503", 10 * 60 * 1000l);
         }
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         String title = entries.get("video_name").toString();
         final String description = (String) entries.get("description");
         if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
             link.setComment(description);
         }
         link.setFinalFileName(this.applyFilenameExtension(title, extDefault));
-        if (!StringUtils.isEmpty(dllink)) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(this.dllink);
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
         return AvailableStatus.TRUE;
     }
 
@@ -141,17 +127,18 @@ public class BitchuteCom extends PluginForHost {
         final Map<String, Object> postdata = new HashMap<String, Object>();
         postdata.put("video_id", fid);
         final PostRequest req = br.createJSonPostRequest("https://api.bitchute.com/api/beta/video/media", postdata);
+        req.getHeaders().put("Accept", "*/*");
         req.getHeaders().put("Content-Type", "application/json");
         req.getHeaders().put("Origin", "https://www.bitchute.com");
         req.getHeaders().put("Priority", "u=1, i");
         req.getHeaders().put("Referer", "https://www.bitchute.com/");
         br.getPage(req);
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        dllink = (String) entries.get("media_url");
+        final String dllink = (String) entries.get("media_url");
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(link, null));
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
