@@ -170,8 +170,6 @@ public class FiledoNet extends PluginForHost {
         link.setProperty("dl3", downloadUrl);
         // link.setProperty("hashedFileName", fileName);
         link.setProperty("decryptedFileName", decryptedFileName);
-        link.setProperty("key", key);
-        link.setProperty("counterFileName", counterFileName);
         if (Boolean.TRUE.equals(resp.get("hasCaptcha"))) {
             link.setProperty("hasCatpcha", hasCaptcha);
         } else {
@@ -191,7 +189,7 @@ public class FiledoNet extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        String dlUrl = (String) link.getProperty("dl3");
+        final String dlUrl = (String) link.getProperty("dl3");
         handleDownload(link, account, dlUrl + "&secret=" + Encoding.urlEncode(this.getApikey(account)));
     }
 
@@ -241,6 +239,10 @@ public class FiledoNet extends PluginForHost {
     }
 
     private void handleDownload(final DownloadLink link, final Account account, final String dlUrl) throws Exception, PluginException {
+        if (StringUtils.isEmpty(dlUrl)) {
+            /* Programmer mistake */
+            throw new IllegalArgumentException();
+        }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dlUrl, this.isResumeable(link, null), this.getMaxChunks(link, null));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection();
