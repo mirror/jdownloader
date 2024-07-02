@@ -300,7 +300,7 @@ public class Ardmediathek extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlArdmediathekDeNew(final CryptedLink param) throws Exception {
         /* E.g. old classic.ardmediathek.de URLs */
-        final String oldArdDocumentIDFromURL = new Regex(param.getCryptedUrl(), "documentId=(\\d+)").getMatch(0);
+        final String oldArdDocumentIDFromURL = new Regex(param.getCryptedUrl(), "(?i)documentId=(\\d+)").getMatch(0);
         String oldArdDocumentID = null;
         final ArdMetadata metadata = new ArdMetadata();
         final Map<String, Object> streamMap;
@@ -343,7 +343,7 @@ public class Ardmediathek extends PluginForDecrypt {
             final URL url = new URL(param.getCryptedUrl());
             String ardBase64;
             // final String pattern_player = ".+/player/([^/]+).*";
-            final Regex pattern_player = new Regex(url.getPath(), ".+/player/([^/]+).*");
+            final Regex pattern_player = new Regex(url.getPath(), "(?i).+/player/([^/]+).*");
             if (pattern_player.matches()) {
                 /* E.g. URLs that are a little bit older */
                 ardBase64 = pattern_player.getMatch(0);
@@ -364,7 +364,13 @@ public class Ardmediathek extends PluginForDecrypt {
                 logger.info("Unsupported URL (?)");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            br.getPage("https://page.ardmediathek.de/page-gateway/pages/daserste/item/" + Encoding.urlEncode(ardBase64) + "?devicetype=pc&embedded=false");
+            br.getPage("https://api.ardmediathek.de/page-gateway/pages/ard/item/" + Encoding.urlEncode(ardBase64) + "?embedded=false&mcV6=true");
+            /*
+             * Old request -> 2024-07-02: This would preferably only return audio-description versions of video streams so I replaced it
+             * with the new request.
+             */
+            // br.getPage("https://page.ardmediathek.de/page-gateway/pages/daserste/item/" + Encoding.urlEncode(ardBase64) +
+            // "?devicetype=pc&embedded=false");
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -406,16 +412,119 @@ public class Ardmediathek extends PluginForDecrypt {
             streamMap = root;
         }
         metadata.setChannel("ardmediathek");
-        final String captionURL_XML = (String) JavaScriptEngineFactory.walkJson(streamMap, "widgets/{0}/mediaCollection/embedded/_subtitleUrl");
-        if (!StringUtils.isEmpty(captionURL_XML)) {
-            metadata.setCaptionsURL_XML(captionURL_XML);
+        final List<Map<String, Object>> subtitles = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(streamMap, "widgets/{0}/mediaCollection/embedded/subtitles");
+        if (subtitles != null && subtitles.size() > 0) {
+            for (final Map<String, Object> subtitlemap : subtitles) {
+                final List<Map<String, Object>> sources = (List<Map<String, Object>>) subtitlemap.get("sources");
+                for (final Map<String, Object> subtitlesourcemap : sources) {
+                    final String kind = subtitlesourcemap.get("kind").toString();
+                    final String url = subtitlesourcemap.get("url").toString();
+                    if (kind.equalsIgnoreCase("ebutt")) {
+                        metadata.setCaptionsURL_XML(br.getURL(url).toString());
+                    } else if (kind.equalsIgnoreCase("webvtt")) {
+                        metadata.setCaptionsURL_WEBVTT(br.getURL(url).toString());
+                    } else {
+                        logger.info("Found unsupported subtitle-format: " + kind);
+                    }
+                }
+            }
         }
-        final String captionURL_WEBVTT = (String) JavaScriptEngineFactory.walkJson(streamMap, "widgets/{0}/mediaCollection/embedded/_subtitleWebVTTUrl");
-        if (!StringUtils.isEmpty(captionURL_WEBVTT)) {
-            metadata.setCaptionsURL_WEBVTT(captionURL_WEBVTT);
-        }
-        final HashMap<String, DownloadLink> foundQualities = crawlARDJson(param, metadata, streamMap);
+        final HashMap<String, DownloadLink> foundQualities = crawlARDMediathekJson2024(param, metadata, streamMap);
         return this.handleUserQualitySelection(metadata, foundQualities);
+    }
+
+    private HashMap<String, DownloadLink> crawlARDMediathekJson2024(final CryptedLink param, final ArdMetadata metadata, final Object mediaCollection) throws Exception {
+        /* 2024-07-02: HLS is not needed anymore since all qualities appear to be available as progressive streams. */
+        this.grabHLS = false;
+        final HashMap<String, DownloadLink> foundQualitiesMap = new HashMap<String, DownloadLink>();
+        final List<String> httpStreamsQualityIdentifiers = new ArrayList<String>();
+        /* For http stream quality identifiers which have been created by the hls --> http URLs converter */
+        String exampleHTTPURL = null;
+        String hlsMaster = null;
+        final Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.walkJson(mediaCollection, "widgets/{0}/mediaCollection/embedded");
+        final List<Map<String, Object>> mediaArray = (List<Map<String, Object>>) map.get("streams");
+        for (Map<String, Object> media : mediaArray) {
+            final List<Map<String, Object>> mediaStreams = (List<Map<String, Object>>) media.get("media");
+            /* Look-ahead */
+            boolean hasAudiodescription = false;
+            for (final Map<String, Object> mediaStream : mediaStreams) {
+                final String audioKind = (String) JavaScriptEngineFactory.walkJson(mediaStream, "audios/{0}/kind");
+                if (StringUtils.equalsIgnoreCase("audio-description", audioKind)) {
+                    hasAudiodescription = true;
+                    break;
+                }
+            }
+            for (final Map<String, Object> mediaStream : mediaStreams) {
+                // list is sorted from best to lowest quality, first one is m3u8
+                final String url = mediaStream.get("url").toString();
+                final String mimeType = mediaStream.get("mimeType").toString();
+                final String audioKind = (String) JavaScriptEngineFactory.walkJson(mediaStream, "audios/{0}/kind");
+                final boolean isAudiodescription;
+                if (StringUtils.equalsIgnoreCase("audio-description", audioKind)) {
+                    isAudiodescription = true;
+                } else {
+                    isAudiodescription = false;
+                }
+                if (isAudiodescription && !this.cfg.isPreferAudioDescription()) {
+                    logger.info("Skipping audio-description stream: " + url);
+                    continue;
+                } else if (hasAudiodescription && this.cfg.isPreferAudioDescription() && !isAudiodescription) {
+                    logger.info("Skipping NON-audio-description stream: " + url);
+                    continue;
+                } else if (mimeType.equalsIgnoreCase("application/vnd.apple.mpegurl")) {
+                    /* E.g. skip quality "auto" (HLS), handle it later. */
+                    hlsMaster = url;
+                    continue;
+                }
+                if (exampleHTTPURL == null) {
+                    exampleHTTPURL = url;
+                }
+                if (exampleHTTPURL == null) {
+                    exampleHTTPURL = url;
+                }
+                VideoResolution resolution = null;
+                /*
+                 * Sometimes the resolutions is given, sometimes we have to assume it and sometimes (e.g. HLS streaming) there are multiple
+                 * qualities available for one stream URL.
+                 */
+                final Number widthO = (Number) mediaStream.get("maxHResolutionPx");
+                final Number heightO = (Number) mediaStream.get("maxVResolutionPx");
+                if (widthO != null && heightO != null) {
+                    resolution = VideoResolution.getByWidth(widthO.intValue());
+                    if (resolution == null) {
+                        logger.warning("Unknown width: " + widthO);
+                    }
+                }
+                if (resolution == null) {
+                    resolution = VideoResolution.getByURL(url);
+                }
+                if (resolution == null) {
+                    logger.warning("Skipping unknown resolution for URL: " + url);
+                    continue;
+                }
+                final DownloadLink download = addQualityHTTP(param, metadata, foundQualitiesMap, url, null, resolution, isAudiodescription);
+                if (download != null) {
+                    httpStreamsQualityIdentifiers.add(getQualityIdentifier(url, resolution, -1));
+                }
+            }
+        }
+        // hlsMaster =
+        // "https://wdradaptiv-vh.akamaihd.net/i/medp/ondemand/weltweit/fsk0/232/2326527/,2326527_32403893,2326527_32403894,2326527_32403895,2326527_32403891,2326527_32403896,2326527_32403892,.mp4.csmil/master.m3u8";
+        String http_url_audio = br.getRegex("((?:https?:)?//[^<>\"]+\\.mp3)\"").getMatch(0);
+        if (StringUtils.isEmpty(hlsMaster) && http_url_audio == null && httpStreamsQualityIdentifiers.size() == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (hlsMaster != null) {
+            addHLS(param, metadata, foundQualitiesMap, br, hlsMaster, false);
+        }
+        if (http_url_audio != null) {
+            if (http_url_audio.startsWith("//")) {
+                /* 2019-04-11: Workaround for missing protocol */
+                http_url_audio = "https:" + http_url_audio;
+            }
+            addQualityHTTP(param, metadata, foundQualitiesMap, http_url_audio, null, null, false);
+        }
+        return foundQualitiesMap;
     }
 
     private ArrayList<DownloadLink> crawlSandmannDe(final CryptedLink param) throws Exception {
@@ -938,7 +1047,7 @@ public class Ardmediathek extends PluginForDecrypt {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         String url_xml = null;
-        final String type_mdr = ".+mdr\\.de/.+/((?:video|audio)\\-\\d+)\\.html";
+        final String type_mdr = "(?i).+mdr\\.de/.+/((?:video|audio)\\-\\d+)\\.html";
         if (this.getHost().equalsIgnoreCase("daserste.de")) {
             /* The fast way - we do not even have to access the main URL which the user has added :) */
             final String[] playerConfigs = br.getRegex("data-ctrl-player=\"(\\{[^\"]+)\"").getColumn(0);
@@ -1604,14 +1713,14 @@ public class Ardmediathek extends PluginForDecrypt {
         }
     }
 
-    private ArrayList<DownloadLink> handleUserQualitySelection(final ArdMetadata metadata, final HashMap<String, DownloadLink> foundQualitiesMap) {
+    private ArrayList<DownloadLink> handleUserQualitySelection(final ArdMetadata metadata, final Map<String, DownloadLink> foundQualitiesMap) {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (foundQualitiesMap.isEmpty()) {
             logger.warning("foundQualitiesMap is empty");
             return ret;
         }
         /* We have to re-add the subtitle for the best quality if wished by the user */
-        HashMap<String, DownloadLink> finalSelectedQualityMap = new HashMap<String, DownloadLink>();
+        Map<String, DownloadLink> finalSelectedQualityMap = new HashMap<String, DownloadLink>();
         if (cfg.isGrabBESTEnabled()) {
             /* User wants BEST only */
             final DownloadLink best = findBESTInsideGivenMap(foundQualitiesMap);
@@ -1717,7 +1826,7 @@ public class Ardmediathek extends PluginForDecrypt {
         return isUnsupported;
     }
 
-    private DownloadLink findBESTInsideGivenMap(final HashMap<String, DownloadLink> foundQualitiesMap) {
+    private DownloadLink findBESTInsideGivenMap(final Map<String, DownloadLink> foundQualitiesMap) {
         if (foundQualitiesMap.isEmpty()) {
             return null;
         }

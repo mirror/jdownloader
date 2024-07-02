@@ -76,9 +76,8 @@ public class AnonymfileCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME       = true;
-    private final int     FREE_MAXCHUNKS    = 1;
-    private final int     FREE_MAXDOWNLOADS = -1;
+    private final boolean FREE_RESUME    = true;
+    private final int     FREE_MAXCHUNKS = 1;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -199,7 +198,7 @@ public class AnonymfileCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

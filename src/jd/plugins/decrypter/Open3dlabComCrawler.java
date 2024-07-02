@@ -122,7 +122,7 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
         } else {
             projectID = projectIDFromSourceurl;
         }
-        final String[] dlHTMLs = br.getRegex("<td class=\"text-wrap-word js-edit-input\"(.*?)</ul>\\s*</div>\\s*</div>\\s*</td>\\s*</tr>").getColumn(0);
+        final String[] dlHTMLs = br.getRegex("<td class=\"text-wrap-word js-edit-input\"(.*?)</div>\\s*</td>\\s*</tr>").getColumn(0);
         if (dlHTMLs == null || dlHTMLs.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -155,7 +155,10 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
             if (filename != null) {
                 filename = Encoding.htmlDecode(filename).trim();
             }
-            final String filesizeStr = new Regex(dlHTML, "<td>(\\d+[^<]+)</td>\\s*</tr>").getMatch(0);
+            String filesizeStr = new Regex(dlHTML, "<td>(\\d+[^<]+)</td>\\s*</tr>").getMatch(0);
+            if (filesizeStr == null) {
+                filesizeStr = new Regex(dlHTML, ">\\s*([0-9\\.]+\\s*(TB|GB|MB|KB))\\s*<").getMatch(0);
+            }
             long filesize = -1;
             if (filesizeStr != null) {
                 filesize = SizeFormatter.getSize(filesizeStr);
@@ -259,14 +262,12 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
             final HashSet<String> dupes = new HashSet<String>();
             int numberofNewItems = 0;
             for (final String url : urls) {
-                if (url.matches(PATTERN_PROJECT)) {
-                    if (dupes.add(url)) {
-                        numberofNewItems++;
-                        final DownloadLink result = this.createDownloadlink(url);
-                        result._setFilePackage(fp);
-                        ret.add(result);
-                        distribute(result);
-                    }
+                if (url.matches(PATTERN_PROJECT) && dupes.add(url)) {
+                    numberofNewItems++;
+                    final DownloadLink result = this.createDownloadlink(url);
+                    result._setFilePackage(fp);
+                    ret.add(result);
+                    distribute(result);
                 }
             }
             logger.info("Crawled page " + page + " | New items on this page: " + numberofNewItems + " | Total number of items so far: " + ret.size());

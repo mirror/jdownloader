@@ -193,98 +193,99 @@ public class MegaConz extends PluginForHost {
             }
             if (uq == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if (uq.containsKey("utype")) {
-                final String subscriptionCycle;
-                if (uq.containsKey("scycle")) {
-                    subscriptionCycle = " (Subscription cycle: " + String.valueOf(uq.get("scycle")) + ")";
-                } else {
-                    subscriptionCycle = "";
-                }
-                final AccountInfo ai = new AccountInfo();
-                boolean isPro = false;
-                String accountStatus = null;
-                // https://docs.mega.nz/sdk/api/classmega_1_1_mega_account_details.html
-                final int accountType = getNumber(uq, "utype").intValue();
-                switch (accountType) {
-                case 1:
-                    accountStatus = "Pro I Account" + subscriptionCycle;
-                    isPro = true;
-                    break;
-                case 2:
-                    accountStatus = "Pro II Account" + subscriptionCycle;
-                    isPro = true;
-                    break;
-                case 3:
-                    accountStatus = "Pro III Account" + subscriptionCycle;
-                    isPro = true;
-                    break;
-                case 4:
-                    accountStatus = "Pro Lite Account" + subscriptionCycle;
-                    isPro = true;
-                    break;
-                case 100:
-                    accountStatus = "Business Account" + subscriptionCycle;
-                    isPro = true;
-                    break;
-                case 0:
-                    accountStatus = "Free Account";
-                    isPro = false;
-                    break;
-                default:
-                    accountStatus = "Unknown Accounttype:" + accountType;
-                    isPro = false;
-                    break;
-                }
-                if (isPro && uq.containsKey("suntil")) {
-                    final Number expire = getNumber(uq, "suntil");
-                    ai.setValidUntil(expire.longValue() * 1000);
-                    if (ai.isExpired()) {
-                        accountStatus += "(expired)";
-                        isPro = false;
-                    }
-                } else {
-                    isPro = false;
-                }
-                if (isPro && uq.containsKey("srvratio")) {
-                    final Number srvratio = getNumber(uq, "srvratio");
-                    final long transfer_srv_reserved = getNumber(uq, "ruo", 0l).longValue();// 3rd party
-                    if (srvratio.intValue() > 0) {
-                        statusAddition += " | TrafficShare Ratio: " + String.format("%.02f", srvratio.floatValue()) + "% (" + SIZEUNIT.formatValue((SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue(), transfer_srv_reserved) + ")";
-                    }
-                }
-                ai.setStatus(accountStatus + statusAddition);
-                if (isPro) {
-                    if (uq.containsKey("mxfer")) {
-                        final Number max = getNumber(uq, "mxfer");
-                        final Number usedOwner = getNumber(uq, "caxfer", 0l);
-                        final Number uncommitedOwner = getNumber(uq, "tuo", 0l);
-                        final long transfer_own_used = usedOwner.longValue() + uncommitedOwner.longValue();
-                        final Number usedServed = getNumber(uq, "csxfer", 0l);
-                        final Number uncommitedServed = getNumber(uq, "tua", 0l);
-                        final long transfer_srv_used = usedServed.longValue() + uncommitedServed.longValue();
-                        final long reserved;
-                        if (PluginJsonConfig.get(MegaConzConfig.class).isCheckReserverTraffic()) {
-                            // Reserved transfer quota for ongoing transfers (currently ignored by clients)
-                            final long transfer_srv_reserved = getNumber(uq, "rua", 0l).longValue();// own account
-                            final long transfer_own_reserved = getNumber(uq, "ruo", 0l).longValue(); // 3rd party
-                            // final long transfer_reserved = getNumber(uq, "tar", 0l).longValue(); //free IP-based
-                            reserved = transfer_own_reserved + transfer_srv_reserved;
-                        } else {
-                            reserved = 0;
-                        }
-                        ai.setTrafficMax(max.longValue());
-                        ai.setTrafficLeft(max.longValue() - (transfer_own_used + transfer_srv_used + reserved));
-                    }
-                    account.setType(AccountType.PREMIUM);
-                } else {
-                    ai.setValidUntil(-1);
-                    account.setType(AccountType.FREE);
-                }
-                account.setRefreshTimeout(2 * 60 * 60 * 1000l);
-                return ai;
-            } else {
+            }
+            final Number utype = (Number) uq.get("utype");
+            if (utype == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            final String subscriptionCycle;
+            if (uq.containsKey("scycle")) {
+                subscriptionCycle = " (Subscription cycle: " + String.valueOf(uq.get("scycle")) + ")";
+            } else {
+                subscriptionCycle = "";
+            }
+            final AccountInfo ai = new AccountInfo();
+            boolean isPro = false;
+            String accountStatus = null;
+            // https://docs.mega.nz/sdk/api/classmega_1_1_mega_account_details.html
+            final int accountType = utype.intValue();
+            switch (accountType) {
+            case 1:
+                accountStatus = "Pro I Account" + subscriptionCycle;
+                isPro = true;
+                break;
+            case 2:
+                accountStatus = "Pro II Account" + subscriptionCycle;
+                isPro = true;
+                break;
+            case 3:
+                accountStatus = "Pro III Account" + subscriptionCycle;
+                isPro = true;
+                break;
+            case 4:
+                accountStatus = "Pro Lite Account" + subscriptionCycle;
+                isPro = true;
+                break;
+            case 100:
+                accountStatus = "Business Account" + subscriptionCycle;
+                isPro = true;
+                break;
+            case 0:
+                accountStatus = "Free Account";
+                isPro = false;
+                break;
+            default:
+                accountStatus = "Unknown Accounttype:" + accountType;
+                isPro = false;
+                break;
+            }
+            if (isPro && uq.containsKey("suntil")) {
+                final Number expire = getNumber(uq, "suntil");
+                ai.setValidUntil(expire.longValue() * 1000);
+                if (ai.isExpired()) {
+                    accountStatus += "(expired)";
+                    isPro = false;
+                }
+            } else {
+                isPro = false;
+            }
+            if (isPro && uq.containsKey("srvratio")) {
+                final Number srvratio = getNumber(uq, "srvratio");
+                final long transfer_srv_reserved = getNumber(uq, "ruo", 0l).longValue();// 3rd party
+                if (srvratio.intValue() > 0) {
+                    statusAddition += " | TrafficShare Ratio: " + String.format("%.02f", srvratio.floatValue()) + "% (" + SIZEUNIT.formatValue((SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue(), transfer_srv_reserved) + ")";
+                }
+            }
+            ai.setStatus(accountStatus + statusAddition);
+            if (isPro) {
+                if (uq.containsKey("mxfer")) {
+                    final Number max = getNumber(uq, "mxfer");
+                    final Number usedOwner = getNumber(uq, "caxfer", 0l);
+                    final Number uncommitedOwner = getNumber(uq, "tuo", 0l);
+                    final long transfer_own_used = usedOwner.longValue() + uncommitedOwner.longValue();
+                    final Number usedServed = getNumber(uq, "csxfer", 0l);
+                    final Number uncommitedServed = getNumber(uq, "tua", 0l);
+                    final long transfer_srv_used = usedServed.longValue() + uncommitedServed.longValue();
+                    final long reserved;
+                    if (PluginJsonConfig.get(MegaConzConfig.class).isCheckReserverTraffic()) {
+                        // Reserved transfer quota for ongoing transfers (currently ignored by clients)
+                        final long transfer_srv_reserved = getNumber(uq, "rua", 0l).longValue();// own account
+                        final long transfer_own_reserved = getNumber(uq, "ruo", 0l).longValue(); // 3rd party
+                        // final long transfer_reserved = getNumber(uq, "tar", 0l).longValue(); //free IP-based
+                        reserved = transfer_own_reserved + transfer_srv_reserved;
+                    } else {
+                        reserved = 0;
+                    }
+                    ai.setTrafficMax(max.longValue());
+                    ai.setTrafficLeft(max.longValue() - (transfer_own_used + transfer_srv_used + reserved));
+                }
+                account.setType(AccountType.PREMIUM);
+            } else {
+                ai.setValidUntil(-1);
+                account.setType(AccountType.FREE);
+            }
+            account.setRefreshTimeout(2 * 60 * 60 * 1000l);
+            return ai;
         }
     }
 
@@ -465,35 +466,34 @@ public class MegaConz extends PluginForHost {
         request.setContentType("text/plain;charset=UTF-8");
         Integer errorCode = null;
         String requestResponseString = null;
-        if (postParams != null) {
-            final HashMap<String, Object> sendParams = new HashMap<String, Object>();
-            sendParams.put("a", action);
-            for (final Object[] postParam : postParams) {
-                if (postParam != null && postParam.length == 2) {
-                    sendParams.put(String.valueOf(postParam[0]), postParam[1]);
-                }
+        if (postParams == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final HashMap<String, Object> sendParams = new HashMap<String, Object>();
+        sendParams.put("a", action);
+        for (final Object[] postParam : postParams) {
+            if (postParam != null && postParam.length == 2) {
+                sendParams.put(String.valueOf(postParam[0]), postParam[1]);
             }
-            if (sendParams.size() > 0) {
-                final List<Map<String, Object>> postData = new ArrayList<Map<String, Object>>();
-                postData.add(sendParams);
-                request.setPostDataString(JSonStorage.toString(postData));
-                requestResponseString = br.getPage(request);
-                if (requestResponseString.matches("^\\s*-?\\d+\\s*$")) {
-                    errorCode = Integer.parseInt(requestResponseString);
-                } else if (requestResponseString.matches("^\\s*\\[.*")) {
-                    final List<Object> requestResponse = restoreFromString(requestResponseString, TypeRef.LIST);
-                    if (requestResponse != null && requestResponse.size() == 1) {
-                        final Object responseObject = requestResponse.get(0);
-                        if (responseObject instanceof Map) {
-                            return (Map<String, Object>) responseObject;
-                        } else if (responseObject instanceof Number) {
-                            errorCode = ((Number) responseObject).intValue();
-                        }
+        }
+        if (sendParams.size() > 0) {
+            final List<Map<String, Object>> postData = new ArrayList<Map<String, Object>>();
+            postData.add(sendParams);
+            request.setPostDataString(JSonStorage.toString(postData));
+            requestResponseString = br.getPage(request);
+            if (requestResponseString.matches("^\\s*-?\\d+\\s*$")) {
+                errorCode = Integer.parseInt(requestResponseString);
+            } else if (requestResponseString.matches("^\\s*\\[.*")) {
+                final List<Object> requestResponse = restoreFromString(requestResponseString, TypeRef.LIST);
+                if (requestResponse != null && requestResponse.size() == 1) {
+                    final Object responseObject = requestResponse.get(0);
+                    if (responseObject instanceof Map) {
+                        return (Map<String, Object>) responseObject;
+                    } else if (responseObject instanceof Number) {
+                        errorCode = ((Number) responseObject).intValue();
                     }
                 }
             }
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (errorCode == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Response:" + requestResponseString);
@@ -723,7 +723,14 @@ public class MegaConz extends PluginForHost {
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink != null) {
+            final boolean isPremium = account != null && AccountType.PREMIUM.equals(account.getType());
             if (!StringUtils.equals((String) downloadLink.getProperty(USED_PLUGIN, getHost()), getHost())) {
+                return false;
+            } else if (!isPremium && downloadLink.getVerifiedFileSize() > 5368709120l) {
+                /**
+                 * 2024-07-02: Skip files over 5GB as we cannot download them in free mode, see: </br>
+                 * https://board.jdownloader.org/showthread.php?t=75268
+                 */
                 return false;
             }
         }

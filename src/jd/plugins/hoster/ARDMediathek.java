@@ -186,9 +186,7 @@ public class ARDMediathek extends PluginForHost {
                     connectionErrorhandling(con);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
+                setFileInfo(link, con);
             } finally {
                 try {
                     con.disconnect();
@@ -197,6 +195,26 @@ public class ARDMediathek extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private void setFileInfo(final DownloadLink link, final URLConnectionAdapter con) {
+        if (con.getCompleteContentLength() > 0) {
+            if (con.isContentDecoded()) {
+                link.setDownloadSize(con.getCompleteContentLength());
+            } else {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
+            }
+        }
+        final String etag = con.getRequest().getResponseHeader("etag");
+        if (etag != null) {
+            try {
+                final String md5 = etag.replace("\"", "").split(":")[0];
+                if (md5.matches("[A-Fa-f0-9]{32}")) {
+                    link.setMD5Hash(md5);
+                }
+            } catch (final Throwable ignore) {
+            }
+        }
     }
 
     protected boolean looksLikeDownloadableContent(final URLConnectionAdapter con, final DownloadLink link) {
@@ -251,6 +269,7 @@ public class ARDMediathek extends PluginForHost {
                 this.connectionErrorhandling(dl.getConnection());
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
+            setFileInfo(link, dl.getConnection());
             if (this.dl.startDownload()) {
                 this.postprocess(link);
             }
