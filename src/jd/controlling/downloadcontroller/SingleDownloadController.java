@@ -28,6 +28,25 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.NullsafeAtomicReference;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.NetworkInterfaceException;
+import org.jdownloader.controlling.download.DownloadControllerListener;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.tasks.PluginProgressTask;
+import org.jdownloader.plugins.tasks.PluginSubTask;
+import org.jdownloader.translate._JDT;
+
+import jd.controlling.downloadcontroller.BadFilePathException.PathFailureReason;
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogEvent;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -56,23 +75,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.HashResult;
-
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.NullsafeAtomicReference;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.NetworkInterfaceException;
-import org.jdownloader.controlling.download.DownloadControllerListener;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
-import org.jdownloader.plugins.tasks.PluginProgressTask;
-import org.jdownloader.plugins.tasks.PluginSubTask;
 
 public class SingleDownloadController extends BrowserSettingsThread implements DownloadControllerListener {
     /**
@@ -482,6 +484,16 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                     break;
                 default:
                     break;
+                }
+            } catch (final BadFilePathException e) {
+                if (e.getReason() == PathFailureReason.PATH_TOO_LONG) {
+                    throwable = new SkipReasonException(SkipReason.INVALID_DESTINATION_TOO_LONG_PATH);
+                } else if (e.getReason() == PathFailureReason.PATH_SEGMENT_TOO_LONG) {
+                    throwable = new SkipReasonException(SkipReason.INVALID_DESTINATION_TOO_LONG_FILENAME);
+                } else if (e.getReason() == PathFailureReason.PERMISSION_PROBLEM) {
+                    throwable = new SkipReasonException(SkipReason.INVALID_DESTINATION_PERMISSION_ISSUE, _JDT.T.DownloadLink_setSkipped_statusmessage_invalid_path_permission_issue_file(e.getProblematicPathSegment().getName()));
+                } else {
+                    throwable = new SkipReasonException(SkipReason.INVALID_DESTINATION);
                 }
             } catch (PluginException pluginException) {
                 switch (pluginException.getLinkStatus()) {

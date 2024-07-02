@@ -8,7 +8,7 @@ import java.util.List;
 import org.appwork.storage.config.annotations.LabelInterface;
 
 public class BadFilePathException extends IOException {
-    public static enum Reason implements LabelInterface {
+    public static enum PathFailureReason implements LabelInterface {
         PATH_SEGMENT_TOO_LONG {
             @Override
             public String getLabel() {
@@ -48,23 +48,23 @@ public class BadFilePathException extends IOException {
     }
 
     private File   file;
-    private Reason reason;
+    private PathFailureReason reason;
     private int    index;
 
     public BadFilePathException(final File file) {
-        init(file, Reason.INVALID_DESTINATION, -1);
+        init(file, PathFailureReason.INVALID_DESTINATION, -1);
     }
 
-    public BadFilePathException(final File file, final Reason reason) {
+    public BadFilePathException(final File file, final PathFailureReason reason) {
         init(file, reason, -1);
     }
 
-    public BadFilePathException(final File file, final Reason reason, final int index) {
+    public BadFilePathException(final File file, final PathFailureReason reason, final int index) {
         // super(file);
         init(file, reason, index);
     }
 
-    private void init(File file, final Reason reason, final int index) {
+    private void init(File file, final PathFailureReason reason, final int index) {
         this.file = file;
         this.reason = reason;
         this.index = index;
@@ -74,7 +74,7 @@ public class BadFilePathException extends IOException {
         return this.file;
     }
 
-    public Reason getReason() {
+    public PathFailureReason getReason() {
         return this.reason;
     }
 

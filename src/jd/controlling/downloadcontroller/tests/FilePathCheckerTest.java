@@ -59,7 +59,7 @@ public class FilePathCheckerTest extends AWTest {
                 /* Invalid path */
                 final File testInvalidFilePath = new File(testBasePath, "invalid:folder_because_of_invalid_char_colon");
                 CLEANUP.add(testInvalidFilePath);
-                testFolderCreationFail(testInvalidFilePath, new BadFilePathException(testInvalidFilePath, BadFilePathException.Reason.PERMISSION_PROBLEM));
+                testFolderCreationFail(testInvalidFilePath, new BadFilePathException(testInvalidFilePath, BadFilePathException.PathFailureReason.PERMISSION_PROBLEM));
                 /*
                  * Windows invalid path due to permission issue. If this test fails, application might have been started with admin
                  * permissions.
@@ -69,20 +69,20 @@ public class FilePathCheckerTest extends AWTest {
                     // TODO: Fix this test
                     final File testPermissionIssue = new File(testBasePathNoWrite, "we_cant_write_this_subfolder");
                     CLEANUP.add(testPermissionIssue);
-                    testFolderCreationFail(testPermissionIssue, new BadFilePathException(testPermissionIssue, BadFilePathException.Reason.PERMISSION_PROBLEM));
+                    testFolderCreationFail(testPermissionIssue, new BadFilePathException(testPermissionIssue, BadFilePathException.PathFailureReason.PERMISSION_PROBLEM));
                 }
                 /********************************************************************/
                 /* File tests */
                 /* Windows too long filename test | If this fails, OS of tester != Windows */
                 final File longfilenameTest = new File(testBasePath, "too_long_filename_test_Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy.txt");
                 CLEANUP.add(longfilenameTest);
-                testFileCreationFail(longfilenameTest, new BadFilePathException(longfilenameTest, BadFilePathException.Reason.PATH_SEGMENT_TOO_LONG));
+                testFileCreationFail(longfilenameTest, new BadFilePathException(longfilenameTest, BadFilePathException.PathFailureReason.PATH_SEGMENT_TOO_LONG));
             }
             /* Test with file that already exists */
-            testFileCreationFail(testfile, new BadFilePathException(testfile, BadFilePathException.Reason.FILE_ALREADY_EXISTS), new CheckFlag[] { CheckFlag.ERROR_ON_ALREADY_EXIST });
+            testFileCreationFail(testfile, new BadFilePathException(testfile, BadFilePathException.PathFailureReason.FILE_ALREADY_EXISTS), new CheckFlag[] { CheckFlag.ERROR_ON_ALREADY_EXIST });
             /* Test: File we want to create but it already exists as a folder */
             final File testInvalidFilePath = new File(testfolderWithFilename.getAbsolutePath());
-            testFileCreationFail(testInvalidFilePath, new BadFilePathException(testInvalidFilePath, BadFilePathException.Reason.FILE_ALREADY_EXISTS_AS_FOLDER));
+            testFileCreationFail(testInvalidFilePath, new BadFilePathException(testInvalidFilePath, BadFilePathException.PathFailureReason.FILE_ALREADY_EXISTS_AS_FOLDER));
             /* Valid folder path */
             final File normalFolderAndSubfolderTest = new File(testBasePath, "subfolder");
             CLEANUP.add(normalFolderAndSubfolderTest);
