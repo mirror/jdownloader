@@ -4097,7 +4097,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                          * TODO: 2023-11-10: Check if this is needed. It's probably easier- and easier readable if we just make sure that
                          * auto renamed filenames are never longer than the original filename?!
                          */
-                        final File writeTest1 = new File(fileOutput, "");
+                        final File writeTest1 = fileOutput;
                         try {
                             FilePathChecker.createFilePath(fileOutput);
                             final RandomAccessFile raf1 = IO.open(writeTest1, "rw");
