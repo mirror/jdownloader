@@ -869,6 +869,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         if (ret) {
             /* Double-check in cleaned HTML */
             ret = new Regex(correctBR(br), pattern).patternFind();
+            if (!ret) {
+                logger.warning("File is password protected according to html but is not password protected according to cleaned HTML!");
+            }
         }
         return ret;
     }
@@ -938,7 +941,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         final String apiKey = this.getAPIKey();
-        if ((this.looksLikeValidAPIKey(apiKey) && this.supportsAPIMassLinkcheck()) || enableAccountApiOnlyMode()) {
+        if (enableAccountApiOnlyMode() || (this.looksLikeValidAPIKey(apiKey) && this.supportsAPIMassLinkcheck())) {
             return massLinkcheckerAPI(urls, apiKey);
         } else if (supportsMassLinkcheckOverWebsite()) {
             return this.massLinkcheckerWebsite(urls);
