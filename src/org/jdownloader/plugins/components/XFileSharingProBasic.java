@@ -291,7 +291,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     /** Returns property to store generated directurl -> Depends on current download mode and account account type. */
@@ -3173,7 +3173,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     @Override
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(DownloadLink link, Account acc) {
         if (isPremium(acc)) {
             /* Premium accounts don't have captchas */
             return false;
