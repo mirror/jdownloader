@@ -4089,16 +4089,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                     if (fileInProgress == null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                         /**
-                         * Check if we can write our desired filename in the download folder. </br>
+                         * Check if we can write our desired filename in the desired download directory. </br>
                          * We know that we can write in the directory but can we write the specific file we want to write? </br>
                          * The filename could still be too long!
                          */
-                        final int maxFilenameLength = 219;
                         /*
                          * TODO: 2023-11-10: Check if this is needed. It's probably easier- and easier readable if we just make sure that
                          * auto renamed filenames are never longer than the original filename?!
                          */
-                        final File writeTest1 = fileOutput;
+                        final File writeTest1 = new File(fileOutput, "");
                         try {
                             FilePathChecker.createFilePath(fileOutput);
                             final RandomAccessFile raf1 = IO.open(writeTest1, "rw");
@@ -4110,7 +4109,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             }
                         } catch (final BadFilePathException e) {
                             /* Looks like filename might be too long -> Check if writing a shortened filename would be possible. */
-                            final boolean allowAutoShortenFilenames = false;
+                            final int maxFilenameLength = 219;
+                            final boolean allowAutoShortenFilenames = true;
                             if (e.getReason() != PathFailureReason.PATH_SEGMENT_TOO_LONG) {
                                 throw e;
                             } else if (fileName.length() <= maxFilenameLength) {
@@ -4126,7 +4126,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             }
                             /* Shorten filename and try again */
                             String shortenedFilename;
-                            String ext = Plugin.getFileNameExtensionFromString(fileName);
+                            final String ext = Plugin.getFileNameExtensionFromString(fileName);
                             if (ext != null) {
                                 /* Filename contains extension -> Shorten name and keep extension */
                                 final int targetFilenameLengthWithoutExt = 200;
@@ -4135,7 +4135,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                  * structure of multi part archives [also an edge case].
                                  */
                                 final int remainingMaxLengthForExt = maxFilenameLength - targetFilenameLengthWithoutExt;
-                                ext = fileName.substring(fileName.lastIndexOf("."));
                                 if (ext.length() > remainingMaxLengthForExt) {
                                     /*
                                      * Edge case: Looks like super long file-extension -> Do not care about "buffer-zone", just shorten
