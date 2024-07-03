@@ -20,17 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -42,6 +35,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BitpornoCom extends PluginForHost {
@@ -274,24 +273,7 @@ public class BitpornoCom extends PluginForHost {
             link.setName(title + extDefault);
         }
         if (!StringUtils.isEmpty(dllink) && !dllink.contains(".m3u8") && !isDownload) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(this.dllink);
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-                link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, title, extDefault);
         }
         return AvailableStatus.TRUE;
     }
@@ -319,19 +301,6 @@ public class BitpornoCom extends PluginForHost {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, free_resume, free_maxchunks);
             handleConnectionErrors(br, dl.getConnection());
             dl.startDownload();
-        }
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
-            }
         }
     }
 

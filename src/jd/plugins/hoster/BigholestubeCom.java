@@ -17,12 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLSearch;
@@ -32,6 +27,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigholestube.com" }, urls = { "https?://(?:www\\.)?bigholestube\\.com/([a-z0-9\\-_]+)/" })
 public class BigholestubeCom extends PluginForHost {
@@ -105,31 +103,15 @@ public class BigholestubeCom extends PluginForHost {
                 title = titleFromURL;
             }
         }
+        String ext = null;
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            final String extFromURL = getFileNameExtensionFromString(dllink, extDefault);
-            link.setName(applyFilenameExtension(title, extFromURL));
+            ext = getFileNameExtensionFromString(dllink, extDefault);
+            link.setFinalFileName(applyFilenameExtension(title, ext));
         }
         if (!StringUtils.isEmpty(dllink) && !isDownload) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(this.dllink);
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-                link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, link.getFinalFileName(), ext);
         }
         return AvailableStatus.TRUE;
     }
@@ -143,22 +125,6 @@ public class BigholestubeCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
-        }
     }
 
     @Override

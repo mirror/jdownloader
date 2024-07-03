@@ -15,16 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.Map;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -33,6 +27,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "clyp.it" }, urls = { "https?://(?:www\\.)?clyp\\.it/([A-Za-z0-9]+)" })
 public class ClypIt extends PluginForHost {
@@ -114,14 +112,12 @@ public class ClypIt extends PluginForHost {
             dllink = "https://a.clyp.it/" + fid + ".mp3";
         }
         dllink = Encoding.htmlDecode(dllink);
+        String ext = extDefault;
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            final String ext = getFileNameExtensionFromString(dllink, extDefault);
-            if (!title.endsWith(ext)) {
-                title += ext;
-            }
-            link.setFinalFileName(title);
+            ext = getFileNameExtensionFromString(dllink, extDefault);
+            link.setFinalFileName(applyFilenameExtension(title, ext));
         }
         if (!StringUtils.isEmpty(description) && link.getComment() == null) {
             link.setComment(description);
@@ -130,37 +126,9 @@ public class ClypIt extends PluginForHost {
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         if (!StringUtils.isEmpty(dllink)) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br2.openHeadConnection(this.dllink);
-                handleConnectionErrors(br2, con);
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, title, ext);
         }
         return AvailableStatus.TRUE;
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
-        }
     }
 
     @Override

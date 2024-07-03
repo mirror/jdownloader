@@ -15,18 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -36,6 +31,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SunoCom extends PluginForHost {
@@ -150,23 +148,7 @@ public class SunoCom extends PluginForHost {
             dllink = "https://cdn1.suno.ai/" + patternregex_precise.getMatch(0) + "-" + patternregex_precise.getMatch(1) + "-" + patternregex_precise.getMatch(2) + "-" + patternregex_precise.getMatch(3) + "-" + patternregex_precise.getMatch(4) + ".mp3";
         }
         if (!StringUtils.isEmpty(dllink) && !isDownload && !link.isSizeSet()) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(this.dllink);
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, title, extDefault);
         }
         return AvailableStatus.TRUE;
     }
@@ -180,19 +162,6 @@ public class SunoCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(link, null));
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Audio stream broken?");
-            }
-        }
     }
 
     @Override

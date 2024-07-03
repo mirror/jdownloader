@@ -25,13 +25,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,6 +41,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.BandCampComDecrypter;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class BandCampCom extends PluginForHost {
@@ -208,21 +208,7 @@ public class BandCampCom extends PluginForHost {
         final String filename = getFormattedFilename(link);
         link.setFinalFileName(filename);
         if (dllink != null && !link.isSizeSet() && !isDownload) {
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                /* Server does NOT like HEAD requests! */
-                con = br2.openGetConnection(dllink);
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
+            basicLinkCheck(br.cloneBrowser(), br.createGetRequest(dllink), link, filename, null);
         }
         return AvailableStatus.TRUE;
     }
@@ -338,19 +324,6 @@ public class BandCampCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Stream broken?");
-            }
-        }
     }
 
     public static String getFormattedFilename(final DownloadLink link) throws ParseException {

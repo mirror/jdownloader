@@ -17,12 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -31,6 +26,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "trannytube.tv" }, urls = { "https?://(?:www\\.)?trannytube\\.tv/(?:[a-z]{2}/)?(movies/\\d+/[a-z0-9\\-]+|embed/\\d+)" })
 public class TrannytubeTv extends PluginForHost {
@@ -42,6 +40,7 @@ public class TrannytubeTv extends PluginForHost {
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
+
     /* DEV NOTES */
     // Tags: porn plugin
     // protocol: no https
@@ -122,10 +121,10 @@ public class TrannytubeTv extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://[a-z0-9]+\\.trannytube\\.tv/video\\d+/f/[^<>\"]+)").getMatch(0);
         }
+        String ext = null;
         if (title != null) {
             String filename = Encoding.htmlDecode(title);
             filename = filename.trim();
-            final String ext;
             if (dllink != null) {
                 ext = getFileNameExtensionFromString(dllink, default_extension);
             } else {
@@ -137,19 +136,7 @@ public class TrannytubeTv extends PluginForHost {
             link.setFinalFileName(filename);
         }
         if (!StringUtils.isEmpty(dllink)) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(this.dllink);
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, title, ext);
         }
         return AvailableStatus.TRUE;
     }
@@ -163,22 +150,6 @@ public class TrannytubeTv extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
-        }
     }
 
     @Override

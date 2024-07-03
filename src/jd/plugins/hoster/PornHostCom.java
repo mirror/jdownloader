@@ -16,8 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-
-import org.jdownloader.plugins.controller.LazyPlugin;
+import java.net.URL;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,6 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "https?://(?:www\\.)?pornhost\\.com/([0-9]+/([0-9]+\\.html)?|[0-9]+|embed/\\d+)" })
 public class PornHostCom extends PluginForHost {
@@ -89,7 +90,7 @@ public class PornHostCom extends PluginForHost {
         }
         if (dllink != null) {
             dllink = Encoding.htmlOnlyDecode(dllink);
-            final String filename = Plugin.getFileNameFromURL(dllink);
+            final String filename = Plugin.getFileNameFromURL(new URL(dllink));
             if (filename != null) {
                 link.setFinalFileName(filename);
             }

@@ -506,7 +506,7 @@ public class TwitterCom extends PluginForHost {
         final String tweetID = link.getStringProperty(TwitterComCrawler.PROPERTY_TWEET_ID);
         if (tweetID != null) {
             /* Item from crawler which shall contain all information needed to set custom filenames. */
-            TwitterComCrawler.setFormattedFilename(link);
+            TwitterComCrawler.setFormattedFilename(this, link);
         } else if (filenameFromConnection != null) {
             link.setFinalFileName(filenameFromConnection);
         }

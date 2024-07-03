@@ -20,8 +20,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -35,6 +33,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FastPicRu extends PluginForHost {
@@ -148,24 +148,7 @@ public class FastPicRu extends PluginForHost {
             }
         }
         if (!StringUtils.isEmpty(dllink)) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(this.dllink);
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-                link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, title, extDefault);
         }
         return AvailableStatus.TRUE;
     }
@@ -181,20 +164,14 @@ public class FastPicRu extends PluginForHost {
         dl.startDownload();
     }
 
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+    @Override
+    protected void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
         if (con.getURL().toExternalForm().contains("/not_found.gif")) {
+            con.disconnect();
             /* https://static.fastpic.org/not_found.gif */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken?");
-            }
+        } else {
+            super.handleConnectionErrors(br, con);
         }
     }
 

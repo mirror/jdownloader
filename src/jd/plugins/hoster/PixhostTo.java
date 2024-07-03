@@ -19,12 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -33,6 +28,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PixhostTo extends PluginForHost {
@@ -44,6 +42,7 @@ public class PixhostTo extends PluginForHost {
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
+
     /* DEV NOTES */
     // Tags: pichost
     // protocol: no https
@@ -150,41 +149,21 @@ public class PixhostTo extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("(https?://[^/]+/images/[^<>\"\\']+)").getMatch(0);
         }
+        String ext = null;
         if (filename != null) {
             filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
-            String ext;
             if (!StringUtils.isEmpty(dllink)) {
                 ext = getFileNameExtensionFromString(dllink, default_extension);
             } else {
                 ext = default_extension;
             }
-            if (!filename.endsWith(ext)) {
-                filename += ext;
-            }
+            filename = applyFilenameExtension(filename, ext);
             link.setFinalFileName(filename);
         }
         if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlOnlyDecode(dllink);
-            if (!isDownload) {
-                URLConnectionAdapter con = null;
-                try {
-                    con = br.openHeadConnection(dllink);
-                    handleConnectionErrors(br, con);
-                    if (con.getCompleteContentLength() > 0) {
-                        if (con.isContentDecoded()) {
-                            link.setDownloadSize(con.getCompleteContentLength());
-                        } else {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
-                        }
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
-            }
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, filename, ext);
         }
         return AvailableStatus.TRUE;
     }
@@ -198,19 +177,6 @@ public class PixhostTo extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken?");
-            }
-        }
     }
 
     @Override

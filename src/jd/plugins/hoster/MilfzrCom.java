@@ -18,13 +18,7 @@ package jd.plugins.hoster;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLSearch;
@@ -35,6 +29,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "milfzr.com" }, urls = { "https?://(?:www\\.)?milfzr\\.com/(?:[A-Za-z0-9\\-%]+/?|\\?p=\\d+)" })
 public class MilfzrCom extends PluginForHost {
@@ -185,10 +183,11 @@ public class MilfzrCom extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
+        String ext = null;
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            String ext;
+
             if (!StringUtils.isEmpty(dllink)) {
                 ext = getFileNameExtensionFromString(dllink, default_extension);
                 if (ext != null && !ext.matches("\\.(?:flv|mp4)")) {
@@ -211,38 +210,9 @@ public class MilfzrCom extends PluginForHost {
             if (dllink.contains("//videos-up")) {
                 dllink = dllink.replace("//videos-up", "//milfzr.com/videos-up");
             }
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(dllink);
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, title, ext);
         }
         return AvailableStatus.TRUE;
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws Exception {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
-            }
-        }
     }
 
     @Override

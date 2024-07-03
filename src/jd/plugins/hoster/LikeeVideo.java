@@ -23,16 +23,15 @@ import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
@@ -163,35 +162,20 @@ public class LikeeVideo extends PluginForHost {
         this.dllink = videoInfo.get("videoUrl").toString();
         /* We want to have the video without watermark */
         this.dllink = this.dllink.replaceFirst("_4.mp4", ".mp4");
-        setFilename(link);
+        setFilename(this, link);
         if (!StringUtils.isEmpty(dllink) && !link.isSizeSet()) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(this.dllink);
-                handleConnectionErrors(br, con);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, link.getFinalFileName(), ".mp4");
         }
         return AvailableStatus.TRUE;
     }
 
-    private static void setFilename(final DownloadLink link) {
+    private static void setFilename(Plugin plugin, final DownloadLink link) {
         String filename = link.getStringProperty(PROPERTY_DATE) + "_@" + link.getStringProperty(PROPERTY_USERNAME) + " - " + link.getStringProperty(PROPERTY_TITLE);
         // String dateFormatted = getDateFormatted(link);
         // if (dateFormatted != null) {
         // filename = dateFormatted;
         // }
-        filename += ".mp4";
-        link.setFinalFileName(filename);
+        link.setFinalFileName(plugin.applyFilenameExtension(filename, ".mp4"));
     }
 
     @Override
@@ -203,19 +187,6 @@ public class LikeeVideo extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws Exception {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
-            }
-        }
     }
 
     @Override

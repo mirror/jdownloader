@@ -15,17 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -35,6 +28,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitchute.com" }, urls = { "https?://(?:www\\.)?bitchute\\.com/video/([A-Za-z0-9\\-_]+)" })
 public class BitchuteCom extends PluginForHost {
@@ -89,7 +86,10 @@ public class BitchuteCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.postPageRaw("https://api.bitchute.com/api/beta9/video", "{\"video_id\":\"" + fid + "\"}");
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            // {"errors":[{"context":"AUTH","message":"Forbidden - Cannot perform this action"},{"context":"reason","message":"Content access is restricted based on the users location"}]}
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Content access is restricted based on the users location");
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503", 10 * 60 * 1000l);
@@ -102,22 +102,6 @@ public class BitchuteCom extends PluginForHost {
         }
         link.setFinalFileName(this.applyFilenameExtension(title, extDefault));
         return AvailableStatus.TRUE;
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
-        }
     }
 
     @Override

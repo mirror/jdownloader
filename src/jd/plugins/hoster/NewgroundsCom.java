@@ -15,16 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -47,6 +42,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(?:www\\.)?newgrounds\\.com/(?:portal/view/|audio/listen/)(\\d+)" })
 public class NewgroundsCom extends antiDDoSForHost {
     public NewgroundsCom(PluginWrapper wrapper) {
@@ -65,8 +66,7 @@ public class NewgroundsCom extends antiDDoSForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "Filename_id", "Add id to file name?").setDefaultValue(true));
     }
 
-    private String  dllink        = null;
-    private boolean server_issues = false;
+    private String dllink = null;
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -229,36 +229,9 @@ public class NewgroundsCom extends antiDDoSForHost {
             link.setFinalFileName(this.applyFilenameExtension(title, ext));
         }
         if (dllink != null && allowCheckForFilesize && !isDownload) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                title = getFileNameFromConnection(con);
-                if (title != null) {
-                    title = Encoding.htmlDecode(title);
-                    link.setFinalFileName(title);
-                }
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        if (con.isContentDecoded()) {
-                            link.setDownloadSize(con.getCompleteContentLength());
-                        } else {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
-                        }
-                    }
-                    if (title != null) {
-                        link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
-                    }
-                } else {
-                    server_issues = true;
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, title, ext, FILENAME_SOURCE.HEADER, FILENAME_SOURCE.URL, FILENAME_SOURCE.CUSTOM, FILENAME_SOURCE.PLUGIN);
+
         }
         return AvailableStatus.TRUE;
     }
@@ -283,14 +256,18 @@ public class NewgroundsCom extends antiDDoSForHost {
             throw new AccountRequiredException();
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         if (!link.getPluginPatternMatcher().matches(ARTLINK)) {
             // avoid 429, You're making too many requests. Wait a bit before trying again
             sleep(30 * 1000l, link);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
+        handleConnectionErrors(br, dl.getConnection());
+        dl.startDownload();
+    }
+
+    @Override
+    protected void handleConnectionErrors(Browser br, URLConnectionAdapter con) throws PluginException, IOException {
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 429) {
@@ -304,6 +281,7 @@ public class NewgroundsCom extends antiDDoSForHost {
             }
             /* 2020-02-18: https://board.jdownloader.org/showthread.php?t=81805 */
             final boolean art_zip_download_broken_serverside = true;
+            final DownloadLink link = getDownloadLink();
             if (link.getName().contains(".zip") && art_zip_download_broken_serverside) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download broken serverside please wait for a fix, then contact us to fix our plugin");
             } else if (link.getName().contains(".mp3")) {
@@ -313,7 +291,6 @@ public class NewgroundsCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl.startDownload();
     }
 
     public void login(final Account account, final boolean force) throws Exception {

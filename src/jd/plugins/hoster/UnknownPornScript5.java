@@ -15,22 +15,14 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import org.appwork.storage.TypeRef;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -47,6 +39,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.storage.TypeRef;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "worldsex.com", "bigcamtube.com", "porneq.com" }, urls = { "https?://(?:\\w+\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "https?://(?:\\w+\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?porneq\\.com/(?:video/\\d+/[a-z0-9\\-]+/?|wporn/porn-videos/[a-z0-9\\-]+/\\d+/)" })
 public class UnknownPornScript5 extends PluginForHost {
@@ -149,7 +147,8 @@ public class UnknownPornScript5 extends PluginForHost {
         }
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
-            link.setFinalFileName(title + default_Extension);
+            title = applyFilenameExtension(title, default_Extension);
+            link.setFinalFileName(title);
         }
         getDllink();
         if (!inValidateDllink(dllink)) {
@@ -163,28 +162,7 @@ public class UnknownPornScript5 extends PluginForHost {
         /* 2022-11-21: Disabled this as their servers will return wrong results when checking multiple items in a short time. */
         final boolean checkFilesize = false;
         if (!inValidateDllink(dllink) && checkFilesize && !isDownload) {
-            final Browser br2 = br.cloneBrowser();
-            br2.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            try {
-                con = br2.openHeadConnection(this.dllink);
-                handleConnectionErrors(br2, con);
-                if (con.getCompleteContentLength() > 0) {
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-                if (title != null) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, link.getFinalFileName(), default_Extension);
         }
         return AvailableStatus.TRUE;
     }
@@ -305,19 +283,6 @@ public class UnknownPornScript5 extends PluginForHost {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             handleConnectionErrors(br, dl.getConnection());
             dl.startDownload();
-        }
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
-            }
         }
     }
 

@@ -17,12 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -32,6 +27,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bdsmstreak.com" }, urls = { "https?://(?:www\\.)?bdsmstreak\\.com/(?:embed/\\d+|video/\\d+(?:/[a-z0-9\\-]+)?)" })
 public class BdsmstreakCom extends PluginForHost {
@@ -133,29 +131,10 @@ public class BdsmstreakCom extends PluginForHost {
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            link.setName(this.applyFilenameExtension(title, extDefault));
+            link.setFinalFileName(this.applyFilenameExtension(title, extDefault));
         }
         if (!StringUtils.isEmpty(dllink) && !isDownload) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(this.dllink);
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-                if (title != null) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, link.getFinalFileName(), extDefault);
         }
         return AvailableStatus.TRUE;
     }
@@ -169,19 +148,6 @@ public class BdsmstreakCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), free_maxchunks);
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
-            }
-        }
     }
 
     @Override

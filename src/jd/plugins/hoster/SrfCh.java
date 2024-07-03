@@ -18,18 +18,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.SrfChConfig;
-import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionFallbackMode;
-import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
-import jd.http.URLConnectionAdapter;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -39,6 +29,15 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.SrfChCrawler;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.SrfChConfig;
+import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionFallbackMode;
+import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { SrfChCrawler.class })
@@ -137,44 +136,10 @@ public class SrfCh extends PluginForHost {
                     }
                 }
             } else {
-                URLConnectionAdapter con = null;
-                try {
-                    con = br.openHeadConnection(downloadurl);
-                    this.connectionErrorhandling(br.getHttpConnection());
-                    if (con.getCompleteContentLength() > 0) {
-                        if (con.isContentDecoded()) {
-                            link.setDownloadSize(con.getCompleteContentLength());
-                        } else {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
-                        }
-                    }
-                    /* Audio URLs sometimes end with .jpg but redirect to .png files. */
-                    final String finalFilename = link.getFinalFileName();
-                    if (finalFilename != null) {
-                        link.setFinalFileName(this.correctOrApplyFileNameExtension(finalFilename, con));
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
+                basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(downloadurl), link, link.getFinalFileName(), null);
             }
         }
         return AvailableStatus.TRUE;
-    }
-
-    private void connectionErrorhandling(final URLConnectionAdapter con) throws Exception {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Media broken?");
-            }
-        }
     }
 
     @Override
@@ -189,7 +154,7 @@ public class SrfCh extends PluginForHost {
             dl.startDownload();
         } else {
             /* http download */
-            this.connectionErrorhandling(dl.getConnection());
+            handleConnectionErrors(br, dl.getConnection());
             this.dl.startDownload();
         }
     }

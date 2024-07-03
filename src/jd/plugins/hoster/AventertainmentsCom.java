@@ -15,12 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -36,9 +30,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgs.aventertainments.com", "aventertainments.com" }, urls = { "https?://imgs\\d+\\.aventertainments\\.com/.+", "https?://www\\.aventertainments\\.com/newdlsample\\.aspx.+\\.mp4|https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u9|https?://(?:www\\.)?aventertainments\\.com/ppv/new_detail\\.aspx\\?ProID=\\d+.*|https?://(?:www\\.)?aventertainments\\.com/ppv/Download\\.aspx\\?.+" })
 public class AventertainmentsCom extends PluginForHost {
@@ -162,37 +161,11 @@ public class AventertainmentsCom extends PluginForHost {
                 /* Video directurl */
                 dllink = link.getPluginPatternMatcher();
             }
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            try {
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    /* Assume directurl is offline */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                final String serverFilename = Plugin.getFileNameFromDispositionHeader(con);
-                if (serverFilename != null) {
-                    if (finalFilename == null && serverFilename != null) {
-                        link.setFinalFileName(finalFilename);
-                    }
-                } else {
-                    /* 2022-01-04: Filename is not (always) given via header... */
-                    final String videoFallbackFilename = new Regex(con.getURL().toExternalForm(), "(?i)/([^/]+\\.mp4)").getMatch(0);
-                    if (finalFilename == null && link.getPluginPatternMatcher().matches(TYPE_VIDEO_DIRECT) && videoFallbackFilename != null) {
-                        link.setFinalFileName(videoFallbackFilename);
-                    } else if (link.getName() != null) {
-                        link.setFinalFileName(this.correctOrApplyFileNameExtension(link.getName(), con));
-                    }
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+            final URLConnectionAdapter con = basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, null, null);
+            if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_DIRECT) && getFileNameFromDispositionHeader(con) == null) {
+                final String videoFallbackFilename = new Regex(con.getURL().toExternalForm(), "(?i)/([^/]+\\.mp4)").getMatch(0);
+                if (videoFallbackFilename != null) {
+                    link.setFinalFileName(correctOrApplyFileNameExtension(videoFallbackFilename, ".mp4", con));
                 }
             }
         }

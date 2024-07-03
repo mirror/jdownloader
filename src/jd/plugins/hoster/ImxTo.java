@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,6 +30,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imx.to" }, urls = { "https?://(?:\\w+\\.)?imx\\.to/((?:u/)?(?:i|t)/\\d+/\\d+/\\d+/([a-z0-9]+)\\.[a-z]+|(?:i/|img\\-)[a-z0-9]+)" })
 public class ImxTo extends PluginForHost {
@@ -210,9 +210,9 @@ public class ImxTo extends PluginForHost {
                     }
                     if (link.getFinalFileName() == null) {
                         String name = link.getName();
-                        final String existingExt = getFileNameExtensionFromString(name);
+                        final String existingExt = getFileNameExtensionFromString(name, null);
                         if (existingExt == null || ".html".equals(existingExt)) {
-                            name += ".jpg";
+                            name = applyFilenameExtension(name, ".jpg");
                         }
                         link.setFinalFileName(name);
                     }

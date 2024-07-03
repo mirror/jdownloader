@@ -18,14 +18,7 @@ package jd.plugins.hoster;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -34,6 +27,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(?:www\\.)?beeg\\.com/-?\\d+(?:\\?t=\\d+-\\d+)?|https?://beta\\.beeg\\.com/-\\d+(?:\\?t=\\d+-\\d+)?" })
 public class BeegCom extends PluginForHost {
@@ -190,28 +189,11 @@ public class BeegCom extends PluginForHost {
                 link.removeProperty(PROPERTY_IS_HLS);
             }
             if (!isDownload && !isHLS) {
-                URLConnectionAdapter con = null;
                 try {
-                    con = br.openGetConnection(dllink);
-                    if (this.looksLikeDownloadableContent(con)) {
-                        if (con.getCompleteContentLength() > 0) {
-                            if (con.isContentDecoded()) {
-                                link.setDownloadSize(con.getCompleteContentLength());
-                            } else {
-                                link.setVerifiedFileSize(con.getCompleteContentLength());
-                            }
-                        }
-                        if (!StringUtils.isEmpty(title)) {
-                            link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
-                        }
-                    } else {
-                        server_issue = true;
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (Throwable e) {
-                    }
+                    basicLinkCheck(br.cloneBrowser(), br.createGetRequest(dllink), link, link.getFinalFileName(), extDefault);
+                } catch (Exception e) {
+                    logger.log(e);
+                    server_issue = true;
                 }
             }
         }

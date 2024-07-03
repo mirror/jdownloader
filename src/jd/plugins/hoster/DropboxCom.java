@@ -15,27 +15,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.config.DropBoxConfig;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -59,6 +38,27 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.DropBoxComCrawler;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.config.DropBoxConfig;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "" })
 public class DropboxCom extends PluginForHost {
@@ -166,8 +166,8 @@ public class DropboxCom extends PluginForHost {
         }
         /**
          * 2019-09-24: Consider updating to the new/current website method: https://www.dropbox.com/sharing/fetch_user_content_link. See
-         * also handling for 'TYPE_SC' linktype! </br>
-         * This might not be necessary for any other linktype as the old '?dl=1' method is working just fine!
+         * also handling for 'TYPE_SC' linktype! </br> This might not be necessary for any other linktype as the old '?dl=1' method is
+         * working just fine!
          */
         if (link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY)) {
             final String url = link.getPluginPatternMatcher().replaceFirst("(?i)/dropbox.com/", "/www.dropbox.com/");
@@ -244,9 +244,8 @@ public class DropboxCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else {
                         /**
-                         * 2020-08-04: Rare case: Content is available not not (officially) downloadable. </br>
-                         * For images, in theory a thumbnail might sometimes be downloadable. Video and audio content can sometimes be
-                         * streamed.
+                         * 2020-08-04: Rare case: Content is available not not (officially) downloadable. </br> For images, in theory a
+                         * thumbnail might sometimes be downloadable. Video and audio content can sometimes be streamed.
                          */
                         logger.info("Looks like this file is officially not downloadable");
                         /* Try to gather more information about this file */
@@ -261,8 +260,8 @@ public class DropboxCom extends PluginForHost {
                             return AvailableStatus.TRUE;
                         } else {
                             /**
-                             * File owner has disabled downloads and there is no streaming link available as fallback. </br>
-                             * --> File is online but cannot be downloaded.
+                             * File owner has disabled downloads and there is no streaming link available as fallback. </br> --> File is
+                             * online but cannot be downloaded.
                              */
                             if (isDownload) {
                                 throw new PluginException(LinkStatus.ERROR_FATAL, "File owner has disabled downloads");
@@ -280,11 +279,9 @@ public class DropboxCom extends PluginForHost {
                 }
                 if (isPasswordProtectedWebsite(br)) {
                     /**
-                     * We know that the file is online but it is password protected. </br>
-                     * Password handling is located in download handling as we do not want to ask the user for a download password during
-                     * linkcheck. </br>
-                     * Also, even if we already know the correct password, we do not want to send it during linkcheck as this would slow
-                     * down linkcheck tremendously.
+                     * We know that the file is online but it is password protected. </br> Password handling is located in download handling
+                     * as we do not want to ask the user for a download password during linkcheck. </br> Also, even if we already know the
+                     * correct password, we do not want to send it during linkcheck as this would slow down linkcheck tremendously.
                      */
                     logger.info("Link is password protected");
                     link.setPasswordProtected(true);
@@ -333,9 +330,8 @@ public class DropboxCom extends PluginForHost {
     }
 
     /**
-     * Returns URL with "dl=1" parameter. This should work for all officially downloadable items. </br>
-     * If an item is password protected, the password needs to be entered correctly otherwise this URL obviously can't be used for
-     * downloading.
+     * Returns URL with "dl=1" parameter. This should work for all officially downloadable items. </br> If an item is password protected,
+     * the password needs to be entered correctly otherwise this URL obviously can't be used for downloading.
      */
     private String generateDirecturl(final DownloadLink link) throws MalformedURLException {
         final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
@@ -768,8 +764,8 @@ public class DropboxCom extends PluginForHost {
     }
 
     /**
-     * Only use this in crawler!! In host-plugins, use isSingleFile(final DownloadLink link)!! </br>
-     * Deprecated since: 2023-05-03: It is not easy / impossible to differentiate between files and folders only by URL-structure!
+     * Only use this in crawler!! In host-plugins, use isSingleFile(final DownloadLink link)!! </br> Deprecated since: 2023-05-03: It is not
+     * easy / impossible to differentiate between files and folders only by URL-structure!
      */
     @Deprecated
     public static boolean looksLikeSingleFile(final String url) {
@@ -961,8 +957,7 @@ public class DropboxCom extends PluginForHost {
      * Sets Authorization header. Because once generated, an oauth token is valid 'forever' until user revokes access to application, it
      * must not necessarily be re-validated!
      *
-     * @return true = api_token found and set </br>
-     *         false = no api_token found
+     * @return true = api_token found and set </br> false = no api_token found
      */
     public static boolean setAPILoginHeaders(final Browser br, final Account account) {
         if (account == null || br == null) {
@@ -985,8 +980,7 @@ public class DropboxCom extends PluginForHost {
     }
 
     /**
-     * Also called App-key and can be found here: https://www.dropbox.com/developers/apps </br>
-     * TODO: Change this to public static
+     * Also called App-key and can be found here: https://www.dropbox.com/developers/apps </br> TODO: Change this to public static
      */
     private String getAPIClientID() throws PluginException {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && force_dev_values) {

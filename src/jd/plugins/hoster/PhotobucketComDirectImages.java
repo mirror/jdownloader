@@ -15,20 +15,17 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -86,28 +83,14 @@ public class PhotobucketComDirectImages extends PluginForHost {
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
-            final String filenameFromURL = Plugin.getFileNameFromURL(link.getPluginPatternMatcher());
+            final String filenameFromURL = Plugin.getFileNameFromURL(new URL(link.getPluginPatternMatcher()));
             if (filenameFromURL != null) {
                 link.setName(filenameFromURL);
             }
         }
         this.setBrowserExclusive();
         prepareDownloadHeaders(br, link);
-        URLConnectionAdapter con = null;
-        try {
-            /* 2024-02-05: They do not like HEAD-requests. */
-            con = br.openGetConnection(link.getPluginPatternMatcher());
-            handleConnectionErrors(br, con);
-            if (con.getCompleteContentLength() > 0) {
-                /* 2024-02-05: Do not set verified size here!! */
-                link.setDownloadSize(con.getCompleteContentLength());
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
+        basicLinkCheck(br.cloneBrowser(), br.createGetRequest(link.getPluginPatternMatcher()), link, link.getName(), null);
         return AvailableStatus.TRUE;
     }
 
@@ -123,19 +106,6 @@ public class PhotobucketComDirectImages extends PluginForHost {
     private void prepareDownloadHeaders(final Browser br, final DownloadLink link) {
         /* Prevents serverside "Watermark protection" RE https://board.jdownloader.org/showthread.php?t=95053 */
         br.getHeaders().put("Referer", link.getPluginPatternMatcher());
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken?");
-            }
-        }
     }
 
     @Override

@@ -15,15 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.LazyPlugin;
+import java.net.URL;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -34,6 +28,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "animegalleries.net" }, urls = { "https?://(?:www\\.)?animegalleries\\.net/img/(\\d+)" })
 public class AnimegalleriesNet extends PluginForHost {
@@ -105,36 +103,20 @@ public class AnimegalleriesNet extends PluginForHost {
             dllink = Encoding.htmlOnlyDecode(dllink);
         }
         if (filename == null && dllink != null) {
-            filename = Plugin.getFileNameFromURL(dllink);
+            filename = Plugin.getFileNameFromURL(new URL(dllink));
         }
+        String ext = extDefault;
         if (filename != null) {
             filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
-            final String extFromURL = getFileNameExtensionFromString(dllink, extDefault);
-            link.setName(this.applyFilenameExtension(filename, extFromURL));
+            ext = getFileNameExtensionFromString(dllink, ext);
+            link.setName(this.applyFilenameExtension(filename, ext));
         }
         final String filesizeStr = br.getRegex("(?i)File Size\\s*:\\s*</td><td [^>]*><span [^>]*>(\\d+ [^<]+)</span>").getMatch(0);
         if (filesizeStr != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
         } else if (!StringUtils.isEmpty(dllink) && !isDownload) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(this.dllink);
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-                link.setFinalFileName(this.correctOrApplyFileNameExtension(filename, con));
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, filename, ext);
         }
         return AvailableStatus.TRUE;
     }
@@ -148,19 +130,6 @@ public class AnimegalleriesNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), 0);
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken?");
-            }
-        }
     }
 
     @Override

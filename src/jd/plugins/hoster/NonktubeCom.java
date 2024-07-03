@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.http.requests.HeadRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -221,25 +219,9 @@ public class NonktubeCom extends PluginForHost {
         if (dllink != null) {
             dllink = Encoding.htmlOnlyDecode(dllink);
             if (!isDownload) {
-                URLConnectionAdapter con = null;
-                try {
-                    HeadRequest headRequest = new HeadRequest(dllink);
-                    headRequest.getHeaders().put(OPEN_RANGE_REQUEST);
-                    con = br.openRequestConnection(headRequest);
-                    handleConnectionErrors(br, con);
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                } finally {
-                    try {
-                        if (con != null) {
-                            con.disconnect();
-                        }
-                    } catch (final Throwable e) {
-                    }
-                }
+                HeadRequest headRequest = new HeadRequest(dllink);
+                headRequest.getHeaders().put(OPEN_RANGE_REQUEST);
+                basicLinkCheck(br.cloneBrowser(), headRequest, link, link.getName(), ".mp4");
             }
         }
         return AvailableStatus.TRUE;
@@ -255,19 +237,6 @@ public class NonktubeCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
-            }
-        }
     }
 
     @Override

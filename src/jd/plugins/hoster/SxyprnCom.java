@@ -1,12 +1,7 @@
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.Map;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -26,6 +21,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy", "sxyprn.com" }, urls = { "https?://(?:www\\.)?yourporn\\.sexy/post/([a-fA-F0-9]{13})(?:\\.html)?", "https?://(?:www\\.)?sxyprn\\.(?:com|net)/post/([a-fA-F0-9]{13})(?:\\.html)?" })
 public class SxyprnCom extends antiDDoSForHost {
@@ -170,29 +171,13 @@ public class SxyprnCom extends antiDDoSForHost {
             /* Do not validate */
             return url;
         } else {
-            final Browser brc = br.cloneBrowser();
-            brc.setFollowRedirects(true);
-            // final String redirect = brc.getRedirectLocation();
-            final URLConnectionAdapter con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(url));
             try {
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        if (con.isContentDecoded()) {
-                            link.setDownloadSize(con.getCompleteContentLength());
-                        } else {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
-                        }
-                    }
-                    final String filenameSoFar = link.getName();
-                    if (filenameSoFar != null) {
-                        link.setFinalFileName(this.correctOrApplyFileNameExtension(filenameSoFar, con));
-                    }
-                    return con.getURL().toExternalForm();
-                }
-            } finally {
-                con.disconnect();
+                final URLConnectionAdapter con = basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(url), link, link.getName(), null);
+                return con.getURL().toExternalForm();
+            } catch (Exception e) {
+                logger.log(e);
+                return null;
             }
-            return null;
         }
     }
 
@@ -207,27 +192,13 @@ public class SxyprnCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                /*
-                 * 2019-09-24: E.g. serverside broken content, videos will not even play via browser. This may also happen when a user opens
-                 * up a lot of connections to this host!
-                 */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 503) {
-                /*
-                 * 2019-09-24: E.g. serverside broken content, videos will not even play via browser. This may also happen when a user opens
-                 * up a lot of connections to this host!
-                 */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503 too many connections", 30 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
+    }
+
+    @Override
+    protected void throwFinalConnectionException(Browser br, URLConnectionAdapter con) throws PluginException, IOException {
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     public void login(final Browser brlogin, final Account account, final boolean validateCookies) throws Exception {

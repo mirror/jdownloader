@@ -35,7 +35,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
@@ -103,27 +102,7 @@ public class KhinsiderCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         if (!isDownload) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(link.getPluginPatternMatcher());
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-                final String filename = Plugin.getFileNameFromDispositionHeader(con);
-                if (filename != null) {
-                    link.setFinalFileName(filename);
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(link.getPluginPatternMatcher()), link, null, null);
         }
         return AvailableStatus.TRUE;
     }
@@ -140,18 +119,16 @@ public class KhinsiderCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+    @Override
+    protected void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
         if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else if (br.containsHTML(">\\s*Unfortunately, due to large server expenses we are no longer able to|To be able to use the mass download feature you are now required to")) {
+
+            if (br.containsHTML(">\\s*Unfortunately, due to large server expenses we are no longer able to|To be able to use the mass download feature you are now required to")) {
                 /* No account or given account does not have the rights to download. */
                 throw new AccountRequiredException();
             } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File broken?");
+                super.handleConnectionErrors(br, con);
             }
         }
     }

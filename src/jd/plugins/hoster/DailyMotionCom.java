@@ -23,14 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -53,6 +45,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.DailyMotionComDecrypter;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://dailymotion\\.com/video/\\w+" })
 public class DailyMotionCom extends PluginForHost {
@@ -172,8 +172,7 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     /**
-     * Returns height of this item. </br>
-     * -1 = Fallback / audio.
+     * Returns height of this item. </br> -1 = Fallback / audio.
      */
     public static int getQualityHeight(final DownloadLink link) {
         final int height = link.getIntegerProperty(PROPERTY_QUALITY_HEIGHT, -1);
@@ -528,7 +527,7 @@ public class DailyMotionCom extends PluginForHost {
         return formattedFilename;
     }
 
-    public static String correctFilename(String filename) {
+    private static String correctFilename(String filename) {
         // Cut filenames if they're too long
         if (filename.length() > 240) {
             final String ext = getFileNameExtensionFromString(filename, "");

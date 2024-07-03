@@ -20,13 +20,6 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideo.DownloadMode;
-import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -44,6 +37,13 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.VoeSxCrawler;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideo.DownloadMode;
+import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { VoeSxCrawler.class })
@@ -404,8 +404,12 @@ public class VoeSx extends XFileSharingProBasic {
         super.getPage(ibr, page);
         final String redirect = ibr.getRegex("else \\{\\s*window\\.location\\.href = '(https?://[^\"\\']+)';").getMatch(0);
         if (redirect != null) {
-            logger.info("Handle special js redirect: " + redirect);
-            super.getPage(ibr, redirect);
+            if (canHandle(redirect)) {
+                logger.info("Handle special js redirect: " + redirect);
+                getPage(ibr, redirect);
+            } else {
+                logger.info("Unuspported domain for special js redirect: " + redirect);
+            }
         }
     }
 

@@ -20,9 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -33,6 +30,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AnonymfileCom extends PluginForHost {
@@ -97,6 +98,15 @@ public class AnonymfileCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (true) {
+            return requestFileInformationWebsite(link);
+        } else {
+            // 2024-07-02: api returns 404/html
+            return requestFileInformationAPI(link);
+        }
+    }
+
+    public AvailableStatus requestFileInformationAPI(final DownloadLink link) throws IOException, PluginException {
         final String fid = this.getFID(link);
         if (!link.isNameSet()) {
             /* Fallback */
@@ -111,7 +121,12 @@ public class AnonymfileCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(API_BASE + "/file/" + this.getFID(link) + "/info");
         if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (true) {
+                // 2024-07-02: api returns 404/html
+                return requestFileInformationWebsite(link);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         if (Boolean.FALSE.equals(entries.get("status"))) {
@@ -131,6 +146,35 @@ public class AnonymfileCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws IOException, PluginException {
+        final String fid = this.getFID(link);
+        if (!link.isNameSet()) {
+            /* Fallback */
+            final String filenameFromURL = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+            if (filenameFromURL != null) {
+                link.setName(Encoding.htmlDecode(filenameFromURL).trim());
+            } else {
+                link.setName(fid);
+            }
+        }
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String fileName = br.getRegex("download\\s*=\\s*\"(.*?)\"").getMatch(0);
+        final String fileSize = br.getRegex(">\\s*Download\\s*\\((.*?)\\)").getMatch(0);
+        if (fileName != null) {
+            link.setName(fileName);
+            if (fileSize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(fileSize));
+            }
+            return AvailableStatus.TRUE;
+        }
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
@@ -144,7 +188,7 @@ public class AnonymfileCom extends PluginForHost {
             if (br.containsHTML("(?i)>\\s*Requested file might be deleted")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String dllink = br.getRegex("\"(https[^\"])\" download=").getMatch(0);
+            String dllink = br.getRegex("\"(https[^\"]+)\"\\s*download\\s*=\\s*").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("(/f/[a-f0-9\\-]+)").getMatch(0);
             }

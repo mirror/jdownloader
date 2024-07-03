@@ -2,16 +2,12 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.BunkrConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,6 +26,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.BunkrAlbum;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.BunkrConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { BunkrAlbum.class })
 public class Bunkr extends PluginForHost {
@@ -42,6 +43,16 @@ public class Bunkr extends PluginForHost {
         final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
         return br;
+    }
+
+    @Override
+    public String getMirrorID(DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return getHost() + "://" + fid;
+        } else {
+            return super.getMirrorID(link);
+        }
     }
 
     @Override
@@ -153,9 +164,9 @@ public class Bunkr extends PluginForHost {
         String filenameFromURL = new Regex(url, BunkrAlbum.PATTERN_SINGLE_FILE).getMatch(2);
         if (filenameFromURL == null) {
             try {
-                filenameFromURL = Plugin.getFileNameFromURL(url);
+                filenameFromURL = getFileNameFromURL(new URL(url));
             } catch (MalformedURLException e) {
-                e.printStackTrace();
+                logger.log(e);
             }
         }
         if (filenameFromURL != null) {
@@ -242,7 +253,7 @@ public class Bunkr extends PluginForHost {
                 }
                 handleConnectionErrors(link, br, con);
                 final String filenameFromHeader = Plugin.getFileNameFromDispositionHeader(con);
-                final String filenameFromDirecturl = Plugin.getFileNameFromURL(lastCachedDirecturl);
+                final String filenameFromDirecturl = Plugin.getFileNameFromURL(new URL(lastCachedDirecturl));
                 if (filenameFromHeader != null) {
                     setFilename(link, filenameFromHeader, true, true);
                 } else if (filenameFromDirecturl != null) {
@@ -250,7 +261,12 @@ public class Bunkr extends PluginForHost {
                 }
                 logger.info("Successfully re-used last cached directurl");
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setVerifiedFileSize(-1);
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
                 return AvailableStatus.TRUE;
             } catch (final Exception e) {
@@ -366,7 +382,7 @@ public class Bunkr extends PluginForHost {
             br.getPage(singleFileURL);
         }
         handleResponsecodeErrors(br.getHttpConnection());
-        final String filenameFromURL = Plugin.getFileNameFromURL(br.getURL());
+        final String filenameFromURL = Plugin.getFileNameFromURL(br._getURL());
         String filenameFromHTML = br.getRegex("<title>([^<]+)</title>").getMatch(0);
         if (filenameFromHTML != null) {
             filenameFromHTML = Encoding.htmlDecode(filenameFromHTML).trim();

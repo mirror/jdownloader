@@ -21,11 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -34,11 +29,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.KoofrNetFolder;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { KoofrNetFolder.class })
@@ -113,33 +112,13 @@ public class KoofrNet extends PluginForHost {
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         final String dllink = getDirecturl(link);
-        URLConnectionAdapter con = null;
-        try {
-            prepareDownloadHeaders(br, link);
-            con = br.openGetConnection(dllink);
-            handleConnectionErrors(br, con);
-            if (con.getCompleteContentLength() > 0) {
-                if (con.isContentDecoded()) {
-                    link.setDownloadSize(con.getCompleteContentLength());
-                } else {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            }
-            final String filenameFromConnection = Plugin.getFileNameFromDispositionHeader(con);
-            if (filenameFromConnection != null) {
-                link.setFinalFileName(filenameFromConnection);
-            }
-            final String jsonFromHeader = br.getRequest().getResponseHeader("x-file-info");
-            if (jsonFromHeader != null && jsonFromHeader.startsWith("{")) {
-                /* Same json rthey return via webapi. */
-                final Map<String, Object> resource = restoreFromString(jsonFromHeader, TypeRef.MAP);
-                parseFileInfo(link, resource);
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
+        prepareDownloadHeaders(br, link);
+        basicLinkCheck(br.cloneBrowser(), br.createGetRequest(dllink), link, null, null);
+        final String jsonFromHeader = br.getRequest().getResponseHeader("x-file-info");
+        if (jsonFromHeader != null && jsonFromHeader.startsWith("{")) {
+            /* Same json rthey return via webapi. */
+            final Map<String, Object> resource = restoreFromString(jsonFromHeader, TypeRef.MAP);
+            parseFileInfo(link, resource);
         }
         return AvailableStatus.TRUE;
     }
@@ -177,7 +156,8 @@ public class KoofrNet extends PluginForHost {
         dl.startDownload();
     }
 
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+    @Override
+    protected void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
         if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
             if (br.getRequest().getHtmlCode().length() <= 100 && con.getContentType().contains("text")) {
@@ -186,12 +166,8 @@ public class KoofrNet extends PluginForHost {
                  * files.
                  */
                 throw new PluginException(LinkStatus.ERROR_FATAL, br.getRequest().getHtmlCode().trim());
-            } else if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File broken?");
+                super.handleConnectionErrors(br, con);
             }
         }
     }

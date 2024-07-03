@@ -15,21 +15,15 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
@@ -45,6 +39,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BadoinkvrCom extends PluginForHost {
@@ -91,15 +90,14 @@ public class BadoinkvrCom extends PluginForHost {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
             /**
-             * 2023-11-14: </br>
-             * vrpornvideo: badoinkvr.com, babevr.com, 18vr.com </br>
-             * cosplaypornvideo: vrcosplayx.com </br>
+             * 2023-11-14: </br> vrpornvideo: badoinkvr.com, babevr.com, 18vr.com </br> cosplaypornvideo: vrcosplayx.com </br>
              * bdsm-vr-video: kinkvr.com
              */
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:members/)?[\\w\\-]+/([a-z0-9\\-_]+)\\-(\\d+)/?");
         }
         return ret.toArray(new String[0]);
     }
+
     /* DEV NOTES */
     // Tags: Porn plugin
     // protocol: no https
@@ -201,7 +199,7 @@ public class BadoinkvrCom extends PluginForHost {
                 }
             }
             if (this.dllink != null) {
-                filename = Plugin.getFileNameFromURL(this.dllink);
+                filename = Plugin.getFileNameFromURL(new URL(this.dllink));
             }
             title += "_" + pickedMediaName;
             filesize = filesizeMax;
@@ -252,24 +250,7 @@ public class BadoinkvrCom extends PluginForHost {
             link.setDownloadSize(filesize);
         } else if (!StringUtils.isEmpty(dllink) && !isDownload) {
             /* Find filesize via header */
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(this.dllink);
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-                link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, filename != null ? filename : title, extDefault);
         }
         return AvailableStatus.TRUE;
     }
@@ -284,19 +265,6 @@ public class BadoinkvrCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
-            }
-        }
     }
 
     private Map<String, Object> login(final Account account, final boolean force) throws Exception {
@@ -394,6 +362,7 @@ public class BadoinkvrCom extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
     }
+
     // @Override
     // public Class<? extends PluginConfigInterface> getConfigInterface() {
     // return HereSphereConfig.class;

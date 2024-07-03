@@ -17,11 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -37,9 +32,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(?:www\\.)?pixabay\\.com/(?:en/)?(?:(?:photos|gifs|illustrations|vectors|images/download)/)?([a-z0-9\\-]+)-(\\d+)/?" })
 public class PixaBayCom extends PluginForHost {
@@ -192,7 +191,7 @@ public class PixaBayCom extends PluginForHost {
                 dllink = br.getRegex("(https?://cdn[^<>\"\\s]+)\\s*1x").getMatch(0);
             }
             if (dllink != null) {
-                final String ext = Plugin.getFileNameExtensionFromURL(dllink);
+                final String ext = getFileNameExtensionFromURL(dllink);
                 link.setProperty("free_directlink", dllink);
                 fileTitle = Encoding.htmlDecode(fileTitle.trim());
                 fileTitle += ext;

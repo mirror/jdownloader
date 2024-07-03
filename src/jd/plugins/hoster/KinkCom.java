@@ -20,19 +20,12 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -48,6 +41,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kink.com" }, urls = { "https?://(?:www\\.)?kink.com/shoot/(\\d+)" })
 public class KinkCom extends PluginForHost {
@@ -68,6 +67,7 @@ public class KinkCom extends PluginForHost {
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
     }
+
     /* DEV NOTES */
     // Tags: Porn plugin
     // protocol: no https
@@ -170,23 +170,7 @@ public class KinkCom extends PluginForHost {
         if (!StringUtils.isEmpty(directurl)) {
             link.setProperty(this.getDirectlinkProperty(link, account), directurl);
             if (!isDownload) {
-                URLConnectionAdapter con = null;
-                try {
-                    final Browser brc = br.cloneBrowser();
-                    con = brc.openHeadConnection(directurl);
-                    handleConnectionErrors(brc, con);
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(filetitle, con));
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
+                basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(directurl), link, link.getFinalFileName(), extDefault);
             }
         }
         return AvailableStatus.TRUE;
@@ -229,19 +213,6 @@ public class KinkCom extends PluginForHost {
             }
         }
         dl.startDownload();
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
-            }
-        }
     }
 
     private void login(final Account account, final boolean force) throws IOException, InterruptedException, PluginException {

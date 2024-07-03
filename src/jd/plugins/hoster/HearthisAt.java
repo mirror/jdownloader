@@ -19,7 +19,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -168,32 +168,9 @@ public class HearthisAt extends PluginForHost {
         if (!StringUtils.isEmpty(this.dllink) && !isDownload) {
             final Browser br2 = br.cloneBrowser();
             br2.getHeaders().put("Referer", "https://" + this.getHost() + "/");
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            try {
-                /* required */
-                br2.getHeaders().put(OPEN_RANGE_REQUEST);
-                /* Do NOT use HEAD request here! */
-                con = br2.openGetConnection(dllink);
-                handleConnectionErrors(br2, con);
-                if (con.getCompleteContentLength() > 0) {
-                    if (DownloadInterface.isNewHTTPCore()) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    } else {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    }
-                }
-                final String ext = getExtensionFromMimeType(con);
-                if (ext != null) {
-                    link.setFinalFileName(title + "." + ext);
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            final GetRequest request = br2.createGetRequest(dllink);
+            request.getHeaders().put(OPEN_RANGE_REQUEST);
+            basicLinkCheck(br2, request, link, link.getFinalFileName(), extDefault);
         }
         return AvailableStatus.TRUE;
     }
@@ -210,21 +187,6 @@ public class HearthisAt extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume && DownloadInterface.isNewHTTPCore(), free_maxchunks);
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else if (isOfficialDownload) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download broken serverside?");
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Audio file broken?");
-            }
-        }
     }
 
     @Override

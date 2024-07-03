@@ -15,11 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLSearch;
@@ -29,6 +26,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ivoox.com" }, urls = { "https?://(?:[a-z]+\\.)?ivoox\\.com/(?:[a-z]{2}/)?[a-z0-9\\-]+audios\\-mp3_rf_(\\d+)_\\d+\\.html" })
 public class IvooxCom extends PluginForHost {
@@ -120,42 +119,9 @@ public class IvooxCom extends PluginForHost {
             link.setDownloadSize(96 * 1024l / 8 * durationSeconds);
         } else if (dllink != null && !isDownload) {
             /* Important: Direct-URL can only be used one time!! */
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(dllink);
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-                final String ext = getExtensionFromMimeType(con);
-                if (ext != null) {
-                    link.setFinalFileName(title + "." + ext);
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, title, default_extension);
         }
         return AvailableStatus.TRUE;
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws Exception {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
     }
 
     @Override

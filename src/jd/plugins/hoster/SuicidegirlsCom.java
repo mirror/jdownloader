@@ -19,13 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -46,6 +39,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suicidegirls.com" }, urls = { "http://suicidegirlsdecrypted/\\d+|https?://(?:www\\.)?suicidegirls\\.com/videos/\\d+/[A-Za-z0-9\\-_]+/" })
 public class SuicidegirlsCom extends PluginForHost {
@@ -138,45 +138,19 @@ public class SuicidegirlsCom extends PluginForHost {
         }
         link.setName(filename);
         if (!StringUtils.containsIgnoreCase(dllink, ".m3u8") && !isDownload) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(dllink);
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-                if (filename == null) {
-                    filename = getFileNameFromConnection(con);
-                }
-                link.setProperty(PROPERTY_DIRECTURL, dllink);
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, filename, videourl.patternFind() ? ".mp4" : null);
+            link.setProperty(PROPERTY_DIRECTURL, dllink);
         }
         if (link.getFinalFileName() == null && filename != null) {
-            link.setFinalFileName(filename);
+            link.setFinalFileName(correctOrApplyFileNameExtension(filename, videourl.patternFind() ? ".mp4" : null, null));
         }
         return AvailableStatus.TRUE;
     }
 
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Media broken?");
-            }
-        } else if (StringUtils.containsIgnoreCase(con.getURL().toExternalForm(), "ph-join-sg.jpg")) {
+    @Override
+    protected void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        super.handleConnectionErrors(br, con);
+        if (StringUtils.containsIgnoreCase(con.getURL().toExternalForm(), "ph-join-sg.jpg")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid media: Got advertising image instead of expected file content");
         }
     }

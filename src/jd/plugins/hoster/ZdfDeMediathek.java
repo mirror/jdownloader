@@ -28,6 +28,17 @@ import java.util.Locale;
 import java.util.Scanner;
 import java.util.TimeZone;
 
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
@@ -40,17 +51,6 @@ import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.translate._JDT;
-
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de" }, urls = { "decryptedmediathek://.+" })
 public class ZdfDeMediathek extends PluginForHost {
@@ -124,23 +124,7 @@ public class ZdfDeMediathek extends PluginForHost {
                     link.setDownloadSize(estimatedSize);
                 }
             } else {
-                URLConnectionAdapter con = null;
-                try {
-                    con = br.openHeadConnection(this.dllink);
-                    handleConnectionErrors(br, con);
-                    if (con.getCompleteContentLength() > 0) {
-                        if (con.isContentDecoded()) {
-                            link.setDownloadSize(con.getCompleteContentLength());
-                        } else {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
-                        }
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
+                basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, link.getFinalFileName(), null);
             }
         }
         return AvailableStatus.TRUE;
@@ -172,8 +156,8 @@ public class ZdfDeMediathek extends PluginForHost {
                 waitMillisUntilVideoIsAvailable = timeUntilLater;
             } else {
                 /**
-                 * This should never happen. Either server time is wrong/offset or user has wrong local OS time. </br>
-                 * Video should already be available -> Wait static wait time
+                 * This should never happen. Either server time is wrong/offset or user has wrong local OS time. </br> Video should already
+                 * be available -> Wait static wait time
                  */
                 waitMillisUntilVideoIsAvailable = 30 * 60 * 1000;
             }
@@ -209,19 +193,6 @@ public class ZdfDeMediathek extends PluginForHost {
             return true;
         } else {
             return false;
-        }
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "GEO blocked");
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File broken?");
-            }
         }
     }
 

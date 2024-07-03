@@ -21,13 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.SankakucomplexComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -49,6 +42,13 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.SankakucomplexComCrawler;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.SankakucomplexComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(?:beta|chan|idol|www)\\.sankakucomplex\\.com/(?:[a-z]{2}/)?(?:post/show|posts)/([A-Za-z0-9]+)" })
 public class SankakucomplexCom extends PluginForHost {
@@ -198,25 +198,12 @@ public class SankakucomplexCom extends PluginForHost {
         if (dllink != null) {
             link.setProperty(PROPERTY_DIRECTURL, dllink);
             if (filesizeBytesStr == null && previouslyStoredDirecturl == null && !isDownload) {
-                final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = null;
                 try {
-                    con = br2.openHeadConnection(dllink);
-                    if (!this.looksLikeDownloadableContent(con)) {
-                        logger.info("Final downloadurl did not lead to file -> File broken/unavailable serverside?");
-                        return AvailableStatus.TRUE;
-                    }
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
+                    basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, title, ext);
+                } catch (Exception e) {
+                    logger.log(e);
+                    logger.info("Final downloadurl did not lead to file -> File broken/unavailable serverside?");
+                    return AvailableStatus.TRUE;
                 }
             }
         }

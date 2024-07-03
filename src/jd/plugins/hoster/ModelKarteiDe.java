@@ -15,15 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -36,9 +31,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ModelKarteiDe extends PluginForHost {
@@ -194,36 +192,16 @@ public class ModelKarteiDe extends PluginForHost {
         }
         String ext = extDefault;
         if (dllink != null) {
-            final String extFromURL = Plugin.getFileNameExtensionFromURL(dllink);
-            if (extFromURL != null) {
-                ext = extFromURL;
-            }
+            ext = getFileNameExtensionFromURL(dllink, extDefault);
         }
         try {
             if (!StringUtils.isEmpty(dllink) && (isDownload == false || dateFormatted == null)) {
                 /* Find filesize */
-                URLConnectionAdapter con = null;
-                try {
-                    con = br.openHeadConnection(dllink);
-                    handleConnectionErrors(br, con);
-                    /* Try to find date if we were unable to find it so far. */
-                    if (dateFormatted == null) {
-                        final Date lastModifiedDate = TimeFormatter.parseDateString(con.getHeaderField(HTTPConstants.HEADER_RESPONSE_LAST_MODFIED));
-                        if (lastModifiedDate != null) {
-                            dateFormatted = new SimpleDateFormat("yyyy-MM-dd").format(lastModifiedDate);
-                        }
-                    }
-                    if (con.getCompleteContentLength() > 0) {
-                        if (con.isContentDecoded()) {
-                            link.setDownloadSize(con.getCompleteContentLength());
-                        } else {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
-                        }
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
+                final URLConnectionAdapter con = basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, null, null);
+                if (dateFormatted == null) {
+                    final Date lastModifiedDate = TimeFormatter.parseDateString(con.getHeaderField(HTTPConstants.HEADER_RESPONSE_LAST_MODFIED));
+                    if (lastModifiedDate != null) {
+                        dateFormatted = new SimpleDateFormat("yyyy-MM-dd").format(lastModifiedDate);
                     }
                 }
             }
@@ -257,19 +235,6 @@ public class ModelKarteiDe extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(link, null));
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
-    }
-
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
-            }
-        }
     }
 
     @Override

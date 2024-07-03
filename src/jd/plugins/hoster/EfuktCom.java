@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -123,34 +125,12 @@ public class EfuktCom extends PluginForHost {
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            link.setName(title + expectedExt);
+            link.setFinalFileName(applyFilenameExtension(title, expectedExt));
         }
         if (dllink != null) {
             dllink = Encoding.htmlOnlyDecode(dllink);
             if (!isDownload) {
-                URLConnectionAdapter con = null;
-                try {
-                    con = br.openGetConnection(dllink);
-                    handleConnectionErrors(br, con);
-                    if (con.getCompleteContentLength() > 0) {
-                        if (con.isContentDecoded()) {
-                            link.setDownloadSize(con.getCompleteContentLength());
-                        } else {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
-                        }
-                    }
-                    if (title != null) {
-                        final String ext = getExtensionFromMimeType(con);
-                        if (ext != null) {
-                            link.setFinalFileName(title + "." + ext);
-                        }
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
+                basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, link.getFinalFileName(), expectedExt);
             }
         }
         return AvailableStatus.TRUE;
@@ -167,17 +147,9 @@ public class EfuktCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws Exception {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
+    @Override
+    protected void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        super.handleConnectionErrors(br, con);
         /* 2022-12-19: Looks like etag can vary so we'll double-check for Content-Length header. */
         final String etag = con.getRequest().getResponseHeader("etag");
         if (StringUtils.equalsIgnoreCase(etag, "\"637be5da-11d2b\"") || StringUtils.equalsIgnoreCase(etag, "\"63a05f27-11d2b\"") || StringUtils.equalsIgnoreCase(etag, "\"5a56b09d-1485eb\"")) {
