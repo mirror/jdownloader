@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import jd.config.Property;
+import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
@@ -15,7 +16,6 @@ import jd.controlling.packagecontroller.PackageControllerComparator;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.ModifyLock;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.packagizer.PackagizerController;
@@ -210,7 +210,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     public void setName(String name) {
         if (!StringUtils.equals(name, this.name)) {
             if (name != null) {
-                name = CrossSystem.alleviatePathParts(name);
+                name = LinknameCleaner.cleanPackagename(name, false);
                 if (StringUtils.equals(name, this.name)) {
                     return;
                 }

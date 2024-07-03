@@ -48,11 +48,11 @@ public class LinknameCleaner {
             /* not loaded yet */
         }
     }
-    public static final Pattern   pat13   = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat17   = Pattern.compile("(.+)\\.\\d+\\.xtm($|\\.html?)");
-    public static final Pattern   pat18   = Pattern.compile("(.*)\\.isz($|\\.html?)", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat19   = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern[] iszPats = new Pattern[] { pat18, pat19 };
+    public static final Pattern   pat13    = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat17    = Pattern.compile("(.+)\\.\\d+\\.xtm($|\\.html?)");
+    public static final Pattern   pat18    = Pattern.compile("(.*)\\.isz($|\\.html?)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat19    = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern[] iszPats  = new Pattern[] { pat18, pat19 };
 
     public static enum EXTENSION_SETTINGS {
         KEEP,
@@ -60,8 +60,8 @@ public class LinknameCleaner {
         REMOVE_ALL
     }
 
-    private static volatile Map<Pattern, String> FILENAME_REPLACEMAP         = new HashMap<Pattern, String>();
-    private static volatile Map<String, String>  FILENAME_REPLACEMAP_DEFAULT = new HashMap<String, String>();
+    private static volatile Map<Pattern, String> FILENAME_REPLACEMAP            = new HashMap<Pattern, String>();
+    private static volatile Map<String, String>  FILENAME_REPLACEMAP_DEFAULT    = new HashMap<String, String>();
     static {
         final ObjectKeyHandler replaceMapKeyHandler = CFG_GENERAL.FILENAME_CHARACTER_REGEX_REPLACEMAP;
         FILENAME_REPLACEMAP_DEFAULT = (Map<String, String>) replaceMapKeyHandler.getDefaultValue();
@@ -100,13 +100,11 @@ public class LinknameCleaner {
         public void validate(KeyHandler<Map<String, String>> keyHandler, Map<String, String> value) throws ValidationException {
             try {
                 for (final Entry<String, String> entry : value.entrySet()) {
-                    if (StringUtils.isNotEmpty(entry.getKey()) && entry.getValue() != null) {
+                    if ((entry.getKey() != null && entry.getKey().length() != 0) && entry.getValue() != null) {
                         Pattern.compile(entry.getKey());
                         Matcher.quoteReplacement(entry.getValue());
                     }
                 }
-            } catch (ValidationException e) {
-                throw e;
             } catch (Exception e) {
                 throw new ValidationException(e);
             }
@@ -119,7 +117,7 @@ public class LinknameCleaner {
         final Set<String> keys = new HashSet<String>();// Pattern doesn't implement equals!
         if (replaceMap != null) {
             for (final Entry<String, String> entry : replaceMap.entrySet()) {
-                if (StringUtils.isNotEmpty(entry.getKey()) && entry.getValue() != null) {
+                if ((entry.getKey() != null && entry.getKey().length() != 0) && entry.getValue() != null) {
                     try {
                         ret.put(Pattern.compile(entry.getKey()), Matcher.quoteReplacement(entry.getValue()));
                         keys.add(entry.getKey());
@@ -131,7 +129,7 @@ public class LinknameCleaner {
         }
         if (defaultReplaceMap != null) {
             for (final Entry<String, String> entry : defaultReplaceMap.entrySet()) {
-                if (StringUtils.isNotEmpty(entry.getKey()) && entry.getValue() != null && !keys.contains(entry.getKey())) {
+                if ((entry.getKey() != null && entry.getKey().length() != 0) && entry.getValue() != null && !keys.contains(entry.getKey())) {
                     try {
                         ret.put(Pattern.compile(entry.getKey()), Matcher.quoteReplacement(entry.getValue()));
                     } catch (final Exception e) {
@@ -168,8 +166,8 @@ public class LinknameCleaner {
             }
         }
         /**
-         * Users can put anything into that replace map. </br>
-         * Try to avoid the results of adding something like ".+" resulting in empty filenames.
+         * Users can put anything into that replace map. </br> Try to avoid the results of adding something like ".+" resulting in empty
+         * filenames.
          */
         if (!StringUtils.isEmpty(newstr)) {
             return newstr;
@@ -188,7 +186,7 @@ public class LinknameCleaner {
     public static String cleanPackagename(final String packageName, boolean allowCleanup) {
         String ret = replaceCharactersByMap(packageName, PACKAGENAME_REPLACEMAP);
         /* if enabled, replace dots and _ with spaces and do further clean ups */
-        if (allowCleanup && org.jdownloader.settings.staticreferences.CFG_GENERAL.CLEAN_UP_PACKAGENAMES.isEnabled()) {
+        if (ret != null && allowCleanup && org.jdownloader.settings.staticreferences.CFG_GENERAL.CLEAN_UP_PACKAGENAMES.isEnabled()) {
             // still wanted by users, so please do not simply remove this
             // TODO: maybe add own cleanup replace map that does this via pattern/replace or add those to package name replace map
             // TODO: Review this to avoid double-spaces caused by this cleanup, see:
@@ -212,7 +210,8 @@ public class LinknameCleaner {
             }
             ret = sb.toString();
         }
-        return ret.trim();
+        ret = CrossSystem.alleviatePathParts(ret, false);
+        return ret;
     }
 
     /** Derives package name out of given filename. */

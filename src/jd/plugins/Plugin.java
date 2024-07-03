@@ -35,6 +35,32 @@ import java.util.regex.Pattern;
 
 import javax.swing.Icon;
 
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.BrowserSettingsThread;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.PluginForHost.FILENAME_SOURCE;
+import jd.plugins.components.SiteType.SiteTemplate;
+import jd.utils.JDUtilities;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonMapperException;
@@ -84,31 +110,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.translate._JDT;
-
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
-import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.BrowserSettingsThread;
-import jd.http.ProxySelectorInterface;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins müssen von dieser Klasse abgeleitet werden.
@@ -308,6 +309,10 @@ public abstract class Plugin implements ActionListener {
         return HTTPConnectionUtils.parseDispositionHeader(contentDisposition);
     }
 
+    public static String getFileNameFromURL(final URL url) {
+        return extractFileNameFromURL(url.getPath());
+    }
+
     /**
      * Determines file extension, from provided String. <br />
      * Must be a valid URL otherwise failover will be returned <br />
@@ -318,30 +323,11 @@ public abstract class Plugin implements ActionListener {
      * @throws MalformedURLException
      */
     public static String getFileNameExtensionFromURL(final String url, final String failover) {
-        if (url == null) {
+        try {
+            return getFileNameExtensionFromString(new URL(url).getPath(), failover);
+        } catch (final MalformedURLException e) {
             return failover;
         }
-        try {
-            final String output = Plugin.getFileNameFromURL(new URL(url));
-            if (output != null && output.contains(".")) {
-                return output.substring(output.lastIndexOf("."));
-            }
-        } catch (final MalformedURLException e) {
-        }
-        return failover;
-    }
-
-    /**
-     * Wrapper
-     *
-     * @since JD2
-     * @author raztoki
-     * @param url
-     * @return
-     * @throws MalformedURLException
-     */
-    public static String getFileNameExtensionFromURL(final String url) {
-        return getFileNameExtensionFromURL(url, null);
     }
 
     /**
@@ -353,25 +339,21 @@ public abstract class Plugin implements ActionListener {
      * @author raztoki
      */
     public static String getFileNameExtensionFromString(final String filename, final String failover) {
-        if (filename == null) {
-            return null;
-        }
-        final String output = extractFileNameFromURL(filename);
-        if (output != null && output.contains(".")) {
-            return output.substring(output.lastIndexOf("."));
+        final String ret = filename != null ? extractFileNameFromURL(filename) : null;
+        final int lastIndex = ret != null ? ret.lastIndexOf(".") : -1;
+        if (lastIndex >= 0) {
+            return ret.substring(lastIndex);
         } else {
             return failover;
         }
     }
 
-    /**
-     * Wrapper
-     *
-     * @since JD2
-     * @author raztoki
-     * @param filename
-     * @return
-     */
+    @Deprecated
+    public static String getFileNameExtensionFromURL(final String url) {
+        return getFileNameExtensionFromURL(url, null);
+    }
+
+    @Deprecated
     public static String getFileNameExtensionFromString(final String filename) {
         return getFileNameExtensionFromString(filename, null);
     }
@@ -419,76 +401,69 @@ public abstract class Plugin implements ActionListener {
      * @return Extracted filename.
      */
     public static String getFileNameFromConnection(final URLConnectionAdapter urlConnection) {
-        final String filenameFromDispositionHeader = getFileNameFromDispositionHeader(urlConnection);
-        if (!StringUtils.isEmpty(filenameFromDispositionHeader)) {
-            return filenameFromDispositionHeader;
-        }
-        String filenameFromURL = Plugin.getFileNameFromURL(urlConnection.getURL());
-        if (filenameFromURL != null) {
-            /* Add file extension if none is there. Allow empty strings so in the worst case, this may only return something like ".jpg". */
-            if (!filenameFromURL.contains(".") && urlConnection.getContentType() != null) {
-                String extByMimetype = null;
-                // TODO: Obtain file extension via one-liner from another function
-                final List<CompiledFiletypeExtension> fileTypeExtensions = CompiledFiletypeFilter.getByMimeType(urlConnection.getContentType());
-                if (fileTypeExtensions != null && fileTypeExtensions.size() > 0) {
-                    extByMimetype = fileTypeExtensions.get(0).getExtensionFromMimeType(urlConnection.getContentType());
-                }
-                if (extByMimetype != null) {
-                    filenameFromURL = filenameFromURL + "." + extByMimetype;
-                }
+        final Plugin plugin = getCurrentActivePlugin();
+        for (FILENAME_SOURCE source : new FILENAME_SOURCE[] { FILENAME_SOURCE.HEADER, FILENAME_SOURCE.URL }) {
+            final String ret = source.getFilename(plugin, null, null, null, urlConnection);
+            if (ret != null) {
+                return ret;
             }
-            return filenameFromURL;
         }
         return null;
     }
 
-    public static String getFileNameFromURL(final URL url) {
-        return Plugin.extractFileNameFromURL(url.getPath());
+    protected String getExtensionFromConnection(URLConnectionAdapter connection) {
+        if (connection == null) {
+            return null;
+        }
+        String ret = null;
+        final String fileNameFromDispositionHeader = getFileNameFromDispositionHeader(connection);
+        if (fileNameFromDispositionHeader != null) {
+            ret = getFileNameExtensionFromString(fileNameFromDispositionHeader, null);
+        }
+        if (ret == null) {
+            ret = getExtensionFromMimeType(connection);
+        }
+        if (ret == null) {
+            ret = getFileNameExtensionFromString(connection.getURL().getPath(), null);
+        }
+        return ret;
+
     }
 
-    public static String getFileNameFromURL(final String url) throws MalformedURLException {
-        return getFileNameFromURL(new URL(url));
-    }
-
-    public String correctOrApplyFileNameExtension(final String filenameOrg, final URLConnectionAdapter connection) {
-        final String extNew = getExtensionFromMimeType(connection);
-        return correctOrApplyFileNameExtension(filenameOrg, extNew);
-    }
-
-    /**
-     * Corrects extension of given filename. Adds extension if it is missing. Returns null if given filename is null. </br>
-     * Pass fileExtension with dot(s) to this! </br>
-     * Only replaces extensions with one dot e.g. ".mp4", NOT e.g. ".tar.gz".
-     *
-     * @param filenameOrg
-     *            Original filename
-     * @param newExtension
-     *            New extension for filename
-     *
-     *
-     * @return Filename with new extension
-     */
-    public static String correctOrApplyFileNameExtension(final String filenameOrg, String newExtension) {
-        if (StringUtils.isEmpty(filenameOrg) || StringUtils.isEmpty(newExtension)) {
+    public String correctOrApplyFileNameExtension(final String filenameOrg, String newExtension, URLConnectionAdapter connection) {
+        // https://svn.jdownloader.org/projects/jd/repository/revisions/49206/diff/trunk/src/jd/plugins/Plugin.java
+        if (connection != null) {
+            final String extensionFromConnection = getExtensionFromConnection(connection);
+            if (extensionFromConnection != null) {
+                newExtension = extensionFromConnection;
+            }
+        }
+        if (filenameOrg == null) {
+            return null;
+        } else if (StringUtils.isEmpty(newExtension)) {
             return filenameOrg;
+        } else if (!newExtension.startsWith(".")) {
+            newExtension = "." + newExtension;
         }
         if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             /* Testing: do not alter filenames in stable version */
             return filenameOrg;
         }
-        if (!newExtension.startsWith(".")) {
-            newExtension = "." + newExtension;
-        }
+        final CompiledFiletypeExtension filetypeNew = CompiledFiletypeFilter.getExtensionsFilterInterface(newExtension);
         if (!filenameOrg.contains(".")) {
             /* Filename doesn't contain an extension at all -> Add extension to filename. */
-            return filenameOrg + newExtension;
+            if (CompiledFiletypeFilter.ExecutableExtensions.EXE.isSameExtensionGroup(filetypeNew)) {
+                logger.info("blocked new extension:" + newExtension + "|" + filetypeNew);
+                return filenameOrg;
+            } else {
+                return filenameOrg + newExtension;
+            }
         } else if (StringUtils.endsWithCaseInsensitive(filenameOrg, newExtension)) {
             /* Filename already ends with target-extension. */
             return filenameOrg;
-        }
-        final CompiledFiletypeExtension filetypeNew = CompiledFiletypeFilter.getExtensionsFilterInterface(newExtension);
-        if (filetypeNew == null) {
+        } else if (filetypeNew == null) {
             /* Unknown new filetype -> Do not touch given filename */
+            logger.info("unknown new extension:" + newExtension);
             return filenameOrg;
         }
         final int lastIndex = filenameOrg.lastIndexOf(".");
@@ -498,32 +473,31 @@ public abstract class Plugin implements ActionListener {
         }
         final CompiledFiletypeExtension filetypeOld = CompiledFiletypeFilter.getExtensionsFilterInterface(currentFileExtension);
         if (filetypeOld == null) {
+            logger.info("Unknown old filetype:" + currentFileExtension);
             /* Unknown current/old filetype -> Do not touch given filename */
             return filenameOrg;
-        }
-        if (filetypeNew.isValidExtension(currentFileExtension)) {
-            /* Filename already contains valid/alternative target-extension e.g. webm/mp4 */
+        } else if (filetypeNew.isValidExtension(currentFileExtension)) {
+            /* Filename already contains valid/alternative target-extension e.g. webm/mp4 or jpg/jpeg */
             return filenameOrg;
-        }
-        if ((CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(filetypeOld) || CompiledFiletypeFilter.ImageExtensions.JPG.isSameExtensionGroup(filetypeOld) || CompiledFiletypeFilter.AudioExtensions.MP3.isSameExtensionGroup(filetypeOld)) && filetypeNew.isSameExtensionGroup(filetypeOld)) {
+        } else if ((CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(filetypeOld) || CompiledFiletypeFilter.ImageExtensions.JPG.isSameExtensionGroup(filetypeOld) || CompiledFiletypeFilter.AudioExtensions.MP3.isSameExtensionGroup(filetypeOld)) && filetypeNew.isSameExtensionGroup(filetypeOld)) {
             final String filenameWithoutExtension = filenameOrg.substring(0, lastIndex);
             return filenameWithoutExtension + newExtension;
+        } else {
+            return filenameOrg;
         }
-        return filenameOrg;
     }
 
     /**
-     * Adds extension to given filename if given filename does not already end with new extension. </br>
-     * Do not use this to replace a file extension with another one if you clearly know what to replace with what because this will auto
-     * decide whether to replace or append the new extension!
+     * Adds extension to given filename if given filename does not already end with new extension. </br> Do not use this to replace a file
+     * extension with another one if you clearly know what to replace with what because this will auto decide whether to replace or append
+     * the new extension!
      */
     public String applyFilenameExtension(final String filenameOrg, String newExtension) {
         if (filenameOrg == null) {
             return null;
         } else if (StringUtils.isEmpty(newExtension)) {
             return filenameOrg;
-        }
-        if (!newExtension.startsWith(".")) {
+        } else if (!newExtension.startsWith(".")) {
             newExtension = "." + newExtension;
         }
         if (StringUtils.endsWithCaseInsensitive(filenameOrg, newExtension)) {
@@ -541,14 +515,19 @@ public abstract class Plugin implements ActionListener {
             return filenameOrg + newExtension;
         }
         final CompiledFiletypeExtension filetypeNew = CompiledFiletypeFilter.getExtensionsFilterInterface(newExtension);
-        if (filetypeNew != null && filetypeNew.isSameExtensionGroup(filetypeOld)) {
-            /* Same filetype (e.g. old is image, new is image) -> Replace old extension with new extension e.g. .png to .jpg */
-            final String filenameWithoutExtension = filenameOrg.substring(0, lastIndex);
-            return filenameWithoutExtension + newExtension;
-        } else {
-            /* Apply new extension */
-            return filenameOrg + newExtension;
+        if (filetypeNew != null) {
+            if (filetypeNew.isValidExtension(currentFileExtension)) {
+                /* Filename already contains valid/alternative target-extension e.g. webm/mp4 or jpg/jpeg */
+                return filenameOrg;
+            } else if (filetypeNew.isSameExtensionGroup(filetypeOld)) {
+                /* Same filetype (e.g. old is image, new is image) -> Replace old extension with new extension e.g. .png to .jpg */
+                final String filenameWithoutExtension = filenameOrg.substring(0, lastIndex);
+                return filenameWithoutExtension + newExtension;
+            }
         }
+        /* Apply new extension */
+        return filenameOrg + newExtension;
+
     }
 
     protected boolean isConnectionOffline(Throwable e) {
@@ -1170,17 +1149,15 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Displays a BubbleNotification. </br>
-     * Plugins which are expected to use this function should return LazyPlugin.FEATURE of type BUBBLE_NOTIFICATION. </br>
-     * Any plugin can try to display a BubbleNotification but upper handling may decide not to display it depending on user settings. </br>
-     * Examples of Plugins using this functionality: RedditComCrawler, TwitterComCrawler, HighWayCore
+     * Displays a BubbleNotification. </br> Plugins which are expected to use this function should return LazyPlugin.FEATURE of type
+     * BUBBLE_NOTIFICATION. </br> Any plugin can try to display a BubbleNotification but upper handling may decide not to display it
+     * depending on user settings. </br> Examples of Plugins using this functionality: RedditComCrawler, TwitterComCrawler, HighWayCore
      */
-    protected void displayBubbleNotification(String title, final String text, final Icon icon) {
-        final String finaltitle = title = getHost() + ": " + title;
+    protected void displayBubbleNotification(final String title, final String text, final Icon icon) {
         BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
             @Override
             public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                return new BasicNotify(finaltitle, text, icon == null ? new AbstractIcon(IconKey.ICON_INFO, 32) : icon);
+                return new BasicNotify(title, text, icon == null ? new AbstractIcon(IconKey.ICON_INFO, 32) : icon);
             }
         });
     }

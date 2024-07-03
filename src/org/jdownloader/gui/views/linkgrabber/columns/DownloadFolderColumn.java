@@ -7,6 +7,14 @@ import java.util.ArrayList;
 
 import javax.swing.JPopupMenu;
 
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackage.TYPE;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
@@ -22,14 +30,6 @@ import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderInLinkgrabberAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackage.TYPE;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
 
 public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     /**
@@ -146,11 +146,10 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
                 final String packagename;
                 if (object instanceof AbstractPackageNode) {
                     /* Package */
-                    packagename = LinknameCleaner.cleanPackagename(object.getName(), true);
+                    packagename = object.getName();
                 } else {
                     /* File */
-                    final String tmpPackagename = LinknameCleaner.derivePackagenameFromFilename(object.getName());
-                    packagename = LinknameCleaner.cleanPackagename(tmpPackagename, true);
+                    packagename = LinknameCleaner.derivePackagenameFromFilename(object.getName());
                 }
                 pkg.setName(packagename);
             } else {

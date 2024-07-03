@@ -3,6 +3,12 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 import java.io.File;
 import java.util.List;
 
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackage.TYPE;
+
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -12,12 +18,6 @@ import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadFolderAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
-
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackage.TYPE;
 
 public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderAction<CrawledPackage, CrawledLink> {
     /**
@@ -71,8 +71,7 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
              * Source package is a "special" package like "permanently offline" or "various" -> Use the filename of the first item of that
              * package and create a new package name by that.
              */
-            String packageName = LinknameCleaner.derivePackagenameFromFilename(getSelection().getPackageView(entry).getChildren().get(0).getName());
-            packageName = LinknameCleaner.cleanPackagename(packageName, true);
+            final String packageName = LinknameCleaner.derivePackagenameFromFilename(getSelection().getPackageView(entry).getChildren().get(0).getName());
             pkg.setName(packageName);
         }
         /* Adopt comment of source-package. */

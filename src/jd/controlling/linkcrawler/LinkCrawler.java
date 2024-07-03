@@ -33,6 +33,28 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
+import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
+import jd.nutils.SimpleFTP;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
+import jd.parser.html.HTMLParser.HtmlParserCharSequence;
+import jd.parser.html.HTMLParser.HtmlParserResultSet;
+import jd.plugins.CryptedLink;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginsC;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
@@ -66,29 +88,6 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
-
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
-import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
-import jd.nutils.SimpleFTP;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
-import jd.parser.html.HTMLParser.HtmlParserCharSequence;
-import jd.parser.html.HTMLParser.HtmlParserResultSet;
-import jd.plugins.CryptedLink;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginsC;
 
 public class LinkCrawler {
     private static enum DISTRIBUTE {
@@ -1220,16 +1219,14 @@ public class LinkCrawler {
             }
         }
         {
-            boolean allowFileExtensionCorrection = true;
             String fileName = null;
             final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
             if (dispositionHeader != null && StringUtils.isNotEmpty(dispositionHeader.getFilename())) {
                 // trust given filename extension via Content-Disposition header
-                allowFileExtensionCorrection = false;
                 fileName = dispositionHeader.getFilename();
                 if (dispositionHeader.getEncoding() == null) {
                     try {
-                        fileName = SimpleFTP.BestEncodingGuessingURLDecode(dispositionHeader.getFilename());
+                        fileName = SimpleFTP.BestEncodingGuessingURLDecode(fileName);
                     } catch (final IllegalArgumentException ignore) {
                     } catch (final UnsupportedEncodingException ignore) {
                     } catch (final IOException ignore) {
@@ -1238,23 +1235,11 @@ public class LinkCrawler {
             }
             if (StringUtils.isEmpty(fileName)) {
                 fileName = Plugin.extractFileNameFromURL(con.getRequest().getUrl());
-                if (StringUtils.isEmpty(fileName)) {
-                    fileName = link.getName();
-                }
             }
-            if (fileName != null) {
-                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
-                if (ext != null) {
-                    if (fileName.indexOf(".") < 0) {
-                        fileName = fileName + "." + ext;
-                    } else if (allowFileExtensionCorrection) {
-                        fileName = Plugin.correctOrApplyFileNameExtension(fileName, "." + ext);
-                    }
-                }
-                link.setFinalFileName(fileName);
-                /* save filename in property so we can restore in reset case */
-                link.setProperty("fixName", fileName);
-            }
+
+            link.setFinalFileName(fileName);
+            /* save filename in property so we can restore in reset case */
+            link.setProperty("fixName", fileName);
         }
         link.setAvailable(true);
         final String requestRef = request.getHeaders().getValue(HTTPConstants.HEADER_REQUEST_REFERER);
@@ -3189,7 +3174,7 @@ public class LinkCrawler {
                 }
                 fpi.setDestinationFolder(CrossSystem.fixPathSeparators(fp.getDownloadDirectory() + File.separator));
             }
-            final String name = LinknameCleaner.cleanPackagename(fp.getName(), fp.isCleanupPackageName());
+            final String name = fp.getName();
             if (StringUtils.isNotEmpty(name)) {
                 if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
                     fpi = new PackageInfo();

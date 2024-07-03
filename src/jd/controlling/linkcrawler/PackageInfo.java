@@ -1,7 +1,8 @@
 package jd.controlling.linkcrawler;
 
+import jd.controlling.linkcollector.LinknameCleaner;
+
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class PackageInfo {
@@ -50,7 +51,7 @@ public class PackageInfo {
 
     public PackageInfo getCopy() {
         final PackageInfo ret = new PackageInfo();
-        ret.setName(getName());
+        ret.name = this.name;// avoid cleanPackagename
         ret.setDestinationFolder(getDestinationFolder());
         ret.setDestinationFolderRoot(getDestinationFolderRoot());
         ret.setIgnoreVarious(isIgnoreVarious());
@@ -63,10 +64,11 @@ public class PackageInfo {
     }
 
     public void setName(String name) {
+        name = LinknameCleaner.cleanPackagename(name, false);
         if (StringUtils.isEmpty(name)) {
             this.name = null;
         } else {
-            this.name = CrossSystem.alleviatePathParts(name);
+            this.name = name;
         }
     }
 

@@ -48,6 +48,50 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
+import jd.PluginWrapper;
+import jd.captcha.JACMethod;
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.NoGateWayException;
+import jd.http.ProxySelectorInterface;
+import jd.http.Request;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.Formatter;
+import jd.nutils.JDHash;
+import jd.plugins.Account.AccountError;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadInterfaceFactory;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
@@ -73,6 +117,7 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
@@ -149,49 +194,6 @@ import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdateHandler;
 
-import jd.PluginWrapper;
-import jd.captcha.JACMethod;
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.NoGateWayException;
-import jd.http.ProxySelectorInterface;
-import jd.http.Request;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
-import jd.nutils.JDHash;
-import jd.plugins.Account.AccountError;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadInterfaceFactory;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien herunterladen koennen
  *
@@ -200,10 +202,11 @@ import jd.plugins.download.Downloadable;
 public abstract class PluginForHost extends Plugin {
     private static final String    COPY_MOVE_FILE = "CopyMoveFile";
     private static final Pattern[] PATTERNS       = new Pattern[] {
-            /**
-             * these patterns should split filename and fileextension (extension must include the point)
-             */
-            // multipart rar archives
+                                                  /**
+                                                   * these patterns should split filename and fileextension (extension must include the
+                                                   * point)
+                                                   */
+                                                  // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
             // normal files with extension
             Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
@@ -1374,16 +1377,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         *
+         * 
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         *
+         * 
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         *
+         * 
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         *
-         *
-         *
+         * 
+         * 
+         * 
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);
@@ -1581,8 +1584,27 @@ public abstract class PluginForHost extends Plugin {
         return enablePremium;
     }
 
-    public void setDownloadLink(DownloadLink link) {
+    public DownloadLink setDownloadLink(DownloadLink link) {
+        final DownloadLink ret = getDownloadLink();
         this.link = link;
+        return ret;
+    }
+
+    protected Account getCurrentAccount() {
+        final Thread thread = Thread.currentThread();
+        if (thread instanceof SingleDownloadController) {
+            final Account account = ((SingleDownloadController) thread).getAccount();
+            if (account != null && StringUtils.equals(getHost(), account.getHosterByPlugin())) {
+                return account;
+            }
+        } else if (thread instanceof AccountCheckerThread) {
+            final AccountCheckJob job = ((AccountCheckerThread) thread).getJob();
+            final Account account = job != null ? job.getAccount() : null;
+            if (account != null && StringUtils.equals(getHost(), account.getHosterByPlugin())) {
+                return account;
+            }
+        }
+        return null;
     }
 
     public DownloadLink buildAccountCheckDownloadLink(final Account account) {
@@ -1783,10 +1805,9 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Determines whether or not mass- linkchecking is allowed. </br>
-     * If it is always possible, simply override PluginForHost.checkLinks(final DownloadLink[] urls). </br>
-     * If it is generally possible but not always e.g. depending whether an apikey is given or not, override this method. Example: </br>
-     * org.jdownloader.plugins.components.XFileSharingProBasic
+     * Determines whether or not mass- linkchecking is allowed. </br> If it is always possible, simply override
+     * PluginForHost.checkLinks(final DownloadLink[] urls). </br> If it is generally possible but not always e.g. depending whether an
+     * apikey is given or not, override this method. Example: </br> org.jdownloader.plugins.components.XFileSharingProBasic
      */
     public boolean internal_supportsMassLinkcheck() {
         return implementsCheckLinks(this);
@@ -3070,11 +3091,9 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Override this if API login is needed for this plugin. </br>
-     * Return an URL which will lead the user to his API key and/or instructions on how to login via API in JDownloader. </br>
-     * Example(s): </br>
-     * pixeldrain.com: https://pixeldrain.com/user/connect_app?app=jdownloader </br>
-     * cocoleech.com: https://members.cocoleech.com/settings
+     * Override this if API login is needed for this plugin. </br> Return an URL which will lead the user to his API key and/or instructions
+     * on how to login via API in JDownloader. </br> Example(s): </br> pixeldrain.com:
+     * https://pixeldrain.com/user/connect_app?app=jdownloader </br> cocoleech.com: https://members.cocoleech.com/settings
      */
     protected String getAPILoginHelpURL() {
         return null;
@@ -3086,8 +3105,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Use this to pre-validate login credentials. </br>
-     * This method works locally/offline and shall not perform any http requests!
+     * Use this to pre-validate login credentials. </br> This method works locally/offline and shall not perform any http requests!
      *
      * @throws AccountInvalidException
      */
@@ -3125,6 +3143,145 @@ public abstract class PluginForHost extends Plugin {
 
     public boolean isSameAccount(Account downloadAccount, AbstractProxySelectorImpl downloadProxySelector, Account candidateAccount, AbstractProxySelectorImpl candidateProxySelector) {
         return downloadProxySelector == candidateProxySelector && downloadAccount == candidateAccount;
+    }
+
+    protected URLConnectionAdapter basicLinkCheck(final Browser br, final Request request, final DownloadLink link, final String customFileName, final String defaultExtension) throws IOException, PluginException {
+        return basicLinkCheck(br, request, link, customFileName, defaultExtension, FILENAME_SOURCE.values());
+    }
+
+    public static interface FilenameSourceInterface {
+
+        public String getFilename(Plugin plugin, DownloadLink link, String customName, String customExtension, URLConnectionAdapter con);
+
+        public boolean setFilename(Plugin plugin, DownloadLink link, final String filename);
+    }
+
+    /**
+     * do not change order as it serves as default order for basicLinkCheck method
+     *
+     * @author daniel
+     *
+     */
+    public static enum FILENAME_SOURCE implements FilenameSourceInterface {
+        CUSTOM() {
+            @Override
+            public String getFilename(Plugin plugin, DownloadLink link, String customName, String customExtension, URLConnectionAdapter con) {
+                String ret = customName;
+                if (ret != null && plugin != null) {
+                    ret = plugin.correctOrApplyFileNameExtension(ret, customExtension, con);
+                }
+                return ret;
+            }
+        },
+        FINAL() {
+            @Override
+            public String getFilename(Plugin plugin, DownloadLink link, String customName, String customExtension, URLConnectionAdapter con) {
+                String finalFilename = link != null ? link.getFinalFileName() : null;
+                if (finalFilename != null && plugin != null) {
+                    finalFilename = plugin.correctOrApplyFileNameExtension(finalFilename, customExtension, con);
+                }
+                return finalFilename;
+            }
+        },
+        HEADER() {
+            @Override
+            public String getFilename(Plugin plugin, DownloadLink link, String customName, String customExtension, URLConnectionAdapter con) {
+                return con != null ? getFileNameFromDispositionHeader(con) : null;
+            }
+        },
+        URL() {
+            @Override
+            public String getFilename(Plugin plugin, DownloadLink link, String customName, String customExtension, URLConnectionAdapter con) {
+                String urlFilename = con != null ? getFileNameFromURL(con.getURL()) : null;
+                if (urlFilename != null && plugin != null) {
+                    urlFilename = plugin.correctOrApplyFileNameExtension(urlFilename, customExtension, con);
+                }
+                return urlFilename;
+            }
+        },
+        PLUGIN() {
+            @Override
+            public String getFilename(Plugin plugin, DownloadLink link, String customName, String customExtension, URLConnectionAdapter con) {
+                String pluginFilename = link != null ? link.getNameSetbyPlugin() : null;
+                if (pluginFilename != null && plugin != null) {
+                    pluginFilename = plugin.correctOrApplyFileNameExtension(pluginFilename, customExtension, con);
+                }
+                return pluginFilename;
+            }
+        };
+
+        @Override
+        public boolean setFilename(Plugin plugin, DownloadLink link, String filename) {
+            if (filename != null) {
+                link.setFinalFileName(filename);
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+    }
+
+    protected URLConnectionAdapter basicLinkCheck(final Browser br, final Request request, final DownloadLink link, final String customFileName, final String defaultExtension, final FILENAME_SOURCE... fileNameSource) throws IOException, PluginException {
+        URLConnectionAdapter con = null;
+        try {
+            br.setFollowRedirects(true);
+            request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
+            con = br.openRequestConnection(request);
+            handleConnectionErrors(br, con);
+            if (con.getCompleteContentLength() > 0) {
+                if (con.isContentDecoded()) {
+                    link.setVerifiedFileSize(-1);
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+            }
+            if (fileNameSource != null && fileNameSource.length > 0) {
+                for (FILENAME_SOURCE source : fileNameSource) {
+                    final String filename = source.getFilename(this, link, customFileName, defaultExtension, con);
+                    if (source.setFilename(this, link, filename)) {
+                        break;
+                    }
+                }
+            }
+            if (RequestMethod.HEAD.equals(request.getRequestMethod())) {
+                br.followConnection();
+            }
+            return con;
+        } finally {
+            try {
+                if (con != null) {
+                    con.disconnect();
+                }
+            } catch (final Throwable e) {
+            }
+        }
+    }
+
+    protected void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            throwConnectionExceptions(br, con);
+            throwFinalConnectionException(br, con);
+        }
+    }
+
+    protected void throwConnectionExceptions(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        switch (con.getResponseCode()) {
+        case 403:
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+        case 404:
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        case 429:
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "429 Too Many Requests", 1 * 60 * 1000l);
+        case 503:
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 connection limit reached", 5 * 60 * 1000l);
+        }
+    }
+
+    protected void throwFinalConnectionException(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Content broken?");
     }
 
     protected Thread showCookieLoginInfo() {
