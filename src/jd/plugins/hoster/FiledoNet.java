@@ -281,7 +281,6 @@ public class FiledoNet extends PluginForHost {
                 return null;
             } else {
                 logger.info("Performing full login");
-                br.setHeader("authorization", apikey);
                 br.getPage(API_BASE + "/user");
                 return (Map<String, Object>) this.callAPI(br.createGetRequest(API_BASE + "/user"), account, null);
             }
@@ -295,18 +294,15 @@ public class FiledoNet extends PluginForHost {
         final String premiumUntilStr = PluginJSonUtils.getJson(br, "premiumUntil");
         long premiumUntil = -1;
         if (premiumUntilStr != null) {
-            premiumUntil = TimeFormatter.getMilliSeconds(premiumUntilStr, "yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH);
+            premiumUntil = TimeFormatter.getMilliSeconds(premiumUntilStr, "yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.ENGLISH);
         }
         if (premiumUntil == -1 || premiumUntil < System.currentTimeMillis()) {
             ai.setExpired(true);
             return ai;
         }
-        final String trafficleftStr = (String) resp.get("dailyDownloadLimit");
-        final String trafficleftMaxStr = (String) resp.get("maxDailyDownloadLimit");
-        ai.setTrafficLeft(Long.parseLong(trafficleftStr) * 1024);
-        ai.setTrafficMax(Long.parseLong(trafficleftMaxStr) * 1024);
+        ai.setTrafficLeft(((Number) resp.get("dailyDownloadLimit")).longValue() * 1024);
+        ai.setTrafficMax(((Number) resp.get("maxDailyDownloadLimit")).longValue() * 1024);
         account.setType(AccountType.PREMIUM);
-        account.setMaxSimultanDownloads(6);
         ai.setValidUntil(premiumUntil, br);
         final String user = (String) resp.get("secret");
         if (!StringUtils.isEmpty(user)) {
@@ -324,7 +320,7 @@ public class FiledoNet extends PluginForHost {
         }
         br.getPage(req);
         if (br.getHttpConnection().getResponseCode() == 401) {
-            throw new AccountInvalidException("Falsche Filedo-ID");
+            throw new AccountInvalidException();
         }
         return checkErrors(account, link);
     }
@@ -361,15 +357,7 @@ public class FiledoNet extends PluginForHost {
     }
 
     private String getApikey(final Account account) {
-        return correctPassword(account.getPass());
-    }
-
-    private static String correctPassword(final String pw) {
-        if (pw != null) {
-            return pw.trim();
-        } else {
-            return null;
-        }
+        return account.getPass();
     }
 
     @Override
@@ -381,7 +369,7 @@ public class FiledoNet extends PluginForHost {
     protected boolean looksLikeValidAPIKey(final String str) {
         if (str == null) {
             return false;
-        } else if (str.matches(".+")) {
+        } else if (str.replace("-", "").trim().matches("[a-f0-9]{32}")) {
             // TODO: Add proper validation
             return true;
         } else {
@@ -396,7 +384,7 @@ public class FiledoNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return Integer.MAX_VALUE;
+        return 6;
     }
 
     @Override
