@@ -431,7 +431,6 @@ public abstract class Plugin implements ActionListener {
     }
 
     public String correctOrApplyFileNameExtension(final String filenameOrg, String newExtension, URLConnectionAdapter connection) {
-        // https://svn.jdownloader.org/projects/jd/repository/revisions/49206/diff/trunk/src/jd/plugins/Plugin.java
         if (connection != null) {
             final String extensionFromConnection = getExtensionFromConnection(connection);
             if (extensionFromConnection != null) {
@@ -444,10 +443,6 @@ public abstract class Plugin implements ActionListener {
             return filenameOrg;
         } else if (!newExtension.startsWith(".")) {
             newExtension = "." + newExtension;
-        }
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /* Testing: do not alter filenames in stable version */
-            return filenameOrg;
         }
         final CompiledFiletypeExtension filetypeNew = CompiledFiletypeFilter.getExtensionsFilterInterface(newExtension);
         if (!filenameOrg.contains(".")) {
