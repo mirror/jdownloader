@@ -16,8 +16,10 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
@@ -60,7 +62,7 @@ public class ProtectedTo extends PluginForDecrypt {
         return buildAnnotationUrls(getPluginDomains());
     }
 
-    private static final String PATTERN_RELATIVE_FOLDER      = "(?i)/f-[a-f0-9]{16}";
+    private static final String PATTERN_RELATIVE_FOLDER      = "(?i)/f-([a-f0-9]{16})";
     private static final String PATTERN_RELATIVE_SINGLE_ITEM = "(?i)/\\?code=.+";
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
@@ -74,11 +76,12 @@ public class ProtectedTo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String contenturl = param.getCryptedUrl().replaceFirst("^(?i)http://", "https://");
-        final String urlpath = new Regex(contenturl, this.getSupportedLinks()).getMatch(0);
-        if (urlpath.matches(PATTERN_RELATIVE_SINGLE_ITEM)) {
+        final Regex itemsingle = new Regex(contenturl, PATTERN_RELATIVE_SINGLE_ITEM);
+        final Regex itemfolder;
+        if (itemsingle.patternFind()) {
             /* Single result */
             br.setFollowRedirects(false);
-            // br.setCookie("protected.to", "ASP.NET_SessionId", "3ssf3qnhwp4bqga2u1adykwp");
+            // br.setCookie("protected.to", "ASP.NET_SessionId", "<someHash>");
             br.getPage(contenturl);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -94,8 +97,9 @@ public class ProtectedTo extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             ret.add(this.createDownloadlink(redirect));
-        } else {
+        } else if ((itemfolder = new Regex(contenturl, PATTERN_RELATIVE_FOLDER)).patternFind()) {
             /* Multiple results */
+            final String folderID = itemfolder.getMatch(0);
             br.setFollowRedirects(true);
             br.getPage(contenturl);
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -109,12 +113,18 @@ public class ProtectedTo extends PluginForDecrypt {
             }
             final String captchaurl = br.getRegex("(/Captcha\\?id[a-zA-Z0-9_/\\+\\=\\-%]+)").getMatch(0);
             final String imageCaptchaKey = "CaptchaInputText";
-            if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(continueform)) {
-                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-                continueform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            } else if (continueform.hasInputFieldByName(imageCaptchaKey)) {
+            final boolean captchaNeeded;
+            if (continueform.hasInputFieldByName(imageCaptchaKey) && captchaurl != null) {
                 final String code = this.getCaptchaCode(captchaurl, param);
                 continueform.put(imageCaptchaKey, Encoding.urlEncode(code));
+                captchaNeeded = true;
+            } else if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(continueform)) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                continueform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                captchaNeeded = true;
+            } else {
+                logger.info("No captcha required");
+                captchaNeeded = false;
             }
             br.submitForm(continueform);
             String html = br.getRegex("<div class=\"well Encrypted-box[^\"]+\">(.*?)</div>\\s+</div>").getMatch(0);
@@ -122,25 +132,61 @@ public class ProtectedTo extends PluginForDecrypt {
                 /* Fallback */
                 html = br.getRequest().getHtmlCode();
             }
-            if (getCaptchaform(br) != null) {
+            if (captchaNeeded && getCaptchaform(br) != null) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            final String[] links = br.getRegex("<a href=\\'(https?://[^\\']+)'>").getColumn(0);
-            if (links == null || links.length == 0) {
+            final String[] ids = br.getRegex("data-slug=\"([a-f0-9]{16})").getColumn(0);
+            if (ids == null || ids.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            for (final String singleLink : links) {
-                ret.add(createDownloadlink(singleLink));
+            final String token = br.getRegex("var token = \"([^\"]+)\"").getMatch(0);
+            if (token == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            FilePackage fp = null;
             String title = br.getRegex("<h3 class=\"Encrypted-folder\"[^>]*>([^<]+)</h3>").getMatch(0);
             if (title != null) {
                 title = Encoding.htmlDecode(title).trim();
                 /* Remove total filesize from end of title */
                 title = title.replaceFirst("\\s*\\[\\s*\\d+\\.\\d+[^\\[]+\\s*$", "");
-                final FilePackage fp = FilePackage.getInstance();
+                fp = FilePackage.getInstance();
                 fp.setName(title);
-                fp.addLinks(ret);
             }
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            final HashSet<String> dupes = new HashSet<String>();
+            int index = -1;
+            for (final String id : ids) {
+                index++;
+                logger.info("Crawling item " + index + "/" + ids.length);
+                if (!dupes.add(id)) {
+                    continue;
+                }
+                final boolean isLastItem = index == ids.length - 1;
+                logger.info("Crawling single link with ID: " + id);
+                final UrlQuery query = new UrlQuery();
+                query.add("token", Encoding.urlEncode(token));
+                query.add("folder", folderID);
+                query.add("link", id);
+                brc.postPage("/admin/Main/GetInFo", query);
+                final String finallink = brc.getRegex("^redirect: (https?://.+)").getMatch(0);
+                if (finallink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final DownloadLink link = createDownloadlink(finallink);
+                if (fp != null) {
+                    link._setFilePackage(fp);
+                }
+                ret.add(link);
+                distribute(link);
+                if (!isLastItem) {
+                    /* Important else we can only crawl the first item! */
+                    this.sleep(2500, param);
+                }
+            }
+        } else {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return ret;
     }
