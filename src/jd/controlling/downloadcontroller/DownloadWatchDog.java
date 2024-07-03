@@ -4093,58 +4093,50 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                          * We know that we can write in the directory but can we write the specific file we want to write? </br>
                          * The filename could still be too long!
                          */
-                        /*
-                         * TODO: 2023-11-10: Check if this is needed. It's probably easier- and easier readable if we just make sure that
-                         * auto renamed filenames are never longer than the original filename?!
-                         */
-                        final File writeTest1 = fileOutput;
-                        try {
-                            FilePathChecker.createFilePath(fileOutput);
-                            final RandomAccessFile raf1 = IO.open(writeTest1, "rw");
-                            raf1.close();
-                            if (!writeTest1.delete()) {
-                                /* This should never never never happen! */
-                                logger.warning("Failed to delete test-written file");
-                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                        File writeTest1 = fileOutput;
+                        final List<File> processFiles = downloadLink.getDefaultPlugin().listProcessFiles(downloadLink);
+                        if (processFiles != null) {
+                            /*
+                             * Get list of all possible files the related plugin could write and pick the longest one to perform our
+                             * write-test. Typically this will be our temporary .part file.
+                             */
+                            int maxlen = fileOutput.getName().length();
+                            for (final File file : processFiles) {
+                                if (file.getName().length() > maxlen && !file.exists()) {
+                                    maxlen = file.getName().length();
+                                    writeTest1 = file;
+                                }
                             }
+                        }
+                        try {
+                            FilePathChecker.createFilePath(writeTest1);
                         } catch (final BadFilePathException e) {
                             /* Looks like filename might be too long -> Check if writing a shortened filename would be possible. */
+                            // TODO: Check up to len 233
                             final int maxFilenameLength = 219;
                             final boolean allowAutoShortenFilenames = true;
                             if (e.getReason() != PathFailureReason.PATH_SEGMENT_TOO_LONG) {
                                 throw e;
                             } else if (fileName.length() <= maxFilenameLength) {
                                 /*
-                                 * Does not look like too long filename -> Must be a different reason, possibly permission problem -> Give
-                                 * up.
+                                 * Does not look like too long filename -> Write-fail must have happened for a different reason, possibly
+                                 * permission problem -> Give up.
                                  */
                                 logger.info("Looks like filename is too long but it's not");
                                 // throw e;
                                 throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
                             } else if (!allowAutoShortenFilenames) {
+                                /* Filename shortening is not allowed. */
                                 throw e;
                             }
                             /* Shorten filename and try again */
                             String shortenedFilename;
+                            // TODO: Make sure to catch complete extension here, especially in order to not break multipart archives
                             final String ext = Plugin.getFileNameExtensionFromString(fileName);
                             if (ext != null) {
                                 /* Filename contains extension -> Shorten name and keep extension */
-                                final int targetFilenameLengthWithoutExt = 200;
-                                /*
-                                 * Buffer zone for file extension so that shortening filenames will hopefully not destroy the filename
-                                 * structure of multi part archives [also an edge case].
-                                 */
-                                final int remainingMaxLengthForExt = maxFilenameLength - targetFilenameLengthWithoutExt;
-                                if (ext.length() > remainingMaxLengthForExt) {
-                                    /*
-                                     * Edge case: Looks like super long file-extension -> Do not care about "buffer-zone", just shorten
-                                     * filename to total max length.
-                                     */
-                                    shortenedFilename = fileName.substring(0, maxFilenameLength - ext.length());
-                                } else {
-                                    final int shortenToLength = Math.min(targetFilenameLengthWithoutExt, fileName.length() - ext.length());
-                                    shortenedFilename = fileName.substring(0, shortenToLength);
-                                }
+                                final int shortenToLength = Math.min(maxFilenameLength - ext.length(), fileName.length() - ext.length());
+                                shortenedFilename = fileName.substring(0, shortenToLength);
                             } else {
                                 /* Filename does not contain extension -> Just shorten it to max allowed length. */
                                 shortenedFilename = fileName.substring(0, maxFilenameLength);
