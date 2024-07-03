@@ -59,7 +59,7 @@ public class IPFS extends PluginForDecrypt {
                     name = getFileNameFromURL(br._getURL());
                 }
                 if (name == null) {
-                    final String extension = getExtensionFromMimeType(con);
+                    final String extension = getExtensionFromConnection(con);
                     name = cid + (extension != null ? ("." + extension) : "");
                 }
             }

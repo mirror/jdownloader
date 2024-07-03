@@ -19,10 +19,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -31,9 +27,12 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class Mangakakalot extends PluginForDecrypt {
@@ -162,7 +161,7 @@ public class Mangakakalot extends PluginForDecrypt {
                     continue;
                 }
                 final DownloadLink link = createDownloadlink(realURL);
-                final String ext = Plugin.getFileNameExtensionFromURL(realURL);
+                final String ext = getFileNameExtensionFromURL(realURL);
                 if (chapterTitle != null && ext != null) {
                     link.setFinalFileName(mangaTitle + "_" + chapterTitle + "-Page_" + StringUtils.formatByPadLength(padLength, pageNumber) + ext);
                 }

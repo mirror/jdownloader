@@ -16,15 +16,12 @@
 package jd.plugins.decrypter;
 
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -45,6 +42,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.VscoCo;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VscoCoCrawler extends PluginForDecrypt {
@@ -208,9 +209,9 @@ public class VscoCoCrawler extends PluginForDecrypt {
                             final String filename = username + "_" + media.get("_id") + getFileNameExtensionFromString(url_content, Boolean.TRUE.equals(isVideo) ? ".mp4" : ".jpg");
                             String filenameFromURL = null;
                             try {
-                                filenameFromURL = Plugin.getFileNameFromURL(url_content);
+                                filenameFromURL = Plugin.getFileNameFromURL(new URL(url_content));
                             } catch (MalformedURLException e) {
-                                e.printStackTrace();
+                                logger.log(e);
                             }
                             final DownloadLink link = this.createDownloadlink(url_content);
                             link.setContentUrl(media.get("permalink").toString());
@@ -298,9 +299,9 @@ public class VscoCoCrawler extends PluginForDecrypt {
             final String filename = username + "_" + media.get("id") + getFileNameExtensionFromString(url_content, Boolean.TRUE.equals(isVideo) ? ".mp4" : ".jpg");
             String filenameFromURL = null;
             try {
-                filenameFromURL = Plugin.getFileNameFromURL(url_content);
+                filenameFromURL = Plugin.getFileNameFromURL(new URL(url_content));
             } catch (MalformedURLException e) {
-                e.printStackTrace();
+                logger.log(e);
             }
             final DownloadLink link = this.createDownloadlink(url_content);
             link.setContentUrl(media.get("permalink").toString());

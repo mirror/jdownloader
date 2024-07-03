@@ -15,14 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -42,6 +39,10 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.BatoTo;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { BatoTo.class })
@@ -137,7 +138,7 @@ public class BatoToCrawlerV3 extends PluginForDecrypt {
                     final String urlEncoded = imageArray.get(1).toString();
                     final String url = Encoding.htmlOnlyDecode(urlEncoded);
                     final DownloadLink image = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
-                    final String filenameFromURL = Plugin.getFileNameFromURL(url);
+                    final String filenameFromURL = Plugin.getFileNameFromURL(new URL(url));
                     if (filenameFromURL != null) {
                         image.setFinalFileName(StringUtils.formatByPadLength(padLength, position) + "_" + filenameFromURL);
                     }

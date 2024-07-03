@@ -15,13 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Map;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -41,6 +37,11 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BangbrosCom;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbrosold.com", "mygf.com" }, urls = { "https?://members\\.bangbros\\.com/product/\\d+/movie/\\d+|https?://(?:bangbrothers\\.(?:com|net)|bangbros\\.com)/video\\d+/[a-z0-9\\-]+", "https?://members\\.mygf\\.com/product/\\d+/movie/\\d+" })
 public class BangbrosComCrawler extends PluginForDecrypt {
@@ -174,7 +175,7 @@ public class BangbrosComCrawler extends PluginForDecrypt {
                 if (preferServersideOriginalFilenames) {
                     String originalFilename = null;
                     if (streamingURL != null) {
-                        originalFilename = Plugin.getFileNameFromURL(streamingURL);
+                        originalFilename = Plugin.getFileNameFromURL(new URL(streamingURL));
                     }
                     if (originalFilename != null) {
                         video.setFinalFileName(originalFilename);
@@ -211,7 +212,7 @@ public class BangbrosComCrawler extends PluginForDecrypt {
             if (preferServersideOriginalFilenames) {
                 String originalFilename = UrlQuery.parse(directurl_photos).get("filename");
                 if (originalFilename == null) {
-                    originalFilename = Plugin.getFileNameFromURL(directurl_photos);
+                    originalFilename = Plugin.getFileNameFromURL(new URL(directurl_photos));
                 }
                 if (originalFilename != null) {
                     dl.setFinalFileName(originalFilename);
@@ -234,7 +235,7 @@ public class BangbrosComCrawler extends PluginForDecrypt {
             if (preferServersideOriginalFilenames) {
                 String originalFilename = UrlQuery.parse(directurl_screencaps).get("filename");
                 if (originalFilename == null) {
-                    originalFilename = Plugin.getFileNameFromURL(directurl_screencaps);
+                    originalFilename = Plugin.getFileNameFromURL(new URL(directurl_screencaps));
                 }
                 if (originalFilename != null) {
                     dl.setFinalFileName(originalFilename);

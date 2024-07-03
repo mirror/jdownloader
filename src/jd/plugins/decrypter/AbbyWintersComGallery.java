@@ -15,10 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -38,6 +37,8 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.AbbyWintersCom;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { AbbyWintersCom.class })
@@ -107,7 +108,7 @@ public class AbbyWintersComGallery extends PluginForDecrypt {
             int position = 0;
             for (String imageurl : imgurls) {
                 imageurl = Encoding.htmlDecode(imageurl);
-                final DownloadLink link = new DownloadLink(hosterPlugin, Plugin.getFileNameFromURL(imageurl), this.getHost(), imageurl, true);
+                final DownloadLink link = new DownloadLink(hosterPlugin, Plugin.getFileNameFromURL(new URL(imageurl)), this.getHost(), imageurl, true);
                 link._setFilePackage(fp);
                 link.setAvailable(true);
                 link.setLinkID(this.getHost() + "://image/" + br._getURL().getPath() + position);

@@ -15,9 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -35,6 +34,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "https?://[\\w\\.]*?chauthanh\\.info/(animeDownload/anime/.*?|\\w+/view/[^/]+)\\.html" })
 public class ChThnhInfoCrawler extends PluginForDecrypt {
@@ -109,7 +110,7 @@ public class ChThnhInfoCrawler extends PluginForDecrypt {
                 }
                 final DownloadLink link = createDownloadlink(DirectHTTP.createURLForThisPlugin(finallink));
                 link.setAvailable(true);
-                final String weakFilename = Plugin.getFileNameFromURL(finallink);
+                final String weakFilename = Plugin.getFileNameFromURL(new URL(finallink));
                 if (weakFilename != null) {
                     link.setName(Encoding.htmlDecode(weakFilename).trim().replace(".html", ""));
                 }

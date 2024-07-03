@@ -19,9 +19,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,6 +32,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ProtectedTo extends PluginForDecrypt {
@@ -152,8 +152,7 @@ public class ProtectedTo extends PluginForDecrypt {
                 fp = FilePackage.getInstance();
                 fp.setName(title);
             }
-            final Browser brc = br.cloneBrowser();
-            brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+
             final HashSet<String> dupes = new HashSet<String>();
             int index = -1;
             for (final String id : ids) {
@@ -168,6 +167,8 @@ public class ProtectedTo extends PluginForDecrypt {
                 query.add("token", Encoding.urlEncode(token));
                 query.add("folder", folderID);
                 query.add("link", id);
+                final Browser brc = br.cloneBrowser();
+                brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 brc.postPage("/admin/Main/GetInFo", query);
                 final String finallink = brc.getRegex("^redirect: (https?://.+)").getMatch(0);
                 if (finallink == null) {

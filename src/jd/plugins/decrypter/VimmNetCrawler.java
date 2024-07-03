@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -34,6 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.VimmNet;
+
+import org.appwork.storage.TypeRef;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VimmNetCrawler extends PluginForDecrypt {
@@ -117,8 +117,7 @@ public class VimmNetCrawler extends PluginForDecrypt {
             }
             /**
              * There are file-hashes available but it looks like those are for the files inside the .zip archives so we can't make use of
-             * them. </br>
-             * See fields GoodHash, GoodMd5, GoodSha1
+             * them. </br> See fields GoodHash, GoodMd5, GoodSha1
              */
             if (filesizeAltZippedStr != null && filesizeAltZippedStr.toString().matches("\\d+") && resourcelist.size() == 1 && downloadformatsOptions != null && downloadformatsOptions.length >= 2) {
                 /* Alternative version is available */

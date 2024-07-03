@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -271,7 +272,7 @@ public class Gogoplay4Com extends PluginForDecrypt {
                 /* Extract some additional information so we can skip linkcheck. */
                 final String b64 = UrlQuery.parse(streamLink).get("url");
                 final String b64decodedURL = Encoding.Base64Decode(b64);
-                final String filename = Plugin.getFileNameFromURL(b64decodedURL);
+                final String filename = Plugin.getFileNameFromURL(new URL(b64decodedURL));
                 if (filename != null && StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {
                     link.setName(filename);
                     link.setAvailable(true);

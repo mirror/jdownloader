@@ -20,10 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -37,10 +33,13 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FotografDe extends PluginForDecrypt {
@@ -168,7 +167,7 @@ public class FotografDe extends PluginForDecrypt {
             if (!StringUtils.isEmpty(title)) {
                 title = title.trim();
                 /* 2022-06-11: File-extension should always be .jpg */
-                String ext = Plugin.getFileNameExtensionFromURL(url);
+                String ext = getFileNameExtensionFromURL(url);
                 if (ext == null) {
                     /* Fallback */
                     ext = ".jpg";

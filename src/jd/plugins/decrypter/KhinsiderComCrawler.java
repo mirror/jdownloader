@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -164,7 +165,7 @@ public class KhinsiderComCrawler extends PluginForDecrypt {
             int index = 0;
             for (final String directurl : directurls) {
                 final DownloadLink direct = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl), false);
-                final String filenameFromURL = Plugin.getFileNameFromURL(directurl);
+                final String filenameFromURL = Plugin.getFileNameFromURL(new URL(directurl));
                 direct.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, "downloads." + getHost());
                 if (filenameFromURL != null) {
                     /*

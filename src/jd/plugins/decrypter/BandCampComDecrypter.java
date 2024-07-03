@@ -25,14 +25,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -46,12 +38,19 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BandCampCom;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { BandCampCom.class })
@@ -352,8 +351,8 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             dateTimestamp = dateToTimestamp(dateStr);
         }
         /**
-         * Not all albums have playable audio tracks so for some, all we can crawl is the album cover art. </br>
-         * Example-album without any streamable tracks: https://midsummerex.bandcamp.com/album/intl
+         * Not all albums have playable audio tracks so for some, all we can crawl is the album cover art. </br> Example-album without any
+         * streamable tracks: https://midsummerex.bandcamp.com/album/intl
          */
         boolean isSingleTrack = new Regex(br.getURL(), BandCampCom.PATTERN_SINGLE_TRACK).patternFind();
         final List<Map<String, Object>> albumtracks = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(json);
@@ -433,10 +432,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                                             if (fileSize > 0) {
                                                 videoEntry.setDownloadSize(fileSize);
                                             }
-                                            String fileExtension = Plugin.getFileNameExtensionFromURL(videoURL);
-                                            if (fileExtension == null) {
-                                                fileExtension = "mp4";
-                                            }
+                                            String fileExtension = getFileNameExtensionFromURL(videoURL, "mp4");
                                             videoEntry.setProperty(BandCampCom.PROPERTY_FILE_TYPE, fileExtension);
                                             ret.add(videoEntry);
                                         }
