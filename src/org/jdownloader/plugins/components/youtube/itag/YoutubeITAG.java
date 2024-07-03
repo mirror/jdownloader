@@ -179,13 +179,20 @@ public enum YoutubeITAG {
     // AudioCodec.AAC, AudioBitrate.KBIT_128),
     MP4_VIDEO_360P_H264_AUDIO_AAC_3D_V1(82, StreamContainer.MP4, VideoResolution.P_360, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_96),
     MP4_VIDEO_360P_H264_AUDIO_AAC_V1(18, StreamContainer.MP4, VideoResolution.P_360, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_96),
-    // 192 kbits aac
-    MP4_VIDEO_720P_H264_AUDIO_AAC(22, StreamContainer.MP4, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_192),
     MP4_VIDEO_720P_H264_AUDIO_AAC_3D(84, StreamContainer.MP4, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_192),
     MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V1(84, StreamContainer.MP4, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_128),
     MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V3(84, StreamContainer.MP4, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_152),
-    MP4_VIDEO_720P_H264_AUDIO_AAC_V1(22, StreamContainer.MP4, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_128),
+    /**
+     * Starting since May 2024, the Format 22 is removed for every YouTube videos uploaded.
+     *
+     * https://gist.github.com/MartinEesmaa/2f4b261cb90a47e9c41ba115a011a4aa
+     */
+    @Deprecated
+    MP4_VIDEO_720P_H264_AUDIO_AAC(22, StreamContainer.MP4, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_192),
+    @Deprecated
     MP4_VIDEO_720P_H264_AUDIO_AAC_V3(22, StreamContainer.MP4, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_152),
+    @Deprecated
+    MP4_VIDEO_720P_H264_AUDIO_AAC_V1(22, StreamContainer.MP4, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_128),
     // http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
     MP4_VIDEO_AUDIO_ORIGINAL(38, StreamContainer.MP4, VideoResolution.P_2160, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_192),
     // fake id
