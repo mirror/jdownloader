@@ -50,6 +50,13 @@ public class UploadrarCom extends XFileSharingProBasic {
     }
 
     @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("uploadrar.net"); // 2024-07-03
+        return deadDomains;
+    }
+
+    @Override
     public String[] scanInfo(String[] fileInfo) {
         super.scanInfo(fileInfo);
         if (StringUtils.isEmpty(fileInfo[0])) {

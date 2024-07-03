@@ -427,7 +427,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         if (aweme_detail == null || aweme_detail.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        return this.crawlProcessWebsiteMediaMapSingleTiktokItem(hostPlg, aweme_detail, null, true);
+        return this.crawlProcessWebsiteMediaMapSingleTiktokItem(hostPlg, aweme_detail, null, forceGrabAll);
     }
 
     private void checkErrorsWebsite(final Browser br) throws PluginException, DecrypterRetryException {

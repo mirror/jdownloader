@@ -132,13 +132,13 @@ public interface TiktokConfig extends PluginConfigInterface {
         WEBSITE {
             @Override
             public String getLabel() {
-                return "Website [Max first ~30 items, also private profiles]";
+                return "[!BROKEN!] Website [Max first ~30 items, also private profiles]";
             }
         },
         API {
             @Override
             public String getLabel() {
-                return "API [All items, only public profiles]";
+                return "[!BROKEN!] API [All items, only public profiles]";
             }
         };
     }
