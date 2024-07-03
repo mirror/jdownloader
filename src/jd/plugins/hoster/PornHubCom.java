@@ -1730,7 +1730,7 @@ public class PornHubCom extends PluginForHost {
              */
             return true;
         } else {
-            if ("debrid-link.fr".equals(plugin.getHost())) {
+            if ("debrid-link.fr".equals(plugin.getHost()) || "debrid-link.com".equals(plugin.getHost())) {
                 // only supports 360p
                 return false;
             } else {

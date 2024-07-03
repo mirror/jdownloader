@@ -58,9 +58,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "debrid-link.fr" }, urls = { "" })
-public class DebridLinkFr2 extends PluginForHost {
-    private static MultiHosterManagement mhm                                                 = new MultiHosterManagement("debrid-link.fr");
+@HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "debrid-link.com" }, urls = { "" })
+public class DebridLinkCom extends PluginForHost {
+    private static MultiHosterManagement mhm                                                 = new MultiHosterManagement("debrid-link.com");
     private static final String          PROPERTY_DIRECTURL                                  = "directurl";
     private static final String          PROPERTY_MAXCHUNKS                                  = "maxchunks";
     private static final String          PROPERTY_ACCOUNT_ACCESS_TOKEN                       = "access_token";
@@ -86,14 +86,24 @@ public class DebridLinkFr2 extends PluginForHost {
         }
     }
 
-    public DebridLinkFr2(PluginWrapper wrapper) {
+    public DebridLinkCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://debrid-link.fr/premium");
+        this.enablePremium("https://" + getHost() + "/premium");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://debrid-link.fr/tos";
+        return "https://" + getHost() + "/tos";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        /* 2024-07-03: Changed main domain from debrid-link.fr to debrid-link.com */
+        if (host == null || host.equalsIgnoreCase("debrid-link.fr")) {
+            return this.getHost();
+        } else {
+            return super.rewriteHost(host);
+        }
     }
 
     private static Browser prepBR(final Browser prepBr) {
@@ -409,7 +419,7 @@ public class DebridLinkFr2 extends PluginForHost {
 
     /**
      * Sets token validity. </br>
-     * 2021-02-19: Token validity is set to 1 month via: https://debrid-link.fr/webapp/account/apps
+     * 2021-02-19: Token validity is set to 1 month via: https://debrid-link.com/webapp/account/apps
      */
     private void accountSetTokenValidity(final Account account, final long expiresIn) {
         account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_VALID_UNTIL, System.currentTimeMillis() + expiresIn * 1000l);
@@ -422,20 +432,21 @@ public class DebridLinkFr2 extends PluginForHost {
         } else {
             pin_url_to_open_in_browser = pin_url;
         }
+        final String domain = getHost();
         final Thread thread = new Thread() {
             public void run() {
                 try {
                     String message = "";
                     final String title;
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Debrid-link.fr - Login";
+                        title = domain + " - Login";
                         message += "Hallo liebe(r) debrid-link NutzerIn\r\n";
                         message += "Um deinen debrid-link Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
                         message += "1. Öffne diesen Link im Browser falls das nicht automatisch passiert:\r\n\t'" + pin_url + "'\t\r\n";
                         message += "2. Gib diesen PIN Code ein: " + user_code + "\r\n";
                         message += "Dein Account sollte nach einigen Sekunden von JDownloader akzeptiert werden.\r\n";
                     } else {
-                        title = "Debrid-link.fr - Login";
+                        title = domain + " - Login";
                         message += "Hello dear debrid-link user\r\n";
                         message += "In order to use this service in JDownloader, you need to follow these steps:\r\n";
                         message += "1. Open this URL in your browser if it is not opened automatically:\r\n\t'" + pin_url + "'\t\r\n";

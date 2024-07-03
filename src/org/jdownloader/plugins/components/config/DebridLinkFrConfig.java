@@ -7,7 +7,7 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.Type;
 
-@PluginHost(host = "debrid-link.fr", type = Type.HOSTER)
+@PluginHost(host = "debrid-link.com", type = Type.HOSTER)
 public interface DebridLinkFrConfig extends PluginConfigInterface {
     public static enum PreferredDomain implements LabelInterface {
         DEFAULT {
