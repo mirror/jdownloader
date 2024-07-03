@@ -103,7 +103,7 @@ public interface TiktokConfig extends PluginConfigInterface {
         WEBSITE {
             @Override
             public String getLabel() {
-                return "Website [Sometimes with watermark, also private videos if account is given]";
+                return "Website [Usually without watermark, also private videos if account is given]";
             }
         },
         WEBSITE_EMBED {

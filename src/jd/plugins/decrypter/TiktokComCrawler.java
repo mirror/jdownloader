@@ -1127,10 +1127,12 @@ public class TiktokComCrawler extends PluginForDecrypt {
             final Boolean has_watermark = Boolean.TRUE.equals(video.get("has_watermark"));
             Map<String, Object> downloadInfo = (Map<String, Object>) video.get("download_addr");
             if (downloadInfo == null) {
-                /* Fallback/old way */
-                final String downloadJson = video.get("misc_download_addrs").toString();
-                final Map<String, Object> misc_download_addrs = restoreFromString(downloadJson, TypeRef.MAP);
-                downloadInfo = (Map<String, Object>) misc_download_addrs.get("suffix_scene");
+                /* Look for official download json */
+                final String downloadJson = (String) video.get("misc_download_addrs");
+                if (downloadJson != null) {
+                    final Map<String, Object> misc_download_addrs = restoreFromString(downloadJson, TypeRef.MAP);
+                    downloadInfo = (Map<String, Object>) misc_download_addrs.get("suffix_scene");
+                }
             }
             final Map<String, Object> play_addr = (Map<String, Object>) video.get("play_addr");
             /* Get non-HD directurl */
