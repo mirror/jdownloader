@@ -504,7 +504,6 @@ public class GoogleDrive extends PluginForHost {
         } else {
             setFilename(plugin, link, Boolean.FALSE, filename, setFinalFilename);
         }
-        link.setProperty(PROPERTY_CACHED_FILENAME, filename);
         if (filesize > -1) {
             if (setVerifiedFilesize) {
                 link.setVerifiedFileSize(filesize);
@@ -618,7 +617,6 @@ public class GoogleDrive extends PluginForHost {
             link.setProperty(PROPERTY_GOOGLE_DOCUMENT_FILE_EXTENSION, finalFileExtensionWithoutDot);
         }
         setFilename(plg, link, Boolean.TRUE, filename, true);
-        link.setProperty(PROPERTY_CACHED_FILENAME, link.getFinalFileName());
     }
 
     private AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
@@ -758,7 +756,6 @@ public class GoogleDrive extends PluginForHost {
         }
         if (!StringUtils.isEmpty(filename)) {
             setFilename(this, link, null, filename, true);
-            link.setProperty(PROPERTY_CACHED_FILENAME, filename);
         } else {
             /**
              * Try to use cached name if we are unable to find one at this moment. </br>
@@ -854,7 +851,6 @@ public class GoogleDrive extends PluginForHost {
             filename = PluginJSonUtils.unescape(filename);
             filename = Encoding.unicodeDecode(filename).trim();
             setFilename(this, link, isGoogleDocument, filename, true);
-            link.setProperty(PROPERTY_CACHED_FILENAME, filename);
         } else {
             logger.warning("Failed to find filename");
         }
@@ -940,6 +936,12 @@ public class GoogleDrive extends PluginForHost {
         } else {
             link.setName(filename);
         }
+        /**
+         * Set filename as property so we can use it later at places where a filename can't be found but is needed. </br>
+         * Example: File was checked successfully but later on download-attempt, it is quota limited and in that case some GDrive endpoints
+         * will not provide a filename.
+         */
+        link.setProperty(PROPERTY_CACHED_FILENAME, filename);
     }
 
     /** Returns directurl for original file download items and google document items. */
@@ -1672,38 +1674,18 @@ public class GoogleDrive extends PluginForHost {
     }
 
     private void errorAccountRequiredOrPrivateFile(final Browser br, final DownloadLink link, final Account account) throws IOException, InterruptedException, PluginException {
-        errorAccountRequiredOrPrivateFile(br, link, account, true);
-    }
-
-    private void errorAccountRequiredOrPrivateFile(final Browser br, final DownloadLink link, final Account account, final boolean verifyLoginStatus) throws IOException, InterruptedException, PluginException {
         synchronized (LOCK) {
             if (link == null) {
-                /* Problem happened during account-check -> Account must be invalid */
+                /* Problem happened during account-check (this should never happen!) -> Account must be invalid */
                 throw new AccountInvalidException();
             } else if (account == null) {
+                /* User does not have an account but the file can only be downloaded by logged-in users. */
                 logger.info("Looks like a private file and no account given -> Ask user to add one");
                 throw new AccountRequiredException();
             } else {
-                /*
-                 * Typically Google will redirect us to accounts.google.com for private files but this can also happen when login session is
-                 * expired -> Extra check is needed
-                 */
-                final String directurl = link.getStringProperty(PROPERTY_DIRECTURL);
-                if (account != null && directurl != null) {
-                    /**
-                     * 2023-01-25: TODO: Temporary errorhandling for "Insufficient permissions" error happening for public files. </br>
-                     * 2023-03-01: We should be able to remove this now as login handling has been refactored.
-                     */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Try again later or delete your google account and re-add it");
-                } else {
-                    logger.info("Checking if we got a private file or a login session failure");
-                    final Browser brc = br.cloneBrowser();
-                    final GoogleHelper helper = new GoogleHelper(brc, this.getLogger());
-                    helper.validateCookies(account);
-                    /* No exception -> Login session is okay -> We can be sure that this is a private file! */
-                    link.setProperty(PROPERTY_LAST_IS_PRIVATE_FILE_TIMESTAMP, System.currentTimeMillis());
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Insufficient permissions: Private file");
-                }
+                /* User has account but that account is missing permissions to access that file. */
+                link.setProperty(PROPERTY_LAST_IS_PRIVATE_FILE_TIMESTAMP, System.currentTimeMillis());
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Insufficient permissions: Private file");
             }
         }
     }
@@ -2177,15 +2159,18 @@ public class GoogleDrive extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
-        if (link != null) {
-            link.setProperty(DirectHTTP.PROPERTY_ServerComaptibleForByteRangeRequest, true);
-            link.removeProperty(PROPERTY_USED_QUALITY);
-            link.removeProperty(PROPERTY_CAN_DOWNLOAD);
-            link.removeProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ACCOUNT);
-            link.removeProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ANONYMOUS);
-            link.removeProperty(PROPERTY_TIMESTAMP_STREAM_QUOTA_REACHED);
-            link.removeProperty(PROPERTY_TMP_STREAM_DOWNLOAD_ACTIVE);
+        if (link == null) {
+            return;
         }
+        link.removeProperty(PROPERTY_DIRECTURL);
+        link.setProperty(DirectHTTP.PROPERTY_ServerComaptibleForByteRangeRequest, true);
+        link.removeProperty(PROPERTY_USED_QUALITY);
+        link.removeProperty(PROPERTY_CAN_DOWNLOAD);
+        link.removeProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ACCOUNT);
+        link.removeProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ANONYMOUS);
+        link.removeProperty(PROPERTY_TIMESTAMP_STREAM_QUOTA_REACHED);
+        link.removeProperty(PROPERTY_TMP_STREAM_DOWNLOAD_ACTIVE);
+        link.removeProperty(PROPERTY_LAST_IS_PRIVATE_FILE_TIMESTAMP);
     }
 
     @Override
