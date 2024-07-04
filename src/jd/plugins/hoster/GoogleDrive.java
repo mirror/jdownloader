@@ -497,7 +497,7 @@ public class GoogleDrive extends PluginForHost {
              * A shortcut can go to another file/folder which has a different ID than the one of this object. We will skip this redirect by
              * making use of this ID right here.
              */
-            // mimeType = shortcutDetails.get("targetMimeType").toString();
+            mimeType = shortcutDetails.get("targetMimeType").toString();
         }
         final String checksumSha256 = (String) entries.get("sha256Checksum");
         final String sha1Checksum = (String) entries.get("sha1Checksum");
