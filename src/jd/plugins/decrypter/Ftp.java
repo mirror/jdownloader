@@ -339,8 +339,7 @@ public class Ftp extends PluginForDecrypt {
                 fp.addLinks(ret);
             }
         } catch (UnknownHostException e) {
-            logger.log(e);
-            throw new DecrypterRetryException(RetryReason.HOST);
+            throw new DecrypterRetryException(RetryReason.HOST, null, null, e);
         } catch (HTTPProxyException e) {
             ProxyController.getInstance().reportHTTPProxyException(proxy, url, e);
             throw e;
