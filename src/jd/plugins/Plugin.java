@@ -402,13 +402,7 @@ public abstract class Plugin implements ActionListener {
      */
     public static String getFileNameFromConnection(final URLConnectionAdapter urlConnection) {
         final Plugin plugin = getCurrentActivePlugin();
-        for (FILENAME_SOURCE source : new FILENAME_SOURCE[] { FILENAME_SOURCE.HEADER, FILENAME_SOURCE.URL }) {
-            final String ret = source.getFilename(plugin, null, null, null, urlConnection);
-            if (ret != null) {
-                return ret;
-            }
-        }
-        return null;
+        return FILENAME_SOURCE.CONNECTION.getFilename(plugin, null, null, null, urlConnection);
     }
 
     protected String getExtensionFromConnection(URLConnectionAdapter connection) {
