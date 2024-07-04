@@ -934,6 +934,9 @@ public abstract class SimpleFTP {
                 }
             }
             if (error && !multilineResponse) {
+                if (!errormsg.endsWith(" ")) {
+                    sb.insert(0, ' ');
+                }
                 throw new IOException((errormsg != null ? errormsg : "revieved unexpected responsecode ") + sb.toString());
             }
         }
@@ -946,6 +949,7 @@ public abstract class SimpleFTP {
             size = readLines(new int[] { 200, 213 }, "SIZE failed");
         } catch (IOException e) {
             if (e.getMessage().contains("SIZE") || e.getMessage().contains("550")) {
+                // SIZE failed 550 /path.....: not a regular file
                 logger.log(e);
                 return -1;
             } else {
@@ -1292,22 +1296,25 @@ public abstract class SimpleFTP {
                     final long size = isFile ? Long.parseLong(entry[2]) : -1;
                     ret.add(new SimpleFTPListEntry(isFile, name.replaceAll(" ", "%20"), cwd, size));
                 } else if (entry.length == 7) {
+                    final boolean isFile = entry[0].startsWith("-");
                     final boolean isFolder = entry[0].startsWith("d");
                     final String name = entry[6];
-                    final boolean isLink;
+                    final boolean isLinkFlag;
                     if (name.contains(" -> ")) {
                         // symlink
-                        isLink = true;
+                        isLinkFlag = true;
                     } else {
-                        isLink = entry[0].startsWith("l");
+                        isLinkFlag = entry[0].startsWith("l");
                     }
-                    final boolean isFile = !isFolder || entry[0].startsWith("-");
+                    final boolean isFileFlag = isFile || !isFolder;
                     final long size = isFile ? Long.parseLong(entry[4]) : -1;
-                    if (isLink) {
+                    if (isLinkFlag) {
                         final String link[] = new Regex(name, "^(.*?)\\s*->\\s*(.+)$").getRow(0);
                         ret.add(new SimpleFTPListEntry(link[0].replaceAll(" ", "%20"), link[1].replaceAll(" ", "%20"), cwd));
+                    } else if (isFileFlag) {
+                        ret.add(new SimpleFTPListEntry(true, name.replaceAll(" ", "%20"), cwd, size));
                     } else {
-                        ret.add(new SimpleFTPListEntry(isFile, name.replaceAll(" ", "%20"), cwd, size));
+                        ret.add(new SimpleFTPListEntry(false, name.replaceAll(" ", "%20"), cwd, size));
                     }
                 }
             }
@@ -1345,7 +1352,10 @@ public abstract class SimpleFTP {
         readLines(new int[] { 226 }, null);
         /* permission,type,user,group,size,date,filename */
         final String listResponse = sb.toString();
-        String[][] matches = new Regex(listResponse, "([-dxrw]+)\\s+(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(\\S+\\s+\\S+\\s+\\S+)\\s+(.*?)[$\r\n]+").getMatches();
+        // first -=file, d=directory, l=link
+        // s=setuid, S=setgid
+        // t/T=sticky bit
+        String[][] matches = new Regex(listResponse, "([-dxrwsStT]+)\\s+(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(\\S+\\s+\\S+\\s+\\S+)\\s+(.*?)[$\r\n]+").getMatches();
         if (matches == null || matches.length == 0) {
             /* date,time,size,name */
             matches = new Regex(listResponse, "(\\S+)\\s+(\\S+)\\s+(<DIR>|\\d+)\\s+(.*?)[$\r\n]+").getMatches();
