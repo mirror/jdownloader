@@ -21,11 +21,9 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -37,7 +35,6 @@ import jd.plugins.PluginForHost;
 public class Up2shaRe extends PluginForHost {
     public Up2shaRe(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
     }
 
     @Override
@@ -45,10 +42,14 @@ public class Up2shaRe extends PluginForHost {
         return "https://up2sha.re/terms-of-service";
     }
 
-    /* Connection stuff */
-    private final boolean FREE_RESUME       = true;
-    private final int     FREE_MAXCHUNKS    = 0;
-    private final int     FREE_MAXDOWNLOADS = 20;
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        return 1;
+    }
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -80,7 +81,16 @@ public class Up2shaRe extends PluginForHost {
             filename = br.getRegex("data\\-toggle=\"truncate\" data\\-length=\"\\d+\">([^<>\"]+)</h1>").getMatch(0);
         }
         if (filename != null) {
-            link.setFinalFileName(Encoding.htmlDecode(filename).trim());
+            filename = Encoding.htmlDecode(filename).trim();
+            /* Extension is sometimes missing */
+            String ext = br.getRegex("Extension\\s*</td>\\s*<td>([^<]+)</td>").getMatch(0);
+            if (ext != null) {
+                ext = Encoding.htmlDecode(ext).trim();
+                filename = this.applyFilenameExtension(filename, ext);
+            }
+            link.setFinalFileName(filename);
+        } else {
+            logger.warning("Failed to find filename");
         }
         if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -91,63 +101,27 @@ public class Up2shaRe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link);
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null) {
-            final String continueLink = br.getRegex("(/files/[^/]+/download\\?token=[^\"\\']+)").getMatch(0);
-            if (continueLink != null) {
-                br.getPage(continueLink);
-            }
-            dllink = br.getRegex("\"(/files/[^/]+/download/send[^\"]+)\"").getMatch(0);
-            if (StringUtils.isEmpty(dllink)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = Encoding.htmlDecode(dllink);
+    private void handleDownload(final DownloadLink link) throws Exception, PluginException {
+        final String continueLink = br.getRegex("(/files/[^/]+/download\\?token=[^\"\\']+)").getMatch(0);
+        if (continueLink != null) {
+            br.getPage(continueLink);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
+        String dllink = br.getRegex("\"(/files/[^/]+/download/send[^\"]+)\"").getMatch(0);
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        dllink = Encoding.htmlOnlyDecode(dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(link, null));
+        this.handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

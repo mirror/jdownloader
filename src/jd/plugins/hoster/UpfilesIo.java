@@ -15,11 +15,18 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -34,14 +41,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UpfilesIo extends PluginForHost {
@@ -58,18 +57,18 @@ public class UpfilesIo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "upfiles.app", "upfiles.io", "upfiles.com", "upfiles.download", "upfilesurls.com" });
+        ret.add(new String[] { "upfiles.com", "upfiles.app", "upfiles.io", "upfiles.download", "upfilesurls.com", "nexnoo.com" });
         return ret;
     }
 
     private final List<String> getDeadDomains() {
-        return Arrays.asList(new String[] { "upfiles.io" });
+        return Arrays.asList(new String[] { "upfiles.io", "upfiles.app" });
     }
 
     public static String[] getAnnotationNames() {
@@ -125,6 +124,42 @@ public class UpfilesIo extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (!link.isNameSet()) {
+            /* Set fallback-name */
+            link.setName(this.getFID(link));
+        }
+        br.setFollowRedirects(true);
+        final String storedDirecturl = link.getStringProperty(PROPERTY_DIRECTURL);
+        if (storedDirecturl != null) {
+            final URLConnectionAdapter con = this.checkDownloadableRequest(link, br, new GetRequest(storedDirecturl), -1, true);
+            if (con != null) {
+                logger.info("Successfully checked stored directurl");
+                link.setFinalFileName(Plugin.getFileNameFromConnection(con));
+                return AvailableStatus.TRUE;
+            }
+        }
+        br.getPage(this.getContentURL(link));
+        checkErrors(br);
+        final String filename = br.getRegex("class=\"file-title[^\"]+\"[^>]*>([^<]+)</div>").getMatch(0);
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename).trim());
+        }
+        final String filesize = br.getRegex("(?i)<h3>\\s*Download\\s*: [^<]* \\(([0-9\\.]+ [A-Za-z]{1,5})\\)</h3>").getMatch(0);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else {
+            /* Harder way to find filesize */
+            final String directurl = getDownloadFileUrl(link, MethodName.requestFileInformation);
+            if (!StringUtils.isEmpty(directurl)) {
+                basicLinkCheck(br, br.createHeadRequest(directurl), link, null, null, FILENAME_SOURCE.FINAL);
+                link.setProperty(PROPERTY_DIRECTURL, br.getHttpConnection().getURL().toExternalForm());
+            }
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         // requestFileInformation(link);
         final String storedDirecturl = link.getStringProperty(PROPERTY_DIRECTURL);
@@ -132,19 +167,19 @@ public class UpfilesIo extends PluginForHost {
         final int maxchunks = 0;
         if (storedDirecturl != null) {
             logger.info("Attempting to re-use stored directurl");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, storedDirecturl, resume, maxchunks);
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                logger.info("Successfully re-used stored directurl");
-                dl.startDownload();
-                return;
-            } else {
-                logger.info("Failed to re-use stored directurl");
-                try {
+            try {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, storedDirecturl, resume, maxchunks);
+                if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                    logger.info("Successfully re-used stored directurl");
+                    dl.startDownload();
+                    return;
+                } else {
+                    logger.info("Failed to re-use stored directurl");
                     br.followConnection(true);
-                } catch (final IOException e) {
-                    /* Purposely catch exception here! */
-                    logger.log(e);
                 }
+            } catch (final Throwable e) {
+                logger.log(e);
+                logger.info("Failed to re-use stored directurl");
             }
         }
         br.setFollowRedirects(true);
@@ -157,31 +192,12 @@ public class UpfilesIo extends PluginForHost {
         if (StringUtils.isEmpty(downloadUrl)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        URLConnectionAdapter con = null;
-        try {
-            br.setFollowRedirects(true);
-            con = br.openGetConnection(downloadUrl);
-            if (this.looksLikeDownloadableContent(con)) {
-                logger.info("This url is a directurl");
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(con).trim()));
-            } else {
-                br.followConnection(true);
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadUrl, resume, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setProperty(PROPERTY_DIRECTURL, con.getURL().toString());
+        link.setProperty(PROPERTY_DIRECTURL, dl.getConnection().getURL().toExternalForm());
         dl.startDownload();
     }
 
@@ -243,58 +259,6 @@ public class UpfilesIo extends PluginForHost {
         br.postPage("/file/go", query3);
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         return entries.get("url").toString();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        if (!link.isNameSet()) {
-            /* Set fallback-name */
-            link.setName(this.getFID(link));
-        }
-        br.setFollowRedirects(true);
-        final String storedDirecturl = link.getStringProperty(PROPERTY_DIRECTURL);
-        if (storedDirecturl != null) {
-            final URLConnectionAdapter con = this.checkDownloadableRequest(link, br, new GetRequest(storedDirecturl), -1, true);
-            if (con != null) {
-                logger.info("Successfully checked stored directurl");
-                link.setFinalFileName(Plugin.getFileNameFromConnection(con));
-                return AvailableStatus.TRUE;
-            }
-        }
-        br.getPage(this.getContentURL(link));
-        checkErrors(br);
-        final String filename = br.getRegex("class=\"file-title[^\"]+\"[^>]*>([^<]+)</div>").getMatch(0);
-        if (filename != null) {
-            link.setName(Encoding.htmlDecode(filename).trim());
-        }
-        final String filesize = br.getRegex("(?i)<h3>\\s*Download\\s*: [^<]* \\(([0-9\\.]+ [A-Za-z]{1,5})\\)</h3>").getMatch(0);
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        final String directurl = getDownloadFileUrl(link, MethodName.requestFileInformation);
-        if (!StringUtils.isEmpty(directurl)) {
-            URLConnectionAdapter con = null;
-            try {
-                br.setFollowRedirects(true);
-                con = br.openGetConnection(directurl);
-                if (this.looksLikeDownloadableContent(con)) {
-                    logger.info("This url is a directurl");
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(con).trim()));
-                    link.setProperty(PROPERTY_DIRECTURL, con.getURL().toString());
-                } else {
-                    br.followConnection();
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return AvailableStatus.TRUE;
     }
 
     private void checkErrors(final Browser br) throws PluginException {
