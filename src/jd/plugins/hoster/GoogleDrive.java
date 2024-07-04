@@ -490,7 +490,15 @@ public class GoogleDrive extends PluginForHost {
             filesize = JavaScriptEngineFactory.toLong(entries.get("size"), -1);
             modifiedDate = (String) entries.get("modifiedTime");
         }
-        final String mimeType = (String) entries.get("mimeType");
+        String mimeType = (String) entries.get("mimeType");
+        final Map<String, Object> shortcutDetails = (Map<String, Object>) entries.get("shortcutDetails");
+        if (shortcutDetails != null) {
+            /*
+             * A shortcut can go to another file/folder which has a different ID than the one of this object. We will skip this redirect by
+             * making use of this ID right here.
+             */
+            // mimeType = shortcutDetails.get("targetMimeType").toString();
+        }
         final String checksumSha256 = (String) entries.get("sha256Checksum");
         final String sha1Checksum = (String) entries.get("sha1Checksum");
         final String checksumMd5 = (String) entries.get("md5Checksum");
@@ -503,6 +511,8 @@ public class GoogleDrive extends PluginForHost {
             parseGoogleDocumentPropertiesAPIAndSetFilename(plugin, link, filename, googleDriveDocumentType, exportLinks);
         } else {
             setFilename(plugin, link, Boolean.FALSE, filename, setFinalFilename);
+            /* Remove this flag just in case this item has been wrongly tagged as a Google Document before. */
+            link.removeProperty(PROPERTY_GOOGLE_DOCUMENT);
         }
         if (filesize > -1) {
             if (setVerifiedFilesize) {
@@ -2171,6 +2181,15 @@ public class GoogleDrive extends PluginForHost {
         link.removeProperty(PROPERTY_TIMESTAMP_STREAM_QUOTA_REACHED);
         link.removeProperty(PROPERTY_TMP_STREAM_DOWNLOAD_ACTIVE);
         link.removeProperty(PROPERTY_LAST_IS_PRIVATE_FILE_TIMESTAMP);
+        /**
+         * 2024-07-04: Workarounds for items which have been wrongly tagged as Google Documents. </br>
+         * TODO: Remove after 01/2025 </br>
+         * Reference: https://board.jdownloader.org/showpost.php?p=536339&postcount=12
+         */
+        final String fname = link.getName();
+        if (link.hasProperty(PROPERTY_GOOGLE_DOCUMENT) && fname != null && fname.matches(".+\\.[a-z0-9]{2,5}\\.zip$")) {
+            link.removeProperty(PROPERTY_GOOGLE_DOCUMENT);
+        }
     }
 
     @Override

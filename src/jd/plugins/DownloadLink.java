@@ -1788,7 +1788,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } else if (hashInfos instanceof List) {
             for (final Object hashInfo : (List) hashInfos) {
                 if (hashInfo instanceof HashInfo) {
-                    setHashInfo((HashInfo) hashInfos);
+                    setHashInfo((HashInfo) hashInfo);
                 } else if (hashInfo instanceof String) {
                     final HashInfo hashInfoParsed = HashInfo.parse(hashInfos.toString(), true, true);
                     this.setHashInfo(hashInfoParsed);
