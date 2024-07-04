@@ -413,8 +413,9 @@ public class Ftp extends PluginForDecrypt {
         }
         if (list == null || list.size() == 0) {
             throw new NoGateWayException(selector, "No Gateway or Proxy Found: " + url);
+        } else {
+            return list;
         }
-        return list;
     }
 
     @Override
