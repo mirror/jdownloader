@@ -384,8 +384,7 @@ public class Ftp extends PluginForDecrypt {
     }
 
     private DownloadLink createDirectFile(SimpleFTPListEntry entry) throws IOException {
-        final String url = entry.getURL().toExternalForm();
-        final DownloadLink ret = createDownloadlink(url);
+        final DownloadLink ret = createDownloadlink(entry.getURL().toExternalForm());
         ret.setAvailable(true);
         if (entry.getSize() >= 0) {
             ret.setVerifiedFileSize(entry.getSize());
