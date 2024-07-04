@@ -95,8 +95,7 @@ public class AparatCom extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         final String extDefault = ".mp4";
         this.setBrowserExclusive();
-        String dllink = link.getStringProperty(PROPERTY_QUALITY_DIRECTURL);
-        dllink += "blaxyy";
+        final String dllink = link.getStringProperty(PROPERTY_QUALITY_DIRECTURL);
         boolean success = false;
         if (dllink != null) {
             try {
