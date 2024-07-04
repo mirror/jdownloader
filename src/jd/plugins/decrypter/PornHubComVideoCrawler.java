@@ -1142,6 +1142,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         return createDownloadlink("https://pornhubdecrypted/" + viewKey + "/" + format + "/" + quality);
     }
 
+    @Override
     public int getMaxConcurrentProcessingInstances() {
         return 2;// seems they try to block crawling
     }

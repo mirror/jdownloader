@@ -418,16 +418,33 @@ public class InstaGramCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 200) {
             /* No error */
             return;
+        } else if (!StringUtils.contains(br.getHttpConnection().getContentType(), "json")) {
+            /* No json -> Nothing we can check for */
+            return;
         }
         /* E.g. {"message": "Invalid media_id 1234561234567862322X", "status": "fail"} */
         /* E.g. {"message": "Media not found or unavailable", "status": "fail"} */
-        Map<String, Object> map = null;
-        String message = null;
-        if (StringUtils.contains(br.getHttpConnection().getContentType(), "json")) {
-            map = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            message = (String) map.get("message");
+        final Map<String, Object> map = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String message = (String) map.get("message");
+        final String status = (String) map.get("status");
+        if (!"fail".equalsIgnoreCase(status)) {
+            /* No fail status -> No error */
+            return;
         }
-        if (br.getHttpConnection().getResponseCode() == 400) {
+        if (message.equalsIgnoreCase("Media not found or unavailable")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* First evaluate error message only, then response-code only */
+        final Map<String, Object> loginChallenge = (Map<String, Object>) map.get("challenge");
+        if (loginChallenge != null) {
+            /* Either the request we made was plain wrong or we were (partly) logged out */
+            /*
+             * {"message":"challenge_required","challenge":{"url":"https://i.instagram.com/challenge/?next=/api/v1/feed/user/...","api_path"
+             * :"/challenge/","hide_webview_header":true,"lock":true,"logout":false,"native_flow":true,"flow_render_type":0},"status":
+             * "fail"}
+             */
+            errorSessionExpired(account);
+        } else if (br.getHttpConnection().getResponseCode() == 400) {
             /* Either the request we made was plain wrong or we were (partly) logged out */
             /*
              * {"message":"challenge_required","challenge":{"url":"https://i.instagram.com/challenge/?next=/api/v1/feed/user/...","api_path"

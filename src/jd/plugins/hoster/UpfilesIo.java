@@ -125,9 +125,14 @@ public class UpfilesIo extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String fid = this.getFID(link);
         if (!link.isNameSet()) {
             /* Set fallback-name */
-            link.setName(this.getFID(link));
+            link.setName(fid);
+        }
+        if (fid.toLowerCase().equals(fid)) {
+            /* Invalid fileID e.g.: https://upfiles.com/contact */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.setFollowRedirects(true);
         final String storedDirecturl = link.getStringProperty(PROPERTY_DIRECTURL);
@@ -185,7 +190,7 @@ public class UpfilesIo extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(getContentURL(link));
         checkErrors(br);
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String downloadUrl = getDownloadFileUrl(link, MethodName.handleFree);
