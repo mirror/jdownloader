@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
@@ -107,11 +108,11 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
             pattern += "embed/[a-z0-9]+|";
             pattern += "embed_player\\.php\\?id=\\d+|";
             /* All videos of a pornstar/model */
-            pattern += "(pornstar|model)/[^/]+(/gifs(/video|/public)?|/public|/videos(/premium|/paid|/upload|/public)?|/from_videos|/photos)?|";
+            pattern += "(pornstar|model)/[^/]+(/gifs(/video|/public)?|/public|/videos(/premium|/paid|/upload|/public)?|/from_videos|/photos)?.*|";
             /* All videos of a channel */
-            pattern += "channels/[A-Za-z0-9\\-_]+(?:/videos)?|";
+            pattern += "channels/[A-Za-z0-9\\-_]+(?:/videos)?.*|";
             /* All videos of a user */
-            pattern += "users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|";
+            pattern += "users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?.*|";
             /* Video playlist */
             pattern += "playlist/\\d+";
             pattern += ")";
@@ -120,7 +121,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_PORNSTAR_VIDEOS_UPLOAD = "(?i)https?://[^/]+/pornstar/([^/]+)/videos/upload$";
+    private static final String TYPE_PORNSTAR_VIDEOS_UPLOAD = "(?i)https?://[^/]+/pornstar/([^/]+)/videos/upload.*";
     private static final String TYPE_PORNSTAR_VIDEOS        = "(?i)https?://[^/]+/pornstar/([^/]+)/videos/?$";
     private static final String TYPE_MODEL_VIDEOS           = "(?i)https?://[^/]+/model/([^/]+)/videos/?$";
     private static final String TYPE_USER_FAVORITES         = "(?i)https?://[^/]+/users/([^/]+)/videos(/?|/favorites/?)$";
@@ -212,6 +213,12 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlModel(final Browser br, final CryptedLink param, final Account account) throws Exception {
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
+        final int resultLimit = cfg.getIntegerProperty(PornHubCom.SETTING_CHANNEL_CRAWLER_LIMIT, PornHubCom.default_SETTING_CHANNEL_CRAWLER_LIMIT);
+        if (resultLimit == 0) {
+            logger.info("User disabled channel crawler -> Returning empty array");
+            return new ArrayList<DownloadLink>();
+        }
         final PornHubCom hosterPlugin = (PornHubCom) this.getNewPluginForHostInstance(this.getHost());
         final String contenturl = getCorrectedContentURL(param.getCryptedUrl());
         PornHubCom.getFirstPageWithAccount(hosterPlugin, account, contenturl);
@@ -239,6 +246,12 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlPornstar(final Browser br, final CryptedLink param, final Account account) throws Exception {
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
+        final int resultLimit = cfg.getIntegerProperty(PornHubCom.SETTING_CHANNEL_CRAWLER_LIMIT, PornHubCom.default_SETTING_CHANNEL_CRAWLER_LIMIT);
+        if (resultLimit == 0) {
+            logger.info("User disabled channel crawler -> Returning empty array");
+            return new ArrayList<DownloadLink>();
+        }
         final PornHubCom hosterPlugin = (PornHubCom) this.getNewPluginForHostInstance(this.getHost());
         final String contenturl = getCorrectedContentURL(param.getCryptedUrl());
         PornHubCom.getFirstPageWithAccount(hosterPlugin, account, contenturl);
@@ -270,16 +283,17 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         if (isOfflineGeneral(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
+        final int resultLimit = cfg.getIntegerProperty(PornHubCom.SETTING_CHANNEL_CRAWLER_LIMIT, PornHubCom.default_SETTING_CHANNEL_CRAWLER_LIMIT);
         final Set<String> pages = new HashSet<String>();
         int page = 0;
         int maxPage = -1;
         int addedItems = 0;
-        int foundItems = 0;
         String ajaxPaginationURL = null;
         final String containerURL = br.getURL();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         do {
-            int numberofActuallyAddedItems = 0;
+            int numberofAddedItemsCurrentPage = 0;
             int numberOfDupeItems = 0;
             page++;
             logger.info(String.format("Crawling page %s| %d / %d", br.getURL(), page, maxPage));
@@ -323,33 +337,33 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                     viewKeys.addAll(Arrays.asList(vKeysAll));
                 }
             }
-            if (viewKeys.size() == 0) {
-                logger.info("no vKeys found!");
-            } else {
-                foundItems += viewKeys.size();
-                for (final String viewkey : viewKeys) {
-                    if (dupes.add(viewkey)) {
-                        final DownloadLink dl = createDownloadlink(br.getURL("/view_video.php?viewkey=" + viewkey).toString());
-                        dl.setContainerUrl(containerURL);
-                        ret.add(dl);
-                        /* Makes testing easier for devs */
-                        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                            distribute(dl);
-                        }
-                        numberofActuallyAddedItems++;
-                        addedItems++;
-                    } else {
-                        numberOfDupeItems++;
+            boolean stopDueToUserDefinedLimit = false;
+            for (final String viewkey : viewKeys) {
+                if (dupes.add(viewkey)) {
+                    final DownloadLink dl = createDownloadlink(br.getURL("/view_video.php?viewkey=" + viewkey).toString());
+                    dl.setContainerUrl(containerURL);
+                    ret.add(dl);
+                    /* Makes testing easier for devs */
+                    if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        distribute(dl);
                     }
+                    numberofAddedItemsCurrentPage++;
+                    addedItems++;
+                    if (addedItems == resultLimit) {
+                        stopDueToUserDefinedLimit = true;
+                        break;
+                    }
+                } else {
+                    numberOfDupeItems++;
                 }
             }
-            if (numberofActuallyAddedItems == 0) {
-                logger.info("Stopping because this page did not contain any NEW content: page=" + page + "|max_page=" + maxPage + "|all_found=" + foundItems + "|all_added=" + addedItems + "|page_found:" + (viewKeys != null ? viewKeys.size() : -1) + "|page_added=" + numberofActuallyAddedItems + "|page_dupes=" + numberOfDupeItems);
+            if (numberofAddedItemsCurrentPage == 0) {
+                logger.info("Stopping because this page did not contain any NEW content: page=" + page + "|max_page=" + maxPage + "|all_added=" + addedItems + "|page_found:" + (viewKeys != null ? viewKeys.size() : -1) + "|page_added=" + numberofAddedItemsCurrentPage + "|page_dupes=" + numberOfDupeItems);
                 break;
             } else {
-                logger.info("found NEW content: page=" + page + "|max_page=" + maxPage + "|all_found=" + foundItems + "|all_added=" + addedItems + "|page_found:" + (viewKeys != null ? viewKeys.size() : -1) + "|page_added=" + numberofActuallyAddedItems + "|page_dupes=" + numberOfDupeItems);
+                logger.info("found NEW content: page=" + page + "|max_page=" + maxPage + "|all_added=" + addedItems + "|page_found:" + (viewKeys != null ? viewKeys.size() : -1) + "|page_added=" + numberofAddedItemsCurrentPage + "|page_dupes=" + numberOfDupeItems);
             }
-            logger.info(String.format("Found %d new items", numberofActuallyAddedItems));
+            logger.info(String.format("Found %d new items", numberofAddedItemsCurrentPage));
             final String next = br.getRegex("page_next[^\"]*\"[^>]*>\\s*<a href=\"([^\"]*?page=\\d+)\"").getMatch(0);
             final String nextAjax = br.getRegex("onclick=\"[^\"]*loadMoreDataStream\\(([^\\)]+)\\)").getMatch(0);
             if (nextAjax != null) {
@@ -376,6 +390,9 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 final int postPage = page + 1;
                 PornHubCom.getPage(br, br.createPostRequest(ajaxPaginationURL + "&page=" + postPage, "o=best&page=" + postPage));
+            } else if (stopDueToUserDefinedLimit) {
+                logger.info("Stopping because: Reached user defined limit: " + resultLimit);
+                break;
             } else {
                 logger.info("Stopping because: no next page! page=" + page + "|max_page=" + maxPage);
                 break;
@@ -389,10 +406,28 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlAllVideosOfAUser(final CryptedLink param, final PornHubCom hosterPlugin, final Account account) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* 2021-08-24: At this moment we never try to find the real/"nice" username - we always use the one that's in our URL. */
         // String username = null;
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
+        final int resultLimit = cfg.getIntegerProperty(PornHubCom.SETTING_CHANNEL_CRAWLER_LIMIT, PornHubCom.default_SETTING_CHANNEL_CRAWLER_LIMIT);
+        if (resultLimit == 0) {
+            logger.info("User disabled channel crawler -> Returning empty array");
+            return ret;
+        }
         String contenturl = getCorrectedContentURL(param.getCryptedUrl());
+        final UrlQuery addedlinkquery = UrlQuery.parse(contenturl);
+        String customServersideSortParameter = null;
+        if (addedlinkquery.list().size() > 0) {
+            /* URL contains parameters */
+            customServersideSortParameter = addedlinkquery.get("o");
+            /* Remove all [other] parameters */
+            contenturl = URLHelper.getUrlWithoutParams(contenturl);
+            /* Add only the sort parameter (if there was one). */
+            if (customServersideSortParameter != null) {
+                contenturl += "?o=" + Encoding.urlEncode(customServersideSortParameter);
+            }
+        }
         final String galleryname;
         if (contenturl.matches(TYPE_PORNSTAR_VIDEOS_UPLOAD)) {
             galleryname = "Uploads";
@@ -487,21 +522,27 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                 break;
             }
             int numberofNewItemsThisPage = 0;
+            boolean stopDueToUserDefinedLimit = false;
             for (final String viewkey : viewkeys) {
-                if (dupes.add(viewkey)) {
-                    // logger.info("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey); // For debugging
-                    final DownloadLink dl = createDownloadlink(br.getURL("/view_video.php?viewkey=" + viewkey).toString());
-                    if (fp != null) {
-                        fp.add(dl);
-                    }
-                    ret.add(dl);
-                    if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                        distribute(dl);
-                    }
-                    numberofNewItemsThisPage++;
+                if (!dupes.add(viewkey)) {
+                    continue;
+                }
+                // logger.info("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey); // For debugging
+                final DownloadLink dl = createDownloadlink(br.getURL("/view_video.php?viewkey=" + viewkey).toString());
+                if (fp != null) {
+                    fp.add(dl);
+                }
+                ret.add(dl);
+                if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    distribute(dl);
+                }
+                numberofNewItemsThisPage++;
+                if (numberofNewItemsThisPage == resultLimit) {
+                    stopDueToUserDefinedLimit = true;
+                    break;
                 }
             }
-            logger.info("New links found on current page " + page + ": " + numberofNewItemsThisPage + " | Total: " + ret.size() + "/" + totalNumberofItemsText);
+            logger.info("New links found on current page " + page + ": " + numberofNewItemsThisPage + " | Total: " + ret.size() + "/" + totalNumberofItemsText + "| customServersideSortParameter: " + customServersideSortParameter);
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
@@ -511,24 +552,29 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
             } else if (numberofNewItemsThisPage == 0) {
                 logger.info("Stopping because: Failed to find any new items on current page");
                 break;
+            } else if (stopDueToUserDefinedLimit) {
+                logger.info("Stopping because: Reached user defined limit: " + resultLimit);
+                break;
             } else {
+                /* Continue to next page */
                 if (numberofNewItemsThisPage < max_entries_per_page) {
                     this.displayBubbleNotification(br._getURL().getPath(), "Current page " + page + " contains less items than max which indicates that this collection of items contains duplicates so number of items in the end might be lower than number of items suggested by website which is " + totalNumberofItemsText + ".\r\nnumberofNewItemsThisPage= " + numberofNewItemsThisPage + " of max items on one page: " + max_entries_per_page);
                 }
-                /* Continue to next page */
                 page++;
                 // PornHubCom.getPage(br, "/users/" + username + "/videos/public/ajax?o=mr&page=" + page);
                 // br.postPage(parameter + "/ajax?o=mr&page=" + page, "");
                 /* e.g. different handling for '/model/' URLs */
                 final Regex nextpageAjaxRegEx = br.getRegex("onclick=\"loadMoreData\\(\\'(/users/[^<>\"\\']+)',\\s*'(\\d+)',\\s*'\\d+'\\)");
                 String nextpage_url = null;
-                String sortValue = null;
+                String sortValue = customServersideSortParameter;
                 if (nextpageAjaxRegEx.patternFind()) {
                     /* New ajax handling */
                     /* Additional fail-safe */
                     final String nextPageStr = nextpageAjaxRegEx.getMatch(1);
                     final UrlQuery nextpageAjaxQuery = UrlQuery.parse(nextpageAjaxRegEx.getMatch(0));
-                    sortValue = nextpageAjaxQuery.get("o");
+                    if (sortValue == null) {
+                        sortValue = nextpageAjaxQuery.get("o");
+                    }
                     if (nextPageStr.equalsIgnoreCase(Integer.toString(page))) {
                         nextpageAjaxQuery.addAndReplace("page", nextPageStr);
                         nextpage_url = nextpageAjaxQuery.toString();
@@ -539,7 +585,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                     }
                 }
                 if (nextpage_url == null) {
-                    final String nextpage_url_old = br.getRegex("class=\"page_next\"[^>]*>\\s*<a href=\"(/[^\"]+\\?page=\\d+)\"").getMatch(0);
+                    final String nextpage_url_old = br.getRegex("class=\"page_next\"[^>]*>\\s*<a href=\"(/[^\"\\']+page=\\d+)\"").getMatch(0);
                     if (nextpage_url_old != null) {
                         /* Old handling */
                         nextpage_url = nextpage_url_old;
@@ -561,6 +607,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                         htmlSourceNeedsFiltering = false;
                     }
                 }
+                nextpage_url = Encoding.htmlOnlyDecode(nextpage_url);
                 PornHubCom.getPage(br, br.createPostRequest(nextpage_url, ""));
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     /* This should be a super rare case */

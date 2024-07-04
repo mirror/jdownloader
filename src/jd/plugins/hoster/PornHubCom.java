@@ -340,6 +340,7 @@ public class PornHubCom extends PluginForHost {
                         return br.getRequest();
                     } else if (--maxLoops > 0) {
                         br.setCookie(br.getHost(), "RNKEY", RNKEY);
+                        br.setCookie(br.getHost(), "KEY", RNKEY);
                         Thread.sleep(1000 + ((8 - maxLoops) * 500));
                         br.getPage(request.cloneRequest());
                         RNKEY = evalRNKEY(br);
@@ -1752,8 +1753,9 @@ public class PornHubCom extends PluginForHost {
     }
 
     /* Similar in: PornHubCom, PornportalCom */
-    public final static String evalRNKEY(Browser br) throws ScriptException {
-        if (br.containsHTML("document.cookie=\"RNKEY") && br.containsHTML("leastFactor")) {
+    public final static String evalRNKEY(final Browser br) throws ScriptException {
+        final String jscookievarname = br.getRegex("document\\.cookie=\"(RNKEY|KEY)=").getMatch(0);
+        if (jscookievarname != null && br.containsHTML("leastFactor")) {
             ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(null);
             ScriptEngine engine = mgr.getEngineByName("JavaScript");
             String js = br.getRequest().getHtmlCode();
@@ -1762,7 +1764,9 @@ public class PornHubCom extends PluginForHost {
             js = js.replaceAll("(/\\*.*?\\*/)", "");
             engine.eval(js + " var ret=go();");
             final String answer = engine.get("ret").toString();
-            return new Regex(answer, "RNKEY=(.+)").getMatch(0);
+            final String realAnswer = new Regex(answer, Pattern.quote(jscookievarname) + "=(.+)").getMatch(0);
+            /* Split this cookie-string, only return first value (cookie-value). */
+            return realAnswer.split(";")[0];
         } else {
             return null;
         }
@@ -1779,6 +1783,8 @@ public class PornHubCom extends PluginForHost {
     public static final String   SETTING_URL_CRAWL_LANGUAGE_HANDLING         = "url_crawl_language_handling";
     public static final int      default_SETTING_URL_CRAWL_LANGUAGE_HANDLING = 0;
     public static final String[] SETTING_URL_CRAWL_LANGUAGE_HANDLING_OPTIONS = new String[] { "Replace subdomain in url with 'www.' -> Title language English", "Do not touch subdomain -> Title language can vary depending on URL" };
+    public static final String   SETTING_CHANNEL_CRAWLER_LIMIT               = "channel_crawler_limit";
+    public static final int      default_SETTING_CHANNEL_CRAWLER_LIMIT       = -1;
 
     /** Returns user configured domain based on domain given in URL we want to access. */
     public static String getConfiguredDomainURL(final String pluginDomain, final String domainFromURL) {
@@ -1883,6 +1889,7 @@ public class PornHubCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GIFS_WEBM, "Prefer webm over old gif format?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_DOMAIN, DOMAINS, "Select preferred domain").setDefaultValue(default_SELECTED_DOMAIN));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SETTING_URL_CRAWL_LANGUAGE_HANDLING, SETTING_URL_CRAWL_LANGUAGE_HANDLING_OPTIONS, "URL crawl handling").setDefaultValue(default_SETTING_URL_CRAWL_LANGUAGE_HANDLING));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SETTING_CHANNEL_CRAWLER_LIMIT, "Channel/Profile crawler: Limit max results [-1 = no limit, 0 = disable crawler]", default_SETTING_CHANNEL_CRAWLER_LIMIT, 10000, 1).setDefaultValue(-1));
     }
 
     @Override
