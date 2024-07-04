@@ -1016,6 +1016,24 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         return getVariant(downloadLink, true);
     }
 
+    @Override
+    public String getPluginCustomURL(DownloadLink link) {
+        String ret = super.getPluginCustomURL(link);
+        if (ret == null && link != null) {
+            try {
+                // provide access via customURL to subtitle URL
+                final AbstractVariant variant = getVariant(link);
+                if (variant != null && DownloadType.SUBTITLES.equals(variant.getType())) {
+                    ret = ((YoutubeSubtitleStorable) variant.getGenericInfo()).getFullUrl();
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            }
+        }
+        return ret;
+
+    }
+
     protected AbstractVariant getVariant(final DownloadLink downloadLink, final boolean storeTempProperty) throws PluginException {
         final Object alternative = downloadLink.getTempProperties().getProperty(YT_ALTERNATE_VARIANT);
         if (alternative != null && alternative instanceof AbstractVariant) {
