@@ -340,8 +340,7 @@ public class Ftp extends PluginForDecrypt {
             }
         } catch (UnknownHostException e) {
             logger.log(e);
-            ret.add(createOfflinelink(cLink.getCryptedUrl()));
-            return ret;
+            throw new DecrypterRetryException(RetryReason.HOST);
         } catch (HTTPProxyException e) {
             ProxyController.getInstance().reportHTTPProxyException(proxy, url, e);
             throw e;
@@ -370,8 +369,8 @@ public class Ftp extends PluginForDecrypt {
             final String path = entry.getURL().getPath();
             final long size = ftp.getSize(path);
             if (size >= 0) {
-                final String url = entry.getURL().toString();
-                final DownloadLink ret = createDownloadlink(url.replace("ftp://", "ftpviajd://"));
+                final String url = entry.getURL().toExternalForm();
+                final DownloadLink ret = createDownloadlink(url);
                 ret.setAvailable(true);
                 ret.setVerifiedFileSize(size);
                 ret.setFinalFileName(SimpleFTP.BestEncodingGuessingURLDecode(entry.getName()));
@@ -381,9 +380,14 @@ public class Ftp extends PluginForDecrypt {
         return null;
     }
 
+    protected DownloadLink createDownloadlink(String link, boolean urlDecode) {
+        // do not URLDecode but keep original name
+        return new DownloadLink(null, null, getHost(), link.replace("ftp://", "ftpviajd://"), true);
+    }
+
     private DownloadLink createDirectFile(SimpleFTPListEntry entry) throws IOException {
-        final String url = entry.getURL().toString();
-        final DownloadLink ret = createDownloadlink(url.replace("ftp://", "ftpviajd://"));
+        final String url = entry.getURL().toExternalForm();
+        final DownloadLink ret = createDownloadlink(url);
         ret.setAvailable(true);
         if (entry.getSize() >= 0) {
             ret.setVerifiedFileSize(entry.getSize());
