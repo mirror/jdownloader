@@ -1356,7 +1356,7 @@ public abstract class SimpleFTP {
         // -=ordinary file
         // s=setuid, S=setgid
         // t/T=sticky bit
-        String[][] matches = new Regex(listResponse, "([dbclps-][rwsStT-]+)\\s+(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(\\S+\\s+\\S+\\s+\\S+)\\s+(.*?)[$\r\n]+").getMatches();
+        String[][] matches = new Regex(listResponse, "([dbclps\\-]{1}[rwxsStT-]+)\\s+(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(\\S+\\s+\\S+\\s+\\S+)\\s+(.*?)[$\r\n]+").getMatches();
         if (matches == null || matches.length == 0) {
             /* date,time,size,name */
             matches = new Regex(listResponse, "(\\S+)\\s+(\\S+)\\s+(<DIR>|\\d+)\\s+(.*?)[$\r\n]+").getMatches();
