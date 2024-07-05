@@ -48,19 +48,16 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.StringTokenizer;
+
+import jd.plugins.Plugin;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.URLHelper;
@@ -191,78 +188,11 @@ public abstract class SimpleFTP {
     }
 
     public static String BestEncodingGuessingURLDecode(final String urlCoded) throws IOException {
-        final List<String> ret = getEncodingGuessingURIDecode(urlCoded, null);
+        final List<String[]> ret = Plugin.decodeURIComponentFindBestEncoding(urlCoded);
         if (ret != null && ret.size() > 0) {
-            return ret.get(0);
+            return ret.get(0)[1];
         } else {
             return urlCoded;
-        }
-    }
-
-    // very simple and dumb guessing for the correct encoding, checks for 'Replacement Character'
-    public static List<String> getEncodingGuessingURIDecode(final String urlCoded, final String tryEncoding) {
-        if (StringUtils.isEmpty(urlCoded)) {
-            return null;
-        }
-        final LinkedHashMap<String, String> results = new LinkedHashMap<String, String>();
-        final List<String> encodings = new ArrayList<String>(Arrays.asList(new String[] { "UTF-8", "cp1251", "ISO-8859-5", "KOI8-R" }));
-        if (tryEncoding != null) {
-            encodings.add(tryEncoding);
-        }
-        for (final String encoding : encodings) {
-            try {
-                results.put(encoding, URLEncode.decodeURIComponent(urlCoded, encoding, true));
-            } catch (final Throwable ignore) {
-                ignore.printStackTrace();
-            }
-        }
-        try {
-            results.put("US_ASCII", new String(ENCODING.ASCII7BIT.toBytes(urlCoded), "US-ASCII"));
-        } catch (final Throwable ignore) {
-            ignore.printStackTrace();
-        }
-        final List<String> bestMatchRound1 = new ArrayList<String>();
-        int best = -1;
-        for (final Entry<String, String> result : results.entrySet()) {
-            int count = 0;
-            final String value = result.getValue();
-            for (int index = 0; index < value.length(); index++) {
-                if ('\uFFFD' == value.charAt(index)) {
-                    count++;
-                }
-            }
-            if (best == -1 || best == count) {
-                best = count;
-                bestMatchRound1.add(result.getKey());
-            } else if (count < best) {
-                best = count;
-                bestMatchRound1.clear();
-                bestMatchRound1.add(result.getKey());
-            }
-        }
-        final List<String> bestMatches = new ArrayList<String>();
-        for (final String bestMatchEncoding : bestMatchRound1) {
-            final String result = results.get(bestMatchEncoding);
-            if (!bestMatches.contains(result)) {
-                bestMatches.add(result);
-            }
-        }
-        if (bestMatches.size() > 0) {
-            Collections.sort(bestMatches, new Comparator<String>() {
-                private final int compare(int x, int y) {
-                    return (x < y) ? -1 : ((x == y) ? 0 : 1);
-                }
-
-                @Override
-                public final int compare(String o1, String o2) {
-                    return compare(o1.length(), o2.length());
-                }
-            });
-        }
-        if (bestMatches.size() > 0) {
-            return bestMatches;
-        } else {
-            return null;
         }
     }
 

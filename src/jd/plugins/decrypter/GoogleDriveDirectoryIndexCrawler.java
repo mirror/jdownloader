@@ -43,7 +43,6 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -152,7 +151,7 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
         if (con != null && looksLikeDownloadableContent(con)) {
             con.disconnect();
             final DownloadLink direct = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(con.getURL().toExternalForm()));
-            final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
+            final DispositionHeader dispositionHeader = parseDispositionHeader(con);
             String dispositionHeaderFilename = null;
             if (dispositionHeader != null && StringUtils.isNotEmpty(dispositionHeaderFilename = dispositionHeader.getFilename())) {
                 direct.setFinalFileName(dispositionHeaderFilename);

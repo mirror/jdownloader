@@ -603,7 +603,12 @@ public class DownloadLinkDownloadable implements Downloadable {
     }
 
     protected DispositionHeader parseDispositionHeader(URLConnectionAdapter connection) {
-        return Plugin.parseDispositionHeader(connection);
+        final PluginForHost plugin = getPlugin();
+        if (plugin != null) {
+            return plugin.getDispositionHeader(connection);
+        } else {
+            return null;
+        }
     }
 
     protected String getFileNameFromURL(URLConnectionAdapter connection) {

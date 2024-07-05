@@ -1250,10 +1250,16 @@ public class YoutubeHelper {
     }
 
     public YoutubeHelper(final Browser br, final LogInterface logger) {
-        this.br = br;
+        this.br = prepareBrowser(br);
         this.logger = logger;
         this.cfg = CFG_YOUTUBE.CFG;
         this.base = "https://www.youtube.com";
+    }
+
+    protected Browser prepareBrowser(Browser br) {
+        br.setCookie("youtube.com", "PREF", "f1=50000000&hl=en");
+        br.setCookie("youtube.com", "hideBrowserUpgradeBox", "true");
+        return br;
     }
 
     public static class StreamMap {
@@ -2280,8 +2286,7 @@ public class YoutubeHelper {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
         br.setFollowRedirects(true);
         /* this cookie makes html5 available and skip controversy check */
-        br.setCookie("youtube.com", "PREF", "f1=50000000&hl=en");
-        br.setCookie("youtube.com", "hideBrowserUpgradeBox", "true");
+        prepareBrowser(br);
         // cookie for new Style(Polymer?)
         // br.setCookie("youtube.com", "VISITOR_INFO1_LIVE", "Qa1hUZu3gtk");
         br.addAllowedResponseCodes(429);

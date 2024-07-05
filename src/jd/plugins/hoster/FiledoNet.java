@@ -120,7 +120,7 @@ public class FiledoNet extends PluginForHost {
     }
 
     public String getPurchasePremiumURL() {
-        return "https://" + getHost() + "/premium";
+        return "https://" + getHost() + "/pricing";
     }
 
     @Override

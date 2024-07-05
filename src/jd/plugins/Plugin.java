@@ -21,10 +21,12 @@ import java.io.File;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -56,6 +58,7 @@ import jd.http.BrowserSettingsThread;
 import jd.http.ProxySelectorInterface;
 import jd.http.StaticProxySelector;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.SimpleFTP.ENCODING;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.PluginForHost.FILENAME_SOURCE;
 import jd.plugins.components.SiteType.SiteTemplate;
@@ -295,6 +298,7 @@ public abstract class Plugin implements ActionListener {
         return ret;
     }
 
+    @Deprecated
     public static String getFileNameFromDispositionHeader(final URLConnectionAdapter urlConnection) {
         final DispositionHeader dispositionHeader = parseDispositionHeader(urlConnection);
         if (dispositionHeader != null) {
@@ -304,9 +308,94 @@ public abstract class Plugin implements ActionListener {
         }
     }
 
+    public static class AutoDispositionHeader extends DispositionHeader {
+        private AutoDispositionHeader(String header, String raw, String filename, Charset encoding) {
+            super(header, raw, filename, encoding);
+        }
+    }
+
+    public static List<String[]> decodeURIComponentFindBestEncoding(final String urlCoded, final String... tryEncodings) {
+        if (StringUtils.isEmpty(urlCoded)) {
+            return null;
+        }
+        final List<String[]> results = new ArrayList<String[]>();
+        final List<String> encodings = new ArrayList<String>(Arrays.asList(new String[] { "UTF-8", "cp1251", "ISO-8859-5", "KOI8-R" }));
+        if (tryEncodings != null) {
+            for (final String tryEncoding : tryEncodings) {
+                if (!encodings.contains(tryEncoding)) {
+                    encodings.add(0, tryEncoding);
+                }
+            }
+        }
+        for (final String encoding : encodings) {
+            try {
+                results.add(new String[] { encoding, URLEncode.decodeURIComponent(urlCoded, encoding, true) });
+            } catch (final Throwable ignore) {
+                ignore.printStackTrace();
+            }
+        }
+        try {
+            results.add(new String[] { "US_ASCII", new String(ENCODING.ASCII7BIT.toBytes(urlCoded), "US-ASCII") });
+        } catch (final Throwable ignore) {
+            ignore.printStackTrace();
+        }
+        Collections.sort(results, new Comparator<String[]>() {
+            private final int compare(int x, int y) {
+                return (x < y) ? -1 : ((x == y) ? 0 : 1);
+            }
+
+            private final int countReplacementCharacter(String string) {
+                int ret = 0;
+                final String value = string;
+                for (int index = 0; index < value.length(); index++) {
+                    final char ch = value.charAt(index);
+                    final Character.UnicodeBlock block = Character.UnicodeBlock.of(ch);
+                    if ('\uFFFD' == ch) {
+                        // https://www.fileformat.info/info/unicode/char/fffd/index.htm
+                        ret++;
+                    } else if (Character.UnicodeBlock.LATIN_1_SUPPLEMENT.equals(block)) {
+                        // https://www.fileformat.info/info/unicode/block/latin_supplement/index.htm
+                        ret++;
+                    } else if (Character.UnicodeBlock.BOX_DRAWING.equals(block)) {
+                        // https://www.fileformat.info/info/unicode/block/box_drawing/index.htm
+                        ret++;
+                    }
+                }
+                return ret;
+            }
+
+            @Override
+            public final int compare(String o1[], String o2[]) {
+                return compare(countReplacementCharacter(o1[1]), countReplacementCharacter(o2[1]));
+            }
+        });
+        if (results.size() > 0) {
+            return results;
+        } else {
+            return null;
+        }
+    }
+
+    public DispositionHeader getDispositionHeader(final URLConnectionAdapter urlConnection) {
+        return parseDispositionHeader(urlConnection);
+    }
+
     public static DispositionHeader parseDispositionHeader(final URLConnectionAdapter urlConnection) {
         final String contentDisposition = urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION);
-        return HTTPConnectionUtils.parseDispositionHeader(contentDisposition);
+        final DispositionHeader ret = HTTPConnectionUtils.parseDispositionHeader(contentDisposition);
+        if (ret == null) {
+            return null;
+        } else if (ret.getEncoding() != null || StringUtils.isEmpty(ret.getFilename()) || ret.getFilename().indexOf('%') == -1) {
+            return ret;
+        } else {
+            final List<String[]> results = decodeURIComponentFindBestEncoding(ret.getFilename());
+            if (results != null && results.size() > 0) {
+                final String[] best = results.get(0);
+                return new AutoDispositionHeader(ret.getHeader(), ret.getRaw(), best[1], Charset.forName(best[0]));
+            } else {
+                return ret;
+            }
+        }
     }
 
     public static String getFileNameFromURL(final URL url) {

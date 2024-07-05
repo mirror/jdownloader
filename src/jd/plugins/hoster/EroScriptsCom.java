@@ -2,17 +2,12 @@ package jd.plugins.hoster;
 
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
@@ -23,8 +18,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+
+import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "discuss.eroscripts.com" }, urls = { "https?://discuss\\.eroscripts\\.com/uploads/([\\w\\-/]+)" })
 public class EroScriptsCom extends antiDDoSForHost {
@@ -130,25 +127,9 @@ public class EroScriptsCom extends antiDDoSForHost {
         }
         // TODO: check if browser instance has cookies set (called by decrypter plugin) so no additional login is required
         login(br, account, false);
-        final Browser testBr = br.cloneBrowser();
-        testBr.setFollowRedirects(true);
-        final URLConnectionAdapter con = openAntiDDoSRequestConnection(testBr, testBr.createGetRequest(link.getPluginPatternMatcher()));
-        try {
-            if (!looksLikeDownloadableContent(con)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
-                if (dispositionHeader != null) {
-                    link.setFinalFileName(dispositionHeader.getFilename());
-                }
-            }
-        } finally {
-            con.disconnect();
-        }
-        link.setPluginPatternMatcher(testBr.getURL());
+        final Browser brc = br.cloneBrowser();
+        basicLinkCheck(brc.cloneBrowser(), brc.createGetRequest(link.getPluginPatternMatcher()), link, null, null);
+        link.setPluginPatternMatcher(brc.getURL());
         return AvailableStatus.TRUE;
     }
 
@@ -157,10 +138,7 @@ public class EroScriptsCom extends antiDDoSForHost {
         requestFileInformation(link);
         // no account required?
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, link.getPluginPatternMatcher());
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 
