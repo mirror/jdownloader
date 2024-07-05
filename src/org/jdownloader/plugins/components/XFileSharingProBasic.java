@@ -4844,24 +4844,24 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         final Form[] forms = br.getForms();
         formLoop: for (final Form form : forms) {
             final List<InputField> fields = form.getInputFields();
-            for (InputField field : fields) {
-                if (field.getKey().matches("^code\\d*$")) {
+            for (final InputField field : fields) {
+                if (field.getKey() != null && field.getKey().matches("^code\\d*$")) {
                     fieldKey = field.getKey();
                     twoFAForm = form;
                     break formLoop;
                 }
             }
-            for (InputField field : fields) {
-                if (field.getKey().matches("^new_ip_token$")) {
+            for (final InputField field : fields) {
+                if (field.getKey() != null && field.getKey().matches("^new_ip_token$")) {
                     fieldKey = field.getKey();
-                    // sendCM
+                    // send.cm -> SendCm class
                     twoFAForm = form;
                     break formLoop;
                 }
             }
         }
         if (twoFAForm == null) {
-            /* Login failed, not due the need of 2FA login */
+            /* No 2FA login needed -> Login failed because user has entered invalid credentials. */
             throw e;
         }
         logger.info("2FA code required");

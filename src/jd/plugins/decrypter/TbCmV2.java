@@ -316,8 +316,6 @@ public class TbCmV2 extends PluginForDecrypt {
                 return super.add(e);
             }
         };
-        br.setFollowRedirects(true);
-        br.setCookie(this.getHost(), "PREF", "hl=en-GB");
         // TODO: Maybe remove this as we're not modifying this URL anymore and also all methods to extract information out of YT URLs work
         // domain-independent.
         String cleanedurl = param.getCryptedUrl();
@@ -327,6 +325,13 @@ public class TbCmV2 extends PluginForDecrypt {
             requestedVariant = AbstractVariant.get(Base64.decodeToString(Encoding.htmlDecode(requestedVariantString)));
             cleanedurl = cleanedurl.replaceAll("(?i)\\#variant=\\S+", "");
         }
+        /**
+         * 2024-07-05 e.g.
+         * https://www.google.com/url?sa=t&source=web&rct=j&opi=123456&url=https://www.youtube.com/watch%3Fv%3DREDACTED&ved=REDACTED&usg=REDACTED
+         * </br>
+         * We can safely url-decode this URL as the items we are looking for are not encoded anyways, all IDs are [a-z0-9_-]
+         */
+        cleanedurl = Encoding.htmlDecode(cleanedurl);
         videoID = getVideoIDFromUrl(cleanedurl);
         // for watch_videos, found within youtube.com music
         final String video_ids_comma_separated = new Regex(cleanedurl, "video_ids=([a-zA-Z0-9\\-_,]+)").getMatch(0);
@@ -338,6 +343,8 @@ public class TbCmV2 extends PluginForDecrypt {
         userName = getUsernameFromUrl(cleanedurl);
         channelID = getChannelIDFromUrl(cleanedurl);
         helper = new YoutubeHelper(br, getLogger());
+        br.setFollowRedirects(true);
+        br.setCookie(this.getHost(), "PREF", "hl=en-GB");
         if (helper.isConsentCookieRequired()) {
             helper.setConsentCookie(br, null);
         }

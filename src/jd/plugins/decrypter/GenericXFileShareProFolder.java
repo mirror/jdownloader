@@ -323,7 +323,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
             final ArrayList<String> tr_snippets = new ArrayList<String>(Arrays.asList(new Regex(html, "((<tr>)?<td.*?</tr>)").getColumn(0)));
             for (final String link : links) {
                 final String linkid = new Regex(link, Pattern.compile("https?://[^/]+/([a-z0-9]{12})", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                if (dupes.contains(linkid)) {
+                if (!dupes.add(linkid)) {
                     /* Skip dupes */
                     continue;
                 }
@@ -331,7 +331,6 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                  * TODO: Consider adding support for "fast linkcheck" option via XFS core (superclass) --> Set links as available here -
                  * maybe only if filename is given inside URL (which is often the case). In general, files inside a folder should be online!
                  */
-                numberofNewItems++;
                 final DownloadLink dl = createDownloadlink(link);
                 String html_snippet = null;
                 final Iterator<String> it = tr_snippets.iterator();
@@ -373,7 +372,8 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 }
                 /* Set ContentURL - VERY important for XFS (Mass-)Linkchecking! */
                 dl.setContentUrl(link);
-                String url_filename = new Regex(link, "[a-z0-9]{12}/(.+)\\.html$").getMatch(0);
+                final String link_quoted = Pattern.quote(link);
+                String url_filename = new Regex(link, "(?i)[a-z0-9]{12}/(.+)\\.html$").getMatch(0);
                 /* E.g. up-4.net */
                 String html_filename = null;
                 String filesizeStr = null;
@@ -387,6 +387,9 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                         /* Only look for unit "bytes" as a fallback! */
                         filesizeStr = new Regex(html_snippet, "([\\d\\.]+ B)").getMatch(0);
                     }
+                } else {
+                    /* Other attempts without pre-found html-snippet */
+                    html_filename = br.getRegex(link_quoted + "\">([^<]+)</a>").getMatch(0);
                 }
                 String filename;
                 if (html_filename != null) {
@@ -397,27 +400,28 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 boolean incompleteFileName = false;
                 if (!StringUtils.isEmpty(filename)) {
                     if (filename.endsWith("&#133;")) {
-                        incompleteFileName = true;
                         /*
                          * Indicates that this is not the complete filename but there is nothing we can do at this stage - full filenames
                          * should be displayed once a full linkcheck is performed or at least once a download starts.
                          */
-                        filename = filename.replace("&#133;", "");
+                        incompleteFileName = true;
                     }
+                    filename = Encoding.htmlDecode(filename);
                     dl.setName(filename);
                 }
                 if (!StringUtils.isEmpty(filesizeStr)) {
                     dl.setDownloadSize(SizeFormatter.getSize(filesizeStr));
                 }
-                if (!incompleteFileName) {
-                    dl.setAvailable(true);
-                }
+                // if (!incompleteFileName) {
+                // dl.setAvailable(true);
+                // }
+                dl.setAvailable(true);
                 if (fp != null) {
                     dl._setFilePackage(fp);
                 }
                 ret.add(dl);
                 distribute(dl);
-                dupes.add(linkid);
+                numberofNewItems++;
             }
         }
         /* These should only be shown when its a /user/ decrypt task */

@@ -142,4 +142,16 @@ public class UploadrarCom extends XFileSharingProBasic {
     public String[] siteSupportedNames() {
         return buildSupportedNames(getPluginDomains());
     }
+
+    @Override
+    protected boolean supports_availablecheck_alt() {
+        // 2024-07-04
+        return false;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filename_abuse() {
+        // 2024-07-04
+        return false;
+    }
 }

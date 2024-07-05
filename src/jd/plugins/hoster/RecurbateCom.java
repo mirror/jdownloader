@@ -25,7 +25,6 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.RecurbateComConfig;
@@ -282,19 +281,19 @@ public class RecurbateCom extends PluginForHost {
             } else {
                 /* Stream download */
                 logger.info("Failed to find highspeed downloadurl -> Trying to download stream");
-                final String token = br.getRegex("data-token\\s*=\\s*\"([^\"]+)\"\\s*data-video-id").getMatch(0);
+                String token = br.getRegex("data-token\\s*=\\s*\"([^\"]+)\"\\s*data-video-id").getMatch(0);
                 if (token == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                token = Encoding.htmlOnlyDecode(token);
                 br.setCookie(br.getHost(), "im18", "true");
                 br.setCookie(br.getHost(), "im18_ets", Long.toString(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000));
                 br.setCookie(br.getHost(), "im18_its", Long.toString(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000));
                 final Browser brc = br.cloneBrowser();
                 brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 brc.getHeaders().put("Accept", "*/*");
-                final UrlQuery query = new UrlQuery();
-                query.add("token", Encoding.urlEncode(token));
-                brc.getPage("/api/video/" + this.getVideoID(link) + "?" + query.toString());
+                /* Do not url-encode token - it can contain further parameters!! */
+                brc.getPage("/api/video/" + this.getVideoID(link) + "?token=" + token);
                 final String streamLink = brc.getRegex("<source\\s*src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\"\\s*/>").getMatch(0);
                 final String hlsURL = brc.getRegex("<source\\s*src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=\"application/x-mpegURL\"").getMatch(0);
                 if (streamLink == null && hlsURL == null) {
