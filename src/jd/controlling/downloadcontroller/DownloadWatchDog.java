@@ -4038,8 +4038,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 final File safeFinalFileDestination = controller.getFileOutput(true, true);
                 if (config.isAllowUnsafeFileNameForFileExistsCheck() == false && controller.getDownloadInstance() == null && safeFinalFileDestination == null) {
                     /**
-                     * Don't proceed when we do not have a finalFilename yet. </br>
-                     * We do not want to do a write-check with an unsafe filename.
+                     * Don't proceed when we do not have a finalFilename yet.
                      */
                     return;
                 }
@@ -4110,11 +4109,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                         try {
                             FilePathChecker.createFilePath(writeTest1);
+                            final boolean devtestForceLongfilenameException = false;
+                            if (devtestForceLongfilenameException && fileName.length() > 219) {
+                                throw new BadFilePathException(writeTest1, PathFailureReason.PATH_SEGMENT_TOO_LONG);
+                            }
                         } catch (final BadFilePathException e) {
                             /* Looks like filename might be too long -> Check if writing a shortened filename would be possible. */
                             // TODO: Check up to len 233
                             final int maxFilenameLength = 219;
-                            final boolean allowAutoShortenFilenames = true;
+                            final boolean allowAutoShortenFilenames = false;
                             if (e.getReason() != PathFailureReason.PATH_SEGMENT_TOO_LONG) {
                                 throw e;
                             } else if (fileName.length() <= maxFilenameLength) {
@@ -4122,7 +4125,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                  * Does not look like too long filename -> Write-fail must have happened for a different reason, possibly
                                  * permission problem -> Give up.
                                  */
-                                logger.info("Looks like filename is too long but it's not");
+                                logger.info("Filename is too long according to Exception but it's not");
                                 // throw e;
                                 throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
                             } else if (!allowAutoShortenFilenames) {
@@ -4156,12 +4159,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 controller.setSessionDownloadFilename(shortenedFilename);
                                 downloadLink.setForcedFileName(shortenedFilename);
                                 downloadLink.setChunksProgress(null);
-                                // TODO: Check this
+                                // TODO: Check this. Maybe at this stage if the shortened file already exists we should just give up.
                                 // fileOutput = writeTest2;
                                 fileExists = true;
                                 break fileDoesntExistHandling;
                                 // throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS, null, e);
                             }
+                            // TODO: Maybe remove this check. If we fail to write the file with the shortened filename later, there is
+                            // nothing we can do anyways.
                             try {
                                 final RandomAccessFile raf2 = IO.open(writeTest2, "rw");
                                 raf2.close();

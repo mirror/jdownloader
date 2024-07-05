@@ -305,7 +305,10 @@ public class ChipDe extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(dl.getConnection())));
+            final String fname = getFileNameFromConnection(dl.getConnection());
+            if (fname != null) {
+                link.setFinalFileName(Encoding.htmlDecode(fname));
+            }
             link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
             dl.startDownload();
         } else {
@@ -388,7 +391,7 @@ public class ChipDe extends PluginForHost {
                     }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                dl.setFilenameFix(true);
+                // dl.setFilenameFix(true);
                 // link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
             }
             link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());

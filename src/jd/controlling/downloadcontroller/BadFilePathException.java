@@ -47,9 +47,9 @@ public class BadFilePathException extends IOException {
         };
     }
 
-    private File   file;
+    private File              file;
     private PathFailureReason reason;
-    private int    index;
+    private int               index;
 
     public BadFilePathException(final File file) {
         init(file, PathFailureReason.INVALID_DESTINATION, -1);
@@ -82,10 +82,15 @@ public class BadFilePathException extends IOException {
         return index;
     }
 
+    /**
+     * Returns path segment which caused the file/folder creation to fail. </br>
+     * If the failure was not caused by a specific segment (e.g. full path too long), this returns the given file item. </br>
+     * This will never return null.
+     */
     public File getProblematicPathSegment() {
         /* TODO: Decide what this should return if no problematic path segment is known */
         if (this.index == -1) {
-            return null;
+            return this.file;
         }
         final List<File> pathList = new ArrayList<File>();
         File next = this.getFile();

@@ -102,7 +102,6 @@ public class GigabazaRu extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.setFilenameFix(true);
         dl.startDownload();
     }
 

@@ -171,7 +171,6 @@ public class FexNet extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        dl.setFilenameFix(true);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {

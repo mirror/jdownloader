@@ -192,8 +192,9 @@ public class ChoMikujPl extends antiDDoSForHost {
                     }
                     /* Only set final filename if it wasn't set before as video and */
                     /* audio streams can have bad filenames */
-                    if (link.getFinalFileName() == null) {
-                        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(con)));
+                    final String fname = getFileNameFromConnection(con);
+                    if (link.getFinalFileName() == null && fname != null) {
+                        link.setFinalFileName(Encoding.htmlDecode(fname));
                     }
                 } else {
                     /* Just because we get html here that doesn't mean that the file is offline ... */
@@ -607,8 +608,6 @@ public class ChoMikujPl extends antiDDoSForHost {
             maxChunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
-        dl.setFilenameFix(true);
-        final URLConnectionAdapter con = dl.getConnection();
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             logger.warning("The final dllink seems not to be a file!");

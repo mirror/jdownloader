@@ -273,7 +273,6 @@ public class LiveMixTapesCom extends antiDDoSForHost {
             }
             link.setProperty(PROPERTY_DIRECTURL, dllink);
         }
-        dl.setFilenameFix(true);
         dl.startDownload();
     }
 
