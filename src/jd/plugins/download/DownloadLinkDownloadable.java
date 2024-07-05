@@ -607,7 +607,7 @@ public class DownloadLinkDownloadable implements Downloadable {
         if (plugin != null) {
             return plugin.getDispositionHeader(connection);
         } else {
-            return null;
+            return Plugin.parseDispositionHeader(connection);
         }
     }
 
@@ -645,7 +645,12 @@ public class DownloadLinkDownloadable implements Downloadable {
     }
 
     protected String fixWrongEncoding(URLConnectionAdapter connection, final String fileName) {
-        return decodeURIComponent(fileName, null);
+        final List<String[]> results = Plugin.decodeURIComponentFindBestEncoding(fileName);
+        if (results != null && results.size() > 0) {
+            return results.get(0)[1];
+        } else {
+            return fileName;
+        }
     }
 
     @Override
