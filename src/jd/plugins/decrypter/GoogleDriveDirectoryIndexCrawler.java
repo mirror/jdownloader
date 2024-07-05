@@ -16,7 +16,6 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -155,13 +154,6 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
             String dispositionHeaderFilename = null;
             if (dispositionHeader != null && StringUtils.isNotEmpty(dispositionHeaderFilename = dispositionHeader.getFilename())) {
                 direct.setFinalFileName(dispositionHeaderFilename);
-                if (dispositionHeader.getEncoding() == null) {
-                    try {
-                        direct.setFinalFileName(URLEncode.decodeURIComponent(dispositionHeaderFilename, "UTF-8", true));
-                    } catch (final IllegalArgumentException ignore) {
-                    } catch (final UnsupportedEncodingException ignore) {
-                    }
-                }
             }
             if (con.getCompleteContentLength() > 0) {
                 if (con.isContentDecoded()) {

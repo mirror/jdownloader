@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -30,6 +29,22 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.requests.PostRequest;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.WeTransferComFolder;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashInfo;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
@@ -48,23 +63,6 @@ import org.jdownloader.controlling.FileStateManager;
 import org.jdownloader.controlling.FileStateManager.FILESTATE;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
-
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.requests.PostRequest;
-import jd.nutils.SimpleFTP;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.WeTransferComFolder;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.HashInfo;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://wetransferdecrypted/[a-f0-9]{46}/[a-f0-9]{4,12}/[a-f0-9]{46}" })
 public class WeTransferCom extends PluginForHost {
@@ -264,8 +262,7 @@ public class WeTransferCom extends PluginForHost {
         dl.startDownload();
         /**
          * 2024-02-27: This website delivers single files as .zip files without .zip file-extension while all of them contain exactly one
-         * file. </br>
-         * The special handling down below corrects this by extracting such files.
+         * file. </br> The special handling down below corrects this by extracting such files.
          */
         if (!isSingleZip && link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getDownloadCurrent() > 0) {
             extract(link);
@@ -336,17 +333,8 @@ public class WeTransferCom extends PluginForHost {
             }
             String fileName = null;
             final DispositionHeader dispositionHeader = parseDispositionHeader(dl.getConnection());
-            if (dispositionHeader != null && StringUtils.isNotEmpty(fileName = dispositionHeader.getFilename())) {
-                // special chars like german umlauts are encoded but no encoding is provided in header
-                if (dispositionHeader.getEncoding() == null) {
-                    try {
-                        fileName = SimpleFTP.BestEncodingGuessingURLDecode(fileName);
-                    } catch (final IllegalArgumentException ignore) {
-                        logger.log(ignore);
-                    } catch (final UnsupportedEncodingException ignore) {
-                        logger.log(ignore);
-                    }
-                }
+            if (dispositionHeader != null) {
+                fileName = dispositionHeader.getFilename();
             }
             if (fileName == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
