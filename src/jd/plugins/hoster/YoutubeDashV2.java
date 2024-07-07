@@ -29,48 +29,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.Property;
-import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractNodeNotifier;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.http.requests.HeadRequest;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.BrowserAdapter;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.DownloadLinkDatabindingInterface;
-import jd.plugins.FilePackage;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.decrypter.TbCmV2;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.HashResult;
-import jd.plugins.download.raf.ChunkRange;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
@@ -151,6 +109,48 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.HeadRequest;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.BrowserAdapter;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.DownloadLinkDatabindingInterface;
+import jd.plugins.FilePackage;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.decrypter.TbCmV2;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashResult;
+import jd.plugins.download.raf.ChunkRange;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" })
 public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInterface {
@@ -1031,7 +1031,6 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             }
         }
         return ret;
-
     }
 
     protected AbstractVariant getVariant(final DownloadLink downloadLink, final boolean storeTempProperty) throws PluginException {
@@ -1054,6 +1053,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         final AbstractVariant variant = getVariant(downloadLink);
         final String youtubeID = downloadLink.getStringProperty(YoutubeHelper.YT_ID);
         logger.info("updateUrls:" + youtubeID + "|" + variant.getVariantDetails());
+        if (br == null) {
+            setBrowser(createNewBrowserInstance());
+        }
         final YoutubeClipData clipData = ClipDataCache.get(new YoutubeHelper(br, getLogger()), downloadLink);
         if (variant instanceof SubtitleVariant) {
             final SubtitleVariant stVariant = ((SubtitleVariant) variant);
@@ -2671,6 +2673,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 downloadLink.getTempProperties().removeProperty(YoutubeHelper.YT_VARIANTS);
             }
             YoutubeHelper.writeVariantToDownloadLink(downloadLink, v);
+            if (br == null) {
+                setBrowser(createNewBrowserInstance());
+            }
             final String filename = new YoutubeHelper(br, getLogger()).createFilename(downloadLink);
             downloadLink.setFinalFileName(filename);
             if (nodeChangeListener instanceof CrawledLink && ((CrawledLink) nodeChangeListener).isNameSet()) {
@@ -2880,7 +2885,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             @Override
             public void run() throws Exception {
                 final YoutubeHelper helper;
-                final YoutubeClipData clipData = ClipDataCache.get(helper = new YoutubeHelper(new Browser(), getLogger()), link.getDownloadLink());
+                final YoutubeClipData clipData = ClipDataCache.get(helper = new YoutubeHelper(createNewBrowserInstance(), getLogger()), link.getDownloadLink());
                 final ArrayList<VariantInfo> vs = new ArrayList<VariantInfo>();
                 vs.addAll(clipData.findVariants());
                 vs.addAll(clipData.findDescriptionVariant());

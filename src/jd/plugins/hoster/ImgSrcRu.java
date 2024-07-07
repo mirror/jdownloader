@@ -129,32 +129,8 @@ public class ImgSrcRu extends PluginForHost {
         getDllink();
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!isDownload) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                /* 2023-02-03: HEAD request is not supported anymore (will return error 404)! */
-                con = brc.openGetConnection(dllink);
-                if (!this.looksLikeDownloadableContent(con)) {
-                    brc.followConnection();
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                this.filenameHandling(link, con);
-                if (con.getCompleteContentLength() > 0) {
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
+        } else if (!isDownload) {
+            basicLinkCheck(br.cloneBrowser(), br.createGetRequest(dllink), link, link.getName(), null);
         }
         return AvailableStatus.TRUE;
     }
@@ -233,10 +209,7 @@ public class ImgSrcRu extends PluginForHost {
         }
         br.setFollowRedirects(true);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        handleConnectionErrors(br, dl.getConnection());
         this.filenameHandling(link, dl.getConnection());
         dl.startDownload();
     }

@@ -73,6 +73,7 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.extensions.Header;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
+import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
@@ -105,6 +106,7 @@ import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.Label;
 import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
+import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
 import jd.gui.swing.jdgui.views.settings.components.TextPane;
@@ -677,184 +679,195 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
     public void addHandler(final ConfigInterface cfg, final KeyHandler m) {
         DescriptionForConfigEntry anno = (DescriptionForConfigEntry) m.getAnnotation(DescriptionForConfigEntry.class);
         System.out.println("Add " + m.getReadableName());
-        String description = getTranslation(m, "_description");
-        if (description != null) {
-            addDescriptionPlain(description);
-        } else if (anno != null) {
-            addDescriptionPlain(anno.value());
-        }
         String label = getTranslation(m, "_label");
         if (label == null) {
             label = m.getReadableName();
         }
-        if (m instanceof BooleanKeyHandler) {
-            addPair(label, null, new Checkbox((BooleanKeyHandler) m));
-            return;
-        } else if (m instanceof StringKeyHandler) {
-            addPair(label, null, new TextInput((StringKeyHandler) m));
-            return;
-        } else if (m instanceof IntegerKeyHandler) {
-            addPair(label, null, new Spinner(new ConfigIntSpinnerModel((IntegerKeyHandler) m)));
-            return;
-        } else if (m instanceof LongKeyHandler) {
-            addPair(label, null, new Spinner(new ConfigLongSpinnerModel((LongKeyHandler) m)));
-            return;
-        } else if (m instanceof EnumKeyHandler) {
-            addPair(label, null, null, new ComboBox<Enum>(m, ((EnumKeyHandler) m).values(), null));
-            return;
-        } else if (m instanceof ObjectKeyHandler) {
-            final Class<?> raw = org.appwork.utils.ReflectionUtils.getRaw(m.getTypeRef().getType());
-            if (Map.class.isAssignableFrom(raw)) {
-                final Type[] types = ((ParameterizedType) m.getTypeRef().getType()).getActualTypeArguments();
-                if (types[0] == String.class && types[1] == Boolean.class) {
-                    try {
-                        Map<String, Boolean> value = (Map<String, Boolean>) m.getValue();
-                        if (value == null) {
-                            value = newMapInstance(m);
+        String description = getTranslation(m, "_description");
+        if (description == null && anno != null) {
+            description = anno.value();
+        }
+        if (description != null && !StringUtils.equals(description, label)) {
+            addDescriptionPlain(description);
+        }
+        Pair<?> pair = null;
+        try {
+            if (m instanceof BooleanKeyHandler) {
+                pair = addPair(label, null, new Checkbox((BooleanKeyHandler) m));
+                return;
+            } else if (m instanceof StringKeyHandler) {
+                pair = addPair(label, null, new TextInput((StringKeyHandler) m));
+                return;
+            } else if (m instanceof IntegerKeyHandler) {
+                pair = addPair(label, null, new Spinner(new ConfigIntSpinnerModel((IntegerKeyHandler) m)));
+                return;
+            } else if (m instanceof LongKeyHandler) {
+                pair = addPair(label, null, new Spinner(new ConfigLongSpinnerModel((LongKeyHandler) m)));
+                return;
+            } else if (m instanceof EnumKeyHandler) {
+                pair = addPair(label, null, null, new ComboBox<Enum>(m, ((EnumKeyHandler) m).values(), null));
+                return;
+            } else if (m instanceof ObjectKeyHandler) {
+                final Class<?> raw = org.appwork.utils.ReflectionUtils.getRaw(m.getTypeRef().getType());
+                if (Map.class.isAssignableFrom(raw)) {
+                    final Type[] types = ((ParameterizedType) m.getTypeRef().getType()).getActualTypeArguments();
+                    if (types[0] == String.class && types[1] == Boolean.class) {
+                        try {
+                            Map<String, Boolean> value = (Map<String, Boolean>) m.getValue();
+                            if (value == null) {
+                                value = newMapInstance(m);
+                            }
+                            final Map<String, Boolean> finalValue = value;
+                            final MultiComboBox<String> comp = new MultiComboBox<String>(new ArrayList<String>(value.keySet())) {
+                                private final GenericConfigEventListener<Map<String, Boolean>> listener = new GenericConfigEventListener<Map<String, Boolean>>() {
+                                    @Override
+                                    public void onConfigValidatorError(KeyHandler<Map<String, Boolean>> keyHandler, Map<String, Boolean> invalidValue, ValidationException validateException) {
+                                    }
+
+                                    @Override
+                                    public void onConfigValueModified(KeyHandler<Map<String, Boolean>> keyHandler, Map<String, Boolean> newValue) {
+                                        updateModel(newValue);
+                                    }
+                                };
+                                {
+                                    m.getEventSender().addListener(listener, true);
+                                    updateModel(finalValue);
+                                }
+
+                                @Override
+                                protected String getLabel(String sc) {
+                                    return super.getLabel(sc);
+                                }
+
+                                @Override
+                                protected String getLabel(List<String> list) {
+                                    return "[" + list.size() + "/" + getValues().size() + "] " + super.getLabel(list);
+                                }
+
+                                protected void updateModel(final Map<String, Boolean> value) {
+                                    final ArrayList<String> selected = new ArrayList<String>();
+                                    for (Entry<String, Boolean> es : value.entrySet()) {
+                                        if (es.getValue() == Boolean.TRUE) {
+                                            selected.add(es.getKey());
+                                        }
+                                    }
+                                    setSelectedItems(selected);
+                                }
+
+                                @Override
+                                public void onChanged() {
+                                    super.onChanged();
+                                    final Map<String, Boolean> value = (Map<String, Boolean>) m.getValue();
+                                    final DontThrowFromCurrentThreadEventSuppressor<DefaultEvent> added = new DontThrowFromCurrentThreadEventSuppressor<DefaultEvent>();
+                                    m.getEventSender().addEventSuppressor(added);
+                                    try {
+                                        final Map<String, Boolean> ret = newMapInstance(m);
+                                        ret.putAll(value);
+                                        for (String key : ret.keySet()) {
+                                            ret.put(key, isItemSelected(key));
+                                        }
+                                        m.setValue(ret);
+                                    } catch (InstantiationException e) {
+                                        LogController.CL().log(e);
+                                    } catch (IllegalAccessException e) {
+                                        LogController.CL().log(e);
+                                    } finally {
+                                        m.getEventSender().removeEventSuppressor(added);
+                                    }
+                                }
+                            };
+                            pair = addPair(label, null, null, comp);
+                        } catch (InstantiationException e) {
+                            LogController.CL().log(e);
+                        } catch (IllegalAccessException e) {
+                            LogController.CL().log(e);
                         }
-                        final Map<String, Boolean> finalValue = value;
-                        final MultiComboBox<String> comp = new MultiComboBox<String>(new ArrayList<String>(value.keySet())) {
-                            private final GenericConfigEventListener<Map<String, Boolean>> listener = new GenericConfigEventListener<Map<String, Boolean>>() {
-                                @Override
-                                public void onConfigValidatorError(KeyHandler<Map<String, Boolean>> keyHandler, Map<String, Boolean> invalidValue, ValidationException validateException) {
+                        return;
+                    }
+                } else if (Set.class.isAssignableFrom(raw)) {
+                    final Type[] types = ((ParameterizedType) m.getTypeRef().getType()).getActualTypeArguments();
+                    if (types[0] instanceof Class && ((Class) types[0]).isEnum()) {
+                        try {
+                            final MultiComboBox<Object> comp = new MultiComboBox<Object>(((Class) types[0]).getEnumConstants()) {
+                                private final GenericConfigEventListener<Set<Enum>> listener = new GenericConfigEventListener<Set<Enum>>() {
+                                    @Override
+                                    public void onConfigValidatorError(KeyHandler<Set<Enum>> keyHandler, Set<Enum> invalidValue, ValidationException validateException) {
+                                    }
+
+                                    @Override
+                                    public void onConfigValueModified(KeyHandler<Set<Enum>> keyHandler, Set<Enum> newValue) {
+                                        updateModel(newValue);
+                                    }
+                                };
+                                {
+                                    Set<Enum> value = (Set<Enum>) m.getValue();
+                                    if (value == null) {
+                                        value = newSetInstance(m);
+                                        for (Object e : ((Class) types[0]).getEnumConstants()) {
+                                            value.add((Enum) e);
+                                        }
+                                    }
+                                    m.getEventSender().addListener(listener, true);
+                                    updateModel(value);
                                 }
 
                                 @Override
-                                public void onConfigValueModified(KeyHandler<Map<String, Boolean>> keyHandler, Map<String, Boolean> newValue) {
-                                    updateModel(newValue);
+                                protected String getLabel(List<Object> list) {
+                                    return "[" + list.size() + "/" + getValues().size() + "] " + super.getLabel(list);
+                                }
+
+                                protected Set<Enum> newSetInstance(KeyHandler m) throws InstantiationException, IllegalAccessException {
+                                    Class raw = ReflectionUtils.getRaw(m.getTypeRef().getType());
+                                    if (raw.isInterface()) {
+                                        raw = HashSet.class;
+                                    }
+                                    final Set<Enum> value = (Set<Enum>) raw.newInstance();
+                                    return value;
+                                }
+
+                                protected void updateModel(final Set<Enum> newValue) {
+                                    if (newValue == null) {
+                                        setSelectedItems(((Class) types[0]).getEnumConstants());
+                                    } else {
+                                        setSelectedItems((Object[]) newValue.toArray(new Enum[0]));
+                                    }
+                                }
+
+                                @Override
+                                public void onChanged() {
+                                    super.onChanged();
+                                    final EventSuppressor added = new DontThrowFromCurrentThreadEventSuppressor<DefaultEvent>();
+                                    m.getEventSender().addEventSuppressor(added);
+                                    try {
+                                        final Set<Enum> set = newSetInstance(m);
+                                        for (Object e : getSelectedItems()) {
+                                            set.add((Enum) e);
+                                        }
+                                        m.setValue(set);
+                                    } catch (InstantiationException e1) {
+                                        LogController.CL().log(e1);
+                                    } catch (IllegalAccessException e1) {
+                                        LogController.CL().log(e1);
+                                    } finally {
+                                        m.getEventSender().removeEventSuppressor(added);
+                                    }
                                 }
                             };
-                            {
-                                m.getEventSender().addListener(listener, true);
-                                updateModel(finalValue);
-                            }
-
-                            @Override
-                            protected String getLabel(String sc) {
-                                return super.getLabel(sc);
-                            }
-
-                            @Override
-                            protected String getLabel(List<String> list) {
-                                return "[" + list.size() + "/" + getValues().size() + "] " + super.getLabel(list);
-                            }
-
-                            protected void updateModel(final Map<String, Boolean> value) {
-                                final ArrayList<String> selected = new ArrayList<String>();
-                                for (Entry<String, Boolean> es : value.entrySet()) {
-                                    if (es.getValue() == Boolean.TRUE) {
-                                        selected.add(es.getKey());
-                                    }
-                                }
-                                setSelectedItems(selected);
-                            }
-
-                            @Override
-                            public void onChanged() {
-                                super.onChanged();
-                                final Map<String, Boolean> value = (Map<String, Boolean>) m.getValue();
-                                final DontThrowFromCurrentThreadEventSuppressor<DefaultEvent> added = new DontThrowFromCurrentThreadEventSuppressor<DefaultEvent>();
-                                m.getEventSender().addEventSuppressor(added);
-                                try {
-                                    final Map<String, Boolean> ret = newMapInstance(m);
-                                    ret.putAll(value);
-                                    for (String key : ret.keySet()) {
-                                        ret.put(key, isItemSelected(key));
-                                    }
-                                    m.setValue(ret);
-                                } catch (InstantiationException e) {
-                                    LogController.CL().log(e);
-                                } catch (IllegalAccessException e) {
-                                    LogController.CL().log(e);
-                                } finally {
-                                    m.getEventSender().removeEventSuppressor(added);
-                                }
-                            }
-                        };
-                        addPair(label, null, null, comp);
-                    } catch (InstantiationException e) {
-                        LogController.CL().log(e);
-                    } catch (IllegalAccessException e) {
-                        LogController.CL().log(e);
+                            pair = addPair(label, null, null, comp);
+                        } catch (InstantiationException e) {
+                            LogController.CL().log(e);
+                        } catch (IllegalAccessException e) {
+                            LogController.CL().log(e);
+                        }
+                        return;
                     }
-                    return;
                 }
-            } else if (Set.class.isAssignableFrom(raw)) {
-                final Type[] types = ((ParameterizedType) m.getTypeRef().getType()).getActualTypeArguments();
-                if (types[0] instanceof Class && ((Class) types[0]).isEnum()) {
-                    try {
-                        final MultiComboBox<Object> comp = new MultiComboBox<Object>(((Class) types[0]).getEnumConstants()) {
-                            private final GenericConfigEventListener<Set<Enum>> listener = new GenericConfigEventListener<Set<Enum>>() {
-                                @Override
-                                public void onConfigValidatorError(KeyHandler<Set<Enum>> keyHandler, Set<Enum> invalidValue, ValidationException validateException) {
-                                }
-
-                                @Override
-                                public void onConfigValueModified(KeyHandler<Set<Enum>> keyHandler, Set<Enum> newValue) {
-                                    updateModel(newValue);
-                                }
-                            };
-                            {
-                                Set<Enum> value = (Set<Enum>) m.getValue();
-                                if (value == null) {
-                                    value = newSetInstance(m);
-                                    for (Object e : ((Class) types[0]).getEnumConstants()) {
-                                        value.add((Enum) e);
-                                    }
-                                }
-                                m.getEventSender().addListener(listener, true);
-                                updateModel(value);
-                            }
-
-                            @Override
-                            protected String getLabel(List<Object> list) {
-                                return "[" + list.size() + "/" + getValues().size() + "] " + super.getLabel(list);
-                            }
-
-                            protected Set<Enum> newSetInstance(KeyHandler m) throws InstantiationException, IllegalAccessException {
-                                Class raw = ReflectionUtils.getRaw(m.getTypeRef().getType());
-                                if (raw.isInterface()) {
-                                    raw = HashSet.class;
-                                }
-                                final Set<Enum> value = (Set<Enum>) raw.newInstance();
-                                return value;
-                            }
-
-                            protected void updateModel(final Set<Enum> newValue) {
-                                if (newValue == null) {
-                                    setSelectedItems(((Class) types[0]).getEnumConstants());
-                                } else {
-                                    setSelectedItems((Object[]) newValue.toArray(new Enum[0]));
-                                }
-                            }
-
-                            @Override
-                            public void onChanged() {
-                                super.onChanged();
-                                final EventSuppressor added = new DontThrowFromCurrentThreadEventSuppressor<DefaultEvent>();
-                                m.getEventSender().addEventSuppressor(added);
-                                try {
-                                    final Set<Enum> set = newSetInstance(m);
-                                    for (Object e : getSelectedItems()) {
-                                        set.add((Enum) e);
-                                    }
-                                    m.setValue(set);
-                                } catch (InstantiationException e1) {
-                                    LogController.CL().log(e1);
-                                } catch (IllegalAccessException e1) {
-                                    LogController.CL().log(e1);
-                                } finally {
-                                    m.getEventSender().removeEventSuppressor(added);
-                                }
-                            }
-                        };
-                        addPair(label, null, null, comp);
-                    } catch (InstantiationException e) {
-                        LogController.CL().log(e);
-                    } catch (IllegalAccessException e) {
-                        LogController.CL().log(e);
-                    }
-                    return;
+            }
+        } finally {
+            if (pair != null) {
+                final SettingsComponent comp = pair.getComponent();
+                if (comp != null) {
+                    comp.setToolTipText(description);
                 }
             }
         }

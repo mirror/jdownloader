@@ -19,6 +19,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.SankakucomplexComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,13 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.SankakucomplexCom;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.SankakucomplexComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SankakucomplexComCrawler extends PluginForDecrypt {
@@ -80,7 +80,7 @@ public class SankakucomplexComCrawler extends PluginForDecrypt {
             regex += "[a-z]{2}/books/\\d+";
             regex += "|[a-z]{2}\\?tags=pool:\\d+";
             regex += "|[a-z0-9]{2}/books\\?tags=.+";
-            regex += "|[a-z0-9]{2}\\?tags=.+";
+            regex += "|[a-z0-9]{2}(?:/posts)?\\?tags=.+";
             regex += ")";
             ret.add(regex);
         }
@@ -90,7 +90,7 @@ public class SankakucomplexComCrawler extends PluginForDecrypt {
     private final String       TYPE_BOOK       = "(?i)https?://[^/]+/([a-z]{2})/books/(\\d+)";
     private final String       TYPE_TAGS_BOOK  = "(?i)https?://[^/]+/([a-z]{2})\\?tags=pool:(\\d+)";
     private final String       TYPE_TAGS_BOOKS = "(?i)https?://[^/]+/([a-z0-9]{2})/books\\?tags=(.+)";
-    private final String       TYPE_TAGS_POSTS = "(?i)https?://[^/]+/([a-z]{2})\\?tags=([^&]+)";
+    private final String       TYPE_TAGS_POSTS = "(?i)https?://[^/]+/([a-z]{2})(?:/posts)?\\?tags=([^&]+)";
     public static final String API_BASE        = "https://capi-v2.sankakucomplex.com";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -118,10 +118,10 @@ public class SankakucomplexComCrawler extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        tags = URLEncode.decodeURIComponent(tags);
+        tags = URLEncode.decodeURIComponent(tags.replace("+", " "));
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(tags);
-        final String tagsUrlEncoded = Encoding.urlEncode(tags);
+        final String tagsUrlEncoded = URLEncode.encodeURIComponent(tags);
         final int maxItemsPerPage = 40;
         final UrlQuery query = new UrlQuery();
         query.add("lang", languageFromURL);
@@ -188,13 +188,13 @@ public class SankakucomplexComCrawler extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        tags = URLEncode.decodeURIComponent(tags);
+        tags = URLEncode.decodeURIComponent(tags.replace("+", " "));
         final int maxItemsPerPage = 20;
         final UrlQuery query = new UrlQuery();
         query.add("lang", languageFromURL);
         query.add("limit", Integer.toString(maxItemsPerPage));
         query.add("includes[]", "series");
-        query.add("tags", Encoding.urlEncode(tags));
+        query.add("tags", URLEncode.encodeURIComponent(tags));
         query.add("pool_type", "0");
         int page = 1;
         do {

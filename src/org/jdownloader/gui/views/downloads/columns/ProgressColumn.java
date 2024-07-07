@@ -15,16 +15,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.raf.FileBytesMap.FileBytesMapView;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.multiprogressbar.MultiProgressBar;
 import org.appwork.swing.components.multiprogressbar.Range;
@@ -41,6 +31,16 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.updatev2.gui.HorizontalPostion;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.raf.FileBytesMap.FileBytesMapView;
 
 public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
     /**
@@ -79,11 +79,17 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
     protected void preInit() {
         textPosition = LAFOptions.getInstance().getCfg().getProgressColumnTextPosition();
         percentEnabled = LAFOptions.getInstance().getCfg().isProgressColumnFormatAddPercentEnabled();
-        df = NumberFormat.getInstance();
+        df = updateNumberFormat();
+    }
+
+    @Override
+    protected NumberFormat updateNumberFormat() {
+        df = super.updateNumberFormat();
         df.setMaximumFractionDigits(LAFOptions.getInstance().getCfg().getProgressColumnFractionDigits());
         df.setMinimumFractionDigits(LAFOptions.getInstance().getCfg().getProgressColumnFractionDigits());
         df.setMaximumIntegerDigits(3);
         df.setMinimumIntegerDigits(1);
+        return df;
     }
 
     protected void setStringValue(final AbstractNode value, long m, long v) {

@@ -1,6 +1,6 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-import java.text.DecimalFormat;
+import java.text.NumberFormat;
 
 import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
@@ -27,7 +27,7 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
      *
      */
     private final RenderLabel      sizeRenderer;
-    private final DecimalFormat    formatter;
+    private NumberFormat           formatter;
     private final RenderLabel      countRenderer;
     private final RendererMigPanel renderer;
     private final boolean          fileCountVisible;
@@ -80,7 +80,12 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
                 }
             }
         });
-        this.formatter = new DecimalFormat();
+        this.formatter = updateNumberFormat();
+    }
+
+    @Override
+    protected NumberFormat updateNumberFormat() {
+        return this.formatter = super.updateNumberFormat();
     }
 
     @Override

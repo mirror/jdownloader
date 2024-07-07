@@ -1,6 +1,6 @@
 package org.jdownloader.controlling;
 
-import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -30,7 +30,7 @@ public class AggregatedNumbers {
     protected static final boolean FORCED_MIRROR_CASE_INSENSITIVE = CrossSystem.isWindows() || JsonConfig.create(GeneralSettings.class).isForceMirrorDetectionCaseInsensitive();
     private final long             totalBytes;
     private static final SIZEUNIT  maxSizeUnit                    = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
-    private final DecimalFormat    formatter                      = new DecimalFormat();
+    private final NumberFormat     formatter;
 
     public final String getFinishedString(final boolean inclDisabled) {
         if (inclDisabled) {
@@ -358,6 +358,11 @@ public class AggregatedNumbers {
         }
         this.enabledUnfinishedTotalBytes = enabledUnfinishedTotalBytes;
         this.linkCount = linkCount;
+        this.formatter = initNumberFormat();
+    }
+
+    protected NumberFormat initNumberFormat() {
+        return NumberFormat.getInstance();
     }
 
     public long getEnabledUnfinishedTotalBytes() {

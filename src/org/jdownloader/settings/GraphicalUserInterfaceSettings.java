@@ -2,6 +2,7 @@ package org.jdownloader.settings;
 
 import java.awt.event.KeyEvent;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -426,6 +427,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setFileCountInSizeColumnVisible(boolean b);
 
+    public static interface NumberFormatProvider {
+        public NumberFormat getNumberFormat(Object requestor);
+    }
+
     public static enum SIZEUNIT {
         TiB(1024 * 1024 * 1024 * 1024l, true),
         TB(1000 * 1000 * 1000 * 1000l),
@@ -467,6 +472,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         }
 
         public static final String formatValue(SIZEUNIT maxSizeUnit, final DecimalFormat formatter, final long fileSize) {
+            return formatValue(maxSizeUnit, (NumberFormat) formatter, fileSize);
+        }
+
+        public static final String formatValue(SIZEUNIT maxSizeUnit, final NumberFormat formatter, final long fileSize) {
             final boolean isIECPrefix = maxSizeUnit.isIECPrefix();
             switch (maxSizeUnit) {
             case TiB:

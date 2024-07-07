@@ -1,6 +1,6 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-import java.text.DecimalFormat;
+import java.text.NumberFormat;
 
 import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
@@ -24,10 +24,10 @@ public class FileSizeColumn extends ExtColumn<AbstractNode> {
     /**
      *
      */
-    private final RenderLabel   sizeRenderer;
-    private final DecimalFormat formatter;
-    private final String        zeroString;
-    private final SIZEUNIT      maxSizeUnit;
+    private final RenderLabel sizeRenderer;
+    private NumberFormat      formatter;
+    private final String      zeroString;
+    private final SIZEUNIT    maxSizeUnit;
 
     public JPopupMenu createHeaderPopup() {
         return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
@@ -58,7 +58,12 @@ public class FileSizeColumn extends ExtColumn<AbstractNode> {
                 }
             }
         });
-        this.formatter = new DecimalFormat();
+        formatter = updateNumberFormat();
+    }
+
+    @Override
+    protected NumberFormat updateNumberFormat() {
+        return formatter = super.updateNumberFormat();
     }
 
     @Override

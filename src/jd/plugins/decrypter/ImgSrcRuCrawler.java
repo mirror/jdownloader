@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -160,6 +161,11 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
         String ret = br.getRegex("from '<strong>([^\r\n]+)</strong>").getMatch(0);
         if (ret == null) {
             ret = br.getRegex("<title>(.*?)(\\s*@\\s*iMGSRC\\.RU)?</title>").getMatch(0);
+            final String remove = new Regex(ret, "\\s*/\\s*([^/]*?)$").getMatch(0);
+            if (remove != null && br.containsHTML("alt\\s*=\\s*'" + Pattern.quote(remove) + "'\\s*>")) {
+                // remove file name that is part of album name
+                ret = new Regex(ret, "(.*?)\\s*/\\s*[^/](.*?)$").getMatch(0);
+            }
         }
         return ret;
     }
@@ -326,7 +332,7 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlImages(final CryptedLink param) {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final HashSet<String> imgs = new HashSet<String>();
+        final LinkedHashSet<String> imgs = new LinkedHashSet<String>();
         // first link = album uid (uaid), these uid's are not transferable to picture ids (upid). But once you are past album page
         // br.getURL() is the correct upid.
         if (br.getURL().contains("/" + id)) {
@@ -350,7 +356,11 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
         } else {
             imgs.add(br.getURL().replaceFirst("https?://imgsrc\\.ru", ""));
         }
-        final String[] links = br.getRegex("(/" + Pattern.quote(username) + "/\\d+\\.html(\\?pwd=[a-z0-9]{32})?)[^']*'\\s*(?:>|target)").getColumn(0);
+        String[] links = br.getRegex("(/" + Pattern.quote(username) + "/\\d+\\.html(\\?pwd=[a-z0-9]{32})?)[^']*'\\s*(?:>|target)").getColumn(0);
+        if (links == null || links.length == 0) {
+            // parse imageID directly from imageURL, anchors(href='#pID') are incomplete as last one is link to next page
+            links = br.getRegex("/imgsrc.ru_(\\d+)[a-zA-Z]{3}\\.(jpe?g|webp)").getColumn(0);
+        }
         if (links == null || links.length == 0) {
             logger.warning("Possible plugin error: Please confirm in your webbrowser that this album " + param.getCryptedUrl() + " contains more than one image. If it does please report this issue to JDownloader Development Team.");
         }
@@ -359,7 +369,10 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
         }
         final String currentLink = br.getURL();
         if (imgs.size() != 0) {
-            for (final String dl : imgs) {
+            for (String dl : imgs) {
+                if (dl.matches("^\\d+$")) {
+                    dl = "/" + username + "/" + dl + ".html";
+                }
                 final String imageid = new Regex(dl, "/(\\d+)\\.html").getMatch(0);
                 final DownloadLink img = createDownloadlink("https://decryptedimgsrc.ru" + dl);
                 img.setReferrerUrl(currentLink);

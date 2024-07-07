@@ -152,6 +152,14 @@ public interface MegaConzConfig extends PluginConfigInterface {
     void setLimitMode(final LimitMode limitMode);
 
     @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Avoid trying to download files larger than 5Gb in free mode as they will most likely fail")
+    @Order(75)
+    boolean is5GBFreeLimitEnabled();
+
+    void set5GBFreeLimitEnabled(boolean b);
+
+    @AboutConfig
     @SpinnerValidator(min = 10, max = 360, step = 1)
     @DefaultIntValue(10)
     @TakeValueFromSubconfig("MAX_LIMIT_WAITTIME")
