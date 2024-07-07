@@ -427,10 +427,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setFileCountInSizeColumnVisible(boolean b);
 
-    public static interface NumberFormatProvider {
-        public NumberFormat getNumberFormat(Object requestor);
-    }
-
     public static enum SIZEUNIT {
         TiB(1024 * 1024 * 1024 * 1024l, true),
         TB(1000 * 1000 * 1000 * 1000l),
