@@ -123,6 +123,7 @@ public class VeevTo extends XFileSharingProBasic {
         final Form dlform = br.getFormbyActionRegex(".*/dl");
         if (dlform == null) {
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* 2024-07-08 */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Uploader has disabled downloads for this file");
         }
         final Form preForm = new Form();

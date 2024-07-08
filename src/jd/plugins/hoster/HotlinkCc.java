@@ -20,6 +20,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoHotlinkCc;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -35,10 +39,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideoHotlinkCc;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HotlinkCc extends XFileSharingProBasic {
@@ -342,7 +342,7 @@ public class HotlinkCc extends XFileSharingProBasic {
     @Override
     protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
         /** 2021-01-26: Special */
-        String dllink = new Regex(correctedBR, "href=\"(https?://[^\"]+)\"[^>]*>Direct Download Link").getMatch(0);
+        String dllink = new Regex(src, "href=\"(https?://[^\"]+)\"[^>]*>\\s*Direct Download Link").getMatch(0);
         if (dllink != null) {
             return dllink;
         } else {
@@ -534,13 +534,13 @@ public class HotlinkCc extends XFileSharingProBasic {
              * 2019-10-04: TODO: Unsure whether we should use the general 'getDllink' method here as it contains a lot of RegExes (e.g. for
              * streaming URLs) which are completely useless here.
              */
-            dllink = this.getDllink(link, account, brc, brc.toString());
+            dllink = this.getDllink(link, account, brc, brc.getRequest().getHtmlCode());
             if (StringUtils.isEmpty(dllink)) {
                 /*
                  * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a
                  * result.
                  */
-                dllink = new Regex(brc.toString(), "<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link</a>").getMatch(0);
+                dllink = new Regex(brc.getRequest().getHtmlCode(), "<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link</a>").getMatch(0);
             }
             if (StringUtils.isEmpty(dllink)) {
                 logger.info("Failed to find final downloadurl");

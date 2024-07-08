@@ -70,7 +70,7 @@ public class VidguardTo extends PluginForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vidguard.to", "vid-guard.com", "vgfplay.com", "vgembed.com", "v6embed.xyz", "vembed.net", "bembed.net" });
+        ret.add(new String[] { "vidguard.to", "vid-guard.com", "vgfplay.com", "vgembed.com", "v6embed.xyz", "vembed.net", "bembed.net", "listeamed.net" });
         return ret;
     }
 

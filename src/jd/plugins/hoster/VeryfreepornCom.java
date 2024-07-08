@@ -61,6 +61,7 @@ public class VeryfreepornCom extends KernelVideoSharingComV2 {
     @Override
     protected boolean isOfflineWebsite(final Browser br) {
         if (br.containsHTML("location\\.href\\s*= ./404\\.php")) {
+            /* 2024-07-08: js redirect to 404 error-page. */
             return true;
         } else {
             return super.isOfflineWebsite(br);
