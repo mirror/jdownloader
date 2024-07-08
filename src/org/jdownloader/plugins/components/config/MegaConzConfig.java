@@ -51,6 +51,10 @@ public interface MegaConzConfig extends PluginConfigInterface {
             return "Set preferred limit mode";
         }
 
+        public String get5GBFreeLimitEnabled_label() {
+            return "Avoid trying to download files larger than 5Gb in free mode?";
+        }
+
         public String getMaxWaittimeOnLimitReachedMinutes_label() {
             return "Max. wait time minutes on limit reached";
         }
@@ -153,7 +157,7 @@ public interface MegaConzConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Avoid trying to download files larger than 5Gb in free mode as they will most likely fail")
+    @DescriptionForConfigEntry("Avoid trying to download files larger than 5Gb in free mode as they will most likely fail, see board.jdownloader.org/showthread.php?t=75268")
     @Order(75)
     boolean is5GBFreeLimitEnabled();
 

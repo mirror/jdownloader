@@ -327,7 +327,6 @@ public class VidguardTo extends PluginForHost {
             }
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
-        dl.setFilenameFix(true);
         dl.startDownload();
     }
 

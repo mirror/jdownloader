@@ -383,7 +383,6 @@ public class FilesMonsterCom extends PluginForHost {
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.setFilenameFix(true);
         dl.startDownload();
     }
 

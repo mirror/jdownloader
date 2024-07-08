@@ -464,7 +464,6 @@ public class DiskYandexNet extends PluginForHost {
             if (freshDirecturlHasJustBeenGenerated) {
                 link.setProperty(directurlproperty, dl.getConnection().getURL().toExternalForm());
             }
-            dl.setFilenameFix(true);
         }
         dl.startDownload();
     }

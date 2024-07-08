@@ -4117,7 +4117,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             /* Looks like filename might be too long -> Check if writing a shortened filename would be possible. */
                             // TODO: Check up to len 233
                             final int maxFilenameLength = 219;
-                            final boolean allowAutoShortenFilenames = false;
+                            final boolean allowAutoShortenFilenames = true;
                             if (e.getReason() != PathFailureReason.PATH_SEGMENT_TOO_LONG) {
                                 throw e;
                             } else if (fileName.length() <= maxFilenameLength) {
