@@ -3391,7 +3391,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                     }
                 }
             }
-            // jssource = new Regex(src, "[A-Za-z0-9]+\\s*:\\s*(\\[[^\\]]+[a-z0-9]{60}/v\\.mp4[^\\]]+\\])").getMatch(0);
         }
         if (!StringUtils.isEmpty(jssource)) {
             logger.info("Found video json source");
@@ -3526,7 +3525,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             /*
              * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
              */
-            // dllink = br.getRegex("href=\"(https?[^\"]+)\"[^>]*>\\s*Direct Download Link\\s*</a>").getMatch(0);
+            dllink = br.getRegex("href=\"(https?[^\"]+)\"[^>]*>\\s*Direct Download Link\\s*</a>").getMatch(0);
         }
         return dllink;
     }
