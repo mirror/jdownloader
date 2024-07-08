@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -114,7 +115,11 @@ public class FiledoNet extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        return getFID(link.getPluginPatternMatcher());
+    }
+
+    private String getFID(final String url) {
+        return new Regex(url, this.getSupportedLinks()).getMatch(0);
     }
 
     private final String API_BASE = "https://api.filedo.net";
@@ -161,12 +166,23 @@ public class FiledoNet extends PluginForHost {
                 sb.delete(0, sb.capacity());
                 final List<String> fileIDs = new ArrayList<String>();
                 for (final DownloadLink link : links) {
-                    fileIDs.add(this.getFID(link));
+                    if (!this.isValidFileURL(link.getPluginPatternMatcher())) {
+                        continue;
+                    } else {
+                        fileIDs.add(this.getFID(link));
+                    }
                 }
                 final PostRequest req = br.createJSonPostRequest(API_BASE + "/file/multiple", JSonStorage.serializeToJson(fileIDs));
                 final List<Map<String, Object>> responselist = (List<Map<String, Object>>) this.callAPI(req, null, links.get(0));
                 for (final DownloadLink link : links) {
                     final String fid = this.getFID(link);
+                    if (!link.isNameSet()) {
+                        link.setName(fid);
+                    }
+                    if (!this.isValidFileURL(link.getPluginPatternMatcher())) {
+                        link.setAvailable(false);
+                        continue;
+                    }
                     Map<String, Object> resp = null;
                     for (final Map<String, Object> responseitem : responselist) {
                         if (responseitem.get("fileId").toString().equals(fid)) {
@@ -181,14 +197,14 @@ public class FiledoNet extends PluginForHost {
                     }
                     final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
                     final String key = query.get("key");
+                    final String counterFileName = query.get("counterFileName");
                     final String fileName = resp.get("fileName").toString();
-                    final String fileSize = PluginJSonUtils.getJson(br, "fileSize");
+                    final Number fileSize = (Number) resp.get("fileSize");
                     final String fileHash = resp.get("fileHash").toString();
                     final String downloadUrl = resp.get("downloadUrl").toString();
-                    final boolean hasCaptcha = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "hasCaptcha"));
-                    final String counterFileName = "TODO_FIXME";
+                    final Boolean hasCaptcha = (Boolean) resp.get("hasCaptcha");
                     if (fileSize != null) {
-                        link.setVerifiedFileSize(Long.parseLong(fileSize) * 1024);
+                        link.setVerifiedFileSize(fileSize.longValue());
                     }
                     final byte[] decodedFileNameIv = Base64.decode(URLEncode.decodeURIComponent(counterFileName));
                     final byte[] decoded = Base64.decode(URLEncode.decodeURIComponent(key));
@@ -204,6 +220,7 @@ public class FiledoNet extends PluginForHost {
                     } else {
                         link.removeProperty("hasCatpcha");
                     }
+                    link.setAvailable(true);
                 }
                 if (index == urls.length) {
                     break;
@@ -234,11 +251,11 @@ public class FiledoNet extends PluginForHost {
             if (!isValidFileID(fileId)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
-            final String key = query.get("key");
-            if (StringUtils.isEmpty(key)) {
+            if (isValidFileURL(link.getPluginPatternMatcher())) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
+            final String key = query.get("key");
             final String counterFileName = query.get("counterFileName");
             final GetRequest req = br.createGetRequest(API_BASE + "/file?fileId=" + fileId);
             final Map<String, Object> resp = (Map<String, Object>) this.callAPI(req, null, link);
@@ -268,6 +285,21 @@ public class FiledoNet extends PluginForHost {
                 link.removeProperty("hasCatpcha");
             }
             return AvailableStatus.TRUE;
+        }
+    }
+
+    private boolean isValidFileURL(final String url) throws MalformedURLException {
+        final String fileId = this.getFID(url);
+        if (!isValidFileID(fileId)) {
+            return false;
+        }
+        final UrlQuery query = UrlQuery.parse(url);
+        final String key = query.get("key");
+        final String counterFileName = query.get("counterFileName");
+        if (StringUtils.isEmpty(key) || StringUtils.isEmpty(counterFileName)) {
+            return false;
+        } else {
+            return true;
         }
     }
 
