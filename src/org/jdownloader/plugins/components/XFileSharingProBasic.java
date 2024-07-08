@@ -5253,7 +5253,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             }
             /* API failed/not supported? Try website! */
             String officialVideoDownloadURL = null;
-            final DownloadMode mode = this.getPreferredDownloadModeFromConfig();
             if (StringUtils.isEmpty(dllink)) {
                 /* TODO: Maybe skip this, check for offline later */
                 requestFileInformationWebsite(link, account, true);
@@ -5270,29 +5269,35 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                  */
                 officialVideoDownloadURL = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
                 dllink = getDllink(link, account, br, getCorrectBR(br));
-                if (StringUtils.isEmpty(dllink) && (mode == DownloadMode.STREAM || StringUtils.isEmpty(officialVideoDownloadURL))) {
+                if (StringUtils.isEmpty(dllink) || StringUtils.isEmpty(officialVideoDownloadURL)) {
                     final Form dlForm = findFormDownload2Premium(link, account, this.br);
-                    if (dlForm == null) {
+                    if (dlForm != null) {
+                        handlePassword(dlForm, link);
+                        final URLConnectionAdapter formCon = openAntiDDoSRequestConnection(br, br.createFormRequest(dlForm));
+                        if (looksLikeDownloadableContent(formCon)) {
+                            /* Sending the form already gives us the file -> Very rare case - e.g. tiny-files.com */
+                            handleDownload(link, account, null, dllink, formCon.getRequest());
+                            return;
+                        } else {
+                            br.followConnection(true);
+                            runPostRequestTask(br);
+                            this.correctBR(br);
+                        }
                         checkErrors(br, getCorrectBR(br), link, account, true);
-                        logger.warning("Failed to find Form download2");
-                        checkServerErrors(br, link, account);
-                        checkErrorsLastResort(br, link, account);
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        if (StringUtils.isEmpty(officialVideoDownloadURL)) {
+                            officialVideoDownloadURL = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
+                        }
+                        if (dllink == null) {
+                            dllink = getDllink(link, account, br, getCorrectBR(br));
+                        }
                     }
-                    handlePassword(dlForm, link);
-                    final URLConnectionAdapter formCon = openAntiDDoSRequestConnection(br, br.createFormRequest(dlForm));
-                    if (looksLikeDownloadableContent(formCon)) {
-                        /* Sending the form already gives us the file -> Very rare case - e.g. tiny-files.com */
-                        handleDownload(link, account, null, dllink, formCon.getRequest());
-                        return;
-                    } else {
-                        br.followConnection(true);
-                        runPostRequestTask(br);
-                        this.correctBR(br);
-                    }
+                }
+                if (StringUtils.isEmpty(dllink) && StringUtils.isEmpty(officialVideoDownloadURL)) {
                     checkErrors(br, getCorrectBR(br), link, account, true);
-                    officialVideoDownloadURL = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
-                    dllink = getDllink(link, account, br, getCorrectBR(br));
+                    logger.warning("Failed to find Form download2");
+                    checkServerErrors(br, link, account);
+                    checkErrorsLastResort(br, link, account);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
             handleDownload(link, account, officialVideoDownloadURL, dllink, null);
