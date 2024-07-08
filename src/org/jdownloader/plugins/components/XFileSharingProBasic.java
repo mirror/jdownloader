@@ -1641,13 +1641,13 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             /* Look for textarea with special copy-able URLs which will sometimes contain information about filename/size. */
             final String[] textareas = new Regex(html, "(?i)<textarea[^>]*>(.*?)</textarea>").getColumn(0);
             /* E.g. brupload.net, apkadmin.com, send.cm */
-            final Pattern pattern_shareboxWithFilenameAndFilesizeBytes = quotedFUID != null ? Pattern.compile(quotedFUID + "(?:/[^\\]]+)?\\]([^\"]+) - \\s*(\\d+)\\[/URL\\]") : null;
+            final Pattern pattern_shareboxWithFilenameAndFilesizeBytes = quotedFUID != null ? Pattern.compile(quotedFUID + "(?:\\.html)?(?:/[^\\]]+)?\\]([^\"]+) - \\s*(\\d+)\\[/URL\\]") : null;
             if (textareas != null && textareas.length > 0) {
                 for (final String textarea : textareas) {
                     if (filename == null) {
                         /* Filename from URL */
-                        if (urlFUID != null) {
-                            final Regex targetUrlWithFilename = new Regex(textarea, "(?i)^https?://[^/]+/" + quotedFUID + "/" + "([^/#?]+)(\\.html)?$");
+                        if (quotedFUID != null) {
+                            final Regex targetUrlWithFilename = new Regex(textarea, "(?i)^https?://[^/]+/" + quotedFUID + "(?:\\.html)?/" + "([^/#?]+)(\\.html)?$");
                             if (targetUrlWithFilename.patternFind()) {
                                 filename = targetUrlWithFilename.getMatch(0);
                             }
@@ -1677,6 +1677,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                         filesizeWithUnit = new Regex(textarea, "(?i)([\\d\\.]+ (?:B|KB|MB|GB))(\\[/URL\\]|</a>)").getMatch(0);
                     }
                     if (filename != null && filesizeWithUnit != null) {
+                        /* We found all needed info -> No need to continue. */
                         break;
                     }
                 }
@@ -3381,7 +3382,16 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         String jssource = new Regex(src, "\"?sources\"?\\s*:\\s*(\\[[^\\]]+\\])").getMatch(0);
         if (StringUtils.isEmpty(jssource)) {
             /* 2019-07-04: Wider attempt - find sources via pattern of their video-URLs. */
-            jssource = new Regex(src, "[A-Za-z0-9]+\\s*:\\s*(\\[[^\\]]+[a-z0-9]{60}/v\\.mp4[^\\]]+\\])").getMatch(0);
+            final String[] jssources = new Regex(src, ":\\s*(\\[[^\\]]+\\])").getColumn(0);
+            if (jssources != null && jssources.length > 0) {
+                for (final String thisjssource : jssources) {
+                    if (new Regex(thisjssource, "[a-z0-9]{60}/v\\.mp4").patternFind()) {
+                        jssource = thisjssource;
+                        break;
+                    }
+                }
+            }
+            // jssource = new Regex(src, "[A-Za-z0-9]+\\s*:\\s*(\\[[^\\]]+[a-z0-9]{60}/v\\.mp4[^\\]]+\\])").getMatch(0);
         }
         if (!StringUtils.isEmpty(jssource)) {
             logger.info("Found video json source");
@@ -3516,7 +3526,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             /*
              * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
              */
-            dllink = br.getRegex("<a[^>]*href=\"(https?[^\"]+)\"[^>]*>\\s*Direct Download Link\\s*</a>").getMatch(0);
+            // dllink = br.getRegex("href=\"(https?[^\"]+)\"[^>]*>\\s*Direct Download Link\\s*</a>").getMatch(0);
         }
         return dllink;
     }

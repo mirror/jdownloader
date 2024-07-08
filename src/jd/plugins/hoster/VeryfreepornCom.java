@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -55,5 +56,14 @@ public class VeryfreepornCom extends KernelVideoSharingComV2 {
     @Override
     protected boolean preferTitleHTML() {
         return true;
+    }
+
+    @Override
+    protected boolean isOfflineWebsite(final Browser br) {
+        if (br.containsHTML("location\\.href\\s*= ./404\\.php")) {
+            return true;
+        } else {
+            return super.isOfflineWebsite(br);
+        }
     }
 }
