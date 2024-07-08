@@ -1,8 +1,14 @@
 package org.jdownloader.gui.settings;
 
 import java.awt.Component;
+import java.awt.Font;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.font.TextAttribute;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.Icon;
 import javax.swing.JComponent;
@@ -114,7 +120,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
     }
 
     public <T extends SettingsComponent> Pair<T> addPair(String name, String lblConstraints, BooleanKeyHandler enabled, T comp) {
-        JLabel lbl = createLabel(name);
+        final JLabel lbl = createLabel(name);
         add(lbl, lblConstraints);
         ExtCheckBox cb = null;
         String con = "pushx,growy";
@@ -129,7 +135,39 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         }
         con += getRightGap();
         add((JComponent) comp, con);
-        Pair<T> p = new Pair<T>(lbl, comp, cb);
+        final MouseListener listener = new MouseListener() {
+            final Font defaultFont = lbl.getFont();
+            final Font highlight;
+            {
+                final Map<TextAttribute, Integer> fontAttributes = new HashMap<TextAttribute, Integer>();
+                fontAttributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+                highlight = defaultFont.deriveFont(fontAttributes);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                lbl.setFont(defaultFont);
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                lbl.setFont(highlight);
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+            }
+        };
+        ((JComponent) comp).addMouseListener(listener);
+        final Pair<T> p = new Pair<T>(lbl, comp, cb);
         pairs.add(p);
         return p;
     }

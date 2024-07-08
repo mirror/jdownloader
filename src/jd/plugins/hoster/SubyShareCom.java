@@ -24,11 +24,13 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -421,27 +423,10 @@ public class SubyShareCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
-        super.getPage(br, page, false);
-        handleAntiDdosChallenge(br, page);
-        if (correctBr) {
-            correctBR(br);
-        }
-    }
-
-    @Override
-    protected void postPage(final Browser br, String page, final String postdata, final boolean correctBr) throws Exception {
-        super.postPage(br, page, postdata, false);
-        handleAntiDdosChallenge(br, null);
-        if (correctBr) {
-            correctBR(br);
-        }
-    }
-
-    @Override
-    protected void submitForm(final Browser br, final Form form, final boolean correctBr) throws Exception {
-        super.submitForm(br, form, false);
-        handleAntiDdosChallenge(br, null);
+    protected void sendRequest(Browser br, final Request request) throws Exception {
+        final boolean correctBr = wasCorrectBrowserFlagSet(br);
+        super.sendRequest(br, request);
+        handleAntiDdosChallenge(br, RequestMethod.GET.equals(request.getRequestMethod()) ? request.getUrl() : null);
         if (correctBr) {
             correctBR(br);
         }

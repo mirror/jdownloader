@@ -3189,6 +3189,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     @Override
     public void clean() {
         try {
+            correctBrowserMap.set(null);
             super.clean();
         } finally {
             synchronized (correctedBrowserRequestMap) {
@@ -3525,7 +3526,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             /*
              * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
              */
-            dllink = br.getRegex("href=\"(https?://[^\"]+)\"[^>]*>\\s*Direct Download Link").getMatch(0);
+            dllink = br.getRegex("href\\s*=\\s*\"(https?://[^\"]+)\"[^>]*>\\s*Direct Download Link").getMatch(0);
         }
         return dllink;
     }
@@ -3701,45 +3702,47 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         }
     }
 
-    @Override
-    protected void getPage(String page) throws Exception {
-        getPage(br, page, true);
+    protected void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
+        setCorrectBrowserFlag(br, correctBr);
+        getPage(br, page);
     }
 
-    protected void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
-        getPage(br, page);
-        if (correctBr) {
+    private final ThreadLocal<WeakHashMap<Browser, Boolean>> correctBrowserMap = new ThreadLocal<WeakHashMap<Browser, Boolean>>();
+
+    @Override
+    protected void sendRequest(Browser br, Request request) throws Exception {
+        super.sendRequest(br, request);
+        if (wasCorrectBrowserFlagSet(br)) {
             correctBR(br);
         }
     }
 
-    @Override
-    protected void postPage(String page, final String postdata) throws Exception {
-        postPage(br, page, postdata, true);
+    protected void setCorrectBrowserFlag(final Browser br, boolean flag) {
+        WeakHashMap<Browser, Boolean> map = correctBrowserMap.get();
+        if (flag && map != null) {
+            map.remove(br);
+        } else if (!flag) {
+            if (map == null) {
+                map = new WeakHashMap<Browser, Boolean>();
+                correctBrowserMap.set(map);
+            }
+            map.put(br, Boolean.FALSE);
+        }
+    }
+
+    protected boolean wasCorrectBrowserFlagSet(final Browser br) {
+        final WeakHashMap<Browser, Boolean> map = correctBrowserMap.get();
+        return map == null || Boolean.TRUE.equals(map.remove(br));
     }
 
     protected void postPage(final Browser br, String page, final String postdata, final boolean correctBr) throws Exception {
+        setCorrectBrowserFlag(br, correctBr);
         postPage(br, page, postdata);
-        if (correctBr) {
-            correctBR(br);
-        }
-    }
-
-    @Override
-    protected void submitForm(final Form form) throws Exception {
-        submitForm(br, form, true);
-    }
-
-    @Override
-    protected void submitForm(Browser br, Form form) throws Exception {
-        submitForm(br, form, true);
     }
 
     protected void submitForm(final Browser br, final Form form, final boolean correctBr) throws Exception {
-        super.submitForm(br, form);
-        if (correctBr) {
-            correctBR(br);
-        }
+        setCorrectBrowserFlag(br, correctBr);
+        submitForm(br, form);
     }
 
     /**

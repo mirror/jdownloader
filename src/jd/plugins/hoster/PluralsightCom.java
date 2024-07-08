@@ -516,11 +516,6 @@ public class PluralsightCom extends antiDDoSForHost {
         }
     }
 
-    @Override
-    public void sendRequest(Browser ibr, Request request) throws Exception {
-        super.sendRequest(ibr, request);
-    }
-
     @Deprecated
     public static Request getClips(final Browser br, final Plugin plugin, final String courseSlug) throws Exception {
         final Map<String, Object> params = new HashMap<String, Object>();

@@ -677,8 +677,7 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
     }
 
     public void addHandler(final ConfigInterface cfg, final KeyHandler m) {
-        DescriptionForConfigEntry anno = (DescriptionForConfigEntry) m.getAnnotation(DescriptionForConfigEntry.class);
-        System.out.println("Add " + m.getReadableName());
+        final DescriptionForConfigEntry anno = (DescriptionForConfigEntry) m.getAnnotation(DescriptionForConfigEntry.class);
         String label = getTranslation(m, "_label");
         if (label == null) {
             label = m.getReadableName();
@@ -686,9 +685,6 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
         String description = getTranslation(m, "_description");
         if (description == null && anno != null) {
             description = anno.value();
-        }
-        if (description != null && !StringUtils.equals(description, label)) {
-            addDescriptionPlain(description);
         }
         Pair<?> pair = null;
         try {
@@ -864,6 +860,9 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
                 }
             }
         } finally {
+            if (description != null && !StringUtils.equals(description, label)) {
+                addDescriptionPlain(description);
+            }
             if (pair != null) {
                 final SettingsComponent comp = pair.getComponent();
                 if (comp != null) {

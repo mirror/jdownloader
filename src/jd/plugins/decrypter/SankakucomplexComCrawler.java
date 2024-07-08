@@ -60,6 +60,12 @@ public class SankakucomplexComCrawler extends PluginForDecrypt {
         return ret;
     }
 
+    @Override
+    public void init() {
+        super.init();
+        Browser.setRequestIntervalLimitGlobal(getHost(), 1000);
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
@@ -273,5 +279,10 @@ public class SankakucomplexComCrawler extends PluginForDecrypt {
         fp.setName(author.get("name") + " - " + bookTitle);
         fp.addLinks(ret);
         return ret;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
     }
 }

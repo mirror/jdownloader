@@ -77,6 +77,7 @@ public class RinkuMe extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final String contentID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -85,6 +86,7 @@ public class RinkuMe extends PluginForDecrypt {
         for (final Form form : br.getForms()) {
             if (form.containsHTML("btn-[a-f0-9]{32}")) {
                 nextform = form;
+                break;
             }
         }
         if (nextform == null) {
@@ -127,8 +129,9 @@ public class RinkuMe extends PluginForDecrypt {
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            ret.add(createDownloadlink(finallink));
+            return ret;
         }
-        ret.add(createDownloadlink(finallink));
-        return ret;
     }
 }

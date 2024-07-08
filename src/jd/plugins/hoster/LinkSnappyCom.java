@@ -59,7 +59,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
@@ -153,54 +152,20 @@ public class LinkSnappyCom extends PluginForHost {
             throw new AccountRequiredException();
         }
         loginAPI(account, false);
-        URLConnectionAdapter con = null;
-        try {
-            /* Do NOT use HEAD request here as that will render our subsequent errorhandling useless. */
-            final Browser br2 = br.cloneBrowser();
-            br2.setFollowRedirects(true);
-            con = br2.openGetConnection(link.getPluginPatternMatcher());
-            handleConnectionErrors(br2, link, con);
-            if (con.getCompleteContentLength() > 0) {
-                if (con.isContentDecoded()) {
-                    link.setDownloadSize(con.getCompleteContentLength());
-                } else {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            }
-            link.setFinalFileName(Plugin.getFileNameFromConnection(con));
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
+        basicLinkCheck(br.cloneBrowser(), br.createGetRequest(link.getPluginPatternMatcher()), link, null, null);
         return AvailableStatus.TRUE;
     }
 
-    /**
-     * Only call this for download-requests of files, hosted on linksnappy!! </br>
-     * Do not call this in handleMultiHost!!
-     */
-    private void handleConnectionErrors(final Browser br, final DownloadLink link, final URLConnectionAdapter con) throws Exception {
-        if (!this.looksLikeDownloadableContent(con)) {
-            br.followConnection(true);
-            if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.getURL().contains(this.getFID(link))) {
-                /* 404 not found page without 404 not found response-code */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                /* E.g. redirect to mainpage due to expired session/invalid cookies -> This should never happen */
-                throw new AccountUnavailableException("Session expired?", 30 * 1000);
-            }
-        }
+    @Override
+    protected void throwFinalConnectionException(Browser br, URLConnectionAdapter con) throws PluginException, IOException {
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         this.loginAPI(account, false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
-        handleConnectionErrors(br, link, dl.getConnection());
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 
@@ -232,7 +197,9 @@ public class LinkSnappyCom extends PluginForHost {
                     validUntil = ((Number) expireTimestampO).longValue() * 1000;
                 } else if (expireTimestampO instanceof String) {
                     final String expireStr = expireTimestampO.toString();
-                    if (expireStr.matches("\\d+")) {
+                    if ("expired".equalsIgnoreCase(expireStr)) {
+                        validUntil = -1;
+                    } else if (expireStr.matches("\\d+")) {
                         validUntil = Long.parseLong(expireTimestampO.toString()) * 1000;
                     }
                 }
@@ -561,7 +528,7 @@ public class LinkSnappyCom extends PluginForHost {
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
                 this.handleDownloadErrors(link, account);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
+                handleConnectionErrors(br, dl.getConnection());
             }
             link.setProperty(PROPERTY_DIRECTURL, dllink);
         }

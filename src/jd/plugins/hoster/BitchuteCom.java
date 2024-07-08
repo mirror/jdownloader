@@ -18,7 +18,13 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.http.Browser;
 import jd.http.requests.PostRequest;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -28,10 +34,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitchute.com" }, urls = { "https?://(?:www\\.)?bitchute\\.com/video/([A-Za-z0-9\\-_]+)" })
 public class BitchuteCom extends PluginForHost {
@@ -87,7 +89,8 @@ public class BitchuteCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.postPageRaw("https://api.bitchute.com/api/beta9/video", "{\"video_id\":\"" + fid + "\"}");
         if (br.getHttpConnection().getResponseCode() == 403) {
-            // {"errors":[{"context":"AUTH","message":"Forbidden - Cannot perform this action"},{"context":"reason","message":"Content access is restricted based on the users location"}]}
+            // {"errors":[{"context":"AUTH","message":"Forbidden - Cannot perform this action"},{"context":"reason","message":"Content
+            // access is restricted based on the users location"}]}
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Content access is restricted based on the users location");
         } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -100,13 +103,16 @@ public class BitchuteCom extends PluginForHost {
         if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
             link.setComment(description);
         }
-        link.setFinalFileName(this.applyFilenameExtension(title, extDefault));
+        final String finalName = this.applyFilenameExtension(title, extDefault);
+        link.setFinalFileName(finalName);
+        if (!(Thread.currentThread() instanceof SingleDownloadController) && !link.isSizeSet()) {
+            final String dllink = getMP4Link(br, link);
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, finalName, extDefault);
+        }
         return AvailableStatus.TRUE;
     }
 
-    @Override
-    public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link, true);
+    private String getMP4Link(final Browser br, final DownloadLink link) throws Exception {
         final String fid = this.getFID(link);
         final Map<String, Object> postdata = new HashMap<String, Object>();
         postdata.put("video_id", fid);
@@ -118,10 +124,18 @@ public class BitchuteCom extends PluginForHost {
         req.getHeaders().put("Referer", "https://www.bitchute.com/");
         br.getPage(req);
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        final String dllink = (String) entries.get("media_url");
-        if (StringUtils.isEmpty(dllink)) {
+        final String ret = (String) entries.get("media_url");
+        if (StringUtils.isEmpty(ret)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return ret;
         }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link, true);
+        final String dllink = getMP4Link(br, link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(link, null));
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();

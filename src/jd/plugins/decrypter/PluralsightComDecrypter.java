@@ -43,11 +43,6 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
     }
 
     @Override
-    public void sendRequest(final Browser ibr, final Request request) throws Exception {
-        super.sendRequest(ibr, request);
-    }
-
-    @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final boolean useNewHandling = true;
         if (useNewHandling) {
@@ -55,6 +50,11 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
         } else {
             return oldHandling(param);
         }
+    }
+
+    @Override
+    public void sendRequest(Browser ibr, Request request) throws Exception {
+        super.sendRequest(ibr, request);
     }
 
     private ArrayList<DownloadLink> newHandling(final CryptedLink param) throws Exception {
