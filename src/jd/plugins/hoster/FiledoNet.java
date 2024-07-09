@@ -11,6 +11,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -22,20 +23,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -56,6 +43,20 @@ import jd.plugins.PluginBrowser;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FiledoNet extends PluginForHost {
@@ -151,79 +152,59 @@ public class FiledoNet extends PluginForHost {
         try {
             br.setCookiesExclusive(true);
             final StringBuilder sb = new StringBuilder();
-            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            final Map<String, DownloadLink> links = new HashMap<String, DownloadLink>();
             int index = 0;
-            while (true) {
+            while (index < urls.length) {
                 links.clear();
                 while (true) {
                     if (index == urls.length || links.size() == 50) {
                         break;
                     } else {
-                        links.add(urls[index]);
-                        index++;
+                        final DownloadLink link = urls[index++];
+                        links.put(getFID(link), link);
                     }
                 }
                 sb.delete(0, sb.capacity());
-                final List<String> fileIDs = new ArrayList<String>();
-                for (final DownloadLink link : links) {
-                    if (!this.isValidFileURL(link.getPluginPatternMatcher())) {
-                        continue;
-                    } else {
-                        fileIDs.add(this.getFID(link));
-                    }
-                }
-                final PostRequest req = br.createJSonPostRequest(API_BASE + "/file/multiple", JSonStorage.serializeToJson(fileIDs));
+                final PostRequest req = br.createJSonPostRequest(API_BASE + "/file/multiple", JSonStorage.serializeToJson(links.values()));
                 final List<Map<String, Object>> responselist = (List<Map<String, Object>>) this.callAPI(req, null, links.get(0));
-                for (final DownloadLink link : links) {
-                    final String fid = this.getFID(link);
-                    if (!link.isNameSet()) {
-                        link.setName(fid);
-                    }
-                    if (!this.isValidFileURL(link.getPluginPatternMatcher())) {
-                        link.setAvailable(false);
+                for (final Map<String, Object> resp : responselist) {
+                    final DownloadLink link = links.remove(resp.get("fileId").toString());
+                    if (link == null) {
                         continue;
                     }
-                    Map<String, Object> resp = null;
-                    for (final Map<String, Object> responseitem : responselist) {
-                        if (responseitem.get("fileId").toString().equals(fid)) {
-                            resp = responseitem;
-                            break;
+                    try {
+                        final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
+                        final String key = query.get("key");
+                        final String counterFileName = query.get("counterFileName");
+                        final String fileName = resp.get("fileName").toString();
+                        final Number fileSize = (Number) resp.get("fileSize");
+                        final String fileHash = resp.get("fileHash").toString();
+                        final String downloadUrl = resp.get("downloadUrl").toString();
+                        final Boolean hasCaptcha = (Boolean) resp.get("hasCaptcha");
+                        if (fileSize != null) {
+                            link.setVerifiedFileSize(fileSize.longValue());
                         }
+                        final byte[] decodedFileNameIv = Base64.decode(URLEncode.decodeURIComponent(counterFileName));
+                        final byte[] decoded = Base64.decode(URLEncode.decodeURIComponent(key));
+                        /* Set final filename here because Content-Disposition header contains crypted filename. */
+                        final String decryptedFileName = decryptFileName(fileName, decoded, decodedFileNameIv);
+                        link.setFinalFileName(decryptedFileName);
+                        link.setMD5Hash(fileHash);
+                        link.setProperty("dl3", downloadUrl);
+                        // link.setProperty("hashedFileName", fileName);
+                        link.setProperty("decryptedFileName", decryptedFileName);
+                        if (Boolean.TRUE.equals(resp.get("hasCaptcha"))) {
+                            link.setProperty("hasCatpcha", hasCaptcha);
+                        } else {
+                            link.removeProperty("hasCatpcha");
+                        }
+                        link.setAvailable(true);
+                    } catch (final Exception e) {
+                        logger.log(e);
                     }
-                    if (resp == null) {
-                        /* This should never happen! */
-                        link.setAvailable(false);
-                        continue;
-                    }
-                    final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
-                    final String key = query.get("key");
-                    final String counterFileName = query.get("counterFileName");
-                    final String fileName = resp.get("fileName").toString();
-                    final Number fileSize = (Number) resp.get("fileSize");
-                    final String fileHash = resp.get("fileHash").toString();
-                    final String downloadUrl = resp.get("downloadUrl").toString();
-                    final Boolean hasCaptcha = (Boolean) resp.get("hasCaptcha");
-                    if (fileSize != null) {
-                        link.setVerifiedFileSize(fileSize.longValue());
-                    }
-                    final byte[] decodedFileNameIv = Base64.decode(URLEncode.decodeURIComponent(counterFileName));
-                    final byte[] decoded = Base64.decode(URLEncode.decodeURIComponent(key));
-                    /* Set final filename here because Content-Disposition header contains crypted filename. */
-                    final String decryptedFileName = decryptFileName(fileName, decoded, decodedFileNameIv);
-                    link.setFinalFileName(decryptedFileName);
-                    link.setMD5Hash(fileHash);
-                    link.setProperty("dl3", downloadUrl);
-                    // link.setProperty("hashedFileName", fileName);
-                    link.setProperty("decryptedFileName", decryptedFileName);
-                    if (Boolean.TRUE.equals(resp.get("hasCaptcha"))) {
-                        link.setProperty("hasCatpcha", hasCaptcha);
-                    } else {
-                        link.removeProperty("hasCatpcha");
-                    }
-                    link.setAvailable(true);
                 }
-                if (index == urls.length) {
-                    break;
+                for (DownloadLink link : links.values()) {
+                    link.setAvailable(false);
                 }
             }
         } catch (final Exception e) {

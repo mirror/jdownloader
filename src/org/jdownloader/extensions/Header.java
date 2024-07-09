@@ -7,6 +7,8 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtMergedIcon;
@@ -14,8 +16,6 @@ import org.appwork.swing.components.IDImageIcon;
 import org.appwork.utils.images.IconIO;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import net.miginfocom.swing.MigLayout;
 
 public class Header extends JPanel {
     /**
@@ -106,7 +106,11 @@ public class Header extends JPanel {
         if (icon.getIconWidth() > max || icon.getIconHeight() > max) {
             icon = IconIO.getScaledInstance(icon, max, max);
         }
-        ExtMergedIcon _getIcon = new ExtMergedIcon(new IDImageIcon(IconIO.createEmptyImage(max, max)));
+        final ExtMergedIcon _getIcon = new ExtMergedIcon(new IDImageIcon(IconIO.createEmptyImage(max, max))) {
+            @Override
+            protected void idIconCheck(Entry entry) {
+            }
+        };
         _getIcon.add(icon, (max - icon.getIconWidth()) / 2, (max - icon.getIconHeight()) / 2);
         return _getIcon;
     }

@@ -36,18 +36,11 @@ public class OpenURLAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        PluginForHost plugin = null;
         try {
-            plugin = info.findPlugin();
+            final PluginForHost plugin = info.findPlugin();
+            AccountController.openAfflink(plugin != null ? plugin.getLazyP() : null, plugin, id);
         } catch (final Throwable e2) {
             LogController.CL().log(e2);
         }
-        final String customURL;
-        if (plugin == null) {
-            customURL = "http://" + info.getTld();
-        } else {
-            customURL = null;
-        }
-        AccountController.openAfflink(plugin, customURL, id);
     }
 }

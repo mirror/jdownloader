@@ -13,6 +13,9 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 
+import jd.controlling.AccountController;
+import jd.controlling.TaskQueue;
+
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.event.queue.QueueAction;
@@ -34,10 +37,6 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.premium.BuyAndAddPremiumAccount;
 import org.jdownloader.premium.BuyAndAddPremiumDialogInterface;
-
-import jd.controlling.AccountController;
-import jd.controlling.TaskQueue;
-import jd.plugins.PluginForHost;
 
 public class BuyAction extends AbstractAction {
     /**
@@ -179,29 +178,12 @@ public class BuyAction extends AbstractAction {
                             if (d.getReturnValue() < 0) {
                                 return;
                             }
-                            final LazyHostPlugin buyIt = options[d.getReturnValue()];
-                            if (buyIt != null) {
-                                PluginForHost plugin = null;
-                                try {
-                                    plugin = buyIt.getPrototype(null);
-                                } catch (final Throwable e) {
-                                }
-                                final String customURL;
-                                if (plugin == null) {
-                                    customURL = "http://" + buyIt.getHost();
-                                } else {
-                                    customURL = null;
-                                }
-                                AccountController.openAfflink(plugin, customURL, "buypremium/accountmanager/buy" + (table == null ? "/context" : "/table"));
-                                try {
-                                    final BuyAndAddPremiumAccount dia;
-                                    UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, dia = new BuyAndAddPremiumAccount(DomainInfo.getInstance(buyIt.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));
-                                    dia.throwCloseExceptions();
-                                } catch (DialogClosedException e1) {
-                                    e1.printStackTrace();
-                                } catch (DialogCanceledException e1) {
-                                    e1.printStackTrace();
-                                }
+                            final LazyHostPlugin lazyHostPlugin = options[d.getReturnValue()];
+                            if (lazyHostPlugin != null) {
+                                AccountController.openAfflink(lazyHostPlugin, null, "buypremium/accountmanager/buy" + (table == null ? "/context" : "/table"));
+                                final BuyAndAddPremiumAccount dia;
+                                UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, dia = new BuyAndAddPremiumAccount(DomainInfo.getInstance(lazyHostPlugin.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));
+                                dia.throwCloseExceptions();
                             }
                         } catch (DialogClosedException e1) {
                             e1.printStackTrace();

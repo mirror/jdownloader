@@ -98,7 +98,11 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                     if (value instanceof LazyHostPlugin) {
                         return favIcon;
                     } else {
-                        final Icon ret = new ExtMergedIcon(favIcon).add(linkgrabber, 6, 6);
+                        final Icon ret = new ExtMergedIcon(favIcon) {
+                            @Override
+                            protected void idIconCheck(Entry entry) {
+                            };
+                        }.add(linkgrabber, 6, 6);
                         return ret;
                     }
                 }

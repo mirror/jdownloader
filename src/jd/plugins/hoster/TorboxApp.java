@@ -21,17 +21,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -48,6 +37,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "torbox.app" }, urls = { "" })
 public class TorboxApp extends PluginForHost {
@@ -91,8 +91,8 @@ public class TorboxApp extends PluginForHost {
 
     public int getMaxChunks(final DownloadLink link, final Account account) {
         /**
-         * 2024-06-12: Max 16 total connections according to admin. </br>
-         * We'll be doing it this way right know, knowing that the user can easily try to exceed that limit with JDownloader.
+         * 2024-06-12: Max 16 total connections according to admin. </br> We'll be doing it this way right know, knowing that the user can
+         * easily try to exceed that limit with JDownloader.
          */
         return -16;
     }
@@ -139,12 +139,11 @@ public class TorboxApp extends PluginForHost {
                 query.add("password", Encoding.urlEncode(link.getDownloadPassword()));
             }
             final Request req_createwebdownload = br.createPostRequest(API_BASE + "/webdl/createwebdownload", query);
-            final Map<String, Object> entries = (Map<String, Object>) this.callAPI(req_createwebdownload, account, link);
+            final Map<String, Object> entries = (Map<String, Object>) this.callAPI(br, req_createwebdownload, account, link);
             /**
-             * These two strings can be used to identify the unique item/link we just added. </br>
-             * We could cache them but instead we will simply rely on the API to do this for us. </br>
-             * Once a download was started successfully we save- and re-use the direct-URL, that should be enough - we do not want to
-             * overcomplicate things.
+             * These two strings can be used to identify the unique item/link we just added. </br> We could cache them but instead we will
+             * simply rely on the API to do this for us. </br> Once a download was started successfully we save- and re-use the direct-URL,
+             * that should be enough - we do not want to overcomplicate things.
              */
             final String file_id = entries.get("webdownload_id").toString();
             final String hash = entries.get("hash").toString();
@@ -162,7 +161,7 @@ public class TorboxApp extends PluginForHost {
                 /* 2024-06-13: Use this for now to avoid problems with outdated response from this API call. */
                 query_checkcached.add("bypass_cache", "true");
                 final Request req_checkcached = br.createGetRequest(API_BASE + "/webdl/checkcached?" + query_checkcached.toString());
-                final Object resp_checkcached = this.callAPI(req_checkcached, account, link);
+                final Object resp_checkcached = this.callAPI(br, req_checkcached, account, link);
                 Map<String, Object> cachemap = null;
                 if (resp_checkcached instanceof Map) {
                     cachemap = (Map<String, Object>) ((Map<String, Object>) resp_checkcached).get(hash);
@@ -187,7 +186,7 @@ public class TorboxApp extends PluginForHost {
             query_requestdl.add("web_id", file_id);
             query_requestdl.add("zip", "false");
             final Request req_requestdl = br.createGetRequest(API_BASE + "/webdl/requestdl?" + query_requestdl.toString());
-            dllink = this.callAPI(req_requestdl, account, link).toString();
+            dllink = this.callAPI(br, req_requestdl, account, link).toString();
             /* Store directurl so we can re-use it next time. */
             link.setProperty(directlinkproperty, dllink);
         }
@@ -208,6 +207,19 @@ public class TorboxApp extends PluginForHost {
         this.dl.startDownload();
     }
 
+    private String fixTimeStampString(final String timeStamp) {
+        // timestamps also have nanosecs?! SimpleDateFormat lenien=true will then parse xxxxxx ms and convert to secs/minutes...
+        return timeStamp != null ? timeStamp.replaceFirst("(\\.\\d{6})", ".000") : null;
+    }
+
+    private long parseTimeStamp(final String timeStamp) {
+        if (timeStamp == null) {
+            return -1;
+        } else {
+            return TimeFormatter.getMilliSeconds(fixTimeStampString(timeStamp), "yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.ENGLISH);
+        }
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -215,8 +227,8 @@ public class TorboxApp extends PluginForHost {
         /* Use shorter timeout than usually to make notification system work in a better way (see end of this function). */
         account.setRefreshTimeout(5 * 60 * 1000l);
         /**
-         * In GUI, used only needs to enter API key so we'll set the username for him here. </br>
-         * This is also important to be able to keep the user from adding the same account multiple times.
+         * In GUI, used only needs to enter API key so we'll set the username for him here. </br> This is also important to be able to keep
+         * the user from adding the same account multiple times.
          */
         account.setUser(user.get("email").toString());
         final int planID = ((Number) user.get("plan")).intValue();
@@ -224,14 +236,9 @@ public class TorboxApp extends PluginForHost {
             throw new AccountInvalidException("Unsupported account type (free account)");
         }
         String created_at = user.get("created_at").toString();
-        created_at = fixDateString(created_at);
         String premium_expires_at = (String) user.get("premium_expires_at");
-        premium_expires_at = fixDateString(premium_expires_at);
-        long premiumExpireTimestamp = -1;
-        if (premium_expires_at != null) {
-            premiumExpireTimestamp = TimeFormatter.getMilliSeconds(premium_expires_at, "yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.ENGLISH);
-        }
-        ai.setCreateTime(TimeFormatter.getMilliSeconds(created_at, "yyyy-MM-dd'T'HH:mm:ss.SSSSX", Locale.ENGLISH));
+        long premiumExpireTimestamp = parseTimeStamp(premium_expires_at);
+        ai.setCreateTime(parseTimeStamp(created_at));
         if (premiumExpireTimestamp > System.currentTimeMillis()) {
             account.setType(AccountType.PREMIUM);
             ai.setValidUntil(premiumExpireTimestamp, br);
@@ -248,7 +255,7 @@ public class TorboxApp extends PluginForHost {
         ai.setStatus(account.getType().getLabel() + " | Subscribed: " + subscribedStr + " | Dl so far: " + SIZEUNIT.formatValue(maxSizeUnit, ((Number) user.get("total_bytes_downloaded")).longValue()));
         /* Obtain list of supported hosts */
         final Request req_hosters = br.createGetRequest(API_BASE + "/webdl/hosters");
-        final List<Map<String, Object>> hosterlist = (List<Map<String, Object>>) this.callAPI(req_hosters, account, null);
+        final List<Map<String, Object>> hosterlist = (List<Map<String, Object>>) this.callAPI(br, req_hosters, account, null);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         for (final Map<String, Object> hosterlistitem : hosterlist) {
             final String domain = hosterlistitem.get("domain").toString();
@@ -269,10 +276,10 @@ public class TorboxApp extends PluginForHost {
                 final long timestampNotificationsDisplayed = account.getLongProperty(PROPERTY_ACCOUNT_NOTIFICATIONS_DISPLAYED_UNTIL_TIMESTAMP, 0);
                 final Request req_notifications = br.createGetRequest(API_BASE + "/notifications/mynotifications");
                 /* Note: 2024-06-13: There is no serverside limit of number of notofications that can be returned here. */
-                notifications = (List<Map<String, Object>>) this.callAPI(req_notifications, account, null);
+                notifications = (List<Map<String, Object>>) this.callAPI(br, req_notifications, account, null);
                 int counterDisplayed = 0;
                 for (final Map<String, Object> notification : notifications) {
-                    final long notification_created_at = TimeFormatter.getMilliSeconds(notification.get("created_at").toString(), "yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.ENGLISH);
+                    final long notification_created_at = parseTimeStamp(notification.get("created_at").toString());
                     if (notification_created_at > highestNotificationTimestamp) {
                         highestNotificationTimestamp = notification_created_at;
                     }
@@ -303,7 +310,7 @@ public class TorboxApp extends PluginForHost {
                     try {
                         /* Clear all notifications ("mark as read") */
                         final Request req_clear_all_notifications = br.createGetRequest(API_BASE + "/notifications/clear");
-                        this.callAPI(req_clear_all_notifications, account, null);
+                        this.callAPI(br, req_clear_all_notifications, account, null);
                         // final Object req_clear_allnotofications_answer = this.callAPI(req_clear_all_notifications, account, null);
                     } catch (final Exception e) {
                         logger.log(e);
@@ -315,11 +322,6 @@ public class TorboxApp extends PluginForHost {
         return ai;
     }
 
-    /** Removes nanoseconds from date strings. */
-    private String fixDateString(final String dateString) {
-        return dateString.replaceFirst("\\.([0-9]{3})([0-9]{3})", ".$1");
-    }
-
     private Map<String, Object> login(final Account account, final boolean validateLogins) throws IOException, PluginException, InterruptedException {
         synchronized (account) {
             setLoginHeaders(br, account);
@@ -328,7 +330,7 @@ public class TorboxApp extends PluginForHost {
                 return null;
             }
             final Request loginreq = br.createGetRequest(API_BASE + "/user/me");
-            final Map<String, Object> resp = (Map<String, Object>) this.callAPI(loginreq, account, null);
+            final Map<String, Object> resp = (Map<String, Object>) this.callAPI(br, loginreq, account, null);
             return resp;
         }
     }
@@ -342,18 +344,17 @@ public class TorboxApp extends PluginForHost {
     }
 
     /* API docs: https://api-docs.torbox.app/ */
-    private Object callAPI(final Request req, final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
-        // setLoginHeaders(req, account);
-        req.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + getApikey(account));
+    private Object callAPI(final Browser br, final Request req, final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
+        setLoginHeaders(req, account);
         br.getPage(req);
-        return checkErrors(account, link);
+        return checkErrors(br, account, link);
     }
 
     private String getApikey(final Account account) {
         return correctPassword(account.getPass());
     }
 
-    private Object checkErrors(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
+    private Object checkErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
         try {
             final Object jsonO = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
             if (jsonO == null || !(jsonO instanceof Map)) {

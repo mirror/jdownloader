@@ -121,9 +121,9 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
         final Collection<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
         // Filter - only premium plugins should be here
         final HashMap<String, String> ret = new HashMap<String, String>();
-        for (final LazyHostPlugin lhp : allPLugins) {
-            if (lhp.isPremium()) {
-                ret.put(lhp.getDisplayName(), AccountController.createFullBuyPremiumUrl(lhp.getPremiumUrl(), "accountmanager/webinterface"));
+        for (final LazyHostPlugin lazyHostPlugin : allPLugins) {
+            if (lazyHostPlugin.isPremium()) {
+                ret.put(lazyHostPlugin.getHost(), AccountController.buildAfflink(lazyHostPlugin, null, "accountmanager/webinterface"));
             }
         }
         return ret;
@@ -133,12 +133,10 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
     public String getPremiumHosterUrl(String hoster) {
         if (hoster == null) {
             return null;
+        } else {
+            final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(hoster);
+            return AccountController.buildAfflink(lazyHostPlugin, null, "captcha/webinterface");
         }
-        final LazyHostPlugin plugin = HostPluginController.getInstance().get(hoster);
-        if (plugin == null) {
-            return null;
-        }
-        return AccountController.createFullBuyPremiumUrl(plugin.getPremiumUrl(), "captcha/webinterface");
     }
 
     public void removeAccounts(long[] ids) {

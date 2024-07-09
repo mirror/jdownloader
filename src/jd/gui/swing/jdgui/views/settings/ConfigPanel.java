@@ -21,21 +21,12 @@ import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
-
-import org.appwork.shutdown.ShutdownController;
-import org.appwork.swing.MigPanel;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.updatev2.RestartController;
-import org.jdownloader.updatev2.SmartRlyRestartRequest;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,6 +37,14 @@ import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.swing.MigPanel;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.updatev2.RestartController;
+import org.jdownloader.updatev2.SmartRlyRestartRequest;
 
 public abstract class ConfigPanel extends SwitchPanel {
 
@@ -97,22 +96,11 @@ public abstract class ConfigPanel extends SwitchPanel {
         panel.setOpaque(false);
     }
 
-    public void init(boolean useScrollPane) {
+    public void init() {
         for (ConfigEntry cfgEntry : setupContainer().getEntries()) {
             addConfigEntry(cfgEntry);
         }
-        if (useScrollPane) {
-            JScrollPane scroll = new JScrollPane(panel);
-            // scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-            scroll.setBorder(null);
-            scroll.setOpaque(false);
-            scroll.getViewport().setOpaque(false);
-            scroll.setViewportBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
-            this.add(scroll);
-
-        } else {
-            add(panel);
-        }
+        add(panel);
         this.load();
     }
 
@@ -159,7 +147,6 @@ public abstract class ConfigPanel extends SwitchPanel {
                 panel.add(guiEntry.getInput(), (guiEntry.getDecoration() == null ? gapLeft + "spanx," : "") + "wmax 250");
                 break;
             case ConfigContainer.TYPE_TEXTAREA:
-
                 panel.add(new JScrollPane(guiEntry.getInput()), gapLeft + "gaptop 0,spanx,growy,pushy,gapbottom 5,wmin 10");
                 break;
             default:

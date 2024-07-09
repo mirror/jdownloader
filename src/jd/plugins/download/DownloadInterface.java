@@ -55,6 +55,7 @@ abstract public class DownloadInterface {
     protected Request initialRequest                   = null;
 
     /** Htmldecode filename from header? */
+    @Deprecated
     public void setFilenameFix(boolean b) {
         this.fixWrongContentDispositionHeader = b;
     }

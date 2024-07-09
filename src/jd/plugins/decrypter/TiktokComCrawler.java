@@ -24,19 +24,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.components.config.TiktokConfig.ImageFormat;
-import org.jdownloader.plugins.components.config.TiktokConfig.MediaCrawlMode;
-import org.jdownloader.plugins.components.config.TiktokConfig.ProfileCrawlMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -58,6 +45,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.TiktokCom;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.components.config.TiktokConfig.ImageFormat;
+import org.jdownloader.plugins.components.config.TiktokConfig.MediaCrawlMode;
+import org.jdownloader.plugins.components.config.TiktokConfig.ProfileCrawlMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { TiktokCom.class })
@@ -198,8 +198,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
         } else {
             /* Website with API as fallback. */
             /**
-             * Deprecated: Website with API fallback </br>
-             * 2024-06-19: This doesn't make sense anymore since API mode doesn't work anymore atm.
+             * Deprecated: Website with API fallback </br> 2024-06-19: This doesn't make sense anymore since API mode doesn't work anymore
+             * atm.
              */
             try {
                 return crawlSingleMediaWebsiteWebsite(hostPlg, contenturl, account, forceGrabAll);
@@ -227,8 +227,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
     private boolean websiteHandlingAsFallbackAndOfflineIfWebsiteHandlingFails = false;
 
     /**
-     * This can crawl single videos from website. </br>
-     * If this tiktok item also contains images or contains only images, this handling will fail!
+     * This can crawl single videos from website. </br> If this tiktok item also contains images or contains only images, this handling will
+     * fail!
      */
     public ArrayList<DownloadLink> crawlSingleMediaWebsiteEmbedWithWebsiteFallback(final TiktokCom hostPlg, final String url, final Account account, final boolean forceGrabAll) throws Exception {
         websiteHandlingAsFallbackAndOfflineIfWebsiteHandlingFails = false;
@@ -259,7 +259,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         } catch (final Exception e) {
             if (websiteHandlingAsFallbackAndOfflineIfWebsiteHandlingFails) {
                 logger.log(e);
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
             } else {
                 throw e;
             }
@@ -483,6 +483,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             }
             if (aweme_detail == null) {
                 logger.info("Fallback failed -> Video item looks to be offline");
+                logger.log(jse);
             }
         }
         if (aweme_detail == null) {
@@ -512,9 +513,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Use website to crawl all videos of a user. </br>
-     * Pagination hasn't been implemented so this will only find the first batch of items - usually around 30 items! </br>
-     * 2024-06-19: This is broken, see: https://svn.jdownloader.org/issues/90216
+     * Use website to crawl all videos of a user. </br> Pagination hasn't been implemented so this will only find the first batch of items -
+     * usually around 30 items! </br> 2024-06-19: This is broken, see: https://svn.jdownloader.org/issues/90216
      */
     public ArrayList<DownloadLink> crawlProfileWebsite(final CryptedLink param, final String contenturl) throws Exception {
         prepBRWebsite(br);
@@ -996,7 +996,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             try {
                 entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             } catch (final JSonMapperException e) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
             }
             final List<Map<String, Object>> videos = (List<Map<String, Object>>) entries.get("aweme_list");
             if (videos.isEmpty()) {
@@ -1154,8 +1154,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 video0.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, directurl);
                 if (data_size != null) {
                     /**
-                     * Set filesize of download-version because streaming- and download-version are nearly identical. </br>
-                     * If a video is watermarked and downloads are prohibited both versions should be identical.
+                     * Set filesize of download-version because streaming- and download-version are nearly identical. </br> If a video is
+                     * watermarked and downloads are prohibited both versions should be identical.
                      */
                     video0.setDownloadSize(data_size.longValue());
                 }

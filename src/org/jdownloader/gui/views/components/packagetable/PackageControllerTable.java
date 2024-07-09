@@ -27,6 +27,12 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableModel;
 
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.PackageController;
+import jd.gui.swing.jdgui.BasicJDTable;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtColumn;
@@ -52,12 +58,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.PackageController;
-import jd.gui.swing.jdgui.BasicJDTable;
 
 public abstract class PackageControllerTable<ParentType extends AbstractPackageNode<ChildrenType, ParentType>, ChildrenType extends AbstractPackageChildrenNode<ParentType>> extends BasicJDTable<AbstractNode> {
     protected class SelectionInfoCache {
@@ -268,6 +268,9 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         void onSelectionInfo(SelectionInfo<PackageType, ChildrenType> selectionInfo);
     }
 
+    private static interface LegacyBlockingSelectionInfoCallback<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends SelectionInfoCallback<PackageType, ChildrenType> {
+    }
+
     /** access within EDT only **/
     protected volatile SelectionInfoCache selectionOnly_TableData      = null;
     /** access within EDT only **/
@@ -276,6 +279,8 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     protected volatile SelectionInfoCache all_TableData                = null;
 
     public void getSelectionInfo(final SelectionInfoCallback<ParentType, ChildrenType> callback, final boolean selectionOnly, final boolean useTableModelData) {
+        // invokeLater in EventDispatchThread as SelectionModels might not be updated yet
+        final boolean invokeLater = SwingUtilities.isEventDispatchThread() && !(callback instanceof LegacyBlockingSelectionInfoCallback);
         if (selectionOnly) {
             new EDTHelper<Void>() {
                 @Override
@@ -320,7 +325,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                     }
                     return null;
                 }
-            }.start();
+            }.start(invokeLater);
         } else {
             if (useTableModelData) {
                 new EDTHelper<Void>() {
@@ -337,7 +342,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                         }
                         return null;
                     }
-                }.start();
+                }.start(invokeLater);
             } else {
                 getModel().getController().getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
                     @Override
@@ -355,7 +360,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     public SelectionInfo<ParentType, ChildrenType> getSelectionInfo(final boolean selectionOnly, final boolean useTableModelData) {
         final AtomicReference<Object> ret = new AtomicReference<Object>();
         ret.set(ret);// help value to differ between result that may also be null
-        final SelectionInfoCallback<ParentType, ChildrenType> callback = new SelectionInfoCallback<ParentType, ChildrenType>() {
+        final LegacyBlockingSelectionInfoCallback<ParentType, ChildrenType> callback = new LegacyBlockingSelectionInfoCallback<ParentType, ChildrenType>() {
             @Override
             public void onSelectionInfo(SelectionInfo<ParentType, ChildrenType> selectionInfo) {
                 synchronized (ret) {

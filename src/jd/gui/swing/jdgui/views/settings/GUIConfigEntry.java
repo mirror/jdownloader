@@ -18,6 +18,8 @@ package jd.gui.swing.jdgui.views.settings;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -146,6 +148,40 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
             boolean state = configEntry.isConditionalEnabled(null, null);
             enableComponent(input, configEntry.isEnabled() && state);
             enableComponent(decoration, configEntry.isEnabled() && state);
+            if (decoration instanceof JLabel) {
+                final JLabel lbl = (JLabel) decoration;
+                final MouseListener listener = new MouseListener() {
+
+                    @Override
+                    public void mouseReleased(MouseEvent e) {
+                    }
+
+                    @Override
+                    public void mousePressed(MouseEvent e) {
+                    }
+
+                    @Override
+                    public void mouseExited(MouseEvent e) {
+                        String text = lbl.getText();
+                        text = text.replaceFirst("^<html><U>", "<html>");
+                        text = text.replaceFirst("</U></html>$", "</html>");
+                        lbl.setText(text);
+                    }
+
+                    @Override
+                    public void mouseEntered(MouseEvent e) {
+                        String text = lbl.getText();
+                        text = text.replaceFirst("^<html>", "<html><U>");
+                        text = text.replaceFirst("</html>$", "</U></html>");
+                        lbl.setText(text);
+                    }
+
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                    }
+                };
+                input.addMouseListener(listener);
+            }
         }
     }
 

@@ -7,7 +7,6 @@ import javax.swing.AbstractAction;
 import jd.controlling.AccountController;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -24,14 +23,8 @@ public class RenewAction extends TableBarAction {
     public void actionPerformed(ActionEvent e) {
         final Account lAcc = getAccount();
         if (lAcc != null) {
-            final PluginForHost plugin = JDUtilities.getPluginForHost(lAcc.getHoster());
-            final String customURL;
-            if (plugin == null) {
-                customURL = "http://" + lAcc.getHoster();
-            } else {
-                customURL = null;
-            }
-            AccountController.openAfflink(plugin, customURL, "RenewAction");
+            final PluginForHost plugin = lAcc.getPlugin();
+            AccountController.openAfflink(plugin != null ? plugin.getLazyP() : null, plugin, "RenewAction");
         }
     }
 }

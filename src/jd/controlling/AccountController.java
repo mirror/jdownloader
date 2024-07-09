@@ -16,6 +16,8 @@
 package jd.controlling;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -59,6 +61,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -70,6 +73,8 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;
@@ -80,11 +85,11 @@ public class AccountController implements AccountControllerListener, AccountProp
     private final HashMap<String, List<Account>>                                 MULTIHOSTER_ACCOUNTS;
     private static AccountController                                             INSTANCE         = new AccountController();
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
-                                                                                                      @Override
-                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-                                                                                                          listener.onAccountControllerEvent(event);
-                                                                                                      }
-                                                                                                  };
+        @Override
+        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+            listener.onAccountControllerEvent(event);
+        }
+    };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -885,16 +890,37 @@ public class AccountController implements AccountControllerListener, AccountProp
         return "http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + Encoding.urlEncode(buyPremiumUrl) + "&" + Encoding.urlEncode(id);
     }
 
-    public static void openAfflink(final PluginForHost plugin, final String customRefURL, final String source) {
-        String refURL = customRefURL;
-        if (StringUtils.isEmpty(refURL) && plugin != null) {
-            String buyPremium = plugin.getBuyPremiumUrl();
-            if (StringUtils.isEmpty(buyPremium)) {
-                buyPremium = "http://" + plugin.getHost();
+    public static String buildAfflink(final LazyHostPlugin lazyHostPlugin, PluginForHost plugin, final String source) {
+        String ret = null;
+        if (plugin != null) {
+            ret = plugin.getBuyPremiumUrl();
+        } else if (lazyHostPlugin != null) {
+            try {
+                plugin = lazyHostPlugin.getPrototype(null);
+                ret = plugin.getBuyPremiumUrl();
+            } catch (UpdateRequiredClassNotFoundException ignore) {
             }
-            refURL = AccountController.createFullBuyPremiumUrl(buyPremium, source);
         }
-        CrossSystem.openURL(refURL);
+        try {
+            URLHelper.verifyURL(new URL(ret));
+        } catch (MalformedURLException e) {
+            ret = null;
+        }
+        if (StringUtils.isEmpty(ret) && lazyHostPlugin != null) {
+            ret = "https://" + lazyHostPlugin.getHost();
+        }
+        if (StringUtils.isEmpty(ret)) {
+            return null;
+        } else {
+            return AccountController.createFullBuyPremiumUrl(ret, source);
+        }
+    }
+
+    public static void openAfflink(final LazyHostPlugin lazyHostPlugin, final PluginForHost plugin, final String source) {
+        final String refURL = buildAfflink(lazyHostPlugin, plugin, source);
+        if (refURL != null) {
+            CrossSystem.openURL(refURL);
+        }
     }
 
     @Override

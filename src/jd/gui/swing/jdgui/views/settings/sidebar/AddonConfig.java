@@ -34,14 +34,14 @@ public class AddonConfig extends ConfigPanel {
     private static HashMap<String, MinTimeWeakReference<AddonConfig>> MAP              = new HashMap<String, MinTimeWeakReference<AddonConfig>>();
     private static MinTimeWeakReferenceCleanup                        cleanup          = new MinTimeWeakReferenceCleanup() {
 
-                                                                                           @Override
-                                                                                           public void onMinTimeWeakReferenceCleanup(MinTimeWeakReference<?> minTimeWeakReference) {
-                                                                                               synchronized (MAP) {
-                                                                                                   MAP.values().remove(minTimeWeakReference);
-                                                                                               }
-                                                                                           }
+        @Override
+        public void onMinTimeWeakReferenceCleanup(MinTimeWeakReference<?> minTimeWeakReference) {
+            synchronized (MAP) {
+                MAP.values().remove(minTimeWeakReference);
+            }
+        }
 
-                                                                                       };
+    };
 
     private final ConfigContainer                                     container;
 
@@ -51,7 +51,7 @@ public class AddonConfig extends ConfigPanel {
         super();
         this.container = container;
         this.showGroups = showGroups;
-        init(true);
+        init();
     }
 
     @Override
@@ -80,18 +80,20 @@ public class AddonConfig extends ConfigPanel {
 
     /**
      * Caches {@link AddonConfig} panels...
-     * 
+     *
      * @param container
      * @param ext
      * @return
      */
-    public synchronized static AddonConfig getInstance(ConfigContainer container, String ext, boolean showGroups) {
-        String id = container + "_" + ext;
-        MinTimeWeakReference<AddonConfig> weak = MAP.get(id);
-        AddonConfig config = null;
-        if (weak != null && (config = weak.get()) != null) return config;
-        config = new AddonConfig(container, showGroups);
-        MAP.put(container + "_" + ext, new MinTimeWeakReference<AddonConfig>(config, 30 * 1000l, id, cleanup));
-        return config;
-    }
+     public synchronized static AddonConfig getInstance(ConfigContainer container, String ext, boolean showGroups) {
+         String id = container + "_" + ext;
+         MinTimeWeakReference<AddonConfig> weak = MAP.get(id);
+         AddonConfig config = null;
+         if (weak != null && (config = weak.get()) != null) {
+             return config;
+         }
+         config = new AddonConfig(container, showGroups);
+         MAP.put(container + "_" + ext, new MinTimeWeakReference<AddonConfig>(config, 30 * 1000l, id, cleanup));
+         return config;
+     }
 }

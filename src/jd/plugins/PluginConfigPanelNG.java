@@ -38,6 +38,25 @@ import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 
+import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.Label;
+import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
+import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.components.TextPane;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.PremiumAccountTableModel;
+import jd.nutils.Formatter;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
@@ -64,7 +83,6 @@ import org.appwork.utils.event.DontThrowFromCurrentThreadEventSuppressor;
 import org.appwork.utils.event.EventSuppressor;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
-import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -88,7 +106,6 @@ import org.jdownloader.plugins.config.PluginConfigPanelEventSenderEventSender;
 import org.jdownloader.plugins.config.PluginConfigPanelEventSenderListener;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.premium.BuyAndAddPremiumAccount;
@@ -96,25 +113,6 @@ import org.jdownloader.premium.BuyAndAddPremiumDialogInterface;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.controlling.AccountController;
-import jd.controlling.AccountControllerEvent;
-import jd.controlling.AccountControllerListener;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.Label;
-import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
-import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
-import jd.gui.swing.jdgui.views.settings.components.Spinner;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.components.TextPane;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.PremiumAccountTableModel;
-import jd.nutils.Formatter;
-import net.miginfocom.swing.MigLayout;
 
 public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements AccountControllerListener {
     private List<Group> groups = new ArrayList<Group>();
@@ -197,7 +195,7 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
 
     public JLabel addStartDescription(String description) {
         if (!description.toLowerCase().startsWith("<html>")) {
-            description = "<html>" + description.replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>";
+            description = "<html>" + description.replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "</html>";
         }
         JLabel txt = new JLabel();
         SwingUtils.setOpaque(txt, false);
@@ -211,7 +209,7 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
     @Override
     public JLabel addDescription(String description) {
         if (!description.toLowerCase().startsWith("<html>")) {
-            description = "<html>" + description.replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>";
+            description = "<html>" + description.replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "</html>";
         }
         JLabel txt = new JLabel();
         SwingUtils.setOpaque(txt, false);
@@ -228,7 +226,7 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
             return null;
         }
         if (!description.toLowerCase().startsWith("<html>")) {
-            description = "<html>" + description.replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>";
+            description = "<html>" + description.replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "</html>";
         }
         JLabel txt = new JLabel();
         SwingUtils.setOpaque(txt, false);
@@ -611,18 +609,10 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
             list.setOpaque(false);
             list.addMouseListener(new MouseAdapter() {
                 public void mouseClicked(MouseEvent e) {
-                    DomainInfo domainInfo = (DomainInfo) list.getSelectedValue();
+                    final DomainInfo domainInfo = (DomainInfo) list.getSelectedValue();
                     if (domainInfo != null) {
-                        LazyHostPlugin plg = HostPluginController.getInstance().get(domainInfo.getTld());
-                        if (plg != null) {
-                            try {
-                                AccountController.openAfflink(plg.getPrototype(null), null, "MultiHostPanel");
-                                return;
-                            } catch (UpdateRequiredClassNotFoundException e1) {
-                                e1.printStackTrace();
-                            }
-                        }
-                        CrossSystem.openURL(AccountController.createFullBuyPremiumUrl("http://" + domainInfo.getTld(), "MultiHostPanel"));
+                        final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(domainInfo.getTld());
+                        AccountController.openAfflink(lazyHostPlugin, null, "MultiHostPanel");
                     }
                 };
             });
@@ -716,15 +706,15 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
                             final Map<String, Boolean> finalValue = value;
                             final MultiComboBox<String> comp = new MultiComboBox<String>(new ArrayList<String>(value.keySet())) {
                                 private final GenericConfigEventListener<Map<String, Boolean>> listener = new GenericConfigEventListener<Map<String, Boolean>>() {
-                                    @Override
-                                    public void onConfigValidatorError(KeyHandler<Map<String, Boolean>> keyHandler, Map<String, Boolean> invalidValue, ValidationException validateException) {
-                                    }
+                                                                                                            @Override
+                                                                                                            public void onConfigValidatorError(KeyHandler<Map<String, Boolean>> keyHandler, Map<String, Boolean> invalidValue, ValidationException validateException) {
+                                                                                                            }
 
-                                    @Override
-                                    public void onConfigValueModified(KeyHandler<Map<String, Boolean>> keyHandler, Map<String, Boolean> newValue) {
-                                        updateModel(newValue);
-                                    }
-                                };
+                                                                                                            @Override
+                                                                                                            public void onConfigValueModified(KeyHandler<Map<String, Boolean>> keyHandler, Map<String, Boolean> newValue) {
+                                                                                                                updateModel(newValue);
+                                                                                                            }
+                                                                                                        };
                                 {
                                     m.getEventSender().addListener(listener, true);
                                     updateModel(finalValue);
@@ -786,15 +776,15 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
                         try {
                             final MultiComboBox<Object> comp = new MultiComboBox<Object>(((Class) types[0]).getEnumConstants()) {
                                 private final GenericConfigEventListener<Set<Enum>> listener = new GenericConfigEventListener<Set<Enum>>() {
-                                    @Override
-                                    public void onConfigValidatorError(KeyHandler<Set<Enum>> keyHandler, Set<Enum> invalidValue, ValidationException validateException) {
-                                    }
+                                                                                                 @Override
+                                                                                                 public void onConfigValidatorError(KeyHandler<Set<Enum>> keyHandler, Set<Enum> invalidValue, ValidationException validateException) {
+                                                                                                 }
 
-                                    @Override
-                                    public void onConfigValueModified(KeyHandler<Set<Enum>> keyHandler, Set<Enum> newValue) {
-                                        updateModel(newValue);
-                                    }
-                                };
+                                                                                                 @Override
+                                                                                                 public void onConfigValueModified(KeyHandler<Set<Enum>> keyHandler, Set<Enum> newValue) {
+                                                                                                     updateModel(newValue);
+                                                                                                 }
+                                                                                             };
                                 {
                                     Set<Enum> value = (Set<Enum>) m.getValue();
                                     if (value == null) {

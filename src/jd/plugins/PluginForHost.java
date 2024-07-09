@@ -33,8 +33,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.WeakHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -125,8 +123,6 @@ import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.InputDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog;
@@ -201,14 +197,14 @@ import org.jdownloader.updatev2.UpdateHandler;
 public abstract class PluginForHost extends Plugin {
     private static final String    COPY_MOVE_FILE = "CopyMoveFile";
     private static final Pattern[] PATTERNS       = new Pattern[] {
-                                                  /**
-                                                   * these patterns should split filename and fileextension (extension must include the
-                                                   * point)
-                                                   */
-                                                  // multipart rar archives
-            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-            // normal files with extension
-            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+        /**
+         * these patterns should split filename and fileextension (extension must include the
+         * point)
+         */
+        // multipart rar archives
+        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+        // normal files with extension
+        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
     private LazyHostPlugin         lazyP          = null;
     /**
      * Is true if the user has answered a captcha challenge. Does not say anything whether or not the answer was correct.
@@ -1101,34 +1097,6 @@ public abstract class PluginForHost extends Plugin {
     public abstract void handleFree(DownloadLink link) throws Exception;
 
     /**
-     * By overriding this method, a plugin is able to return a HostPluginInfoGenerator. <br>
-     * <b>Attention: Until next stable update, we have to return Object here.</b>
-     *
-     * @return
-     */
-    // @Override DO NEVER USE OVERRIDE ON THIS METHOD BEFORE NEXT STABLE UPDATE.
-    public Object getInfoGenerator(Account account) {
-        AccountInfo ai = account.getAccountInfo();
-        Map<String, Object> props = null;
-        if (ai == null) {
-            return null;
-        }
-        props = ai.getProperties();
-        if (props == null || props.size() == 0) {
-            return null;
-        }
-        KeyValueInfoGenerator ret = new KeyValueInfoGenerator(_JDT.T.pluginforhost_infogenerator_title(account.getUser(), account.getHoster()));
-        for (Entry<String, Object> es : props.entrySet()) {
-            String key = es.getKey();
-            Object value = es.getValue();
-            if (value != null) {
-                ret.addPair(key, value.toString());
-            }
-        }
-        return ret;
-    }
-
-    /**
      * return if we can download given downloadLink via given account with this pluginForHost
      *
      * @param downloadLink
@@ -1365,16 +1333,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         * 
+         *
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         * 
+         *
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         * 
+         *
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         * 
-         * 
-         * 
+         *
+         *
+         *
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);
@@ -2582,25 +2550,24 @@ public abstract class PluginForHost extends Plugin {
         return downloadLinks;
     }
 
-    protected AskToUsePremiumDialog createAskToUsePremiumDialog(final String domain) {
-        AskToUsePremiumDialog dialog = new AskToUsePremiumDialog(domain, this) {
+    protected AskToUsePremiumDialog createAskToUsePremiumDialog() {
+        final AskToUsePremiumDialog dialog = new AskToUsePremiumDialog(this) {
             @Override
             public String getDontShowAgainKey() {
-                return "adsPremium_" + domain;
+                return "adsPremium_" + getDomain();
             }
         };
         dialog.setTimeout(1 * 60 * 1000);
         return dialog;
     }
 
-    /**
-     * @since JD2
-     * @param domain
-     * @throws DialogCanceledException
-     * @throws DialogClosedException
-     */
+    @Deprecated
     protected void showFreeDialog(final String domain) throws PluginException {
-        final AskToUsePremiumDialog dialog = createAskToUsePremiumDialog(domain);
+        showFreeDialog();
+    }
+
+    protected void showFreeDialog() throws PluginException {
+        final AskToUsePremiumDialog dialog = createAskToUsePremiumDialog();
         try {
             UIOManager.I().show(AskToUsePremiumDialogInterface.class, dialog).throwCloseExceptions();
             CrossSystem.openURL(new URL(dialog.getPremiumUrl()));

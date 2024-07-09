@@ -1,20 +1,20 @@
 package org.jdownloader.gui.settings;
 
 import java.awt.Component;
-import java.awt.Font;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.font.TextAttribute;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.components.ExtCheckBox;
@@ -29,10 +29,6 @@ import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
-import net.miginfocom.swing.MigLayout;
 
 public abstract class AbstractConfigPanel extends SwitchPanel {
     private static final String       PAIR_CONDITION   = "PAIR_CONDITION";
@@ -81,7 +77,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
 
     public JLabel addDescriptionPlain(String description) {
         if (!description.toLowerCase().startsWith("<html>")) {
-            description = "<html>" + description.replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>";
+            description = "<html>" + description.replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "</html>";
         }
         JLabel txt = new JLabel();
         SwingUtils.setOpaque(txt, false);
@@ -136,13 +132,6 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         con += getRightGap();
         add((JComponent) comp, con);
         final MouseListener listener = new MouseListener() {
-            final Font defaultFont = lbl.getFont();
-            final Font highlight;
-            {
-                final Map<TextAttribute, Integer> fontAttributes = new HashMap<TextAttribute, Integer>();
-                fontAttributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-                highlight = defaultFont.deriveFont(fontAttributes);
-            }
 
             @Override
             public void mouseReleased(MouseEvent e) {
@@ -154,12 +143,18 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
 
             @Override
             public void mouseExited(MouseEvent e) {
-                lbl.setFont(defaultFont);
+                String text = lbl.getText();
+                text = text.replaceFirst("^<html><U>", "<html>");
+                text = text.replaceFirst("</U></html>$", "</html>");
+                lbl.setText(text);
             }
 
             @Override
             public void mouseEntered(MouseEvent e) {
-                lbl.setFont(highlight);
+                String text = lbl.getText();
+                text = text.replaceFirst("^<html>", "<html><U>");
+                text = text.replaceFirst("</html>$", "</U></html>");
+                lbl.setText(text);
             }
 
             @Override
@@ -189,8 +184,11 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         save();
     }
 
-    public JLabel createLabel(String name) {
-        JLabel lbl = new JLabel(name) {
+    public JLabel createLabel(String text) {
+        if (text != null && !text.toLowerCase().startsWith("<html>")) {
+            text = "<html>" + text.replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "</html>";
+        }
+        JLabel lbl = new JLabel(text) {
             {
                 LAFOptions.getInstance().applyConfigLabelEnabledTextColor(this);
             }

@@ -46,6 +46,17 @@ import javax.swing.KeyStroke;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.gui.UserIO;
+import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
+import jd.plugins.AccountInfo;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.StringUtils;
@@ -75,17 +86,6 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountChecker;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.gui.UserIO;
-import jd.gui.swing.jdgui.JDGui;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
-import jd.plugins.AccountInfo;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
 
 public class AddAccountDialog extends AbstractDialog<Integer> implements InputChangedCallbackInterface {
     public static void showDialog(final PluginForHost pluginForHost, Account acc) {
@@ -381,15 +381,8 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         link.setToolTipText(_GUI.T.gui_menu_action_premium_buy_name());
         link.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
-                try {
-                    final LazyHostPlugin selected = hoster.getSelectedPlugin();
-                    final PluginForHost plugin = selected != null ? selected.newInstance(cl) : null;
-                    if (plugin != null) {
-                        AccountController.openAfflink(plugin, null, "accountmanager/table");
-                    }
-                } catch (UpdateRequiredClassNotFoundException e1) {
-                    e1.printStackTrace();
-                }
+                final LazyHostPlugin selected = hoster.getSelectedPlugin();
+                AccountController.openAfflink(selected, null, "accountmanager/table");
             }
         });
         link.setFocusable(false);

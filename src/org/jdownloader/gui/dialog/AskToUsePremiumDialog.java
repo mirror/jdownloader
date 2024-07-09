@@ -10,14 +10,15 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class AskToUsePremiumDialog extends ConfirmDialog implements AskToUsePremiumDialogInterface {
-    private final String domain;
+    protected final LazyHostPlugin lazyHostPlugin;
 
-    public AskToUsePremiumDialog(String domain, PluginForHost plugin) {
-        super(UIOManager.LOGIC_COUNTDOWN, _GUI.T.PluginForHost_showFreeDialog_title(domain), _GUI.T.PluginForHost_showFreeDialog_message(domain), new AbstractIcon(IconKey.ICON_PREMIUM, 32), _GUI.T.lit_yes(), _GUI.T.lit_no());
+    public AskToUsePremiumDialog(PluginForHost plugin) {
+        super(UIOManager.LOGIC_COUNTDOWN, _GUI.T.PluginForHost_showFreeDialog_title(plugin.getHost()), _GUI.T.PluginForHost_showFreeDialog_message(plugin.getHost()), new AbstractIcon(IconKey.ICON_PREMIUM, 32), _GUI.T.lit_yes(), _GUI.T.lit_no());
         setTimeout(5 * 60 * 1000);
-        this.domain = domain;
+        this.lazyHostPlugin = plugin.getLazyP();
     }
 
     @Override
@@ -27,11 +28,11 @@ public class AskToUsePremiumDialog extends ConfirmDialog implements AskToUsePrem
 
     @Override
     public String getPremiumUrl() {
-        return AccountController.createFullBuyPremiumUrl(getDomain(), "freedialog");
+        return AccountController.buildAfflink(lazyHostPlugin, null, "freedialog");
     }
 
     @Override
     public String getDomain() {
-        return domain;
+        return lazyHostPlugin.getHost();
     }
 }
