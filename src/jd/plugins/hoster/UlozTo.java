@@ -309,9 +309,13 @@ public class UlozTo extends PluginForHost {
             if (looksLikeDownloadableContent(con)) {
                 con.disconnect();
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
-                final String fileName = getFileNameFromDispositionHeader(con);
+                final String fileName = getFileNameFromConnection(con);
                 if (fileName != null) {
                     link.setFinalFileName(fileName);
                 }
@@ -586,8 +590,7 @@ public class UlozTo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl.setFilenameFix(true);
-        link.setProperty(getDownloadModeDirectlinkProperty(account), dl.getConnection().getURL().toString());
+        link.setProperty(getDownloadModeDirectlinkProperty(account), dl.getConnection().getURL().toExternalForm());
         /* Add a download slot */
         controlMaxFreeDownloads(account, link, +1);
         try {

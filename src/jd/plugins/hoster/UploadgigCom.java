@@ -177,13 +177,8 @@ public class UploadgigCom extends antiDDoSForHost {
         if (filename == null) {
             filename = br.getRegex("id=\"pg_title\">Download \"([^<>\"]+)\"").getMatch(0);
         }
-        if (filename == null) {
-            if (!link.isNameSet()) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            // we continue.
-        } else {
-            link.setName(Encoding.htmlDecode(filename.trim()));
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename).trim());
         }
         final String filesize = br.getRegex("class=\"filesize\">\\[([^<]+)\\]<").getMatch(0);
         if (filesize != null) {
@@ -273,8 +268,7 @@ public class UploadgigCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
-        dl.setFilenameFix(true);
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
         dl.startDownload();
     }
 
@@ -586,8 +580,7 @@ public class UploadgigCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else {
-                link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
-                dl.setFilenameFix(true);
+                link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
                 dl.startDownload();
             }
         }

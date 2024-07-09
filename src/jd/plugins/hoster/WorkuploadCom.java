@@ -225,7 +225,6 @@ public class WorkuploadCom extends PluginForHost {
                 throw e;
             }
         }
-        dl.setFilenameFix(true);
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
         dl.startDownload();
     }

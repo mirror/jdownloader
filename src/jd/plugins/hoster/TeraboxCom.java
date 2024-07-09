@@ -387,11 +387,6 @@ public class TeraboxCom extends PluginForHost {
                 throw e;
             }
         }
-        /*
-         * htmldecode final filename just in case we're using in from Content-Disposition and not the one that was set during the crawl
-         * process.
-         */
-        dl.setFilenameFix(true);
         dl.startDownload();
     }
 

@@ -223,8 +223,10 @@ public class TorboxApp extends PluginForHost {
         if (planID == 0) {
             throw new AccountInvalidException("Unsupported account type (free account)");
         }
-        final String created_at = user.get("created_at").toString();
-        final String premium_expires_at = (String) user.get("premium_expires_at");
+        String created_at = user.get("created_at").toString();
+        created_at = fixDateString(created_at);
+        String premium_expires_at = (String) user.get("premium_expires_at");
+        premium_expires_at = fixDateString(premium_expires_at);
         long premiumExpireTimestamp = -1;
         if (premium_expires_at != null) {
             premiumExpireTimestamp = TimeFormatter.getMilliSeconds(premium_expires_at, "yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.ENGLISH);
@@ -311,6 +313,11 @@ public class TorboxApp extends PluginForHost {
             }
         }
         return ai;
+    }
+
+    /** Removes nanoseconds from date strings. */
+    private String fixDateString(final String dateString) {
+        return dateString.replaceFirst("\\.([0-9]{3})([0-9]{3})", ".$1");
     }
 
     private Map<String, Object> login(final Account account, final boolean validateLogins) throws IOException, PluginException, InterruptedException {
