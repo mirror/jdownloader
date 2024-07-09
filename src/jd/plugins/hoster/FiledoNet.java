@@ -217,7 +217,7 @@ public class FiledoNet extends PluginForHost {
             logger.log(e);
             return false;
         } finally {
-            for (DownloadLink link : urls) {
+            for (final DownloadLink link : urls) {
                 if (!link.isNameSet()) {
                     final String fileID = getFID(link);
                     link.setName(fileID);
