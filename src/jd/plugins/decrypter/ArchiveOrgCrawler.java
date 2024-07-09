@@ -257,13 +257,20 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (desiredFilePath != null) {
             final String[] pathSegments = desiredFilePath.split("/");
             desiredFileName = pathSegments[pathSegments.length - 1];
-        }
-        if (desiredFilePath != null) {
             /*
              * Remove filename from URL so that we can find that file in the list of file which will give us more information such as the
              * last-modified date.
              */
             contenturl = contenturl.replaceFirst(Pattern.quote(URLEncode.encodeURIComponent(desiredFileName)) + "$", "");
+        } else {
+            final UrlQuery query = UrlQuery.parse(contenturl);
+            final String filenameFromURLParameter = query.get("file");
+            if (filenameFromURLParameter != null) {
+                desiredFileName = Encoding.htmlDecode(filenameFromURLParameter);
+                /* Change URL */
+                query.remove("file");
+                contenturl = URLHelper.getUrlWithoutParams(contenturl) + "?" + query.toString();
+            }
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         try {
@@ -335,9 +342,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     dl._setFilePackage(fp);
                 }
                 ret.add(dl);
-                /* TODO: Check this */
-                if (desiredFilePath != null && Encoding.htmlDecode(url).endsWith(desiredFileName)) {
-                    logger.info("Found desired file: " + desiredFilePath);
+                if (desiredFileName != null && Encoding.htmlDecode(url).endsWith(desiredFileName)) {
+                    logger.info("Found desired file: " + desiredFileName);
                     ret.clear();
                     /* Do not set FilePackage for single desired files. */
                     dl._setFilePackage(null);
@@ -346,8 +352,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     break;
                 }
             }
-            if (desiredFilePath != null && !foundDesiredFile) {
-                logger.info("Failed to find desired file with filename: " + desiredFilePath);
+            if (desiredFileName != null && !foundDesiredFile) {
+                logger.info("Failed to find desired file with filename: " + desiredFileName);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return ret;
@@ -1138,8 +1144,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
 
     /** Returns true if given URL leads to content inside an archive. */
     private static boolean isArchiveURL(final String url) throws MalformedURLException {
-        final UrlQuery query = UrlQuery.parse(url);
-        return url.contains("view_archive.php") && query.get("file") == null;
+        return url.toLowerCase(Locale.ENGLISH).contains("view_archive.php");
     }
 
     /** 2024-03-27: TODO: Remove this old/deprecated code by the end of 2024 */
