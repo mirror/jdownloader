@@ -171,7 +171,7 @@ public class FiledoNet extends PluginForHost {
                     final String fileID = resp.get("fileId").toString();
                     final DownloadLink link = links.remove(fileID);
                     if (link == null) {
-                        logger.info("no response for:" + fileID);
+                        logger.info("no response for: " + fileID);
                         continue;
                     }
                     try {
