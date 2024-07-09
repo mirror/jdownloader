@@ -532,7 +532,6 @@ public class LinkSnappyCom extends PluginForHost {
             }
             link.setProperty(PROPERTY_DIRECTURL, dllink);
         }
-        dl.setFilenameFix(true);
         if (this.dl.startDownload()) {
             /**
              * Check if user wants JD to clear serverside download history in linksnappy account after each successful download. </br>

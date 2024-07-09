@@ -401,7 +401,6 @@ abstract public class ZeveraCore extends UseNet {
                 }
             }
             link.setProperty(directlinkproperty, dllink);
-            dl.setFilenameFix(true);
             final long verifiedFileSize = link.getVerifiedFileSize();
             final long completeContentLength = dl.getConnection().getCompleteContentLength();
             if (completeContentLength != verifiedFileSize) {

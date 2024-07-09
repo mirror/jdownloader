@@ -143,7 +143,6 @@ public class CocoleechCom extends PluginForHost {
         }
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
-            dl.setFilenameFix(true);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
                 if (dl.getConnection().getContentType().contains("json")) {
