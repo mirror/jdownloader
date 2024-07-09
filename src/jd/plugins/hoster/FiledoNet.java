@@ -168,11 +168,15 @@ public class FiledoNet extends PluginForHost {
                 final PostRequest req = br.createJSonPostRequest(API_BASE + "/file/multiple", JSonStorage.serializeToJson(links.values()));
                 final List<Map<String, Object>> responselist = (List<Map<String, Object>>) this.callAPI(req, null, links.get(0));
                 for (final Map<String, Object> resp : responselist) {
-                    final DownloadLink link = links.remove(resp.get("fileId").toString());
+                    final String fileID = resp.get("fileId").toString();
+                    final DownloadLink link = links.remove(fileID);
                     if (link == null) {
                         continue;
                     }
                     try {
+                        if (!link.isNameSet()) {
+                            link.setName(fileID);
+                        }
                         final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
                         final String key = query.get("key");
                         final String counterFileName = query.get("counterFileName");
@@ -198,12 +202,20 @@ public class FiledoNet extends PluginForHost {
                         } else {
                             link.removeProperty("hasCatpcha");
                         }
-                        link.setAvailable(true);
+                        if (!this.isValidFileURL(link.getPluginPatternMatcher())) {
+                            link.setAvailable(false);
+                        } else {
+                            link.setAvailable(true);
+                        }
                     } catch (final Exception e) {
                         logger.log(e);
                     }
                 }
                 for (DownloadLink link : links.values()) {
+                    final String fileID = getFID(link);
+                    if (!link.isNameSet()) {
+                        link.setName(fileID);
+                    }
                     link.setAvailable(false);
                 }
             }
