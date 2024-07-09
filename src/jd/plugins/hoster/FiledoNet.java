@@ -165,7 +165,7 @@ public class FiledoNet extends PluginForHost {
                     }
                 }
                 sb.delete(0, sb.capacity());
-                final PostRequest req = br.createJSonPostRequest(API_BASE + "/file/multiple", JSonStorage.serializeToJson(links.values()));
+                final PostRequest req = br.createJSonPostRequest(API_BASE + "/file/multiple", JSonStorage.serializeToJson(links.keySet()));
                 final List<Map<String, Object>> responselist = (List<Map<String, Object>>) this.callAPI(req, null, links.get(0));
                 for (final Map<String, Object> resp : responselist) {
                     final String fileID = resp.get("fileId").toString();
