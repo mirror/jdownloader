@@ -113,8 +113,8 @@ public class KoofrNet extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         final String dllink = getDirecturl(link);
         prepareDownloadHeaders(br, link);
-        basicLinkCheck(br.cloneBrowser(), br.createGetRequest(dllink), link, null, null);
-        final String jsonFromHeader = br.getRequest().getResponseHeader("x-file-info");
+        final URLConnectionAdapter con = basicLinkCheck(br.cloneBrowser(), br.createGetRequest(dllink), link, null, null);
+        final String jsonFromHeader = con.getRequest().getResponseHeader("x-file-info");
         if (jsonFromHeader != null && jsonFromHeader.startsWith("{")) {
             /* Same json rthey return via webapi. */
             final Map<String, Object> resource = restoreFromString(jsonFromHeader, TypeRef.MAP);
