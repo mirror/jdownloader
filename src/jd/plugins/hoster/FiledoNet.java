@@ -328,7 +328,7 @@ public class FiledoNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         if (checkShowFreeDialog(getHost())) {
-            showFreeDialog(getHost());
+            showFreeDialog();
         }
         requestFileInformation(link);
         final String dlUrl = link.getStringProperty("dl3");
