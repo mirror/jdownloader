@@ -220,6 +220,7 @@ public class FiledoNet extends PluginForHost {
             for (final DownloadLink link : urls) {
                 if (!link.isNameSet()) {
                     final String fileID = getFID(link);
+                    /* Set weak-filename */
                     link.setName(fileID);
                 }
             }
