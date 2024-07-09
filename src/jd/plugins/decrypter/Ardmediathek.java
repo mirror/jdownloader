@@ -510,19 +510,20 @@ public class Ardmediathek extends PluginForDecrypt {
                 }
             }
         }
-        /* Decide if we need to grab the HLS qualities too. */
-        if (maxHeightHls > maxHeightProgressive) {
-            logger.info("Crawl HLS streams because they have higher qualities than progressive");
-            this.grabHLS = true;
-        } else {
-            logger.info("Do not grab HLS streams because the number of qualities for progressive and HLS looks to be the same");
-            this.grabHLS = false;
-        }
         // hlsMaster =
         // "https://wdradaptiv-vh.akamaihd.net/i/medp/ondemand/weltweit/fsk0/232/2326527/,2326527_32403893,2326527_32403894,2326527_32403895,2326527_32403891,2326527_32403896,2326527_32403892,.mp4.csmil/master.m3u8";
         String http_url_audio = br.getRegex("((?:https?:)?//[^<>\"]+\\.mp3)\"").getMatch(0);
         if (StringUtils.isEmpty(hlsMaster) && http_url_audio == null && httpStreamsQualityIdentifiers.size() == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Decide if we need to grab the HLS qualities too. */
+        final String logpart = "maxHeightHls=" + maxHeightHls + " | maxHeightProgressive=" + maxHeightProgressive;
+        if (maxHeightHls > maxHeightProgressive) {
+            logger.info(logpart + " | Crawl HLS streams because they have higher qualities than progressive");
+            this.grabHLS = true;
+        } else {
+            logger.info(logpart + " | Do not grab HLS streams because the number of qualities for progressive and HLS looks to be the same");
+            this.grabHLS = false;
         }
         if (hlsMaster != null) {
             addHLS(param, metadata, foundQualitiesMap, br, hlsMaster, false);
