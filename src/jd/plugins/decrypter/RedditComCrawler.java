@@ -110,12 +110,12 @@ public class RedditComCrawler extends PluginForDecrypt {
 
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
-        ret.add("https?://(?:(?:www|old)\\.)?(?:reddxxx|reddit)\\.com/(?:r/[\\w\\-]+(?:/comments/[a-z0-9]+(/[A-Za-z0-9\\-_]+/?)?)?|gallery/[a-z0-9]+|(?:user|u)/[\\w\\-]+(?:/saved)?)" + "|" + PATTERN_SELFHOSTED_VIDEO);
+        ret.add("https?://(?:(?:www|old)\\.)?reddit\\.com/(?:r/[\\w\\-]+(?:/comments/[a-z0-9]+(/[A-Za-z0-9\\-_]+/?)?)?|gallery/[a-z0-9]+|user/[\\w\\-]+(?:/saved)?)" + "|" + PATTERN_SELFHOSTED_VIDEO);
         return ret.toArray(new String[0]);
     }
 
-    public static final String  PATTERN_SELFHOSTED_IMAGE   = "https?://i\\.redd\\.it/([a-z0-9]+)\\.[A-Za-z]{2,5}";
-    public static final String  PATTERN_SELFHOSTED_VIDEO   = "https?://v\\.redd\\.it/([a-z0-9]+)";
+    public static final String  PATTERN_SELFHOSTED_IMAGE   = "(?i)https?://i\\.redd\\.it/([a-z0-9]+)\\.[A-Za-z]{2,5}";
+    public static final String  PATTERN_SELFHOSTED_VIDEO   = "(?i)https?://v\\.redd\\.it/([a-z0-9]+)";
     private static final String PATTERN_SUBREDDIT          = "(?:https?://[^/]+)?/r/([^/]+)$";
     private static final String PATTERN_POST               = "(?:https?://[^/]+)?/(r|user|u)/([\\w\\-\\.]+)/comments/([a-z0-9]+)(/([^/\\?]+)/?)?";
     private static final String PATTERN_GALLERY            = "(?:https?://[^/]+)?/gallery/([a-z0-9]+)";
@@ -125,11 +125,7 @@ public class RedditComCrawler extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         this.param = param;
-        if (param.getCryptedUrl().matches("https?://[^/]*reddxxx.com/.*")) {
-            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-            ret.add(createDownloadlink(param.getCryptedUrl().replaceFirst("(?i)reddxxx.com/", "reddit.com/"), false));
-            return ret;
-        } else if (param.getCryptedUrl().matches(PATTERN_SELFHOSTED_VIDEO)) {
+        if (param.getCryptedUrl().matches(PATTERN_SELFHOSTED_VIDEO)) {
             return crawlSingleVideourl(param);
         } else if (param.getCryptedUrl().matches(PATTERN_USER_SAVED_OBJECTS)) {
             return crawlUserSavedObjects(param);
