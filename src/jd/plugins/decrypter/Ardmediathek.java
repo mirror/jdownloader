@@ -434,13 +434,13 @@ public class Ardmediathek extends PluginForDecrypt {
     }
 
     private HashMap<String, DownloadLink> crawlARDMediathekJson2024(final CryptedLink param, final ArdMetadata metadata, final Object mediaCollection) throws Exception {
-        /* 2024-07-02: HLS is not needed anymore since all qualities appear to be available as progressive streams. */
-        this.grabHLS = false;
         final HashMap<String, DownloadLink> foundQualitiesMap = new HashMap<String, DownloadLink>();
         final List<String> httpStreamsQualityIdentifiers = new ArrayList<String>();
         /* For http stream quality identifiers which have been created by the hls --> http URLs converter */
         String exampleHTTPURL = null;
         String hlsMaster = null;
+        int maxHeightHls = -1;
+        int maxHeightProgressive = -1;
         final Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.walkJson(mediaCollection, "widgets/{0}/mediaCollection/embedded");
         final List<Map<String, Object>> mediaArray = (List<Map<String, Object>>) map.get("streams");
         for (Map<String, Object> media : mediaArray) {
@@ -459,6 +459,8 @@ public class Ardmediathek extends PluginForDecrypt {
                 final String url = mediaStream.get("url").toString();
                 final String mimeType = mediaStream.get("mimeType").toString();
                 final String audioKind = (String) JavaScriptEngineFactory.walkJson(mediaStream, "audios/{0}/kind");
+                final Number widthO = (Number) mediaStream.get("maxHResolutionPx");
+                final Number heightO = (Number) mediaStream.get("maxVResolutionPx");
                 final boolean isAudiodescription;
                 if (StringUtils.equalsIgnoreCase("audio-description", audioKind)) {
                     isAudiodescription = true;
@@ -474,6 +476,9 @@ public class Ardmediathek extends PluginForDecrypt {
                 } else if (mimeType.equalsIgnoreCase("application/vnd.apple.mpegurl")) {
                     /* E.g. skip quality "auto" (HLS), handle it later. */
                     hlsMaster = url;
+                    if (heightO != null && heightO.intValue() > maxHeightHls) {
+                        maxHeightHls = heightO.intValue();
+                    }
                     continue;
                 }
                 if (exampleHTTPURL == null) {
@@ -483,12 +488,9 @@ public class Ardmediathek extends PluginForDecrypt {
                     exampleHTTPURL = url;
                 }
                 VideoResolution resolution = null;
-                /*
-                 * Sometimes the resolutions is given, sometimes we have to assume it and sometimes (e.g. HLS streaming) there are multiple
-                 * qualities available for one stream URL.
-                 */
-                final Number widthO = (Number) mediaStream.get("maxHResolutionPx");
-                final Number heightO = (Number) mediaStream.get("maxVResolutionPx");
+                if (heightO != null && heightO.intValue() > maxHeightProgressive) {
+                    maxHeightProgressive = heightO.intValue();
+                }
                 if (widthO != null && heightO != null) {
                     resolution = VideoResolution.getByWidth(widthO.intValue());
                     if (resolution == null) {
@@ -507,6 +509,14 @@ public class Ardmediathek extends PluginForDecrypt {
                     httpStreamsQualityIdentifiers.add(getQualityIdentifier(url, resolution, -1));
                 }
             }
+        }
+        /* Decide if we need to grab the HLS qualities too. */
+        if (maxHeightHls > maxHeightProgressive) {
+            logger.info("Crawl HLS streams because they have higher qualities than progressive");
+            this.grabHLS = true;
+        } else {
+            logger.info("Do not grab HLS streams because the number of qualities for progressive and HLS looks to be the same");
+            this.grabHLS = false;
         }
         // hlsMaster =
         // "https://wdradaptiv-vh.akamaihd.net/i/medp/ondemand/weltweit/fsk0/232/2326527/,2326527_32403893,2326527_32403894,2326527_32403895,2326527_32403891,2326527_32403896,2326527_32403892,.mp4.csmil/master.m3u8";
