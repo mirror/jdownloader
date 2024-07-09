@@ -209,7 +209,7 @@ public class FiledoNet extends PluginForHost {
                         logger.log(e);
                     }
                 }
-                for (DownloadLink link : links.values()) {
+                for (final DownloadLink link : links.values()) {
                     link.setAvailable(false);
                 }
             }
