@@ -116,11 +116,11 @@ public class RedditComCrawler extends PluginForDecrypt {
 
     public static final String  PATTERN_SELFHOSTED_IMAGE   = "(?i)https?://i\\.redd\\.it/([a-z0-9]+)\\.[A-Za-z]{2,5}";
     public static final String  PATTERN_SELFHOSTED_VIDEO   = "(?i)https?://v\\.redd\\.it/([a-z0-9]+)";
-    private static final String PATTERN_SUBREDDIT          = "(?:https?://[^/]+)?/r/([^/]+)$";
-    private static final String PATTERN_POST               = "(?:https?://[^/]+)?/(r|user|u)/([\\w\\-\\.]+)/comments/([a-z0-9]+)(/([^/\\?]+)/?)?";
-    private static final String PATTERN_GALLERY            = "(?:https?://[^/]+)?/gallery/([a-z0-9]+)";
-    private static final String PATTERN_USER               = "(?:https?://[^/]+)?/(?:user|u)/([\\w\\-]+)$";
-    private static final String PATTERN_USER_SAVED_OBJECTS = "(?:https?://[^/]+)?/(?:user|u)/([\\w\\-]+)/saved";
+    private static final String PATTERN_SUBREDDIT          = "(?i)(?:https?://[^/]+)?/r/([^/]+)$";
+    private static final String PATTERN_POST               = "(?i)(?:https?://[^/]+)?/(r|user|u)/([\\w\\-\\.]+)/comments/([a-z0-9]+)(/([^/\\?]+)/?)?";
+    private static final String PATTERN_GALLERY            = "(?i)(?:https?://[^/]+)?/gallery/([a-z0-9]+)";
+    private static final String PATTERN_USER               = "(?i)(?:https?://[^/]+)?/(?:user|u)/([\\w\\-]+)$";
+    private static final String PATTERN_USER_SAVED_OBJECTS = "(?i)(?:https?://[^/]+)?/(?:user|u)/([\\w\\-]+)/saved";
     private CryptedLink         param                      = null;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
