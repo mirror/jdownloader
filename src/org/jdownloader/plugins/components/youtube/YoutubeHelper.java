@@ -1395,7 +1395,9 @@ public class YoutubeHelper {
                     jsCache.put(vid.videoID, cache);
                 }
                 final String html5PlayerSource = ensurePlayerSource();
-                function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=a\\.split\\(\"\"\\),c=\\[.*?\\};)\n").getMatch(0);
+                // String[][] func = new Regex(html5PlayerSource,
+                // "(?x)(?:\\.get\\(\"n\"\\)\\)&&\\(b=|b=String\\.fromCharCode\\(110\\),c=a\\.get\\(b\\)\\)&&\\(c=)([a-zA-Z0-9$]+)(?:\\[(\\d+)\\])?\\([a-zA-Z0-9]\\)").getMatches();
+                function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=String\\.prototype\\.split\\.call\\(a,\"\"\\),c=\\[.*?\\};)\n").getMatch(0);
                 cache.put("n_function", function);
             }
             final String resultKey = "n_result_" + vid.videoID + "_" + Hash.getSHA256(function) + "_" + value;
