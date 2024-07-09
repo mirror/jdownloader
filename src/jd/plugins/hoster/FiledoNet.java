@@ -175,9 +175,6 @@ public class FiledoNet extends PluginForHost {
                         continue;
                     }
                     try {
-                        if (!link.isNameSet()) {
-                            link.setName(fileID);
-                        }
                         final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
                         final String key = query.get("key");
                         final String counterFileName = query.get("counterFileName");
@@ -213,16 +210,19 @@ public class FiledoNet extends PluginForHost {
                     }
                 }
                 for (DownloadLink link : links.values()) {
-                    final String fileID = getFID(link);
-                    if (!link.isNameSet()) {
-                        link.setName(fileID);
-                    }
                     link.setAvailable(false);
                 }
             }
         } catch (final Exception e) {
             logger.log(e);
             return false;
+        } finally {
+            for (DownloadLink link : urls) {
+                if (!link.isNameSet()) {
+                    final String fileID = getFID(link);
+                    link.setName(fileID);
+                }
+            }
         }
         return true;
     }
