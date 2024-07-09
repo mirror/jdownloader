@@ -24,6 +24,19 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -43,20 +56,6 @@ import jd.plugins.PluginBrowser;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FiledoNet extends PluginForHost {
@@ -143,9 +142,13 @@ public class FiledoNet extends PluginForHost {
         return 0;
     }
 
-    /** Using API: https://api.filedo.net/doc/index.html#/File/post_File_Multiple */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
+        return checkLinks(urls, null);
+    }
+
+    /** Using API: https://api.filedo.net/doc/index.html#/File/post_File_Multiple */
+    private boolean checkLinks(final DownloadLink[] urls, final Account account) {
         if (urls == null || urls.length == 0) {
             return false;
         }
@@ -161,12 +164,16 @@ public class FiledoNet extends PluginForHost {
                         break;
                     } else {
                         final DownloadLink link = urls[index++];
-                        links.put(getFID(link), link);
+                        final String fileID = getFID(link);
+                        if (!link.isNameSet()) {
+                            link.setName(fileID);
+                        }
+                        links.put(fileID, link);
                     }
                 }
                 sb.delete(0, sb.capacity());
                 final PostRequest req = br.createJSonPostRequest(API_BASE + "/file/multiple", JSonStorage.serializeToJson(links.keySet()));
-                final List<Map<String, Object>> responselist = (List<Map<String, Object>>) this.callAPI(req, null, links.get(0));
+                final List<Map<String, Object>> responselist = (List<Map<String, Object>>) this.callAPI(req, account, links.get(0));
                 for (final Map<String, Object> resp : responselist) {
                     final String fileID = resp.get("fileId").toString();
                     final DownloadLink link = links.remove(fileID);
@@ -175,6 +182,11 @@ public class FiledoNet extends PluginForHost {
                         continue;
                     }
                     try {
+                        final int fileStatus = ((Number) resp.get("fileStatus")).intValue();
+                        if (fileStatus != 1) {
+                            link.setAvailable(false);
+                            continue;
+                        }
                         final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
                         final String key = query.get("key");
                         final String counterFileName = query.get("counterFileName");
@@ -209,6 +221,7 @@ public class FiledoNet extends PluginForHost {
                         logger.log(e);
                     }
                 }
+                /** All items which were not included in the API response shall be offline. */
                 for (final DownloadLink link : links.values()) {
                     link.setAvailable(false);
                 }
@@ -216,14 +229,6 @@ public class FiledoNet extends PluginForHost {
         } catch (final Exception e) {
             logger.log(e);
             return false;
-        } finally {
-            for (final DownloadLink link : urls) {
-                if (!link.isNameSet()) {
-                    final String fileID = getFID(link);
-                    /* Set weak-filename */
-                    link.setName(fileID);
-                }
-            }
         }
         return true;
     }
@@ -239,48 +244,51 @@ public class FiledoNet extends PluginForHost {
             /* Set weak-filename */
             link.setName(fileId);
         }
-        final boolean useMassLinkchecker = false;
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && useMassLinkchecker) {
-            return requestFileInformationSingleViaMassLinkcheck(link);
+        final boolean useMassLinkchecker = true;
+        if (useMassLinkchecker) {
+            return requestFileInformationSingleViaMassLinkcheck(link, account);
         } else {
-            if (!isValidFileID(fileId)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (isValidFileURL(link.getPluginPatternMatcher())) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
-            final String key = query.get("key");
-            final String counterFileName = query.get("counterFileName");
-            final GetRequest req = br.createGetRequest(API_BASE + "/file?fileId=" + fileId);
-            final Map<String, Object> resp = (Map<String, Object>) this.callAPI(req, null, link);
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final String fileName = resp.get("fileName").toString();
-            final String fileSize = PluginJSonUtils.getJson(br, "fileSize");
-            final String fileHash = resp.get("fileHash").toString();
-            final String downloadUrl = resp.get("downloadUrl").toString();
-            final boolean hasCaptcha = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "hasCaptcha"));
-            if (fileSize != null) {
-                link.setVerifiedFileSize(Long.parseLong(fileSize) * 1024);
-            }
-            final byte[] decodedFileNameIv = Base64.decode(URLEncode.decodeURIComponent(counterFileName));
-            final byte[] decoded = Base64.decode(URLEncode.decodeURIComponent(key));
-            /* Set final filename here because Content-Disposition header contains crypted filename. */
-            final String decryptedFileName = decryptFileName(fileName, decoded, decodedFileNameIv);
-            link.setFinalFileName(decryptedFileName);
-            link.setMD5Hash(fileHash);
-            link.setProperty("dl3", downloadUrl);
-            // link.setProperty("hashedFileName", fileName);
-            link.setProperty("decryptedFileName", decryptedFileName);
-            if (Boolean.TRUE.equals(resp.get("hasCaptcha"))) {
-                link.setProperty("hasCatpcha", hasCaptcha);
-            } else {
-                link.removeProperty("hasCatpcha");
-            }
-            return AvailableStatus.TRUE;
+            return requestFileInformationAPISingle(link, account);
         }
+    }
+
+    @Deprecated
+    private AvailableStatus requestFileInformationAPISingle(final DownloadLink link, final Account account) throws Exception {
+        if (isValidFileURL(link.getPluginPatternMatcher())) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String fileId = this.getFID(link);
+        final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
+        final String key = query.get("key");
+        final String counterFileName = query.get("counterFileName");
+        final GetRequest req = br.createGetRequest(API_BASE + "/file?fileId=" + fileId);
+        final Map<String, Object> resp = (Map<String, Object>) this.callAPI(req, null, link);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String fileName = resp.get("fileName").toString();
+        final String fileSize = PluginJSonUtils.getJson(br, "fileSize");
+        final String fileHash = resp.get("fileHash").toString();
+        final String downloadUrl = resp.get("downloadUrl").toString();
+        final boolean hasCaptcha = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "hasCaptcha"));
+        if (fileSize != null) {
+            link.setVerifiedFileSize(Long.parseLong(fileSize) * 1024);
+        }
+        final byte[] decodedFileNameIv = Base64.decode(URLEncode.decodeURIComponent(counterFileName));
+        final byte[] decoded = Base64.decode(URLEncode.decodeURIComponent(key));
+        /* Set final filename here because Content-Disposition header contains crypted filename. */
+        final String decryptedFileName = decryptFileName(fileName, decoded, decodedFileNameIv);
+        link.setFinalFileName(decryptedFileName);
+        link.setMD5Hash(fileHash);
+        link.setProperty("dl3", downloadUrl);
+        // link.setProperty("hashedFileName", fileName);
+        link.setProperty("decryptedFileName", decryptedFileName);
+        if (Boolean.TRUE.equals(resp.get("hasCaptcha"))) {
+            link.setProperty("hasCatpcha", hasCaptcha);
+        } else {
+            link.removeProperty("hasCatpcha");
+        }
+        return AvailableStatus.TRUE;
     }
 
     private boolean isValidFileURL(final String url) throws MalformedURLException {
@@ -298,7 +306,7 @@ public class FiledoNet extends PluginForHost {
         }
     }
 
-    private AvailableStatus requestFileInformationSingleViaMassLinkcheck(final DownloadLink link) throws Exception {
+    private AvailableStatus requestFileInformationSingleViaMassLinkcheck(final DownloadLink link, final Account account) throws Exception {
         checkLinks(new DownloadLink[] { link });
         if (!link.isAvailabilityStatusChecked()) {
             return AvailableStatus.UNCHECKED;
