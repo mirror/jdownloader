@@ -7,6 +7,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DecrypterRetryException.RetryReason;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
+import jd.plugins.PluginProgress;
+import jd.plugins.PluginStateCollection;
+
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.api.RemoteAPIController;
@@ -21,6 +33,7 @@ import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
 import org.jdownloader.myjdownloader.client.bindings.SkipReasonStorable;
 import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsListInterface;
+import org.jdownloader.myjdownloader.client.json.JsonMap;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.MirrorLoading;
@@ -30,18 +43,6 @@ import org.jdownloader.plugins.WaitForAccountSkipReason;
 import org.jdownloader.plugins.WaitForAccountTrafficSkipReason;
 import org.jdownloader.plugins.WaitWhileWaitingSkipReasonIsSet;
 import org.jdownloader.plugins.WaitingSkipReason;
-
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DecrypterRetryException.RetryReason;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
-import jd.plugins.PluginProgress;
-import jd.plugins.PluginStateCollection;
 
 public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     private final PackageControllerUtils<FilePackage, DownloadLink> packageControllerUtils;
@@ -297,7 +298,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     }
 
     public static DownloadLinkAPIStorableV2 setStatus(DownloadLinkAPIStorableV2 dls, DownloadLink link, Object caller) {
-        final Map<String, Object> advancedStatus = new HashMap<String, Object>();
+        final JsonMap advancedStatus = new JsonMap();
         dls.setAdvancedStatus(advancedStatus);
         boolean oldStatusSet = false;// old status field did only hold/contain first status/progress
         final PluginProgress prog = link.getPluginProgress();
@@ -416,7 +417,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                         dls.setStatus(label);
                     }
                 }
-                    break;
+                break;
                 case SUCCESSFUL: {
                     entry.put("iconKey", IconKey.ICON_EXTRACT_OK);
                     final String label = extractionStatus.getExplanation();
@@ -426,7 +427,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                         dls.setStatus(label);
                     }
                 }
-                    break;
+                break;
                 case RUNNING: {
                     entry.put("iconKey", IconKey.ICON_EXTRACT);
                     final String label = extractionStatus.getExplanation();
@@ -436,7 +437,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                         dls.setStatus(label);
                     }
                 }
-                    break;
+                break;
                 }
                 if (!oldStatusSet) {
                     final String label = finalLinkState.getExplanation(caller, link);

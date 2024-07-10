@@ -39,6 +39,7 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
         this.captchaChallenge = captchaChallenge2;
         config = JsonConfig.create(CaptchaSettings.class);
         logger = JDGui.getInstance().getLogger();
+
         dialogHandler = new DialogHandler() {
             @Override
             public <T> T showDialog(final AbstractDialog<T> dialog) throws DialogClosedException, DialogCanceledException {

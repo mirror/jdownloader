@@ -67,6 +67,14 @@ public interface CaptchaSettings extends ConfigInterface {
 
     void setOnHosterCaptchaTimeoutAction(CAPTCHA_TIMEOUT_ACTION b);
 
+    @Deprecated
+    // @LookUpKeys({ "captchatimeoutaction", "hostercaptchatimeoutaction" })
+    void setcaptchatimeoutaction(CAPTCHA_TIMEOUT_ACTION b);
+
+    @Deprecated
+    // @LookUpKeys({ "captchatimeoutaction", "hostercaptchatimeoutaction" })
+    void sethostercaptchatimeoutaction(CAPTCHA_TIMEOUT_ACTION b);
+
     @AboutConfig
     @DefaultEnumValue("SKIP")
     @LookUpKeys("crawlercaptchatimeoutaction")
@@ -74,6 +82,10 @@ public interface CaptchaSettings extends ConfigInterface {
     CAPTCHA_TIMEOUT_ACTION getOnCrawlerCaptchaTimeoutAction();
 
     void setOnCrawlerCaptchaTimeoutAction(CAPTCHA_TIMEOUT_ACTION b);
+
+    @Deprecated
+    // see @LookUpKeys("crawlercaptchatimeoutaction")
+    void setcrawlercaptchatimeoutaction(CAPTCHA_TIMEOUT_ACTION b);
 
     @AboutConfig
     @DefaultIntValue(300000)

@@ -9,11 +9,17 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.gui.swing.dialog.DialogType;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.swing.action.BasicAction;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeSolver;
@@ -22,10 +28,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
-import jd.gui.swing.dialog.DialogType;
-import net.miginfocom.swing.MigLayout;
-
-public class OAuthDialog extends AbstractDialog<Boolean> implements ActionListener, ChallengeSolverJobListener {
+public class OAuthDialog extends AbstractDialog<Boolean> implements ActionListener, ChallengeSolverJobListener, ConfirmDialogInterface {
 
     // private BufferedImage[] kcImages;
     // private int kcSampleImg;
@@ -55,7 +58,21 @@ public class OAuthDialog extends AbstractDialog<Boolean> implements ActionListen
     }
 
     protected void openBrowser() {
-        CrossSystem.openURL(challenge.getUrl());
+        if (CrossSystem.openURL(challenge.getUrl()) != null || true) {
+            new Thread() {
+                {
+                    setDaemon(true);
+                }
+
+                @Override
+                public void run() {
+                    final InputDialog oauthDialog = new InputDialog(UIOManager.LOGIC_COUNTDOWN, _GUI.T.lit_open_browser(), challenge.getExplain(), challenge.getUrl(), null, _GUI.T.lit_continue(), null);
+                    oauthDialog.setTimeout(5 * 60 * 1000);
+                    UIOManager.I().show(InputDialogInterface.class, oauthDialog);
+                }
+            }.start();
+        }
+
     }
 
     protected int getPreferredHeight() {
@@ -206,6 +223,11 @@ public class OAuthDialog extends AbstractDialog<Boolean> implements ActionListen
     @Override
     public void onSolverTimedOut(ChallengeSolver<?> parameter) {
 
+    }
+
+    @Override
+    public String getMessage() {
+        return challenge.getExplain() + "\r\n" + challenge.getUrl();
     }
 
 }

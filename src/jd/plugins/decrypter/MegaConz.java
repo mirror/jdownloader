@@ -22,6 +22,23 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Base64;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.SimpleMapper;
@@ -42,23 +59,6 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.MegaConzConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Base64;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DecrypterRetryException;
-import jd.plugins.DecrypterRetryException.RetryReason;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(?:https?://(www\\.)?mega\\.(co\\.)?nz/[^/:]*#F|chrome://mega/content/secure\\.html#F|mega:/*#F)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((!|%21)[a-zA-Z0-9]+)?(\\?[a-zA-Z0-9]+)?" })
 public class MegaConz extends PluginForDecrypt {
@@ -141,13 +141,13 @@ public class MegaConz extends PluginForDecrypt {
         String contenturl = param.getCryptedUrl().replaceAll("%21", "!");
         final String folderID = getFolderID(contenturl);
         final String folderNodeID = getFolderNodeID(contenturl);
-        final String masterKey = getFolderMasterKey(contenturl);
+        final String folderMasterKey = getFolderMasterKey(contenturl);
         final String preferredNodeID = getParentNodeID(contenturl);
         final String containerURL;
         if (StringUtils.startsWithCaseInsensitive(contenturl, "chrome:") || StringUtils.startsWithCaseInsensitive(contenturl, "mega:")) {
             /* Change "Application url" to "http url" */
-            if (folderID != null && masterKey != null) {
-                containerURL = "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/folder/" + folderID + "#" + masterKey;
+            if (folderID != null && folderMasterKey != null) {
+                containerURL = "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/folder/" + folderID + "#" + folderMasterKey;
             } else {
                 containerURL = contenturl;
             }
@@ -234,9 +234,9 @@ public class MegaConz extends PluginForDecrypt {
                         }
                     } else {
                         con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID
-                        /*
-                         * + "&domain=meganz
-                         */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
+                                /*
+                                 * + "&domain=meganz
+                                 */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
                         // ->
                         // !nocache,
                         // commands.cpp
@@ -423,7 +423,7 @@ public class MegaConz extends PluginForDecrypt {
                             }
                             final String nodeKey;
                             try {
-                                nodeKey = decryptNodeKey(encryptedNodeKey, masterKey);
+                                nodeKey = decryptNodeKey(encryptedNodeKey, folderMasterKey);
                             } catch (final InvalidKeyException e) {
                                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
                             }
@@ -564,13 +564,13 @@ public class MegaConz extends PluginForDecrypt {
                     // folder nodes can only be downloaded with knowledge of the folderNodeID
                     link.setProperty("public", false);
                     link.setProperty("pn", folderID);
+                    link.setProperty("mk", folderMasterKey);
                     link.setLinkID(getHost() + "N" + "/" + folderID + "/" + nodeID);
                 } else {
                     link.setLinkID(getHost() + "N" + "/" + nodeID);
                 }
                 // alternative: https://mega.nz/folder/folderID#masterKey/file/nodeID
                 link.setProperty("fa", toObject(folderNode.get("fa")));// file attributes
-                link.setContentUrl("https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/folder/" + folderID + "#" + masterKey + "/file/" + nodeID);
                 link.setContainerUrl(containerURL);
                 link.setFinalFileName(nodeName);
                 link.setRelativeDownloadFolderPath(path);
@@ -586,6 +586,7 @@ public class MegaConz extends PluginForDecrypt {
                 }
                 link.setAvailable(true);
                 link.setVerifiedFileSize(nodeSize);
+                link.setContentUrl(jd.plugins.hoster.MegaConz.buildFileLink(link));
                 if (fp != null) {
                     fp.add(link);
                 }
