@@ -586,12 +586,12 @@ public class AllDebridCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -808,7 +808,7 @@ public class AllDebridCom extends PluginForHost {
             break;
         } while (counter <= 3);
         if (!StringUtils.isEmpty(downloadPassword)) {
-            /* Store password e.g. for the next try */
+            /* Entered password looks to be correct -> Store password */
             link.setDownloadPassword(downloadPassword);
         }
         final Map<String, Object> entries = handleErrors(account, link);
@@ -820,7 +820,7 @@ public class AllDebridCom extends PluginForHost {
         final Object delayID = data.get("delayed");
         if (delayID != null) {
             /* See https://docs.alldebrid.com/v4/#delayed-links */
-            if (!cacheDLChecker(delayID.toString())) {
+            if (!cacheDLChecker(link, account, delayID.toString())) {
                 /* Error or serverside download not finished in given time. */
                 logger.info("Delayed handling failure");
                 handleErrors(account, link);
@@ -858,7 +858,7 @@ public class AllDebridCom extends PluginForHost {
     }
 
     /* Stolen from LinkSnappyCom plugin */
-    private boolean cacheDLChecker(final String delayID) throws Exception {
+    private boolean cacheDLChecker(final DownloadLink link, final Account account, final String delayID) throws Exception {
         final PluginProgress waitProgress = new PluginProgress(0, 100, null) {
             protected long lastCurrent    = -1;
             protected long lastTotal      = -1;
@@ -908,7 +908,7 @@ public class AllDebridCom extends PluginForHost {
         int lastProgress = -1;
         try {
             /* See https://docs.alldebrid.com/v4/#delayed-links */
-            Form dlform = new Form();
+            final Form dlform = new Form();
             dlform.setMethod(MethodType.GET);
             dlform.setAction(api_base + "/link/delayed");
             dlform.put("id", delayID);
@@ -922,11 +922,11 @@ public class AllDebridCom extends PluginForHost {
             Integer currentProgress = 0;
             do {
                 logger.info(String.format("Waiting for file to get loaded onto server - seconds left %d / %d", waitSecondsLeft, maxWaitSeconds));
-                this.getDownloadLink().addPluginProgress(waitProgress);
+                link.addPluginProgress(waitProgress);
                 waitProgress.updateValues(currentProgress.intValue(), 100);
                 for (int sleepRound = 0; sleepRound < waitSecondsPerLoop; sleepRound++) {
                     if (isAbort()) {
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                        throw new InterruptedException();
                     } else {
                         Thread.sleep(1000);
                     }
@@ -938,7 +938,7 @@ public class AllDebridCom extends PluginForHost {
                 br.submitForm(dlform);
                 try {
                     /* We have to use the parser here because json contains two 'status' objects ;) */
-                    final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                    final Map<String, Object> entries = handleErrors(account, link);
                     final Map<String, Object> data = (Map<String, Object>) entries.get("data");
                     delayedStatus = (int) JavaScriptEngineFactory.toLong(data.get("status"), 3);
                     final int tmpCurrentProgress = (int) ((Number) data.get("progress")).doubleValue() * 100;
@@ -965,7 +965,7 @@ public class AllDebridCom extends PluginForHost {
                 return false;
             }
         } finally {
-            this.getDownloadLink().removePluginProgress(waitProgress);
+            link.removePluginProgress(waitProgress);
         }
     }
 
@@ -1019,6 +1019,7 @@ public class AllDebridCom extends PluginForHost {
             synchronized (RATE_LIMITED) {
                 final HashSet<String> set = RATE_LIMITED.get(account);
                 if (set != null && set.contains(downloadURL.getHost())) {
+                    /* Host in rate-limit -> Allow max 1 chunk */
                     chunks = 1;
                 }
             }

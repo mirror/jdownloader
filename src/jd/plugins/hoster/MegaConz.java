@@ -1624,11 +1624,14 @@ public class MegaConz extends PluginForHost {
                 } else if (StringUtils.equals("linksnappy.com", buildForThisPlugin.getHost())) {
                     return "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#N!" + fileID + "!" + keyString + "!" + parentNodeID;
                 } else if (StringUtils.equals("alldebrid.com", buildForThisPlugin.getHost())) {
+                    /* 2024-07-10: This format is still mandatory! */
                     return "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#!" + fileID + "!" + keyString + "=~~" + parentNodeID;
                 } else if (StringUtils.equals("leechall.io", buildForThisPlugin.getHost())) {
                     final String folderMasterKey = this.getFolderMasterKey(downloadLink);
+                    /* 2024-07-10: This is the current URL format for "singl file as part of a folder". */
                     return "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/folder/" + parentNodeID + "#" + folderMasterKey + "/file/" + fileID;
                 } else {
+                    /* 2024-07-10: Old format which doesn't even work in browser anymore. */
                     return "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#!" + fileID + "!" + keyString + "!" + parentNodeID;
                 }
             } else {

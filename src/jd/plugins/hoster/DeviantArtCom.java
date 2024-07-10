@@ -390,6 +390,13 @@ public class DeviantArtCom extends PluginForHost {
                         if (originalFile != null) {
                             originalFileSizeBytes = (Number) originalFile.get("filesize");
                         }
+                        final Map<String, Object> descriptionText = (Map<String, Object>) deviationExtendedThisArt.get("descriptionText");
+                        if (descriptionText != null) {
+                            final String rawText = (String) descriptionText.get("excerpt");
+                            if (!StringUtils.isEmpty(rawText) && StringUtils.isEmpty(link.getComment())) {
+                                link.setComment(rawText);
+                            }
+                        }
                     }
                 }
             }
