@@ -66,15 +66,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/([\\w\\-]+/(art|journal)/[\\w\\-]+-\\d+|([\\w\\-]+/)?status(?:-update)?/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(([\\w\\-]+/)?(art|journal)/[\\w\\-]+-\\d+|([\\w\\-]+/)?status(?:-update)?/\\d+)" })
 public class DeviantArtCom extends PluginForHost {
     private final String               TYPE_DOWNLOADALLOWED_HTML             = "(?i)class=\"text\">HTML download</span>";
     private final String               TYPE_DOWNLOADFORBIDDEN_HTML           = "<div class=\"grf\\-indent\"";
     private boolean                    downloadHTML                          = false;
     private String                     betterHTML                            = null;
     private boolean                    accountRequiredWhenDownloadImpossible = false;
-    private final String               PATTERN_ART                           = "(?i)https?://[^/]+/([\\w\\-]+)/art/([\\w\\-]+)-(\\d+)";
-    private final String               PATTERN_JOURNAL                       = "(?i)https?://[^/]+/([\\w\\-]+)/journal/([\\w\\-]+)-(\\d+)";
+    private final String               PATTERN_ART                           = "(?i)https?://[^/]+/([\\w\\-]+/)?art/([\\w\\-]+)-(\\d+)";
+    private final String               PATTERN_JOURNAL                       = "(?i)https?://[^/]+/([\\w\\-]+/)?journal/([\\w\\-]+)-(\\d+)";
     public static final String         PATTERN_STATUS                        = "(?i)https?://[^/]+/([\\w\\-]+)/([\\w\\-]+/)?status(?:-update)?/(\\d+)";
     public static final String         PROPERTY_USERNAME                     = "username";
     public static final String         PROPERTY_TITLE                        = "title";

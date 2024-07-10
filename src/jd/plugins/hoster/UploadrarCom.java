@@ -22,10 +22,13 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -71,7 +74,7 @@ public class UploadrarCom extends XFileSharingProBasic {
     @Override
     public void doFree(DownloadLink link, Account account) throws Exception, PluginException {
         if (checkShowFreeDialog(getHost())) {
-            showFreeDialog(getHost());
+            showFreeDialog();
         }
         super.doFree(link, account);
     }
@@ -151,7 +154,58 @@ public class UploadrarCom extends XFileSharingProBasic {
 
     @Override
     protected boolean supports_availablecheck_filename_abuse() {
-        // 2024-07-04
-        return false;
+        // 2024-07-10
+        return true;
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        String dllink = super.getDllink(link, account, br, src);
+        if (dllink != null && this.findFormDownload2Free(br) == null) {
+            /* 2024-07-10: Special as they put a fake direct-downloadlink in their html code */
+            return dllink;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    protected String getFnameViaAbuseLink(final Browser br, final DownloadLink link) throws Exception {
+        /*
+         * 2024-07-10: Special because an ad-redirect might have happened before (redirect to e.g. "get.rahim-soft.com/xen-vs-nvidia.html")
+         * so we need to force-do this request with the current plugin base domain to ensure it works.
+         */
+        getPage(br, "https://" + getHost() + "/?op=report_file&id=" + this.getFUIDFromURL(link), false);
+        /*
+         * 2019-07-10: ONLY "No such file" as response might always be wrong and should be treated as a failure! Example: xvideosharing.com
+         */
+        if (br.containsHTML(">\\s*No such file\\s*<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String filename = regexFilenameAbuse(br);
+        if (filename != null) {
+            logger.info("Successfully found filename via report_file");
+            return filename;
+        } else {
+            logger.info("Failed to find filename via report_file");
+            final boolean fnameViaAbuseUnsupported = br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500 || !br.getURL().contains("report_file") || br.getRequest().getHtmlCode().trim().equalsIgnoreCase("No such file");
+            if (fnameViaAbuseUnsupported) {
+                logger.info("Seems like report_file availablecheck seems not to be supported by this host");
+                final SubConfiguration config = this.getPluginConfig();
+                // config.setProperty(PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP, System.currentTimeMillis());
+                // config.setProperty(PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_VERSION, getPluginVersionHash());
+            }
+            return null;
+        }
+    }
+
+    @Override
+    public String regexFilenameAbuse(final Browser br) {
+        final String filename_src = br.getRegex("name=\"file_name\"[^<]*value=\"([^\"]+)\"").getMatch(-1);
+        if (filename_src != null) {
+            return filename_src;
+        } else {
+            return super.regexFilenameAbuse(br);
+        }
     }
 }
