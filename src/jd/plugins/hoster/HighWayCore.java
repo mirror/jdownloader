@@ -57,7 +57,6 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
-import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -129,8 +128,10 @@ public abstract class HighWayCore extends UseNet {
     /** Returns true if an account is required to download the given item. */
     private boolean requiresAccount(final DownloadLink link) {
         if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches(PATTERN_TV)) {
+            /* Account required. */
             return true;
         } else {
+            /* No account required. */
             return false;
         }
     }
@@ -301,9 +302,6 @@ public abstract class HighWayCore extends UseNet {
                 final String serverFilename = getFileNameFromConnection(con);
                 if (!StringUtils.isEmpty(serverFilename)) {
                     link.setFinalFileName(serverFilename);
-                } else {
-                    /* Fallback: This should not be needed. */
-                    link.setFinalFileName(correctOrApplyFileNameExtension(fallbackFilename, null, con));
                 }
                 if (con.getCompleteContentLength() != -1) {
                     if (con.isContentDecoded()) {
@@ -324,8 +322,10 @@ public abstract class HighWayCore extends UseNet {
 
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
-        if (account == null) {
-            /* without account its not possible to download the link */
+        if (!requiresAccount(link)) {
+            return true;
+        } else if (account == null) {
+            /* without account its not possible to download the link. */
             return false;
         } else {
             /* Make sure that we do not start more than the allowed number of max simultaneous downloads for the current host. */
@@ -357,7 +357,7 @@ public abstract class HighWayCore extends UseNet {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        throw new AccountRequiredException();
+        this.handleSelfhostedFileDownload(link, null);
     }
 
     @Override
@@ -367,14 +367,21 @@ public abstract class HighWayCore extends UseNet {
             super.handleMultiHost(link, account);
             return;
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, this.getMaxChunks(link));
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection(true);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file", 1 * 60 * 1000l);
-            }
-            dl.startDownload();
+            handleSelfhostedFileDownload(link, account);
         }
+    }
+
+    private void handleSelfhostedFileDownload(final DownloadLink link, final Account account) throws Exception {
+        if (account != null) {
+            this.login(account, false);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, this.getMaxChunks(link));
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection(true);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file", 1 * 60 * 1000l);
+        }
+        dl.startDownload();
     }
 
     /**
@@ -817,7 +824,7 @@ public abstract class HighWayCore extends UseNet {
             br.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
             final Cookies cookies = account.loadCookies("");
             if (cookies != null) {
-                br.setCookies(this.getHost(), cookies);
+                br.setCookies(cookies);
                 if (!validateCookies) {
                     /* Do not validate cookies */
                     return;
@@ -830,7 +837,7 @@ public abstract class HighWayCore extends UseNet {
                         this.checkErrors(br, null, account);
                         /* No exception --> Success */
                         logger.info("Cookie login successful");
-                        account.saveCookies(this.br.getCookies(this.br.getHost()), "");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
                         return;
                     } catch (final PluginException ignore) {
                         logger.log(ignore);

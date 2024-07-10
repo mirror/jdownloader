@@ -1490,7 +1490,7 @@ public class SaveTv extends PluginForHost {
                 }
             }
             final String expireDate_str = PluginJSonUtils.getJsonValue(br, "DCURRENTARTICLEENDDATE");
-            final long expireDate_real = TimeFormatter.getMilliSeconds(expireDate_str, "yyyy-MM-dd hh:mm:ss", Locale.GERMAN);
+            final long expireDate_real = TimeFormatter.getMilliSeconds(expireDate_str, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
             long expireDate_user_display = expireDate_real;
             final long timeleft = System.currentTimeMillis() - expireDate_real;
             if ((timeleft > 0 && timeleft < 24 * 60 * 60 * 1000l) || (timeleft < 0 && timeleft > -2 * 60 * 60 * 1000l)) {

@@ -19,20 +19,21 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.haberturk.com" }, urls = { "https?://video\\.haberturk\\.com/haber/video/[a-z0-9\\-_]+/\\d+|https?://(?:www\\.)?haberturk\\.com/video/haber/izle/[a-z0-9\\-_]+/\\d+" })
 public class VideoHaberturkCom extends PluginForHost {
@@ -44,22 +45,43 @@ public class VideoHaberturkCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://video.haberturk.com/";
+        return "https://video.haberturk.com/";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        this.dllink = null;
+        final String extDefault = ".mp4";
+        final String fid = this.getFID(link);
+        if (!link.isNameSet()) {
+            /* Set fallback filename */
+            link.setName(fid + extDefault);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://video.haberturk.com/") || this.br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h2 class=\"baslik\">([^<>\"]*?)</h2>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>([^<>\"]*?) \\- Haber Videoları \\- Habertürk Video</title>").getMatch(0);
+        String title = br.getRegex("<h2 class=\"baslik\">([^<>\"]*?)</h2>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (title == null) {
+                title = br.getRegex("<title>([^<>\"]*?) \\- Haber Videoları \\- Habertürk Video</title>").getMatch(0);
             }
         }
         dllink = br.getRegex("og:video:url\" content=\"(https?://[^<>\"]*?)\"").getMatch(0);
@@ -75,6 +97,12 @@ public class VideoHaberturkCom extends PluginForHost {
                 }
             }
         }
+        if (dllink == null) {
+            final String[] mp4s = br.getRegex("\"(https?:[^\"]+\\.mp4)").getColumn(0);
+            if (mp4s != null && mp4s.length > 0) {
+                this.dllink = PluginJSonUtils.unescape(mp4s[0]);
+            }
+        }
         // hls
         if (dllink == null) {
             final String json = br.getRegex("<div class='htplay_video' data-ht='(\\{.*?\\})' style=").getMatch(0);
@@ -82,35 +110,11 @@ public class VideoHaberturkCom extends PluginForHost {
                 processJavascript(json);
             }
         }
-        if (filename == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            link.setFinalFileName(this.applyFilenameExtension(title, extDefault));
         }
-        filename = filename.trim();
-        if (dllink.contains(".m3u8")) {
-            downloadLink.setName(filename + ".mp4");
-            return AvailableStatus.TRUE;
-        }
-        dllink = Encoding.htmlDecode(dllink);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+        return AvailableStatus.TRUE;
     }
 
     private void processJavascript(String json) {
@@ -163,8 +167,12 @@ public class VideoHaberturkCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = Encoding.htmlOnlyDecode(dllink);
         if (dllink.contains(".m3u8")) {
             // hls has multiple qualities....
             final Browser br2 = br.cloneBrowser();
@@ -174,11 +182,11 @@ public class VideoHaberturkCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = hlsbest.getDownloadurl();
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, dllink);
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
             dl.startDownload();
         } else {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
