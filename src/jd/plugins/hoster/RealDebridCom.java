@@ -675,6 +675,7 @@ public class RealDebridCom extends PluginForHost {
                         loginForm.getInputField("p").setValue(Encoding.urlEncode(getAccount().getPass()));
                         loginForm.getInputField("u").setValue(Encoding.urlEncode(getAccount().getUser()));
                         if (is2FARequired(loginForm.getHtmlCode())) {
+                            logger.info("2fa required");
                             if (Application.isHeadless() || !BrowserSolverService.getInstance().isOpenBrowserSupported()) {
                                 String text = loginForm.getRegex(">\\s*(A temporary.*?)\\s*</").getMatch(0);
                                 if (StringUtils.isEmpty(text)) {
