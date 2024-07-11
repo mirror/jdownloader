@@ -20,10 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
@@ -398,6 +400,19 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         return finallink;
     }
 
+    @Override
+    protected void runPostRequestTask(Browser br) throws Exception {
+        String html = br.getRequest().getHtmlCode();
+        final Matcher m = Pattern.compile("<script[^>]*src\\s*=\\s*\"data:text/javascript;base64[^>]*>[^<]*</script>").matcher(html);
+        while (m.find()) {
+            final String match = m.group(0);
+            final String base64 = new Regex(match, ";base64,(.*?)\"").getMatch(0);
+            final String replacement = Base64.decodeToString(base64);
+            html = html.replaceFirst(Pattern.quote(match), Matcher.quoteReplacement(replacement));
+        }
+        br.getRequest().setHtmlCode(html);
+    }
+
     protected void handleLandingRedirect(final CryptedLink param, Browser br) throws Exception {
         final Form landingRedirect = br.getFormByRegex("id\\s*=\\s*\"landing\"");
         if (landingRedirect != null) {
@@ -426,6 +441,49 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
      *            TODO
      */
     protected void hookAfterCaptcha(final Browser br, Form form) throws Exception {
+        /*
+         * Special: Previous form will redirect to external website e.g. "makemoneywithurl.com" or "wp2host.com" which will then redirect
+         * back to the initial site.
+         */
+        Form ret = null;
+        final Form[] forms = br.getForms();
+        for (final Form search : forms) {
+            if (search.containsHTML("(?i)Generating Link\\.\\.\\.")) {
+                ret = search;
+                break;
+            }
+        }
+        final String getLink = br.getRegex("document\\.getElementById\\(\"getlink\"\\)\\.href\\s*=\\s*'(.*?)'").getMatch(0);
+        if (form != null && getLink != null || br.containsHTML("document\\.getElementById\\(\"get(my)?link\"\\)")) {
+            // loan2host // tii.la
+            ret = new Form();
+            ret.setMethod(MethodType.POST);
+            if (getLink != null) {
+                ret.setAction(getLink);
+            } else {
+                ret.setAction(URLEncode.decodeURIComponent(form.getInputField("url").getValue()));
+            }
+            final InputField token = form.getInputField("token");
+            if (token != null) {
+                ret.put("token", token.getValue());
+            }
+            ret.put("_method", "POST");
+            final InputField c_d = form.getInputField("c_d");
+            if (c_d != null) {
+                ret.put("c_d", c_d.getValue());
+            }
+            final InputField c_t = form.getInputField("c_t");
+            if (c_t != null) {
+                ret.put("c_t", c_t.getValue());
+            }
+            final InputField alias = form.getInputField("alias");
+            if (alias != null) {
+                ret.put("alias", alias.getValue());
+            }
+        }
+        if (ret != null) {
+            submitForm(br, ret);
+        }
     }
 
     protected final AtomicReference<String> autoDetectedSpecialReferer = new AtomicReference<String>();

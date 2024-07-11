@@ -25,6 +25,8 @@ import java.util.regex.Pattern;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.CompiledFiletypeExtension;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.downloader.text.TextDownloader;
@@ -511,6 +513,15 @@ public class TwitterCom extends PluginForHost {
             link.setFinalFileName(filenameFromConnection);
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    protected boolean allowFileNameExtension(String filenameOrg, CompiledFiletypeExtension filetypeOld, CompiledFiletypeExtension filetypeNew) {
+        if (super.allowFileNameExtension(filenameOrg, filetypeOld, filetypeNew)) {
+            return true;
+        } else {
+            return filetypeOld != null && filetypeNew != null && (CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(filetypeOld) || CompiledFiletypeFilter.ImageExtensions.JPG.isSameExtensionGroup(filetypeOld)) && CompiledFiletypeFilter.DocumentExtensions.TXT.isSameExtensionGroup(filetypeNew);
+        }
     }
 
     private boolean looksLikeOriginalImageIsUnavailable(final DownloadLink link) {

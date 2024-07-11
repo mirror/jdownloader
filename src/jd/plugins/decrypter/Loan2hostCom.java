@@ -20,15 +20,9 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
-import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-
-import org.appwork.utils.encoding.URLEncode;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Loan2hostCom extends MightyScriptAdLinkFly {
@@ -68,54 +62,5 @@ public class Loan2hostCom extends MightyScriptAdLinkFly {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         /* Default handling */
         return super.decryptIt(param, progress);
-    }
-
-    @Override
-    protected void hookAfterCaptcha(final Browser br, Form form) throws Exception {
-        /*
-         * 2021-10-11: Special: Previous form will redirect to external website e.g. "makemoneywithurl.com" which will then redirect back to
-         * the initial site.
-         */
-        Form ret = null;
-        final Form[] forms = br.getForms();
-        for (final Form search : forms) {
-            if (search.containsHTML("(?i)Generating Link\\.\\.\\.")) {
-                ret = search;
-                break;
-            }
-        }
-        if (ret == null) {
-            final String getLink = br.getRegex("document\\.getElementById\\(\"getlink\"\\)\\.href\\s*=\\s*'(.*?)'").getMatch(0);
-            if (form != null) {
-                // loan2host
-                ret = new Form();
-                ret.setMethod(MethodType.POST);
-                if (getLink != null) {
-                    ret.setAction(getLink);
-                } else {
-                    ret.setAction(URLEncode.decodeURIComponent(form.getInputField("url").getValue()));
-                }
-                final InputField token = form.getInputField("token");
-                if (token != null) {
-                    ret.put("token", token.getValue());
-                }
-                ret.put("_method", "POST");
-                final InputField c_d = form.getInputField("c_d");
-                if (c_d != null) {
-                    ret.put("c_d", c_d.getValue());
-                }
-                final InputField c_t = form.getInputField("c_t");
-                if (c_t != null) {
-                    ret.put("c_t", c_t.getValue());
-                }
-                final InputField alias = form.getInputField("alias");
-                if (alias != null) {
-                    ret.put("alias", alias.getValue());
-                }
-            }
-        }
-        if (ret != null) {
-            this.submitForm(ret);
-        }
     }
 }

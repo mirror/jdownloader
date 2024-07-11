@@ -15,9 +15,12 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vids.myspace.com" }, urls = { "https?://(?:www\\.)?(myspace\\.com/(([a-z0-9\\-_\\.]+/)?video/[a-z0-9\\-_]+/\\d+|mediaservices\\.myspace\\.com/services/media/embed\\.aspx/m=\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vids.myspace.com" }, urls = { "https?://(?:www\\.)?(myspace\\.com/(([a-z0-9\\-_\\.]+/)?video/[a-z0-9\\-_]+/\\d+)|mediaservices\\.myspace\\.com/services/media/embed\\.aspx/m=\\d+)" })
 public class VidsMySpaceCom extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -107,16 +110,17 @@ public class VidsMySpaceCom extends PluginForHost {
         if (dlurl == null && (br.containsHTML("class=\"lock_16\"") || br.containsHTML("\"isExplicit\"\\s*:\\s*false"))) {
             /* +18 Videos are only downloadable for registered users */
             throw new AccountRequiredException();
-        }
-        if (dlurl == null) {
+        } else if (dlurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlurl, true, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
+    }
+
+    @Override
+    protected void throwFinalConnectionException(Browser br, URLConnectionAdapter con) throws PluginException, IOException {
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override
