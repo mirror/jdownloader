@@ -447,12 +447,18 @@ public class Ardmediathek extends PluginForDecrypt {
             final List<Map<String, Object>> mediaStreams = (List<Map<String, Object>>) media.get("media");
             /* Look-ahead */
             boolean hasAudiodescription = false;
+            boolean hasNormalVersion = false;
             for (final Map<String, Object> mediaStream : mediaStreams) {
                 final String audioKind = (String) JavaScriptEngineFactory.walkJson(mediaStream, "audios/{0}/kind");
                 if (StringUtils.equalsIgnoreCase("audio-description", audioKind)) {
                     hasAudiodescription = true;
                     break;
+                } else {
+                    hasNormalVersion = true;
                 }
+            }
+            if (hasAudiodescription && !hasNormalVersion) {
+                logger.info("Video is only available as audio-description version");
             }
             for (final Map<String, Object> mediaStream : mediaStreams) {
                 // list is sorted from best to lowest quality, first one is m3u8
@@ -467,10 +473,10 @@ public class Ardmediathek extends PluginForDecrypt {
                 } else {
                     isAudiodescription = false;
                 }
-                if (isAudiodescription && !this.cfg.isPreferAudioDescription()) {
+                if (isAudiodescription && hasNormalVersion && !this.cfg.isPreferAudioDescription()) {
                     logger.info("Skipping audio-description stream: " + url);
                     continue;
-                } else if (hasAudiodescription && this.cfg.isPreferAudioDescription() && !isAudiodescription) {
+                } else if (hasAudiodescription && hasNormalVersion && this.cfg.isPreferAudioDescription() && !isAudiodescription) {
                     logger.info("Skipping NON-audio-description stream: " + url);
                     continue;
                 } else if (mimeType.equalsIgnoreCase("application/vnd.apple.mpegurl")) {
@@ -513,7 +519,7 @@ public class Ardmediathek extends PluginForDecrypt {
         // hlsMaster =
         // "https://wdradaptiv-vh.akamaihd.net/i/medp/ondemand/weltweit/fsk0/232/2326527/,2326527_32403893,2326527_32403894,2326527_32403895,2326527_32403891,2326527_32403896,2326527_32403892,.mp4.csmil/master.m3u8";
         String http_url_audio = br.getRegex("((?:https?:)?//[^<>\"]+\\.mp3)\"").getMatch(0);
-        if (StringUtils.isEmpty(hlsMaster) && http_url_audio == null && httpStreamsQualityIdentifiers.size() == 0) {
+        if (hlsMaster == null && http_url_audio == null && httpStreamsQualityIdentifiers.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Decide if we need to grab the HLS qualities too. */
@@ -559,7 +565,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 continue;
             }
             brc.getPage(url);
-            final Map<String, Object> ardJsonRoot = restoreFromString(brc.toString(), TypeRef.MAP);
+            final Map<String, Object> ardJsonRoot = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             final ArdMetadata metadata = new ArdMetadata(title);
             /* No contentID available --> Use URL */
             metadata.setContentID(url);
