@@ -436,10 +436,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 return 140;
             }
 
-            protected Color getDefaultForeground() {
-                return null;
-            }
-
             protected boolean isIndeterminated(final AccountEntry value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
                 if (checkRunning) {
                     return AccountChecker.getInstance().contains(value.getAccount());
