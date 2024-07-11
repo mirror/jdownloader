@@ -298,12 +298,11 @@ public class MegaConz extends PluginForHost {
                     reserved = 0;
                 }
                 final long transfer_max = max.longValue();
-
                 final long transfer_left = transfer_max - (transfer_own_used + transfer_srv_used + reserved);
                 ai.setTrafficMax(transfer_max);
                 ai.setTrafficLeft(transfer_left);
                 if (transfer_left > 0 && !isPro) {
-                    accountStatus += "(still premium?)";
+                    accountStatus += "(but still premium?)";
                     isPro = true;
                 }
             }
