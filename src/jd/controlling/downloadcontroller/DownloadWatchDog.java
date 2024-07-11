@@ -4176,17 +4176,17 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 logger.info("Skipping filename auto short");
                                 throw e;
                             }
-                            logger.info("Looks like too long filename | Checking if we can write shortened filename: " + shortenedFilename);
+                            controller.setSessionDownloadFilename(shortenedFilename);
+                            downloadLink.setForcedFileName(shortenedFilename);
+                            downloadLink.setChunksProgress(null);
+                            logger.info("Looks like too long filename | Checking if shortened filename already exists: " + shortenedFilename);
                             final File writeTest2 = new File(writeTest1.getParent(), shortenedFilename);
                             if (writeTest2.exists()) {
                                 logger.info("File with shortened filename already exists!");
-                                /* Let rename handling down below take care about it (Exception or auto rename). */
-                                controller.setSessionDownloadFilename(shortenedFilename);
-                                downloadLink.setForcedFileName(shortenedFilename);
-                                downloadLink.setChunksProgress(null);
                                 // TODO
                                 // fileOutput = writeTest2;
                                 fileExists = true;
+                                /* Let rename handling down below take care about it (Exception or auto rename). */
                                 break fileDoesntExistHandling;
                             }
                         }

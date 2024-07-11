@@ -40,10 +40,11 @@ public class ParsedFilename {
             extCompiled = null;
             filenameWithoutExtension = filename;
         }
-        extensionAdvanced = extAdvanced;
         if (extAdvanced != null) {
+            extensionAdvanced = extAdvanced;
             filenameWithoutExtensionAdvanced = filename.replaceFirst(extAdvanced + "$", "");
         } else {
+            extensionAdvanced = extension;
             filenameWithoutExtensionAdvanced = filenameWithoutExtension;
         }
     }
