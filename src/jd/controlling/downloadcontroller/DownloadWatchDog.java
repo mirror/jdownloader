@@ -110,6 +110,7 @@ import org.jdownloader.plugins.controller.container.ContainerPluginController;
 import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
+import org.jdownloader.settings.IfFilenameTooLongAction;
 import org.jdownloader.settings.MirrorDetectionDecision;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
@@ -163,7 +164,6 @@ import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
@@ -4045,7 +4045,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 DownloadLink fileInProgress = null;
                 fileDoesntExistHandling: if (!fileExists) {
                     /* Check if a mirror of this item is currently being downloaded. */
-                    final String fileName;
+                    final String filename;
                     if (MirrorDetectionDecision.SAFE.equals(mirrorDetectionDecision)) {
                         /**
                          * this returns a safe checkFile or null (if not available yet, eg no final/forcedFileName set)
@@ -4054,18 +4054,18 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             /**
                              * we use fileName from checkFile
                              */
-                            fileName = safeFinalFileDestination.getName();
+                            filename = safeFinalFileDestination.getName();
                         } else {
                             /**
                              * we use final/forcedFileName from downloadLink
                              */
-                            fileName = downloadLink.getName(true, false);
+                            filename = downloadLink.getName(true, false);
                         }
                     } else {
                         /**
                          * we use fileName from fileOutput (may be unsafe)
                          */
-                        fileName = fileOutput.getName();
+                        filename = fileOutput.getName();
                     }
                     for (final SingleDownloadController downloadController : session.getControllers()) {
                         if (downloadController == controller) {
@@ -4077,7 +4077,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                         if (session.getFileAccessManager().isLockedBy(fileOutput, downloadController)) {
                             /* fileOutput is already locked */
-                            if (block.getFilePackage() == downloadLink.getFilePackage() && isMirrorCandidate(downloadLink, fileName, block, mirrorDetectionDecision)) {
+                            if (block.getFilePackage() == downloadLink.getFilePackage() && isMirrorCandidate(downloadLink, filename, block, mirrorDetectionDecision)) {
                                 /* only throw ConditionalSkipReasonException when file is from same package */
                                 throw new ConditionalSkipReasonException(new MirrorLoading(block));
                             } else {
@@ -4109,18 +4109,24 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                         try {
                             FilePathChecker.createFilePath(writeTest1);
+                            /* Test-boolean to test this on OS which do not have any path limitations. */
                             final boolean devtestForceLongfilenameException = false;
-                            if (devtestForceLongfilenameException && fileName.length() > 219) {
+                            if (devtestForceLongfilenameException && fileOutput.getAbsolutePath().length() > 259) {
                                 throw new BadFilePathException(writeTest1, PathFailureReason.PATH_SEGMENT_TOO_LONG);
                             }
                         } catch (final BadFilePathException e) {
                             /* Looks like filename might be too long -> Check if writing a shortened filename would be possible. */
-                            // TODO: Check up to len 233
-                            final int maxFilenameLength = 219;
-                            final boolean allowAutoShortenFilenames = true;
+                            int maxFilenameLength = 259 - fileOutput.getParentFile().getAbsolutePath().length();
+                            if (fileOutput.getName().length() > filename.length()) {
+                                /*
+                                 * Name of write-test file was longer than name of filename -> Filename needs to be smaller to compensate
+                                 * for that.
+                                 */
+                                maxFilenameLength = maxFilenameLength - (fileOutput.getName().length() - filename.length());
+                            }
                             if (e.getReason() != PathFailureReason.PATH_SEGMENT_TOO_LONG) {
                                 throw e;
-                            } else if (fileName.length() <= maxFilenameLength) {
+                            } else if (maxFilenameLength <= 0) {
                                 /*
                                  * Does not look like too long filename -> Write-fail must have happened for a different reason, possibly
                                  * permission problem -> Give up.
@@ -4128,27 +4134,61 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 logger.info("Filename is too long according to Exception but it's not");
                                 // throw e;
                                 throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
-                            } else if (!allowAutoShortenFilenames) {
-                                /* Filename shortening is not allowed. */
-                                throw e;
                             }
                             /* Shorten filename and try again */
                             String shortenedFilename;
                             // TODO: Make sure to catch complete extension here, especially in order to not break multipart archives
-                            final String ext = Plugin.getFileNameExtensionFromString(fileName);
-                            if (ext != null) {
+                            String ext = null;
+                            if (filename.contains(".")) {
                                 /* Filename contains extension -> Shorten name and keep extension */
-                                final int shortenToLength = Math.min(maxFilenameLength - ext.length(), fileName.length() - ext.length());
-                                shortenedFilename = fileName.substring(0, shortenToLength);
+                                final int extPos = filename.lastIndexOf(".");
+                                ext = filename.substring(extPos, filename.length());
+                                if (ext.length() > maxFilenameLength) {
+                                    /* Edge case */
+                                    logger.info("Cannot shorten filename because file extension wouldn't fit");
+                                    throw e;
+                                }
+                                // final String filenameWithoutExt = filename.substring(0, extPos);
+                                final int shortenToLength = Math.min(maxFilenameLength - ext.length(), filename.length() - ext.length());
+                                shortenedFilename = filename.substring(0, shortenToLength);
                             } else {
                                 /* Filename does not contain extension -> Just shorten it to max allowed length. */
-                                shortenedFilename = fileName.substring(0, maxFilenameLength);
+                                shortenedFilename = filename.substring(0, maxFilenameLength);
                             }
                             /* Trim in case after cutting it, it randomly ends with a space. */
                             shortenedFilename = shortenedFilename.trim();
                             /* Re-Add file-extension if there is one. */
                             if (ext != null) {
                                 shortenedFilename += ext;
+                            }
+                            final IfFilenameTooLongDialogInterface io = new IfFilenameTooLongDialog(downloadLink, shortenedFilename).show();
+                            IfFilenameTooLongAction doAction;
+                            // if (io.getCloseReason() == CloseReason.TIMEOUT) {
+                            // /* User did not react -> All we can do is display an error. */
+                            // // throw new SkipReasonException(SkipReason.FILE_EXISTS);
+                            // doAction = IfFilenameTooLongAction.SKIP_FILE;
+                            // } else if (io.getCloseReason() == CloseReason.INTERRUPT) {
+                            // // throw new InterruptedException("IFFileExistsDialog Interrupted");
+                            // doAction = IfFilenameTooLongAction.SKIP_FILE;
+                            // } else if (io.getCloseReason() != CloseReason.OK) {
+                            // /* Timeout or dialog closed/ignored -> Do not auto rename */
+                            // doAction = IfFilenameTooLongAction.SKIP_FILE;
+                            // } else {
+                            // doAction = io.getAction();
+                            // }
+                            if (io.getCloseReason() == CloseReason.OK) {
+                                doAction = io.getAction();
+                            } else {
+                                /* Timeout or dialog closed/ignored -> Do not auto rename */
+                                doAction = IfFilenameTooLongAction.SKIP_FILE;
+                            }
+                            if (doAction == null) {
+                                /* Fallback */
+                                doAction = IfFilenameTooLongAction.SKIP_FILE;
+                            }
+                            if (doAction != IfFilenameTooLongAction.AUTO_SHORTEN) {
+                                logger.info("Skipping filename auto short");
+                                throw e;
                             }
                             logger.info("Looks like too long filename | Checking if we can write shortened filename: " + shortenedFilename);
                             final File writeTest2 = new File(writeTest1.getParent(), shortenedFilename);
@@ -4159,11 +4199,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 controller.setSessionDownloadFilename(shortenedFilename);
                                 downloadLink.setForcedFileName(shortenedFilename);
                                 downloadLink.setChunksProgress(null);
-                                // TODO: Check this. Maybe at this stage if the shortened file already exists we should just give up.
+                                // TODO
                                 // fileOutput = writeTest2;
                                 fileExists = true;
                                 break fileDoesntExistHandling;
-                                // throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS, null, e);
                             }
                             // TODO: Maybe remove this check. If we fail to write the file with the shortened filename later, there is
                             // nothing we can do anyways.
