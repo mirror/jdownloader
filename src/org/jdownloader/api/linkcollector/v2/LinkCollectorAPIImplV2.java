@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,26 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import javax.swing.Icon;
+
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledLinkModifiers;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackageView;
+import jd.controlling.linkcrawler.modifier.CommentModifier;
+import jd.controlling.linkcrawler.modifier.DownloadFolderModifier;
+import jd.controlling.linkcrawler.modifier.PackageNameModifier;
+import jd.plugins.DecrypterRetryException.RetryReason;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.storage.JSonStorage;
@@ -37,6 +58,7 @@ import org.jdownloader.api.utils.SelectionInfoUtils;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.extensions.extraction.BooleanStatus;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
@@ -45,25 +67,8 @@ import org.jdownloader.myjdownloader.client.bindings.CleanupActionOptions;
 import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
 import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.LinkgrabberInterface;
+import org.jdownloader.myjdownloader.client.json.JsonMap;
 import org.jdownloader.settings.GeneralSettings;
-
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.CrawledLinkModifiers;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackageView;
-import jd.controlling.linkcrawler.modifier.CommentModifier;
-import jd.controlling.linkcrawler.modifier.DownloadFolderModifier;
-import jd.controlling.linkcrawler.modifier.PackageNameModifier;
-import jd.plugins.DownloadLink;
 
 public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     private LogSource                                                 logger;
@@ -244,14 +249,53 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             maxResults = links.size();
         }
         for (int i = startWith; i < Math.min(startWith + maxResults, links.size()); i++) {
-            CrawledLink cl = links.get(i);
-            CrawledLinkAPIStorableV2 cls = toStorable(queryParams, cl);
+            final CrawledLink cl = links.get(i);
+            final CrawledLinkAPIStorableV2 cls = toStorable(queryParams, cl, this);
             result.add(cls);
         }
         return result;
     }
 
-    public static CrawledLinkAPIStorableV2 toStorable(CrawledLinkQueryStorable queryParams, CrawledLink cl) {
+    public static CrawledLinkAPIStorableV2 setStatus(final CrawledLinkAPIStorableV2 cls, final CrawledLink link, final Object caller) {
+        final JsonMap advancedStatus = new JsonMap();
+        cls.setAdvancedStatus(advancedStatus);
+        {
+            final DownloadLink dl = link.getDownloadLink();
+            final AvailableStatus availableStatus = dl != null ? dl.getAvailableStatus() : AvailableStatus.UNCHECKED;
+            final Map<String, Object> entry = new HashMap<String, Object>();
+            switch (availableStatus) {
+            case FALSE:
+                entry.put("iconKey", IconKey.ICON_ERROR);
+                break;
+            case TRUE:
+                entry.put("iconKey", IconKey.ICON_TRUE);
+                break;
+            case UNCHECKABLE:
+            case UNCHECKED:
+                entry.put("iconKey", IconKey.ICON_HELP);
+                break;
+            }
+            entry.put("label", availableStatus.getExplanation());
+            entry.put("id", availableStatus.name());
+            advancedStatus.put("AvailableStatus", entry);
+        }
+        if ("LinkCrawlerRetry".equals(link.getHost())) {
+            final DownloadLink dl = link.getDownloadLink();
+            final String reason = dl != null ? dl.getStringProperty("reason", null) : null;
+            final Map<String, Object> entry = new HashMap<String, Object>();
+            try {
+                if (reason != null) {
+                    entry.put("id", reason);
+                    entry.put("label", RetryReason.valueOf(reason).getExplanation(caller));
+                }
+            } catch (IllegalArgumentException ignore) {
+            }
+            advancedStatus.put("LinkCrawlerRetry", entry);
+        }
+        return cls;
+    }
+
+    public static CrawledLinkAPIStorableV2 toStorable(CrawledLinkQueryStorable queryParams, CrawledLink cl, final Object caller) {
         CrawledLinkAPIStorableV2 cls = new CrawledLinkAPIStorableV2(cl);
         ContentAPIImplV2 contentAPI = RemoteAPIController.getInstance().getContentAPI();
         if (queryParams.isPassword() && cl.getDownloadLink() != null) {
@@ -290,6 +334,9 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 LoggerFactory.getDefaultLogger().log(e);
             }
         }
+        if (queryParams.isAdvancedStatus()) {
+            setStatus(cls, cl, caller);
+        }
         if (queryParams.isJobUUID()) {
             cls.setJobUUID(cl.getJobID());
         }
@@ -307,6 +354,9 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         }
         if (queryParams.isUrl()) {
             cls.setUrl(cl.getURL());
+        }
+        if (queryParams.isAddedDate()) {
+            cls.setAddedDate(cl.getCreated());
         }
         if (queryParams.isEnabled()) {
             cls.setEnabled(cl.isEnabled());

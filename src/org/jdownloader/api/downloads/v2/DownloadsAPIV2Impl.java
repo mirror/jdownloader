@@ -438,17 +438,19 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                     }
                 }
                 break;
+                default:
+                    break;
                 }
-                if (!oldStatusSet) {
-                    final String label = finalLinkState.getExplanation(caller, link);
-                    oldStatusSet = true;
-                    if (FinalLinkState.FINISHED_MIRROR.equals(finalLinkState)) {
-                        dls.setStatusIconKey(IconKey.ICON_TRUE_ORANGE);
-                    } else {
-                        dls.setStatusIconKey(IconKey.ICON_TRUE);
-                    }
-                    dls.setStatus(label);
+            }
+            if (!oldStatusSet) {
+                final String label = finalLinkState.getExplanation(caller, link);
+                oldStatusSet = true;
+                if (FinalLinkState.FINISHED_MIRROR.equals(finalLinkState)) {
+                    dls.setStatusIconKey(IconKey.ICON_TRUE_ORANGE);
+                } else {
+                    dls.setStatusIconKey(IconKey.ICON_TRUE);
                 }
+                dls.setStatus(label);
             }
         }
         if (link.getDownloadLinkController() != null) {
@@ -466,6 +468,18 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         {
             final AvailableStatus availableStatus = link.getAvailableStatus();
             final Map<String, Object> entry = new HashMap<String, Object>();
+            switch (availableStatus) {
+            case FALSE:
+                entry.put("iconKey", IconKey.ICON_ERROR);
+                break;
+            case TRUE:
+                entry.put("iconKey", IconKey.ICON_TRUE);
+                break;
+            case UNCHECKABLE:
+            case UNCHECKED:
+                entry.put("iconKey", IconKey.ICON_HELP);
+                break;
+            }
             entry.put("label", availableStatus.getExplanation());
             entry.put("id", availableStatus.name());
             advancedStatus.put("AvailableStatus", entry);
