@@ -436,9 +436,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
 
     /**
      * Override to do something after the captcha (also gets called when no captcha was needed).
-     *
-     * @param form
-     *            TODO
+     * 
      */
     protected void hookAfterCaptcha(final Browser br, Form form) throws Exception {
         /*
