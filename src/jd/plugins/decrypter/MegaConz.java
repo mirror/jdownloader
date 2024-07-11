@@ -22,23 +22,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Base64;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DecrypterRetryException;
-import jd.plugins.DecrypterRetryException.RetryReason;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.SimpleMapper;
@@ -59,6 +42,23 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.MegaConzConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Base64;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(?:https?://(www\\.)?mega\\.(co\\.)?nz/[^/:]*#F|chrome://mega/content/secure\\.html#F|mega:/*#F)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((!|%21)[a-zA-Z0-9]+)?(\\?[a-zA-Z0-9]+)?" })
 public class MegaConz extends PluginForDecrypt {
@@ -234,9 +234,9 @@ public class MegaConz extends PluginForDecrypt {
                         }
                     } else {
                         con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID
-                                /*
-                                 * + "&domain=meganz
-                                 */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
+                        /*
+                         * + "&domain=meganz
+                         */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
                         // ->
                         // !nocache,
                         // commands.cpp
@@ -408,57 +408,58 @@ public class MegaConz extends PluginForDecrypt {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                if (!isAbort()) {
-                    final Iterator<Map<String, Object>> it = parsedNodes.iterator();
-                    while (it.hasNext()) {
-                        final Map<String, Object> parsedNode = it.next();
-                        if (isAbort()) {
-                            throw new InterruptedException();
-                        } else {
-                            final String encryptedNodeKey = new Regex(toString(parsedNode.remove("k")), ":([^:]*?)$").getMatch(0);
-                            if (encryptedNodeKey == null) {
-                                it.remove();
-                                logger.info("NodeKey missing:" + JSonStorage.toString(parsedNode));
-                                continue;
-                            }
-                            final String nodeKey;
-                            try {
-                                nodeKey = decryptNodeKey(encryptedNodeKey, folderMasterKey);
-                            } catch (final InvalidKeyException e) {
-                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
-                            }
-                            final String nodeAttr = decrypt(toString(parsedNode.remove("a")), nodeKey);
-                            if (nodeAttr == null) {
-                                it.remove();
-                                logger.info("NodeAttr missing:" + JSonStorage.toString(parsedNode));
-                                continue;
-                            }
-                            final String nodeName = removeEscape(new Regex(nodeAttr, "\"n\"\\s*?:\\s*?\"(.*?)(?<!\\\\)\"").getMatch(0));
-                            final String nodeType = String.valueOf(toObject(parsedNode.remove("t")));
-                            if ("1".equals(nodeType)) {
-                                parsedNode.put("nodeDirectory", Boolean.TRUE);
-                            } else if ("0".equals(nodeType)) {
-                                // parsedNode.put("nodeDirectory", Boolean.FALSE);
-                                final Long nodeSize = JavaScriptEngineFactory.toLong(toObject(parsedNode.remove("s")), -1);
-                                if (nodeSize == -1) {
-                                    it.remove();
-                                    logger.info("NodeSize missing:" + JSonStorage.toString(parsedNode));
-                                    continue;
-                                } else {
-                                    parsedNode.put("nodeSize", nodeSize);
-                                }
-                            } else {
-                                it.remove();
-                                logger.info("Unknown type(" + nodeType + "):" + JSonStorage.toString(parsedNode));
-                                continue;
-                            }
-                            parsedNode.put("nodeKey", nodeKey);
-                            parsedNode.put("nodeName", nodeName);
-                        }
-                    }
-                    logger.info("Fill Cache:Nodes=" + parsedNodes.size() + "|FolderID=" + folderID);
-                    folderNodes.addAll(parsedNodes);
+                if (this.isAbort()) {
+                    throw new InterruptedException();
                 }
+                final Iterator<Map<String, Object>> it = parsedNodes.iterator();
+                while (it.hasNext()) {
+                    final Map<String, Object> parsedNode = it.next();
+                    if (isAbort()) {
+                        throw new InterruptedException();
+                    }
+                    final String encryptedNodeKey = new Regex(toString(parsedNode.remove("k")), ":([^:]*?)$").getMatch(0);
+                    if (encryptedNodeKey == null) {
+                        it.remove();
+                        logger.info("NodeKey missing:" + JSonStorage.toString(parsedNode));
+                        continue;
+                    }
+                    final String nodeKey;
+                    try {
+                        nodeKey = decryptNodeKey(encryptedNodeKey, folderMasterKey);
+                    } catch (final InvalidKeyException e) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
+                    }
+                    final String nodeAttr = decrypt(toString(parsedNode.remove("a")), nodeKey);
+                    if (nodeAttr == null) {
+                        it.remove();
+                        logger.info("NodeAttr missing:" + JSonStorage.toString(parsedNode));
+                        continue;
+                    }
+                    // TODO: Use json parser here
+                    final String nodeName = removeEscape(new Regex(nodeAttr, "\"n\"\\s*?:\\s*?\"(.*?)(?<!\\\\)\"").getMatch(0));
+                    final String nodeType = String.valueOf(toObject(parsedNode.remove("t")));
+                    if ("1".equals(nodeType)) {
+                        parsedNode.put("nodeDirectory", Boolean.TRUE);
+                    } else if ("0".equals(nodeType)) {
+                        // parsedNode.put("nodeDirectory", Boolean.FALSE);
+                        final Long nodeSize = JavaScriptEngineFactory.toLong(toObject(parsedNode.remove("s")), -1);
+                        if (nodeSize == -1) {
+                            it.remove();
+                            logger.info("NodeSize missing:" + JSonStorage.toString(parsedNode));
+                            continue;
+                        } else {
+                            parsedNode.put("nodeSize", nodeSize);
+                        }
+                    } else {
+                        it.remove();
+                        logger.info("Unknown type(" + nodeType + "):" + JSonStorage.toString(parsedNode));
+                        continue;
+                    }
+                    parsedNode.put("nodeKey", nodeKey);
+                    parsedNode.put("nodeName", nodeName);
+                }
+                logger.info("Fill Cache:Nodes=" + parsedNodes.size() + "|FolderID=" + folderID);
+                folderNodes.addAll(parsedNodes);
             }
         }
         /*
@@ -482,7 +483,7 @@ public class MegaConz extends PluginForDecrypt {
         final LinkedHashMap<String, MegaFolder> folders = new LinkedHashMap<String, MegaFolder>();
         for (final Map<String, Object> folderNode : folderNodes) {
             if (isAbort()) {
-                break;
+                throw new InterruptedException();
             }
             final String nodeID = toString(folderNode.get("h"));
             final String nodeParentID = toString(folderNode.get("p"));
@@ -597,7 +598,10 @@ public class MegaConz extends PluginForDecrypt {
                 }
             }
         }
-        if (!isAbort() && ret.size() == 0) {
+        if (this.isAbort()) {
+            throw new InterruptedException();
+        }
+        if (ret.size() == 0) {
             boolean hasFiles = false;
             for (final MegaFolder folder : folders.values()) {
                 if (folder.content != null) {
