@@ -46,8 +46,7 @@ public class IfFilenameTooLongDialog extends AbstractDialog<IfFilenameTooLongAct
     }
 
     private JRadioButton       skip;
-    private JRadioButton       overwrite;
-    private JRadioButton       autoShorten;
+    private JRadioButton       rename;
     private final String       packageID;
     private final DownloadLink downloadLink;
     private final String       autoShortenedFilenameSuggestion;
@@ -120,27 +119,19 @@ public class IfFilenameTooLongDialog extends AbstractDialog<IfFilenameTooLongAct
                 result = IfFilenameTooLongAction.SKIP_FILE;
             }
         });
-        overwrite = new JRadioButton(_GUI.T.IfFileExistsDialog_layoutDialogContent_overwrite_());
-        overwrite.addActionListener(new ActionListener() {
+        rename = new JRadioButton("Use shortened filename");
+        rename.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                result = IfFilenameTooLongAction.OVERWRITE_FILE;
-            }
-        });
-        autoShorten = new JRadioButton("Auto shorten filename");
-        autoShorten.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                result = IfFilenameTooLongAction.AUTO_SHORTEN;
+                result = IfFilenameTooLongAction.RENAME_FILE;
             }
         });
         // Group the radio buttons.
         final ButtonGroup group = new ButtonGroup();
         group.add(skip);
-        group.add(overwrite);
-        group.add(autoShorten);
+        group.add(rename);
         p.add(new JSeparator(), "pushx,growx");
         p.add(skip, "gapleft 10");
-        p.add(overwrite, "gapleft 10");
-        p.add(autoShorten, "gapleft 10");
+        p.add(rename, "gapleft 10");
         // TODO: Update this so last selection is correctly used as current default
         // IfFileExistsAction def = org.jdownloader.settings.staticreferences.CFG_GUI.CFG.getLastIfFileExists();
         IfFilenameTooLongAction def = null;
@@ -148,11 +139,8 @@ public class IfFilenameTooLongDialog extends AbstractDialog<IfFilenameTooLongAct
             def = IfFilenameTooLongAction.SKIP_FILE;
         }
         switch (def) {
-        case AUTO_SHORTEN:
-            autoShorten.setSelected(true);
-            break;
-        case OVERWRITE_FILE:
-            overwrite.setSelected(true);
+        case RENAME_FILE:
+            rename.setSelected(true);
             break;
         default:
             skip.setSelected(true);

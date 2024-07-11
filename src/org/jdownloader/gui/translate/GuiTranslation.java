@@ -4291,8 +4291,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Auto-Rename the new File" })
     String auto_rename();
 
-    @Default(lngs = { "en" }, values = { "Auto shorten filename" })
-    String auto_shorten();
+    @Default(lngs = { "en" }, values = { "Use shortened filename" })
+    String too_long_filename_use_shortened_filename();
 
     @Default(lngs = { "en" }, values = { "Ask me" })
     String ask();
