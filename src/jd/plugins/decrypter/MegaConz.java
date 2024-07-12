@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -49,8 +50,10 @@ import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Base64;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
 import jd.plugins.DecrypterRetryException.RetryReason;
@@ -60,12 +63,99 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(?:https?://(www\\.)?mega\\.(co\\.)?nz/[^/:]*#F|chrome://mega/content/secure\\.html#F|mega:/*#F)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((!|%21)[a-zA-Z0-9]+)?(\\?[a-zA-Z0-9]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MegaConz extends PluginForDecrypt {
     private static AtomicLong CS = new AtomicLong(System.currentTimeMillis());
 
     public MegaConz(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "mega.co.nz", "mega.nz" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static final Pattern PATTERN_FILE_FOLDER_ID = Pattern.compile("[a-zA-Z0-9]{8}");
+    public static final Pattern PATTERN_ENCRYPTION_KEY = Pattern.compile("[a-zA-Z0-9_-]{22}|[a-zA-Z0-9_-]{43}");
+    public static final Pattern PATTERN_FOLDER_OLD     = Pattern.compile("#F!([a-zA-Z0-9]+)(!([a-zA-Z0-9_-]{22,43}))?(!([a-zA-Z0-9]+))?");
+    public static final Pattern PATTERN_FOLDER_NEW     = Pattern.compile("folder/([a-zA-Z0-9]+)(#([a-zA-Z0-9_-]{22,43}))?(/(file|folder)/([a-zA-Z0-9]+))?");
+
+    /**
+     * Returns ID of preferred subfolder or file. </br>
+     * Returns non-validated result!
+     */
+    private static String getPreferredNodeID(final String url) {
+        String id = new Regex(url, PATTERN_FOLDER_NEW).getMatch(5);
+        if (id == null) {
+            id = new Regex(url, PATTERN_FOLDER_OLD).getMatch(4);
+        }
+        return id;
+    }
+
+    /** Returns non-validated result! */
+    private static String getFolderID(final String url) {
+        String folderID = new Regex(url, PATTERN_FOLDER_NEW).getMatch(0);
+        if (folderID == null) {
+            /* Older URLs */
+            folderID = new Regex(url, PATTERN_FOLDER_OLD).getMatch(0);
+        }
+        return folderID;
+    }
+
+    /** Returns non-validated result! */
+    public static String getFolderMasterKey(final String url) {
+        String key = new Regex(url, PATTERN_FOLDER_NEW).getMatch(2);
+        if (key == null) {
+            key = new Regex(url, PATTERN_FOLDER_OLD).getMatch(2);
+        }
+        return key;
+    }
+
+    public static boolean isValidFileFolderNodeID(final String str) {
+        if (str == null) {
+            return false;
+        } else if (new Regex(str, PATTERN_FILE_FOLDER_ID).patternFind()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean isValidDecryptionKey(final String str) {
+        if (str == null) {
+            return false;
+        } else if (new Regex(str, PATTERN_ENCRYPTION_KEY).patternFind()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            String regex = "(https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/|chrome://mega/content/secure\\.html|mega:/*)";
+            /* Add domain-unspecific patterns */
+            regex += "(" + PATTERN_FOLDER_OLD.pattern() + "|" + PATTERN_FOLDER_NEW.pattern() + ")";
+            ret.add(regex);
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -99,16 +189,6 @@ public class MegaConz extends PluginForDecrypt {
         }
     }
 
-    private static String getParentNodeID(final String url) {
-        final String ret = new Regex(url, "(?:!|%21)([a-zA-Z0-9]+)$").getMatch(0);
-        final String folderID = getFolderID(url);
-        final String masterKey = getFolderMasterKey(url);
-        if (ret != null && !StringUtils.startsWithCaseInsensitive(ret, folderID) && !StringUtils.startsWithCaseInsensitive(ret, masterKey)) {
-            return ret;
-        }
-        return null;
-    }
-
     private static HashMap<String, Reference<List<Map<String, Object>>>> GLOBAL_CACHE = new HashMap<String, Reference<List<Map<String, Object>>>>();
     private final Charset                                                UTF8         = Charset.forName("UTF-8");
 
@@ -138,21 +218,22 @@ public class MegaConz extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        String contenturl = param.getCryptedUrl().replaceAll("%21", "!");
+        String contenturl = Encoding.htmlDecode(param.getCryptedUrl());
         final String folderID = getFolderID(contenturl);
-        final String folderNodeID = getFolderNodeID(contenturl);
-        final String folderMasterKey = getFolderMasterKey(contenturl);
-        final String preferredNodeID = getParentNodeID(contenturl);
-        final String containerURL;
-        if (StringUtils.startsWithCaseInsensitive(contenturl, "chrome:") || StringUtils.startsWithCaseInsensitive(contenturl, "mega:")) {
-            /* Change "Application url" to "http url" */
-            if (folderID != null && folderMasterKey != null) {
-                containerURL = "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/folder/" + folderID + "#" + folderMasterKey;
-            } else {
-                containerURL = contenturl;
-            }
+        String folderMasterKey = getFolderMasterKey(contenturl);
+        final String preferredNodeIDFromURL = getPreferredNodeID(contenturl);
+        final String preferredNodeID;
+        if (isValidFileFolderNodeID(preferredNodeIDFromURL)) {
+            preferredNodeID = preferredNodeIDFromURL;
         } else {
-            containerURL = contenturl;
+            /* It doesn't make sense to look for a nodeID if we know that it is invalid. */
+            preferredNodeID = null;
+        }
+        if (folderID == null) {
+            /* Developer mistake */
+            throw new IllegalArgumentException();
+        } else if (!isValidFileFolderNodeID(folderID)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid folderID");
         }
         int retryCounter = 0;
         final Map<String, FilePackage> fpMap = new HashMap<String, FilePackage>();
@@ -163,7 +244,6 @@ public class MegaConz extends PluginForDecrypt {
             newCore = true;
         } catch (Throwable ignore) {
         }
-        final boolean isCrawlerSetFullPathAsPackagename = config.isCrawlerSetFullPathAsPackagename();
         List<Map<String, Object>> folderNodes = null;
         if (!newCore) {
             folderNodes = new ArrayList<Map<String, Object>>();
@@ -218,8 +298,8 @@ public class MegaConz extends PluginForDecrypt {
             if (folderNodes.size() > 0) {
                 logger.info("Found Cache:Nodes=" + folderNodes.size() + "|FolderID=" + folderID);
             } else {
-                List<Map<String, Object>> parsedNodes = new ArrayList<Map<String, Object>>();
-                while (!isAbort()) {
+                final List<Map<String, Object>> parsedNodes = new ArrayList<Map<String, Object>>();
+                pagination: while (!isAbort()) {
                     final URLConnectionAdapter con;
                     if (sn != null) {
                         if (w != null) {
@@ -400,8 +480,9 @@ public class MegaConz extends PluginForDecrypt {
                              */
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         } else {
+                            /* Unknown error code, typically -2 or -9 */
                             // https://help.servmask.com/knowledgebase/mega-error-codes/
-                            return ret;
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
                     } else {
                         logger.info("Response:" + JSonStorage.toString(response));
@@ -423,11 +504,15 @@ public class MegaConz extends PluginForDecrypt {
                         logger.info("NodeKey missing:" + JSonStorage.toString(parsedNode));
                         continue;
                     }
+                    if (folderMasterKey == null || !isValidDecryptionKey(folderMasterKey)) {
+                        /* We need this key to decrypt the items of this folder -> Ask user if we don't have it yet. */
+                        folderMasterKey = getUserInput("Decryption key", param);
+                    }
                     final String nodeKey;
                     try {
                         nodeKey = decryptNodeKey(encryptedNodeKey, folderMasterKey);
                     } catch (final InvalidKeyException e) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
+                        throw new DecrypterException(DecrypterException.PASSWORD, e);
                     }
                     final String nodeAttr = decrypt(toString(parsedNode.remove("a")), nodeKey);
                     if (nodeAttr == null) {
@@ -462,6 +547,19 @@ public class MegaConz extends PluginForDecrypt {
                 folderNodes.addAll(parsedNodes);
             }
         }
+        if (StringUtils.isEmpty(folderMasterKey)) {
+            /* Something must have gone seriously wrong */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String containerURL = "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/folder/" + folderID + "#" + folderMasterKey;
+        if (preferredNodeID != null) {
+            String preferredNodeType = new Regex(contenturl, PATTERN_FOLDER_NEW).getMatch(4);
+            if (preferredNodeType == null) {
+                /* For older links, type ob preferred node is not given inside URL. */
+                preferredNodeType = "file";
+            }
+            containerURL += "/" + preferredNodeType + "/" + preferredNodeID;
+        }
         /*
          * p = parent node (ID)
          *
@@ -479,12 +577,13 @@ public class MegaConz extends PluginForDecrypt {
          *
          * k = node key
          */
-        Boolean preferredNodeIDFound = StringUtils.isNotEmpty(preferredNodeID) ? Boolean.FALSE : null;
         final LinkedHashMap<String, MegaFolder> folders = new LinkedHashMap<String, MegaFolder>();
+        final ArrayList<DownloadLink> desiredItems = new ArrayList<DownloadLink>();
         for (final Map<String, Object> folderNode : folderNodes) {
             if (isAbort()) {
                 throw new InterruptedException();
             }
+            boolean preferredNodeIDFound = false;
             final String nodeID = toString(folderNode.get("h"));
             final String nodeParentID = toString(folderNode.get("p"));
             if (folderNode.containsKey("nodeDirectory")) {
@@ -501,7 +600,7 @@ public class MegaConz extends PluginForDecrypt {
                 final Long nodeSize = (Long) toObject(folderNode.get("nodeSize"));
                 final MegaFolder folder = folders.get(nodeParentID);
                 if (StringUtils.isNotEmpty(preferredNodeID)) {
-                    // see RewriteMegaConz
+                    /* Look for preferred item such as a specific subfolder inside a folder or specific file inside a folder. */
                     if (StringUtils.equals(preferredNodeID, nodeID)) {
                         // preferred nodeID
                         logger.info("Preferred File NodeID found:" + preferredNodeID);
@@ -518,9 +617,6 @@ public class MegaConz extends PluginForDecrypt {
                                 checkParent = folders.get(checkParent.parent);
                             }
                         }
-                        if (checkParent == null) {
-                            continue;
-                        }
                     }
                 }
                 FilePackage fp;
@@ -530,7 +626,7 @@ public class MegaConz extends PluginForDecrypt {
                     fp = fpMap.get(path);
                     if (fp == null) {
                         fp = FilePackage.getInstance();
-                        if (isCrawlerSetFullPathAsPackagename) {
+                        if (config.isCrawlerSetFullPathAsPackagename()) {
                             fp.setName(path);
                         } else {
                             fp.setName(path.substring(path.lastIndexOf("/") + 1));
@@ -540,9 +636,6 @@ public class MegaConz extends PluginForDecrypt {
                 } else {
                     fp = null;
                     path = null;
-                }
-                if (folderNodeID != null && !StringUtils.equalsIgnoreCase(nodeID, folderNodeID)) {
-                    continue;
                 }
                 final String nodeName = toString(folderNode.get("nodeName"));
                 final String nodeKey = toString(folderNode.get("nodeKey"));
@@ -592,14 +685,18 @@ public class MegaConz extends PluginForDecrypt {
                     fp.add(link);
                 }
                 ret.add(link);
-                distribute(link);
-                if (folderNodeID != null && StringUtils.equalsIgnoreCase(nodeID, folderNodeID)) {
-                    break;
+                if (preferredNodeID != null && preferredNodeIDFound) {
+                    desiredItems.add(link);
                 }
             }
         }
-        if (this.isAbort()) {
-            throw new InterruptedException();
+        if (desiredItems.size() > 0) {
+            /* Return only items which the user wants such as a specific subfolder or specific file as part of folder. */
+            return desiredItems;
+        }
+        if (preferredNodeID != null) {
+            /* Preferred file/subfolder was not found --> Reurn all items instead */
+            logger.info("Preferred NodeID NOT found:" + preferredNodeID);
         }
         if (ret.size() == 0) {
             boolean hasFiles = false;
@@ -616,7 +713,7 @@ public class MegaConz extends PluginForDecrypt {
             if (!hasFiles) {
                 MegaFolder emptyFolder = null;
                 if (folders.size() > 0) {
-                    if (preferredNodeIDFound != null) {
+                    if (preferredNodeID != null) {
                         emptyFolder = folders.get(preferredNodeID);
                     }
                     if (emptyFolder == null) {
@@ -624,14 +721,12 @@ public class MegaConz extends PluginForDecrypt {
                     }
                 }
                 if (emptyFolder != null) {
+                    /* Show name/path of empty folder to user */
                     final String path = getRelPath(emptyFolder, folders);
                     throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, emptyFolder.id + "_" + path);
                 } else {
                     throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
                 }
-            }
-            if (Boolean.FALSE.equals(preferredNodeIDFound)) {
-                logger.info("Preferred NodeID NOT found:" + preferredNodeID);
             }
         }
         return ret;
@@ -711,21 +806,5 @@ public class MegaConz extends PluginForDecrypt {
         } else {
             return ret;
         }
-    }
-
-    private static String getFolderID(final String url) {
-        return new Regex(url, "#F\\!([a-zA-Z0-9]+)\\!").getMatch(0);
-    }
-
-    private static String getFolderNodeID(final String url) {
-        return new Regex(url, "\\?([a-zA-Z0-9]+)$").getMatch(0);
-    }
-
-    public static String getFolderMasterKey(final String url) {
-        String ret = new Regex(url, "#F\\![a-zA-Z0-9]+\\!([a-zA-Z0-9_,\\-%]+)").getMatch(0);
-        if (ret != null && ret.contains("%20")) {
-            ret = ret.replace("%20", "");
-        }
-        return ret;
     }
 }

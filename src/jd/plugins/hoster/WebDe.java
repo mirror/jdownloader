@@ -22,8 +22,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -48,15 +47,18 @@ public class WebDe extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://web.de/";
+        return "https://web.de/";
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(410);
         br.getPage(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
         if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String contentID = br.getRegex("ui\\.tifConfig\\.coremid\\s*=\\s*\"(\\d+)\";").getMatch(0);
@@ -76,26 +78,11 @@ public class WebDe extends PluginForHost {
             filename = br._getURL().getPath().replace("/", " ").replace("-", " ").trim();
         }
         filename = Encoding.htmlDecode(filename).trim();
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openHeadConnection(dllink);
-            if (this.looksLikeDownloadableContent(con)) {
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?");
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
+        final String extDefault = ".mp4";
+        link.setFinalFileName(this.applyFilenameExtension(filename, extDefault));
+        final boolean isDownload = Thread.currentThread() instanceof SingleDownloadController;
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, filename, extDefault);
         }
         return AvailableStatus.TRUE;
     }
@@ -104,10 +91,7 @@ public class WebDe extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        this.handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 
