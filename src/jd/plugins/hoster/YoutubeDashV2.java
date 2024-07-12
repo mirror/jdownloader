@@ -392,12 +392,12 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 final Browser br2 = br.cloneBrowser();
                 br2.getHeaders().remove("Accept-Encoding");
                 URLConnectionAdapter con = null;
+                IOException ioe = null;
                 try {
-                    try {
-                        con = br2.openGetConnection(urls.getDataStreams().get(0).getUrl());
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    con = br2.openGetConnection(urls.getDataStreams().get(0).getUrl());
+                } catch (final IOException e) {
+                    ioe = e;
+                    logger.log(e);
                 } finally {
                     if (con != null) {
                         con.disconnect();
@@ -407,6 +407,8 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     if (i == 0) {
                         resetStreamUrls(downloadLink);
                         continue;
+                    } else if (ioe != null) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, ioe);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
@@ -426,12 +428,12 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 URLConnectionAdapter con = null;
+                IOException ioe = null;
                 try {
-                    try {
-                        con = br.openGetConnection(urls.getDataStreams().get(0).getUrl());
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    con = br.openGetConnection(urls.getDataStreams().get(0).getUrl());
+                } catch (final IOException e) {
+                    ioe = e;
+                    logger.log(e);
                 } finally {
                     if (con != null) {
                         con.disconnect();
@@ -441,6 +443,8 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     if (i == 0) {
                         resetStreamUrls(downloadLink);
                         continue;
+                    } else if (ioe != null) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, ioe);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
@@ -510,10 +514,12 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                     // if (false && vv.getQualityRating() > VideoResolution.P_360.getRating()) {
                                     // url = url.replace("signature=", "signature=BAD");
                                     // }
+                                    IOException ioe = null;
                                     try {
                                         lastCon = null;
                                         lastCon = br.openRequestConnection(new HeadRequest(url));
                                     } catch (IOException e) {
+                                        ioe = e;
                                         logger.log(e);
                                     } finally {
                                         if (lastCon != null) {
@@ -540,9 +546,11 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                         }
                                         if (lastCon != null && lastCon.getResponseCode() == 403) {
                                             firstException = new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                                        } else if (ioe != null) {
+                                            firstException = new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, ioe);
                                         } else if (firstException == null) {
-                                                firstException = new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                                            }
+                                            firstException = new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                                        }
                                         continue;
                                     }
                                 }
@@ -592,10 +600,12 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                     break;
                                 } else {
                                     final String url = cache.getBaseUrl();
+                                    IOException ioe = null;
                                     try {
                                         lastCon = null;
                                         lastCon = br.openRequestConnection(new HeadRequest(url));
                                     } catch (IOException e) {
+                                        ioe = e;
                                         logger.log(e);
                                     } finally {
                                         if (lastCon != null) {
@@ -618,9 +628,11 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                     } else {
                                         if (lastCon != null && lastCon.getResponseCode() == 403) {
                                             firstException = new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                                        } else if (ioe != null) {
+                                            firstException = new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, ioe);
                                         } else if (firstException == null) {
-                                                firstException = new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                                            }
+                                            firstException = new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                                        }
                                         continue;
                                     }
                                 }
