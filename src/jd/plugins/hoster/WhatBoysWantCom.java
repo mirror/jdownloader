@@ -16,9 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -27,7 +25,6 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -55,21 +52,17 @@ public class WhatBoysWantCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = false;
-    private static final int     FREE_MAXCHUNKS               = 1;
-    private static final int     FREE_MAXDOWNLOADS            = -1;
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = -1;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
-    private static final String  TYPE_BABE                    = "h.+/babes/show/\\d+";
-    private static final String  TYPE_CAR                     = ".+/car/show/\\d+";
-    private static final String  TYPE_MOVIE                   = ".+/(?:movies/show/\\d+|videos/.+)";
-    private static final String  TYPE_VIDEOS                  = "https?://[^/]+/videos/[^/]+/([a-z0-9\\-]+)-(\\d+)";
-    private static final String  default_EXT_video            = ".mp4";
-    private static final String  default_EXT_photo            = ".jpg";
+    private static final boolean FREE_RESUME               = false;
+    private static final int     FREE_MAXCHUNKS            = 1;
+    private static final boolean ACCOUNT_FREE_RESUME       = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS    = 0;
+    private static final boolean ACCOUNT_PREMIUM_RESUME    = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    private static final String  TYPE_BABE                 = "(?i)h.+/babes/show/\\d+";
+    private static final String  TYPE_CAR                  = "(?i).+/car/show/\\d+";
+    private static final String  TYPE_MOVIE                = "(?i).+/(?:movies/show/\\d+|videos/.+)";
+    private static final String  TYPE_VIDEOS               = "https?://[^/]+/videos/[^/]+/([a-z0-9\\-]+)-(\\d+)";
+    private static final String  default_EXT_photo         = ".jpg";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -77,15 +70,16 @@ public class WhatBoysWantCom extends PluginForHost {
         final String type = getTYPE(link);
         String filename = null;
         this.setBrowserExclusive();
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
-            this.login(aa, false);
+        final String default_EXT_video = ".mp4";
+        final Account account = AccountController.getInstance().getValidAccount(this);
+        if (account != null) {
+            this.login(account, false);
             br.getPage("https://whatboyswant.com/" + type + "/properties/" + fid + "/");
             if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/error404")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String filesize = br.getRegex("<th>Filesize:</th>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
-            filename = br.getRegex("<th>Filename:</th>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
+            String filesize = br.getRegex("<th>\\s*Filesize\\s*:\\s*</th>\\s*<td>([^<>\"]*?)</td>").getMatch(0);
+            filename = br.getRegex("<th>\\s*Filename\\s*:\\s*</th>\\s*<td>([^<>\"]*?)</td>").getMatch(0);
             if (filename == null || filesize == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -109,7 +103,7 @@ public class WhatBoysWantCom extends PluginForHost {
                 filename += default_EXT_photo;
             }
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -197,58 +191,28 @@ public class WhatBoysWantCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
-    private static final String MAINPAGE = "http://whatboyswant.com";
-    private static Object       LOCK     = new Object();
-
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
-            try {
-                // Load cookies
-                br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
-                    final Map<String, String> cookies = (Map<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
-                        return;
-                    }
-                }
-                br.setFollowRedirects(false);
-                br.postPage("https://whatboyswant.com/login", "data%5BUser%5D%5Bremember%5D=0&data%5BUser%5D%5Bremember%5D=1&_method=POST&data%5BUser%5D%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&data%5BUser%5D%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "UsersCookie[RememberMe]") == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.setProperty("cookies", Property.NULL);
-                }
-                throw e;
+        synchronized (account) {
+            // Load cookies
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null && !force) {
+                br.setCookies(cookies);
+                return;
             }
+            br.setFollowRedirects(false);
+            br.postPage("https://whatboyswant.com/login", "data%5BUser%5D%5Bremember%5D=0&data%5BUser%5D%5Bremember%5D=1&_method=POST&data%5BUser%5D%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&data%5BUser%5D%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()));
+            if (br.getCookie(br.getHost(), "UsersCookie[RememberMe]", Cookies.NOTDELETEDPATTERN) == null) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
@@ -256,19 +220,14 @@ public class WhatBoysWantCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         br.getPage("/credits");
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex("(?i)Your premium membership will expire on:\\s*<span>([^<>\"]*?)</span>").getMatch(0);
         if (expire == null) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(this.getMaxSimultanFreeDownloadNum());
             account.setConcurrentUsePossible(false);
             /* Credits has noi specified amount of bytes but we know that we got no traffic at all if it's zero! */
             if (br.containsHTML("You have 0 credits\\.")) {
@@ -277,7 +236,7 @@ public class WhatBoysWantCom extends PluginForHost {
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "HH:mm dd-MM-yyyy", Locale.ENGLISH));
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
             account.setConcurrentUsePossible(true);
         }
         return ai;
@@ -344,7 +303,7 @@ public class WhatBoysWantCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

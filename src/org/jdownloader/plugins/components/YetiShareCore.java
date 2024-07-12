@@ -2244,11 +2244,11 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         long timestamp_dayssecond = 0;
         /* Days first */
         if (secondNumber <= 12) {
-            timestamp_daysfirst = TimeFormatter.getMilliSeconds(expireString, "dd/MM/yyyy hh:mm:ss", Locale.ENGLISH);
+            timestamp_daysfirst = TimeFormatter.getMilliSeconds(expireString, "dd/MM/yyyy HH:mm:ss", Locale.ENGLISH);
         }
         /* Months first */
         if (firstNumber <= 12) {
-            timestamp_dayssecond = TimeFormatter.getMilliSeconds(expireString, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
+            timestamp_dayssecond = TimeFormatter.getMilliSeconds(expireString, "MM/dd/yyyy HH:mm:ss", Locale.ENGLISH);
         }
         if (timestamp_daysfirst > timestamp_dayssecond) {
             return timestamp_daysfirst;
