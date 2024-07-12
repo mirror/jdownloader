@@ -23,18 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
-import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig.CrawlSpeedMode;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.components.hls.HlsContainer.StreamCodec;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -52,7 +40,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.GenericM3u8;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8($|(?:\\?|%3F)[^\\s<>\"']*|#.*)" })
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig.CrawlSpeedMode;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.components.hls.HlsContainer.StreamCodec;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "m3u8" }, urls = { "(https?://.+\\.m3u8|m3u8://https?://.*)($|(?:\\?|%3F)[^\\s<>\"']*|#.*)" })
 public class GenericM3u8Decrypter extends PluginForDecrypt {
     @Override
     public Boolean siteTesterDisabled() {
@@ -121,14 +121,15 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             }
         }
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        final String m3u8 = param.getCryptedUrl().replaceFirst("(?i)^m3u8://", "");
+        br.getPage(m3u8);
         if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!LinkCrawlerDeepInspector.looksLikeMpegURL(br.getHttpConnection())) {
             logger.info("!Response is not a valid HLS construct according to headers!");
             /* This is only an indicator. Continue anyways. */
         }
-        return parseM3U8(this, param.getCryptedUrl(), br, refererURL, cookiesString, preSetTitle);
+        return parseM3U8(this, m3u8, br, refererURL, cookiesString, preSetTitle);
     }
 
     public static ArrayList<DownloadLink> parseM3U8(final PluginForDecrypt plugin, final String m3u8URL, final Browser br, final String referer, final String cookiesString, final String preSetTitle) throws Exception {
@@ -209,9 +210,8 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                     if (hls.getAverageBandwidth() > 0 || hls.getBandwidth() > 0) {
                         if (estimatedDurationMillis == null) {
                             /**
-                             * Load first item to get the estimated play-duration which we expect to be the same for all items. </br>
-                             * Based on this we can set estimated filesizes while at the same time providing a super fast crawling
-                             * experience.
+                             * Load first item to get the estimated play-duration which we expect to be the same for all items. </br> Based
+                             * on this we can set estimated filesizes while at the same time providing a super fast crawling experience.
                              */
                             final List<M3U8Playlist> playlist = hls.getM3U8(br);
                             estimatedDurationMillis = M3U8Playlist.getEstimatedDuration(playlist);

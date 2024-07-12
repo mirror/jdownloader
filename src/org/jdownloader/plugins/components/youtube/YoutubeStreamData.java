@@ -81,6 +81,15 @@ public class YoutubeStreamData {
     private String src;
     private long   contentLength          = -1;
     private long   estimatedContentLength = -1;
+    private int    throttle               = -1;
+
+    public int getThrottle() {
+        return throttle;
+    }
+
+    public void setThrottle(int throttle) {
+        this.throttle = throttle;
+    }
 
     public void setEstimatedContentLength(long estimatedContentLength) {
         this.estimatedContentLength = estimatedContentLength;

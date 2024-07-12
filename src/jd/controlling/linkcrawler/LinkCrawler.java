@@ -3951,6 +3951,8 @@ public class LinkCrawler {
             if (!StringUtils.containsIgnoreCase(host, "decrypted") && !StringUtils.containsIgnoreCase(host, "dummydirect.jdownloader.org") && !StringUtils.containsIgnoreCase(host, "dummycnl.jdownloader.org") && !StringUtils.containsIgnoreCase(host, "yt.not.allowed")) {
                 if (cUrl.startsWith("http://") || cUrl.startsWith("https://") || cUrl.startsWith("ftp://") || cUrl.startsWith("file:/")) {
                     return cUrl;
+                } else if (cUrl.startsWith("m3u8://")) {
+                    return cUrl.substring("m3u8://".length());
                 } else if (cUrl.startsWith("directhttp://")) {
                     return cUrl.substring("directhttp://".length());
                 } else if (cUrl.startsWith("httpviajd://")) {
