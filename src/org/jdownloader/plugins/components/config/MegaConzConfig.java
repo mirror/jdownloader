@@ -243,8 +243,8 @@ public interface MegaConzConfig extends PluginConfigInterface {
     }
 
     @AboutConfig
-    @DefaultEnumValue("ASK")
-    @DescriptionForConfigEntry("MEGA links by default contain a key which is needed to decrypt the file- and file information. This setting allows you to customize how JDownloader should treat such links.")
+    @DefaultEnumValue("DEFAULT")
+    @DescriptionForConfigEntry("MEGA links by default contain a key which is needed to decrypt the file- and file information. If you are adding a lot of links with invalid/missing key, JDownloader may ask you to enter it a lot of times which may be annoying for you. This setting allows you to customize how JDownloader should treat such links.")
     @Order(130)
     InvalidOrMissingDecryptionKeyAction getInvalidOrMissingDecryptionKeyAction();
 
