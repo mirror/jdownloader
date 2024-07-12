@@ -22,7 +22,7 @@ public class RewriteMegaConz extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         // TODO: update pattern in hoster/decrypter plugin to support this new url format
         final String parts[] = new Regex(parameter.getCryptedUrl(), "(file|folder|embed)/(?:!|%21)?([a-zA-Z0-9]+)(?:#|%23|!|%21)([a-zA-Z0-9_,\\-%]{16,})(/(folder|file)/([a-zA-Z0-9]+))?").getRow(0);
         final DownloadLink link;
@@ -45,6 +45,7 @@ public class RewriteMegaConz extends PluginForDecrypt {
         } else if (StringUtils.equals("folder", parts[0])) {
             if (parts.length == 6 && StringUtils.isNotEmpty(parts[5])) {
                 if (StringUtils.equals("file", parts[4])) {
+                    /* File as part of folder */
                     link = createDownloadlink("https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#F!" + parts[1] + "!" + parts[2] + "!" + parts[5]);
                 } else if (StringUtils.equals("folder", parts[4])) {
                     link = createDownloadlink("https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#F!" + parts[1] + "!" + parts[2] + "!" + parts[5]);
@@ -55,9 +56,10 @@ public class RewriteMegaConz extends PluginForDecrypt {
                 link = createDownloadlink("https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#F!" + parts[1] + "!" + parts[2]);
             }
         } else {
+            /* Unsupported link -> Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        decryptedLinks.add(link);
-        return decryptedLinks;
+        ret.add(link);
+        return ret;
     }
 }

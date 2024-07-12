@@ -70,6 +70,10 @@ public interface MegaConzConfig extends PluginConfigInterface {
         public String getMaxCacheFolderDetails_label() {
             return "Folder crawler: Max. time(minutes) to cache folder details for faster crawling";
         }
+
+        public String getInvalidOrMissingDecryptionKeyAction_label() {
+            return "How to handle links with invalid or missing decryption keys?";
+        }
     }
 
     @AboutConfig
@@ -208,4 +212,41 @@ public interface MegaConzConfig extends PluginConfigInterface {
     int getMaxCacheFolderDetails();
 
     void setMaxCacheFolderDetails(int minutes);
+
+    final InvalidOrMissingDecryptionKeyAction default_InvalidOrMissingDecryptionKeyAction = InvalidOrMissingDecryptionKeyAction.ASK;
+
+    public static enum InvalidOrMissingDecryptionKeyAction implements LabelInterface {
+        ASK {
+            @Override
+            public String getLabel() {
+                return "Ask";
+            }
+        },
+        DONT_ASK {
+            @Override
+            public String getLabel() {
+                return "Don't ask";
+            }
+        },
+        DONT_ASK_AND_OFFLINE {
+            @Override
+            public String getLabel() {
+                return "Don't ask and display item as offline";
+            }
+        },
+        DEFAULT {
+            @Override
+            public String getLabel() {
+                return "Default: " + default_InvalidOrMissingDecryptionKeyAction.getLabel();
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("PER_FILE")
+    @DescriptionForConfigEntry("MEGA links by default contain a key which is needed to decrypt the file- and file information. This setting allows you to customize how JDownloader should treat such links.")
+    @Order(130)
+    InvalidOrMissingDecryptionKeyAction getInvalidOrMissingDecryptionKeyAction();
+
+    void setInvalidOrMissingDecryptionKeyAction(final InvalidOrMissingDecryptionKeyAction action);
 }

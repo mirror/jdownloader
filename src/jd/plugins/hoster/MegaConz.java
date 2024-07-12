@@ -40,32 +40,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import jd.PluginWrapper;
-import jd.config.Property;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.HashResult;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -74,6 +48,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.JDK8BufferHelper;
 import org.appwork.utils.JVMVersion;
@@ -105,6 +80,31 @@ import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
+
+import jd.PluginWrapper;
+import jd.config.Property;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashResult;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/.*?(#!?N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21|\\?)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((=###n=|!)[a-zA-Z0-9]+)?|mega:/*#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9_,\\-%]{16,}" })
 public class MegaConz extends PluginForHost {
@@ -151,7 +151,8 @@ public class MegaConz extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (account) {
             final String sid = apiLogin(account);
-            final Map<String, Object> uq = apiRequest(account, sid, null, "uq"/* userQuota */, new Object[] { "xfer"/* xfer */, 1 }, new Object[] { "pro"/* pro */, 1 });
+            final Map<String, Object> uq = apiRequest(account, sid, null, "uq"/* userQuota */, new Object[] { "xfer"/* xfer */, 1 },
+                    new Object[] { "pro"/* pro */, 1 });
             if (uq == null || uq.size() == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -409,7 +410,8 @@ public class MegaConz extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     try {
-                        response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail }, new Object[] { "uh"/* emailHash */, uh });
+                        response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail },
+                                new Object[] { "uh"/* emailHash */, uh });
                     } catch (PluginException e) {
                         if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM && e.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE && account.getBooleanProperty("mfa", Boolean.FALSE)) {
                             try {
@@ -417,7 +419,8 @@ public class MegaConz extends PluginForHost {
                                 mfaDialog.setTimeout(5 * 60 * 1000);
                                 final InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, mfaDialog);
                                 handler.throwCloseExceptions();
-                                response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail }, new Object[] { "uh"/* emailHash */, uh }, new Object[] { "mfa"/* ping */, handler.getText() });
+                                response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail },
+                                        new Object[] { "uh"/* emailHash */, uh }, new Object[] { "mfa"/* ping */, handler.getText() });
                             } catch (DialogNoAnswerException e2) {
                                 throw Exceptions.addSuppressed(e, e2);
                             }
@@ -460,8 +463,6 @@ public class MegaConz extends PluginForHost {
                     }
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } catch (BrowserException e) {
-                throw e;
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     apiLogoff(account);
@@ -763,17 +764,13 @@ public class MegaConz extends PluginForHost {
         return super.canHandle(downloadLink, account);
     }
 
-    private static String getFolderID(final String url) {
-        return new Regex(url, "#F\\!([a-zA-Z0-9]+)\\!").getMatch(0);
-    }
-
     private static final boolean isPublic(final DownloadLink downloadLink) {
         return downloadLink.getBooleanProperty("public", true);
     }
 
     private String getPreviewURL(final DownloadLink link) throws Exception {
         if (false) {
-            // decryption still missing, see ticket 90021
+            // decryption still missing, see ticket https://svn.jdownloader.org/issues/90021
             // type 0 = thumbnail
             // type 1 = preview
             final String fa = link.getStringProperty("fa");
@@ -793,7 +790,7 @@ public class MegaConz extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setBrowserExclusive();
         String fileID = getPublicFileID(link);
         String keyString = getPublicFileKey(link);
@@ -805,16 +802,32 @@ public class MegaConz extends PluginForHost {
                 link.setProperty("public", false);
             }
         }
-        if (fileID == null || keyString == null) {
+        if (!jd.plugins.decrypter.MegaConz.isValidFileFolderNodeID(fileID) || keyString == null) {
             /* Broken item or invalid URL -> File can only be offline. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (!jd.plugins.decrypter.MegaConz.isValidDecryptionKey(keyString)) {
+            keyString = link.getDownloadPassword();
+        }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            if (jd.plugins.decrypter.MegaConz.isValidDecryptionKey(link.getDownloadPassword())) {
+                logger.info("Prefer decryption key from download password over key from URL: " + keyString);
+                keyString = link.getDownloadPassword();
+            }
+        }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            final boolean treatInvalidOrMissingKeyAsOffline = true;
+            if (!jd.plugins.decrypter.MegaConz.isValidDecryptionKey(keyString) && treatInvalidOrMissingKeyAsOffline) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid or missing decryption key");
+            }
+        }
+        final boolean isDownload = Thread.currentThread() instanceof SingleDownloadController;
         Map<String, Object> response = null;
         Account account = null;
         final String parentNode;
         try {
             parentNode = getParentNodeID(link);
-            if (Thread.currentThread() instanceof SingleDownloadController) {
+            if (isDownload) {
                 account = ((SingleDownloadController) (Thread.currentThread())).getAccount();
                 if (account != null && !getHost().equals(account.getHosterByPlugin())) {
                     account = null;
@@ -870,20 +883,43 @@ public class MegaConz extends PluginForHost {
         final String fileSize = valueOf(response.get("s"));
         if (fileSize == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else {
-            link.setDownloadSize(Long.parseLong(fileSize));
-            link.setVerifiedFileSize(Long.parseLong(fileSize));
         }
+        link.setDownloadSize(Long.parseLong(fileSize));
+        link.setVerifiedFileSize(Long.parseLong(fileSize));
         final String at = valueOf(response.get("at"));
         if (at == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        boolean askedUserForDecryptKey = false;
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            if (!jd.plugins.decrypter.MegaConz.isValidDecryptionKey(keyString)) {
+                final boolean allowAskForKey = true;
+                if (isDownload && allowAskForKey) {
+                    /* Ask user to enter decryption key */
+                    keyString = getUserInput("Decryption key", link);
+                    if (!jd.plugins.decrypter.MegaConz.isValidDecryptionKey(keyString)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid decryption key");
+                    }
+                    askedUserForDecryptKey = true;
+                } else {
+                    /* Do not ask user for decryption key during availablecheck */
+                    return AvailableStatus.UNCHECKABLE;
+                }
+            }
+        }
         final Map<String, Object> fileInfo;
         try {
             fileInfo = decrypt(at, keyString);
+            if (askedUserForDecryptKey) {
+                link.setDownloadPassword(keyString);
+            }
         } catch (final StringIndexOutOfBoundsException e) {
-            /* key is incomplete */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
+            /* Invalid key */
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                link.setDownloadPassword(null);
+            }
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid decryption key", e);
+            // throw new PluginException(LinkStatus.ERROR_FATAL, "Invalid decryption key", e);
         }
         final String fileName = valueOf(fileInfo.get("n"));
         if (fileName == null) {
@@ -1116,7 +1152,8 @@ public class MegaConz extends PluginForHost {
     /**
      * MEGA limits can be tricky: They can sit on specific files, on IP ("global limit") or also quota based (also global) e.g. 5GB per day
      * per IP or per Free-Account. For these reasons the user can define the max wait time. The wait time given by MEGA must not be true.
-     * </br> 2021-01-21 TODO: Use this for ALL limit based errors
+     * </br>
+     * 2021-01-21 TODO: Use this for ALL limit based errors
      */
     private void fileOrIPDownloadlimitReached(final Account account, final String msg, final long waitMilliseconds) throws PluginException {
         final long userDefinedMaxWaitMilliseconds = PluginJsonConfig.get(MegaConzConfig.class).getMaxWaittimeOnLimitReachedMinutes() * 60 * 1000;
