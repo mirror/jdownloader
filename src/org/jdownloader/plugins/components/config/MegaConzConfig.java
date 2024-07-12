@@ -4,6 +4,7 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultOnNull;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.SpinnerValidator;
@@ -213,9 +214,10 @@ public interface MegaConzConfig extends PluginConfigInterface {
 
     void setMaxCacheFolderDetails(int minutes);
 
-    final InvalidOrMissingDecryptionKeyAction default_InvalidOrMissingDecryptionKeyAction = InvalidOrMissingDecryptionKeyAction.ASK;
+    public static final InvalidOrMissingDecryptionKeyAction default_InvalidOrMissingDecryptionKeyAction = InvalidOrMissingDecryptionKeyAction.ASK;
 
     public static enum InvalidOrMissingDecryptionKeyAction implements LabelInterface {
+
         ASK {
             @Override
             public String getLabel() {
@@ -228,22 +230,26 @@ public interface MegaConzConfig extends PluginConfigInterface {
                 return "Don't ask";
             }
         },
-        DONT_ASK_AND_OFFLINE {
-            @Override
-            public String getLabel() {
-                return "Don't ask and display item as offline";
-            }
-        },
         DEFAULT {
             @Override
             public String getLabel() {
                 return "Default: " + default_InvalidOrMissingDecryptionKeyAction.getLabel();
             }
+
+            @Override
+            public InvalidOrMissingDecryptionKeyAction getAction() {
+                return default_InvalidOrMissingDecryptionKeyAction.getAction();
+            }
         };
+
+        public InvalidOrMissingDecryptionKeyAction getAction() {
+            return this;
+        }
     }
 
     @AboutConfig
     @DefaultEnumValue("DEFAULT")
+    @DefaultOnNull
     @DescriptionForConfigEntry("MEGA links by default contain a key which is needed to decrypt the file- and file information. If you are adding a lot of links with invalid/missing key, JDownloader may ask you to enter it a lot of times which may be annoying for you. This setting allows you to customize how JDownloader should treat such links.")
     @Order(130)
     InvalidOrMissingDecryptionKeyAction getInvalidOrMissingDecryptionKeyAction();

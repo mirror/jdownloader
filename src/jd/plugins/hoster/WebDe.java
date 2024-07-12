@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.nutils.encoding.Encoding;
@@ -31,6 +28,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "web.de" }, urls = { "https?://(?:www\\.)?web\\.de/magazine/.+" })
 public class WebDe extends PluginForHost {
@@ -94,6 +94,11 @@ public class WebDe extends PluginForHost {
         this.handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
+
+    @Override
+    protected void throwFinalConnectionException(jd.http.Browser br, jd.http.URLConnectionAdapter con) throws PluginException, IOException {
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    };
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
