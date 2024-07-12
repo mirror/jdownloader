@@ -26,11 +26,11 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -46,6 +46,11 @@ public class WeltDeMediathek extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
+    }
+
     /* DEV NOTES */
     // Tags:
     // protocol: https
@@ -55,9 +60,7 @@ public class WeltDeMediathek extends PluginForHost {
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -68,18 +71,19 @@ public class WeltDeMediathek extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("\"DreifaltigkeitLiveMarker\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Livestreams are not supported");
         }
         final String url_title = new Regex(link.getDownloadURL(), ".+/(.+)\\.html").getMatch(0);
         /* Tags: schema.org */
         final String json_source_videoinfo = this.br.getRegex("<script[^>]*?type=\"application/ld\\+json[^>]*?\">(.*?)</script>").getMatch(0);
         Map<String, Object> entries = restoreFromString(json_source_videoinfo, TypeRef.MAP);
-        String filename = "";
+        String filenameBase = "";
         String title = (String) entries.get("headline");
         final String description = (String) entries.get("description");
         final String date_formatted = formatDate((String) entries.get("datePublished"));
@@ -91,11 +95,11 @@ public class WeltDeMediathek extends PluginForHost {
             title = url_title;
         }
         if (date_formatted != null) {
-            filename = date_formatted + "_";
+            filenameBase = date_formatted + "_";
         }
-        filename += organization + "_" + title;
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
+        filenameBase += organization + "_" + title;
+        filenameBase = Encoding.htmlDecode(filenameBase);
+        filenameBase = filenameBase.trim();
         /* Find downloadlink */
         try {
             final String mp4[] = br.getRegex("(https?://[^\"]*?[A-Za-z0-9_]+_(\\d{3,4})\\.mp4)").getColumn(0);
@@ -153,49 +157,27 @@ public class WeltDeMediathek extends PluginForHost {
         if (description != null && link.getComment() == null) {
             link.setComment(description);
         }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
+        link.setFinalFileName(this.applyFilenameExtension(filenameBase, ext));
         if (StringUtils.isNotEmpty(dllink) && !StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
-            dllink = Encoding.htmlDecode(dllink);
-            link.setFinalFileName(filename);
-            URLConnectionAdapter con = null;
-            try {
-                final Browser brc = br.cloneBrowser();
-                con = brc.openHeadConnection(dllink);
-                if (looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    }
-                    link.setProperty("directlink", dllink);
-                } else {
-                    brc.followConnection(true);
-                    server_issues = true;
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        } else {
-            /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
+            dllink = Encoding.htmlOnlyDecode(dllink);
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, filenameBase, ext);
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        final String html_error = this.br.getRegex("<p[^>]*?class=\"o-text c-catch-up-error__text\">([^<>\"]+)</p>").getMatch(0);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (html_error != null) {
-            /* 2018-04-11: E.g. 'Diese Sendung ist zur Zeit aus lizenzrechtlichen Gründen nicht verfügbar.' */
-            throw new PluginException(LinkStatus.ERROR_FATAL, html_error);
-        } else if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (dllink == null) {
+            final String html_error = this.br.getRegex("<p[^>]*?class=\"o-text c-catch-up-error__text\">([^<\"]+)</p>").getMatch(0);
+            if (html_error != null) {
+                /* 2018-04-11: E.g. 'Diese Sendung ist zur Zeit aus lizenzrechtlichen Gründen nicht verfügbar.' */
+                throw new PluginException(LinkStatus.ERROR_FATAL, Encoding.htmlDecode(html_error).trim());
+            } else if (br.containsHTML(">\\s*Diese Sendung ist zur Zeit aus lizenzrechtlichen Gründen nicht verfügbar")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Diese Sendung ist zur Zeit aus lizenzrechtlichen Gründen nicht verfügbar");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         if (StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br.cloneBrowser(), dllink));
@@ -203,20 +185,11 @@ public class WeltDeMediathek extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String dllink = hlsbest.getDownloadurl();
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, dllink);
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-            if (!looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+            this.handleConnectionErrors(br, dl.getConnection());
         }
         dl.startDownload();
     }
@@ -239,7 +212,7 @@ public class WeltDeMediathek extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override
