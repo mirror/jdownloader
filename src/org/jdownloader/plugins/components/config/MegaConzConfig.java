@@ -214,8 +214,6 @@ public interface MegaConzConfig extends PluginConfigInterface {
 
     void setMaxCacheFolderDetails(int minutes);
 
-    public static final InvalidOrMissingDecryptionKeyAction default_InvalidOrMissingDecryptionKeyAction = InvalidOrMissingDecryptionKeyAction.ASK;
-
     public static enum InvalidOrMissingDecryptionKeyAction implements LabelInterface {
 
         ASK {
@@ -231,16 +229,18 @@ public interface MegaConzConfig extends PluginConfigInterface {
             }
         },
         DEFAULT {
+
             @Override
             public String getLabel() {
-                return "Default: " + default_InvalidOrMissingDecryptionKeyAction.getLabel();
+                return "Default: " + DEFAULT_ACTION.getLabel();
             }
 
             @Override
             public InvalidOrMissingDecryptionKeyAction getAction() {
-                return default_InvalidOrMissingDecryptionKeyAction.getAction();
+                return DEFAULT_ACTION.getAction();
             }
         };
+        private static final InvalidOrMissingDecryptionKeyAction DEFAULT_ACTION = InvalidOrMissingDecryptionKeyAction.ASK;
 
         public InvalidOrMissingDecryptionKeyAction getAction() {
             return this;
