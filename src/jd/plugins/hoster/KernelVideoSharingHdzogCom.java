@@ -59,4 +59,9 @@ public class KernelVideoSharingHdzogCom extends KernelVideoSharingComV2 {
         /* 2024-02-14 */
         return 1;
     }
+
+    @Override
+    protected boolean useAPI() {
+        return true;
+    }
 }

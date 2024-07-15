@@ -87,6 +87,15 @@ public class XfreehdCom extends KernelVideoSharingComV2 {
     }
 
     @Override
+    protected boolean isOfflineWebsite(final Browser br) {
+        if (br.containsHTML(">\\s*This Video Is No Longer Available")) {
+            return true;
+        } else {
+            return super.isOfflineWebsite(br);
+        }
+    }
+
+    @Override
     public Class<? extends KVSConfig> getConfigInterface() {
         return KVSConfigXfreehdCom.class;
     }

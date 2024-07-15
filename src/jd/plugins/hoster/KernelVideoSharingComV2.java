@@ -33,6 +33,22 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.KVSConfig;
+import org.jdownloader.plugins.components.config.KVSConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.components.kvs.Script;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
@@ -59,22 +75,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.KVSConfig;
-import org.jdownloader.plugins.components.config.KVSConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.components.kvs.Script;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
@@ -104,20 +104,23 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     // other: URL to a live demo: http://www.kvs-demo.com/
     /***
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPattern(List)} AND
-     * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(List)} (excluding "embed" URLs). </br> Examples:
-     * example.com/videos/1234/title/ </br> example.com/videos/1234-title.html </br> example.com/videos/
+     * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(List)} (excluding "embed" URLs). </br>
+     * Examples: example.com/videos/1234/title/ </br>
+     * example.com/videos/1234-title.html </br>
+     * example.com/videos/
      */
     private static final String   type_normal               = "(?i)^https?://[^/]+/(?:[a-z]{2}/)?(?:videos?/)?(\\d+)(?:/|-)([^/\\?#]+)(?:/?|\\.html)$";
     /**
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List)} (excluding
-     * "embed" URLs). </br> You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to return true when using such a pattern! </br>
+     * "embed" URLs). </br>
+     * You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to return true when using such a pattern! </br>
      * TODO: Consider removing support for this from this main class.
      */
     private static final String   type_normal_fuid_at_end   = "^(?i)https?://[^/]+/videos?/([^/\\?#]+)-(\\d+)(?:/?|\\.html)$";
     /***
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileID(List)} and
-     * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileIDWithHTMLEnding(List)} (excluding "embed" URLs). </br> You need to
-     * override {@link #hasFUIDInsideURLAtTheEnd(String)} to return false when using such a pattern!
+     * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileIDWithHTMLEnding(List)} (excluding "embed" URLs). </br>
+     * You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to return false when using such a pattern!
      */
     private static final String   type_normal_without_fuid  = "(?i)^https?://[^/]+/(?:videos?/)?([^/\\?#]*?)(?:/?|\\.html)$";
     private static final String   type_mobile               = "(?i)^https?://m\\.([^/]+/(videos?/)?\\d+/[^/\\?#]+/$)";
@@ -141,9 +144,13 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     private String                dllink                    = null;
 
     /**
-     * Use this e.g. for: </br> example.com/(de/)?videos/1234/title-inside-url OR: </br> example.com/embed/1234 OR </br> OR(rare/older
-     * case):</br> m.example.com/videos/1234/title-inside-url | m.example.com/embed/1234 </br> Example: <a
-     * href="https://kvs-demo.com/">kvs-demo.com</a> More example hosts in generic class: {@link #KernelVideoSharingComV2HostsDefault}
+     * Use this e.g. for: </br>
+     * example.com/(de/)?videos/1234/title-inside-url OR: </br>
+     * example.com/embed/1234 OR </br>
+     * OR(rare/older case):</br>
+     * m.example.com/videos/1234/title-inside-url | m.example.com/embed/1234 </br>
+     * Example: <a href="https://kvs-demo.com/">kvs-demo.com</a> More example hosts in generic class:
+     * {@link #KernelVideoSharingComV2HostsDefault}
      */
     public static String[] buildAnnotationUrlsDefaultVideosPattern(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -161,9 +168,13 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Use this e.g. for: </br> example.com/1234/title-inside-url</br> OR: </br> example.com/embed/1234 </br> OR </br> Example: <a
-     * href="https://alotporn.com/">alotporn.com</a> </br> More example hosts in generic class:
-     * {@link #KernelVideoSharingComV2HostsDefault2}
+     * Use this e.g. for: </br>
+     * example.com/1234/title-inside-url</br>
+     * OR: </br>
+     * example.com/embed/1234 </br>
+     * OR </br>
+     * Example: <a href="https://alotporn.com/">alotporn.com</a> </br>
+     * More example hosts in generic class: {@link #KernelVideoSharingComV2HostsDefault2}
      */
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -181,9 +192,13 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Use this e.g. for:</br> example.com/title-inside-url</br> OR:</br> example.com/embed/1234 </br> Example: <a
-     * href="https://alphaporno.com/">alphaporno.com</a> </br> Special: You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to
-     * return false when using this pattern! </br> More example hosts in generic class: {@link #KernelVideoSharingComV2HostsDefault3}
+     * Use this e.g. for:</br>
+     * example.com/title-inside-url</br>
+     * OR:</br>
+     * example.com/embed/1234 </br>
+     * Example: <a href="https://alphaporno.com/">alphaporno.com</a> </br>
+     * Special: You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to return false when using this pattern! </br>
+     * More example hosts in generic class: {@link #KernelVideoSharingComV2HostsDefault3}
      */
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutFileID(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -201,8 +216,11 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Use this e.g. for:</br> example.com/videos/title-inside-url-1234 OR:</br> example.com/embed/1234 </br> Example: <a
-     * href="https://uiporn.com/">uiporn.com</a> </br> Example classses: {@link #UipornCom}, {@link #PorngemCom}
+     * Use this e.g. for:</br>
+     * example.com/videos/title-inside-url-1234 OR:</br>
+     * example.com/embed/1234 </br>
+     * Example: <a href="https://uiporn.com/">uiporn.com</a> </br>
+     * Example classses: {@link #UipornCom}, {@link #PorngemCom}
      */
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -220,8 +238,12 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Use this e.g. for:</br> example.com/title-inside-url OR:</br> example.com/embed/1234 </br> Example: <a
-     * href="https://yogaporn.net/">yogaporn.net</a> </br> Example classses: {@link #YogapornNet} </br> Very rarely used pattern!
+     * Use this e.g. for:</br>
+     * example.com/title-inside-url OR:</br>
+     * example.com/embed/1234 </br>
+     * Example: <a href="https://yogaporn.net/">yogaporn.net</a> </br>
+     * Example classses: {@link #YogapornNet} </br>
+     * Very rarely used pattern!
      */
     public static String[] buildAnnotationUrlsDefaultNoVideosNoFUID(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -255,8 +277,12 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Use this e.g. for:</br> example.com/1234</br> OR:</br> example.com/embed/1234 </br> Example: <a
-     * href="https://anyporn.com/">anyporn.com</a> </br> Example class: {@link #AnypornCom}
+     * Use this e.g. for:</br>
+     * example.com/1234</br>
+     * OR:</br>
+     * example.com/embed/1234 </br>
+     * Example: <a href="https://anyporn.com/">anyporn.com</a> </br>
+     * Example class: {@link #AnypornCom}
      */
     public static String[] buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -274,18 +300,19 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Override this if URLs can end with digits but these are not your FUID! </br> E.g. override this when adding host plugins with
-     * patterns that match {@link #type_normal_fuid_at_end} . </br> Example: example.com/url-title.html</br> Override
-     * {@link #type_normal_without_fuid} if the expected URLs do not contain any FUID at all (well, other than e.g. embed URLs - in this
-     * case, FUID will always get detected).
+     * Override this if URLs can end with digits but these are not your FUID! </br>
+     * E.g. override this when adding host plugins with patterns that match {@link #type_normal_fuid_at_end} . </br>
+     * Example: example.com/url-title.html</br>
+     * Override {@link #type_normal_without_fuid} if the expected URLs do not contain any FUID at all (well, other than e.g. embed URLs - in
+     * this case, FUID will always get detected).
      */
     protected boolean hasFUIDInsideURLAtTheEnd(final String url) {
         return false;
     }
 
     /**
-     * Set this to false if URLs do not contain a FUID at all! </br> Especially important for e.g.: example.com/1random-title/ or
-     * example.com/random-title-version10/ ('1' != FUID!)
+     * Set this to false if URLs do not contain a FUID at all! </br>
+     * Especially important for e.g.: example.com/1random-title/ or example.com/random-title-version10/ ('1' != FUID!)
      */
     protected boolean hasFUIDInsideURL(final String url) {
         return true;
@@ -355,8 +382,9 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * By default, title inside URL will be used whenever found. </br> Let this return true to prefer title returned by
-     * {@link #regexNormalTitleWebsite(Browser) } [if not null] even if title from inside URL is given.
+     * By default, title inside URL will be used whenever found. </br>
+     * Let this return true to prefer title returned by {@link #regexNormalTitleWebsite(Browser) } [if not null] even if title from inside
+     * URL is given.
      */
     protected boolean preferTitleHTML() {
         return false;
@@ -364,15 +392,16 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     /**
      * Enable this for websites which have embed URLs but they're broken e.g. motherporno.com, hclips.com, privatehomeclips.com . </br>
-     * EWmbed URLs will be changed to "fake" normal content URLs which should then redirect to the correct contentURL. </br> <b>Warning:</b>
-     * Enabling this without testing can break embed support!!
+     * EWmbed URLs will be changed to "fake" normal content URLs which should then redirect to the correct contentURL. </br>
+     * <b>Warning:</b> Enabling this without testing can break embed support!!
      */
     protected boolean useEmbedWorkaround() {
         return false;
     }
 
     /**
-     * Returns domain which is considered to work. </br> Prefers to return domain of added URL.
+     * Returns domain which is considered to work. </br>
+     * Prefers to return domain of added URL.
      */
     protected String getWorkingDomain(final DownloadLink link) {
         return getWorkingDomain(link.getPluginPatternMatcher());
@@ -451,8 +480,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Alternative way to linkcheck (works only for some hosts and only if FUID is given): privat-zapisi.biz/feed/12345.xml </br> Also
-     * working for: webcamsbabe.com
+     * Alternative way to linkcheck (works only for some hosts and only if FUID is given): privat-zapisi.biz/feed/12345.xml </br>
+     * Also working for: webcamsbabe.com
      */
     protected AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
@@ -471,7 +500,153 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
         final String fuid = this.getFUID(link);
         final String contenturl = this.getContentURL(link);
+        boolean useEmbedWorkaround = false;
         if (isEmbedURL(contenturl) && this.useEmbedWorkaround()) {
+            useEmbedWorkaround = true;
+        } else {
+            embedHandling: if (isEmbedURL(contenturl)) {
+                /* Embed URL */
+                getPage(contenturl);
+                /* in case there is http<->https or url format redirect */
+                br.followRedirect();
+                if (br.getHttpConnection().getResponseCode() == 403) {
+                    /* E.g. hdzog.com */
+                    logger.info("Looks like this website doesn't support embed links (anymore?) -> Try auto embed workaround");
+                    useEmbedWorkaround = true;
+                    break embedHandling;
+                }
+                if (isOfflineWebsite(this.br)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                /* Rare case: Embedded content -> URL does not contain a title -> Look for "real" URL in html and get title from there! */
+                /* Try to find URL-title */
+                /*
+                 * A lot of websites will provide lower qualiy in embed mode! Let's fix that by trying to find the original URL. It is
+                 * typically stored in "video_alt_url" labeled as "720p" and html will also contain: "video_alt_url_redirect: '1'" (=
+                 * "safe place") </br>
+                 */
+                String realURL = null;
+                if (br.containsHTML("video_alt_url_redirect\\s*:\\s*'1'")) {
+                    /* Examples which would fail without this extra check: frprn.com */
+                    realURL = br.getRegex("video_alt_url\\s*:\\s*'(https?://[^<>\"\\']+)'").getMatch(0);
+                }
+                /*
+                 * Tries to find original URL based on different default patterns --> "Unsafe attempt". Examples: porngem.com, nudogram.com
+                 */
+                if (realURL == null) {
+                    /** {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List) } */
+                    realURL = br.getRegex("(https?://[^/\"\\']+/videos?/[^/\\?#<>\"]+-" + fuid + ")").getMatch(0);
+                }
+                if (realURL == null) {
+                    /** {@link #buildAnnotationUrlsDefaultVideosPattern(List)} */
+                    realURL = br.getRegex("(https?://[^/\"\\']+/videos?/" + fuid + "/[^/\\?#<>\"]+/?)").getMatch(0);
+                }
+                if (realURL == null) {
+                    /** {@link #buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(List)} */
+                    realURL = br.getRegex("(https?://[^/\"\\']+/" + fuid + "/[^/\\?#<>\"]+/?)").getMatch(0);
+                }
+                if (realURL == null) {
+                    /** {@link #buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(List)} */
+                    realURL = br.getRegex("(https?://[^/\"\\']+/" + fuid + "/?)").getMatch(0);
+                }
+                if (realURL == null) {
+                    /* 2020-11-10: Experimental feature: This can fix "broken" embed URLs: https://svn.jdownloader.org/issues/89009 */
+                    final String embedTitle = regexEmbedTitleWebsite(br);
+                    if (!StringUtils.isEmpty(embedTitle)) {
+                        /*
+                         * "Convert" embed title to URL-title (slug). Unsafe attempt but this can make "embed" URLs downloadable that
+                         * wouldn't be downloadable otherwise.
+                         */
+                        String urlTitle = Encoding.htmlDecode(embedTitle).trim().toLowerCase();
+                        urlTitle = urlTitle.replaceAll("[^a-z0-9]", "-");
+                        /* Make sure that that string doesn't start- or end with "-". */
+                        urlTitle = new Regex(urlTitle, "^(\\-*)(.*?)(\\-*)$").getMatch(1);
+                        realURL = this.generateContentURL(this.getHost(), fuid, urlTitle);
+                        logger.info("Generated real URL corresponding to embed URL: " + realURL);
+                    } else {
+                        logger.info("Failed to find- and generate real URL corresponding to embed URL");
+                    }
+                } else {
+                    logger.info("Found real URL corresponding to embed URL: " + realURL);
+                }
+                if (!StringUtils.isEmpty(realURL)) {
+                    logger.info("Found real URL corresponding to embed URL: " + realURL);
+                    try {
+                        realURL = br.getURL(realURL).toExternalForm();
+                        final Browser brc = this.createNewBrowserInstance();
+                        brc.getPage(realURL);
+                        /* Fail-safe: Only set this URL as PluginPatternMatcher if it contains our expected videoID! */
+                        if ((!this.hasFUIDInsideURL(null) || (this.hasFUIDInsideURL(null) && brc.getURL().contains(fuid))) && new Regex(brc.getURL(), this.getSupportedLinks()).matches() && !this.isOfflineWebsite(brc)) {
+                            logger.info("Successfully found real URL: " + realURL);
+                            link.setPluginPatternMatcher(brc.getURL());
+                            br.setRequest(brc.getRequest());
+                        } else {
+                            /* This should never happen */
+                            logger.warning("Cannot trust 'real' URL: " + realURL);
+                        }
+                    } catch (final MalformedURLException ignore) {
+                        logger.log(ignore);
+                        logger.info("URL parsing failure");
+                    }
+                } else {
+                    logger.info("Unable to convert embedded URL --> Real URL");
+                    if (br.containsHTML(">\\s*You are not allowed to watch this video")) {
+                        /**
+                         * Some websites have embedding videos disabled but nevertheless it is possible to generate- and add such URLs. It
+                         * may also happen that a website owner disabled embedding after first allowing it. </br>
+                         * The content should be online but we'll never be able to download it --> Treat as offline
+                         */
+                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                            /*
+                             * For debug purposes so that such URLs get displayed as "unchecked" in LinkGrabber so new example URLs for this
+                             * edge case can be found easier.
+                             */
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "This content cannot be embedded - try to find- and add the original URL");
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "This content cannot be embedded - try to find- and add the original URL");
+                        }
+                    }
+                }
+            } else {
+                /* Normal URL */
+                getPage(contenturl);
+                /* in case there is http<->https or url format redirect */
+                br.followRedirect();
+                if (isOfflineWebsite(this.br)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                /* Look for real unique videoID just in case it is not present in our use-given URL. */
+                String fuidInsideHTML = br.getRegex("\"https?://" + Pattern.quote(br.getHost()) + "/embed/(\\d+)/?\"").getMatch(0);
+                if (fuidInsideHTML == null) {
+                    /* E.g. for hosts which have embed support disabled or are using other embed URLs than default e.g. h2porn.com. */
+                    fuidInsideHTML = br.getRegex("video_?id\\s*:\\s*\\'(\\d+)\\'").getMatch(0);
+                }
+                if (fuidInsideHTML == null) {
+                    /* Common Trait 3. E.g. tubewolf.com */
+                    fuidInsideHTML = br.getRegex("\\['video_?id'\\]\\s*=\\s*(\\d+)").getMatch(0);
+                }
+                /* 2020-11-04: Other possible places: "videoId: '12345'" (without "") [e.g. privat-zapisi.biz] */
+                /* 2020-11-04: Other possible places: name="video_id" value="12345" [e.g. privat-zapisi.biz] */
+                if (fuidInsideHTML != null) {
+                    if (fuid == null) {
+                        /**
+                         * We have no FUID -> Store the one we found in html.
+                         */
+                        logger.info("Setting FUID found inside HTML as DownloadLink FUID");
+                        link.setProperty(PROPERTY_FUID, fuidInsideHTML);
+                    } else if (!StringUtils.equals(fuid, fuidInsideHTML)) {
+                        /* Fuid that we found in html does not match FUID we already have -> Log this */
+                        logger.warning("FUID inside URL doesn't match FUID found in HTML: URL: " + fuid + " | HTML: " + fuidInsideHTML);
+                    } else {
+                        /* Everything alright - FUID of inside URL equals FUID found in HTML! */
+                    }
+                } else {
+                    /* This can happen but most of all times, a FUID should be present inside HTML. */
+                    logger.info("Failed to find fuid in html");
+                }
+            }
+        }
+        if (useEmbedWorkaround) {
             /* Embed URL --> Build fake real URL and just go for it */
             final String fakeContentURL = this.generateContentURL(this.getWorkingDomain(link), fuid, "dummystring");
             br.getPage(fakeContentURL);
@@ -479,141 +654,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             logger.info("Embed workaround result: Presumed real ContentURL: " + br.getURL());
-        } else if (isEmbedURL(contenturl)) {
-            /* Embed URL */
-            getPage(contenturl);
-            /* in case there is http<->https or url format redirect */
-            br.followRedirect();
-            if (isOfflineWebsite(this.br)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* Rare case: Embedded content -> URL does not contain a title -> Look for "real" URL in html and get title from there! */
-            /* Try to find URL-title */
-            /*
-             * A lot of websites will provide lower qualiy in embed mode! Let's fix that by trying to find the original URL. It is typically
-             * stored in "video_alt_url" labeled as "720p" and html will also contain: "video_alt_url_redirect: '1'" (= "safe place") </br>
-             */
-            String realURL = null;
-            if (br.containsHTML("video_alt_url_redirect\\s*:\\s*'1'")) {
-                /* Examples which would fail without this extra check: frprn.com */
-                realURL = br.getRegex("video_alt_url\\s*:\\s*'(https?://[^<>\"\\']+)'").getMatch(0);
-            }
-            /*
-             * Tries to find original URL based on different default patterns --> "Unsafe attempt". Examples: porngem.com, nudogram.com
-             */
-            if (realURL == null) {
-                /** {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List) } */
-                realURL = br.getRegex("(https?://[^/\"\\']+/videos?/[^/\\?#<>\"]+-" + fuid + ")").getMatch(0);
-            }
-            if (realURL == null) {
-                /** {@link #buildAnnotationUrlsDefaultVideosPattern(List)} */
-                realURL = br.getRegex("(https?://[^/\"\\']+/videos?/" + fuid + "/[^/\\?#<>\"]+/?)").getMatch(0);
-            }
-            if (realURL == null) {
-                /** {@link #buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(List)} */
-                realURL = br.getRegex("(https?://[^/\"\\']+/" + fuid + "/[^/\\?#<>\"]+/?)").getMatch(0);
-            }
-            if (realURL == null) {
-                /** {@link #buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(List)} */
-                realURL = br.getRegex("(https?://[^/\"\\']+/" + fuid + "/?)").getMatch(0);
-            }
-            if (realURL == null) {
-                /* 2020-11-10: Experimental feature: This can fix "broken" embed URLs: https://svn.jdownloader.org/issues/89009 */
-                final String embedTitle = regexEmbedTitleWebsite(br);
-                if (!StringUtils.isEmpty(embedTitle)) {
-                    /*
-                     * "Convert" embed title to URL-title (slug). Unsafe attempt but this can make "embed" URLs downloadable that wouldn't
-                     * be downloadable otherwise.
-                     */
-                    String urlTitle = Encoding.htmlDecode(embedTitle).trim().toLowerCase();
-                    urlTitle = urlTitle.replaceAll("[^a-z0-9]", "-");
-                    /* Make sure that that string doesn't start- or end with "-". */
-                    urlTitle = new Regex(urlTitle, "^(\\-*)(.*?)(\\-*)$").getMatch(1);
-                    realURL = this.generateContentURL(this.getHost(), fuid, urlTitle);
-                    logger.info("Generated real URL corresponding to embed URL: " + realURL);
-                } else {
-                    logger.info("Failed to find- and generate real URL corresponding to embed URL");
-                }
-            } else {
-                logger.info("Found real URL corresponding to embed URL: " + realURL);
-            }
-            if (!StringUtils.isEmpty(realURL)) {
-                logger.info("Found real URL corresponding to embed URL: " + realURL);
-                try {
-                    realURL = br.getURL(realURL).toExternalForm();
-                    final Browser brc = this.createNewBrowserInstance();
-                    brc.getPage(realURL);
-                    /* Fail-safe: Only set this URL as PluginPatternMatcher if it contains our expected videoID! */
-                    if ((!this.hasFUIDInsideURL(null) || (this.hasFUIDInsideURL(null) && brc.getURL().contains(fuid))) && new Regex(brc.getURL(), this.getSupportedLinks()).matches() && !this.isOfflineWebsite(brc)) {
-                        logger.info("Successfully found real URL: " + realURL);
-                        link.setPluginPatternMatcher(brc.getURL());
-                        br.setRequest(brc.getRequest());
-                    } else {
-                        /* This should never happen */
-                        logger.warning("Cannot trust 'real' URL: " + realURL);
-                    }
-                } catch (final MalformedURLException ignore) {
-                    logger.log(ignore);
-                    logger.info("URL parsing failure");
-                }
-            } else {
-                logger.info("Unable to convert embedded URL --> Real URL");
-                if (br.containsHTML(">\\s*You are not allowed to watch this video")) {
-                    /**
-                     * Some websites have embedding videos disabled but nevertheless it is possible to generate- and add such URLs. It may
-                     * also happen that a website owner disabled embedding after first allowing it. </br> The content should be online but
-                     * we'll never be able to download it --> Treat as offline
-                     */
-                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                        /*
-                         * For debug purposes so that such URLs get displayed as "unchecked" in LinkGrabber so new example URLs for this
-                         * edge case can be found easier.
-                         */
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "This content cannot be embedded - try to find- and add the original URL");
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "This content cannot be embedded - try to find- and add the original URL");
-                    }
-                }
-            }
-        } else {
-            /* Normal URL */
-            getPage(contenturl);
-            /* in case there is http<->https or url format redirect */
-            br.followRedirect();
-            if (isOfflineWebsite(this.br)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* Look for real unique videoID just in case it is not present in our use-given URL. */
-            String fuidInsideHTML = br.getRegex("\"https?://" + Pattern.quote(br.getHost()) + "/embed/(\\d+)/?\"").getMatch(0);
-            if (fuidInsideHTML == null) {
-                /* E.g. for hosts which have embed support disabled or are using other embed URLs than default e.g. h2porn.com. */
-                fuidInsideHTML = br.getRegex("video_?id\\s*:\\s*\\'(\\d+)\\'").getMatch(0);
-            }
-            if (fuidInsideHTML == null) {
-                /* Common Trait 3. E.g. tubewolf.com */
-                fuidInsideHTML = br.getRegex("\\['video_?id'\\]\\s*=\\s*(\\d+)").getMatch(0);
-            }
-            /* 2020-11-04: Other possible places: "videoId: '12345'" (without "") [e.g. privat-zapisi.biz] */
-            /* 2020-11-04: Other possible places: name="video_id" value="12345" [e.g. privat-zapisi.biz] */
-            if (fuidInsideHTML != null) {
-                if (fuid == null) {
-                    /**
-                     * We have no FUID -> Store the one we found in html.
-                     */
-                    logger.info("Setting FUID found inside HTML as DownloadLink FUID");
-                    link.setProperty(PROPERTY_FUID, fuidInsideHTML);
-                } else if (!StringUtils.equals(fuid, fuidInsideHTML)) {
-                    /* Fuid that we found in html does not match FUID we already have -> Log this */
-                    logger.warning("FUID inside URL doesn't match FUID found in HTML: URL: " + fuid + " | HTML: " + fuidInsideHTML);
-                } else {
-                    /* Everything alright - FUID of inside URL equals FUID found in HTML! */
-                }
-            } else {
-                /* This can happen but most of all times, a FUID should be present inside HTML. */
-                logger.info("Failed to find fuid in html");
-            }
         }
-        if (br.containsHTML("\"iab_extended\"") && br.containsHTML("app\\.js")) {
+        if (br.containsHTML("\"iab_extended\"")) {
             /* 2024-06-18: New e.g. vjav.com, txxx.com, upornia.com, mrgay.com and many more */
             logger.info("Auto detected the need to use API for linkcheck");
             return this.requestFileInformationAPI(link, account, isDownload);
@@ -759,8 +801,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (video == null) {
             if ("video_not_found".equals(entries.get("code"))) {
                 /**
-                 * 2023-04-28 e.g.: https://txxx.com/embed/882346568220/ </br> Typically also comes with this json:
-                 * "error":1,"code":"video_not_found"
+                 * 2023-04-28 e.g.: https://txxx.com/embed/882346568220/ </br>
+                 * Typically also comes with this json: "error":1,"code":"video_not_found"
                  */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
@@ -891,8 +933,9 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Contains logic to determine best file title. </br> Override the following functions if you want to modify filenames:
-     * {@link #regexNormalTitleWebsite()}, {@link #regexEmbedTitleWebsite()}, {@link #preferTitleHTML()}
+     * Contains logic to determine best file title. </br>
+     * Override the following functions if you want to modify filenames: {@link #regexNormalTitleWebsite()},
+     * {@link #regexEmbedTitleWebsite()}, {@link #preferTitleHTML()}
      */
     private String getFileTitle(final DownloadLink link) {
         final String fuid = this.getFUID(link);
@@ -1113,8 +1156,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         login(account, true);
         /**
-         * Registered users can watch private videos when they follow/subscribe to the uploaders. </br> Apart from this there aren't much
-         * advantages. Sometimes registered users can watch higher quality streams.
+         * Registered users can watch private videos when they follow/subscribe to the uploaders. </br>
+         * Apart from this there aren't much advantages. Sometimes registered users can watch higher quality streams.
          */
         final AccountInfo ai = new AccountInfo();
         ai.setUnlimitedTraffic();
@@ -1914,8 +1957,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * This is supposed to return a numeric ID. Rather return null than anything else here! </br> Override {@link #hasFUIDInsideURL(String)}
-     * to return false if you know that your URLs do not contain a FUID for sure.
+     * This is supposed to return a numeric ID. Rather return null than anything else here! </br>
+     * Override {@link #hasFUIDInsideURL(String)} to return false if you know that your URLs do not contain a FUID for sure.
      */
     protected String getFUID(final DownloadLink link) {
         /* Prefer stored unique ID over ID inside URL because sometimes none is given inside URL. */

@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -65,13 +66,13 @@ public class FreedlInk extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return true;
+            return false;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return true;
+            return false;
         }
     }
 
@@ -80,14 +81,29 @@ public class FreedlInk extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return 0;
+            return 1;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return 1;
         }
+    }
+
+    @Override
+    protected String regexWaittime(final Browser br) {
+        String waitSecondsStr = regexWaittime(br.getRequest().getHtmlCode());
+        if (waitSecondsStr == null && this.isLoggedin(br)) {
+            /**
+             * 2024-07-15: Workaround for broken website when user is logged in: Website owner forgot to add wait time in html while it is
+             * required. </br>
+             * Reference: https://board.jdownloader.org/showthread.php?t=95609
+             */
+            logger.info("Pre download wait workaround active");
+            waitSecondsStr = "60";
+        }
+        return waitSecondsStr;
     }
 
     @Override

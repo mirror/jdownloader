@@ -34,8 +34,20 @@ public class GoodpornTo extends KernelVideoSharingComV2 {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "goodporn.to" });
+        ret.add(new String[] { "sincity.is", "goodporn.to", "goodporn.se" });
         return ret;
+    }
+
+    @Override
+    protected ArrayList<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("goodporn.to"); // 2024-07-15
+        return deadDomains;
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {

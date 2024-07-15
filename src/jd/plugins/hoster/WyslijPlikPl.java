@@ -134,6 +134,10 @@ public class WyslijPlikPl extends PluginForHost {
             filename = br.getRegex("<h2>([^<>\"]+)</h2>").getMatch(0);
         }
         String filesize = br.getRegex("(?i)>\\s*(?:Rozmiar pliku|File size)\\s*:\\s*</div><div class=\"right\">([^<>\"]+)<").getMatch(0);
+        if (filesize == null) {
+            /* 2024-07-15 */
+            filesize = br.getRegex("(?:Rozmiar pliku|File size):\\s*</td>\\s*<td>([^<]+)</td>").getMatch(0);
+        }
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
