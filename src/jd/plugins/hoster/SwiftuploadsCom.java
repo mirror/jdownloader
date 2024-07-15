@@ -24,7 +24,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -40,8 +39,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class UptoearnXyz extends PluginForHost {
-    public UptoearnXyz(PluginWrapper wrapper) {
+public class SwiftuploadsCom extends PluginForHost {
+    public SwiftuploadsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -60,7 +59,7 @@ public class UptoearnXyz extends PluginForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "uptoearn.xyz" });
+        ret.add(new String[] { "swiftuploads.com" });
         return ret;
     }
 
@@ -164,12 +163,9 @@ public class UptoearnXyz extends PluginForHost {
                 // TODO: 2023-11-21: This plugin is unfinished
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-            dlform2.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             br.submitForm(dlform2);
-            // final String secondsWaitStr = br.getRegex(">\\s*(\\d+)\\s*</span>\\s*Seconds").getMatch(0);
             final String fid = this.getFID(link);
-            br.postPageRaw("/" + fid + "/file/generate", "{    \"download_link\": \"https://TODO\"}");
+            br.postPageRaw("/" + fid + "/file/generate", "");
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             dllink = entries.get("download_link").toString();
             if (StringUtils.isEmpty(dllink)) {
