@@ -93,7 +93,7 @@ public class FreedlInk extends XFileSharingProBasic {
 
     @Override
     protected String regexWaittime(final Browser br) {
-        String waitSecondsStr = regexWaittime(br.getRequest().getHtmlCode());
+        String waitSecondsStr = super.regexWaittime(br);
         if (waitSecondsStr == null && this.isLoggedin(br)) {
             /**
              * 2024-07-15: Workaround for broken website when user is logged in: Website owner forgot to add wait time in html while it is

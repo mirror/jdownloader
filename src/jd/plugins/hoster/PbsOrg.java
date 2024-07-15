@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -217,6 +218,9 @@ public class PbsOrg extends PluginForHost {
         /* Find available streaming formats/protocols */
         String url_http = null;
         String url_hls_base = null;
+        String best_url = null;
+        int bestHeight = -1;
+        int bestBandwidth = -1;
         final String[] urls = this.br.getRegex("(https?://urs\\.pbs\\.org/redirect/[^<>\"\\']+)").getColumn(0);
         if (urls != null) {
             for (final String url : urls) {
@@ -225,13 +229,30 @@ public class PbsOrg extends PluginForHost {
                     final String redirect = this.br.getRedirectLocation();
                     if (redirect == null) {
                         continue;
-                    }
-                    if (redirect.contains(".m3u8") && url_hls_base == null) {
+                    } else if (redirect.contains(".m3u8") && url_hls_base == null) {
                         url_hls_base = redirect;
-                    } else if (url_http == null) {
+                        final Browser brc = br.cloneBrowser();
+                        brc.getPage(redirect);
+                        handleResponsecodeErrors(brc.getHttpConnection());
+                        final HlsContainer hlsBest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(brc));
+                        if (hlsBest != null) {
+                            if (bestHeight == -1 && (hlsBest.getHeight() > bestHeight || (hlsBest.getHeight() == bestHeight && hlsBest.getBandwidth() > bestBandwidth))) {
+                                bestHeight = hlsBest.getHeight();
+                                best_url = redirect;
+                                bestBandwidth = hlsBest.getBandwidth();
+                            }
+                        }
+                    } else if (redirect.contains(".mp4") && url_http == null) {
                         url_http = redirect;
+                        final String heightString = new Regex(redirect, "-(\\d+)p-").getMatch(0);
+                        final int height = heightString != null ? Integer.parseInt(heightString) : -1;
+                        if (bestHeight == -1 || height >= bestHeight) {
+                            bestHeight = height;
+                            best_url = redirect;
+                        }
                     }
                 } catch (final Throwable e) {
+                    logger.log(e);
                 }
             }
         }
@@ -239,9 +260,8 @@ public class PbsOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.br.setFollowRedirects(true);
-        /* Prefer http over hls */
-        if (url_http == null && url_hls_base != null) {
-            /* Prefer hls as video- and audio bitrate is higher and also the resolution. */
+        /* prefer highest resolution but mp4 over hls for highest */
+        if ((url_http == null && url_hls_base != null) || StringUtils.equals(url_hls_base, best_url)) {
             br.getPage(url_hls_base);
             handleResponsecodeErrors(this.br.getHttpConnection());
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));

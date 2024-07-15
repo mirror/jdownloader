@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
+import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
@@ -138,7 +138,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (StringUtils.isEmpty(collectionIdentifier)) {
             throw new IllegalArgumentException();
         }
-        return crawlViaScrapeAPI(br, "collection:" + collectionIdentifier, -1);
+        return crawlViaScrapeAPI(br, "collection:" + collectionIdentifier, null, -1);
     }
 
     private ArrayList<DownloadLink> crawlSearchQueryURL(final Browser br, final CryptedLink param) throws Exception {
@@ -158,7 +158,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* User supplied invalid URL. */
             throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "INVALID_SEARCH_QUERY");
         }
-        final ArrayList<DownloadLink> searchResults = crawlViaScrapeAPI(br, searchQuery, maxResults);
+        final ArrayList<DownloadLink> searchResults = crawlViaScrapeAPI(br, searchQuery, parseFilterMap(param.getCryptedUrl()), maxResults);
         if (searchResults.isEmpty()) {
             throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "NO_SEARCH_RESULTS_FOR_QUERY_" + searchQuery);
         }
@@ -169,7 +169,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
      * Uses search APIv1 </br>
      * API: Docs: https://archive.org/help/aboutsearch.htm
      */
-    private ArrayList<DownloadLink> crawlViaScrapeAPI(final Browser br, final String searchTerm, final int maxResultsLimit) throws Exception {
+    private ArrayList<DownloadLink> crawlViaScrapeAPI(final Browser br, final String searchTerm, Map<String, Object> filter_map, final int maxResultsLimit) throws Exception {
         if (StringUtils.isEmpty(searchTerm)) {
             /* Developer mistake */
             throw new IllegalArgumentException();
@@ -183,7 +183,11 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final int minNumberofItemsPerPage = 100;
         final UrlQuery query = new UrlQuery();
         query.add("fields", "identifier");
-        query.add("q", Encoding.urlEncode(searchTerm));
+        query.add("q", URLEncode.encodeURIComponent(searchTerm));
+        if (!filter_map.isEmpty()) {
+            final String json = new SimpleMapper().setPrettyPrintEnabled(false).objectToString(filter_map);
+            query.add("filter_map", URLEncode.encodeURIComponent(json));
+        }
         final int maxNumberofItemsPerPageForThisRun;
         if (maxResultsLimit == -1) {
             /* -1 means unlimited -> Use internal hardcoded limit. */
@@ -1007,6 +1011,61 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
     }
 
+    private Map<String, Object> parseFilterMap(String url) {
+        final Map<String, Object> filter_map = new HashMap<String, Object>();
+        final String[] andValueStrings = new Regex(url, "and%5B%5D=([^&]+)").getColumn(0);
+        if (andValueStrings != null && andValueStrings.length > 0) {
+            /* Filter parameters selected by the user. On the website you can find them on the left side as checkboxes. */
+            for (String andValueString : andValueStrings) {
+                andValueString = URLEncode.decodeURIComponent(andValueString);
+                if (!andValueString.contains(":")) {
+                    /* Skip invalid items */
+                    continue;
+                }
+                final String keyValue[] = new Regex(andValueString, "(.*?)\\s*:\\s*\"(.*?)\"").getRow(0);
+                if (keyValue != null) {
+                    Map<String, Object> valueMap = (Map<String, Object>) filter_map.get(keyValue[0]);
+                    if (valueMap == null) {
+                        valueMap = new HashMap<String, Object>();
+                        filter_map.put(keyValue[0], valueMap);
+                    }
+                    valueMap.put(keyValue[1], "inc");
+                    continue;
+                }
+                final String range[] = new Regex(andValueString, "(.*?)\\s*:\\s*\\[\\s*(\\d+)(?:\\+\\s*)?TO\\s*(?:\\+\\s*)?(\\d+)\\s*\\]").getRow(0);
+                if (range != null) {
+                    Map<String, Object> valueMap = (Map<String, Object>) filter_map.get(range[0]);
+                    if (valueMap == null) {
+                        valueMap = new HashMap<String, Object>();
+                        filter_map.put(range[0], valueMap);
+                    }
+                    valueMap.put(range[1], "gte");
+                    valueMap.put(range[2], "lte");
+                    continue;
+                }
+            }
+        }
+        final String[] notValueStrings = new Regex(url, "not%5B%5D=([^&]+)").getColumn(0);
+        if (notValueStrings != null && notValueStrings.length > 0) {
+            /* Filter parameters selected by the user. On the website you can find them on the left side as checkboxes. */
+            for (String notValueString : notValueStrings) {
+                notValueString = URLEncode.decodeURIComponent(notValueString);
+                if (!notValueString.contains(":")) {
+                    /* Skip invalid items */
+                    continue;
+                }
+                String keyValue[] = new Regex(notValueString, "(.*?)\\s*:\\s*\"(.*?)\"").getRow(0);
+                Map<String, Object> valueMap = (Map<String, Object>) filter_map.get(keyValue[0]);
+                if (valueMap == null) {
+                    valueMap = new HashMap<String, Object>();
+                    filter_map.put(keyValue[0], valueMap);
+                }
+                valueMap.put(keyValue[1], "exc");
+            }
+        }
+        return filter_map;
+    }
+
     /** Returns all uploads of a profile. */
     private ArrayList<DownloadLink> crawlProfile(String username, final String sourceurl) throws Exception {
         if (StringUtils.isEmpty(username)) {
@@ -1027,41 +1086,25 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             logger.info("Starting from page 1");
             startPage = 1;
         }
-        final Map<String, Object> filter_map = new HashMap<String, Object>();
-        final String[] ands = new Regex(sourceurl, "and%5B%5D=([^&]+)").getColumn(0);
-        if (ands != null && ands.length > 0) {
-            /* Filter parameters selected by the user. On the website you can find them on the left side as checkboxes. */
-            for (String and : ands) {
-                and = Encoding.htmlDecode(and);
-                if (!and.contains(":")) {
-                    /* Skip invalid items */
-                    continue;
-                }
-                final String key = and.substring(0, and.indexOf(":"));
-                String value = and.substring(and.indexOf(":") + 1);
-                value = value.replace("\"", "");
-                final Map<String, Object> thismap = new HashMap<String, Object>();
-                thismap.put(value, "inc");
-                filter_map.put(key, thismap);
-            }
-        }
         logger.info("Starting from page " + startPage);
         final int maxItemsPerPage = 100;
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final UrlQuery query = new UrlQuery();
         query.add("user_query", "");
         query.add("page_type", "account_details");
-        query.add("page_target", Encoding.urlEncode(username));
+        query.add("page_target", URLEncode.encodeURIComponent(username));
         query.add("page_elements", "%5B%22uploads%22%5D");
         query.add("hits_per_page", Integer.toString(maxItemsPerPage));
+        final Map<String, Object> filter_map = parseFilterMap(sourceurl);
         if (!filter_map.isEmpty()) {
-            query.add("filter_map", Encoding.urlEncode(JSonStorage.serializeToJson(filter_map)));
+            final String json = new SimpleMapper().setPrettyPrintEnabled(false).objectToString(filter_map);
+            query.add("filter_map", URLEncode.encodeURIComponent(json));
         }
         query.add("sort", "publicdate%3Adesc");
         query.add("aggregations", "false");
         if (sourceurl != null) {
             /* Not important */
-            query.add("client_url", Encoding.urlEncode(sourceurl));
+            query.add("client_url", URLEncode.encodeURIComponent(sourceurl));
         }
         final Browser brc = br.cloneBrowser();
         brc.setAllowedResponseCodes(400);

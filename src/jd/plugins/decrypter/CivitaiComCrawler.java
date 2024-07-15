@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,9 +38,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.CivitaiCom;
 import jd.plugins.hoster.DirectHTTP;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { CivitaiCom.class })
@@ -73,7 +73,7 @@ public class CivitaiComCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(models/.+|posts/\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(models/.+|posts/\\d+|user/.+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -81,12 +81,15 @@ public class CivitaiComCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String contenturl = param.getCryptedUrl();
-        final Regex urlregex = new Regex(param.getCryptedUrl(), "(?i)/(posts|models)/(\\d+)");
+        final Regex urlregex = new Regex(param.getCryptedUrl(), "(?i)/(posts|models|user)/(.+)");
         final UrlQuery query = UrlQuery.parse(contenturl);
         final String modelVersionId = query.get("modelVersionId");
         final String itemType = urlregex.getMatch(0);
         final String itemID = urlregex.getMatch(1);
-        /* Using API: https://github.com/civitai/civitai/wiki/REST-API-Reference */
+        /*
+         * Using API: https://github.com/civitai/civitai/wiki/REST-API-Reference,
+         * https://wiki.civitai.com/wiki/Civitai_API#GET_/api/v1/images
+         */
         final String apiBase = "https://civitai.com/api/v1";
         final List<Map<String, Object>> modelVersions = new ArrayList<Map<String, Object>>();
         if (modelVersionId != null) {
@@ -132,6 +135,42 @@ public class CivitaiComCrawler extends PluginForDecrypt {
                 }
                 link.setAvailable(true);
                 ret.add(link);
+            }
+        } else if (itemType.equals("user")) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(itemID);
+            fp.setPackageKey("civitai://user/" + itemID);
+            /* Handles such links: https://civitai.com/user/test */
+            /* https://github.com/civitai/civitai/wiki/REST-API-Reference#get-apiv1images */
+            String nextPage = apiBase + "/images?username=" + itemID + "&limit=10";
+            while (nextPage != null && !isAbort()) {
+                br.getPage(nextPage);
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final List<Map<String, Object>> images = (List<Map<String, Object>>) entries.get("items");
+                if (images == null || images.isEmpty()) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                for (final Map<String, Object> image : images) {
+                    final String imageurl = image.get("url").toString();
+                    final String tempName = getFileNameFromURL(new URL(imageurl));
+                    final DownloadLink link = this.createDownloadlink(br.getURL("/images/" + image.get("id")).toExternalForm());
+                    link._setFilePackage(fp);
+                    if (tempName != null) {
+                        link.setName(tempName);
+                    }
+                    link.setAvailable(true);
+                    ret.add(link);
+                    distribute(link);
+                }
+                final Map<String, Object> metadata = (Map<String, Object>) entries.get("metadata");
+                if (metadata != null) {
+                    nextPage = (String) metadata.get("nextPage");
+                } else {
+                    nextPage = null;
+                }
             }
         } else {
             /* Unsupported link */
