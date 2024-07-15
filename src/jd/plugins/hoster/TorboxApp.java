@@ -227,6 +227,7 @@ public class TorboxApp extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         final Map<String, Object> user = login(account, true);
+        final Map<String, Object> user_settings = (Map<String, Object>) user.get("settings");
         /* Use shorter timeout than usually to make notification system work in a better way (see end of this function). */
         account.setRefreshTimeout(5 * 60 * 1000l);
         /**
@@ -238,8 +239,8 @@ public class TorboxApp extends PluginForHost {
         if (planID == 0) {
             throw new AccountInvalidException("Unsupported account type (free account)");
         }
-        String created_at = user.get("created_at").toString();
-        String premium_expires_at = (String) user.get("premium_expires_at");
+        final String created_at = user.get("created_at").toString();
+        final String premium_expires_at = (String) user.get("premium_expires_at");
         long premiumExpireTimestamp = parseTimeStamp(premium_expires_at);
         ai.setCreateTime(parseTimeStamp(created_at));
         if (premiumExpireTimestamp > System.currentTimeMillis()) {
@@ -271,8 +272,7 @@ public class TorboxApp extends PluginForHost {
         ai.setMultiHostSupport(this, supportedHosts);
         account.setConcurrentUsePossible(true);
         /* Handle notifications */
-        final boolean enableNotifications = true;
-        if (enableNotifications) {
+        if (Boolean.TRUE.equals(user_settings.get("jdownloader_notifications"))) {
             long highestNotificationTimestamp = 0;
             List<Map<String, Object>> notifications = null;
             try {
@@ -321,6 +321,8 @@ public class TorboxApp extends PluginForHost {
                     }
                 }
             }
+        } else {
+            logger.info("User has turned off JDownloader bubble notifications in website settings of " + this.getHost());
         }
         return ai;
     }
@@ -332,7 +334,7 @@ public class TorboxApp extends PluginForHost {
                 /* Do not validate logins */
                 return null;
             }
-            final Request loginreq = br.createGetRequest(API_BASE + "/user/me");
+            final Request loginreq = br.createGetRequest(API_BASE + "/user/me?settings=true");
             final Map<String, Object> resp = (Map<String, Object>) this.callAPI(br, loginreq, account, null);
             return resp;
         }

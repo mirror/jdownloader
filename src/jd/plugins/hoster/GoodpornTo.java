@@ -42,6 +42,8 @@ public class GoodpornTo extends KernelVideoSharingComV2 {
     protected ArrayList<String> getDeadDomains() {
         final ArrayList<String> deadDomains = new ArrayList<String>();
         deadDomains.add("goodporn.to"); // 2024-07-15
+        /* 2024-07-15: Still working but soon not anymore, see: https://gpstatus.org/ */
+        deadDomains.add("goodporn.se");
         return deadDomains;
     }
 
