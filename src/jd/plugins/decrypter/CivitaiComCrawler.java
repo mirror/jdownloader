@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
@@ -142,6 +143,7 @@ public class CivitaiComCrawler extends PluginForDecrypt {
             fp.setPackageKey("civitai://user/" + itemID);
             /* Handles such links: https://civitai.com/user/test */
             /* https://github.com/civitai/civitai/wiki/REST-API-Reference#get-apiv1images */
+            /* small limit/pagination size to avoid timeout issues */
             String nextPage = apiBase + "/images?username=" + itemID + "&limit=10";
             while (nextPage != null && !isAbort()) {
                 br.getPage(nextPage);
@@ -215,6 +217,13 @@ public class CivitaiComCrawler extends PluginForDecrypt {
         // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // }
         return ret;
+    }
+
+    @Override
+    public void distribute(DownloadLink... links) {
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            super.distribute(links);
+        }
     }
 
     @Override
