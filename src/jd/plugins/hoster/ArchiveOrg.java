@@ -680,12 +680,12 @@ public class ArchiveOrg extends PluginForHost {
             if (!skipAllExceptLastStep) {
                 query.add("action", "grant_access");
                 br.postPage(urlBase + "/services/loans/loan/searchInside.php", query);
-                entries = restoreFromString(br.toString(), TypeRef.MAP);
+                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 query.addAndReplace("action", "browse_book");
                 br.postPage("/services/loans/loan/", query);
-                entries = restoreFromString(br.toString(), TypeRef.MAP);
-                if (br.getHttpConnection().getResponseCode() == 400) {
-                    final String error = (String) entries.get("error");
+                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final String error = (String) entries.get("error");
+                if (error != null) {
                     if (StringUtils.equalsIgnoreCase(error, "This book is not available to borrow at this time. Please try again later.")) {
                         /**
                          * Happens if you try to borrow a book that can't be borrowed or if you try to borrow a book while too many
@@ -709,7 +709,7 @@ public class ArchiveOrg extends PluginForHost {
             /* This should set a cookie called "br-load-<bookID>" */
             query.addAndReplace("action", "create_token");
             br.postPage(urlBase + "/services/loans/loan/", query);
-            entries = restoreFromString(br.toString(), TypeRef.MAP);
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final String borrowToken = (String) entries.get("token");
             if (StringUtils.isEmpty(borrowToken)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Book borrow failure #2");

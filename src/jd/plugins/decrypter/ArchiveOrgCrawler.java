@@ -111,7 +111,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             return this.crawlSearchQueryURL(br, param);
         } else if ((identifier = getIdentifierFromURL(contenturl)) != null) {
             return this.crawlMetadataJsonV2(identifier, contenturl);
-        } else if (isArchiveURL(contenturl)) {
+        } else if (isCompressedArchiveURL(contenturl)) {
             return this.crawlArchiveContentV2(contenturl, null, null);
         } else {
             /* Unsupported link -> Developer mistake */
@@ -303,7 +303,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             }
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (!isArchiveURL(br.getURL())) {
+            } else if (!isCompressedArchiveURL(br.getURL())) {
                 /* Redirect to some unsupported URL. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -413,7 +413,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             loanedSecondsLeft += secondsLeftOnLoan;
         }
         final Map<String, Object> brOptions = (Map<String, Object>) data.get("brOptions");
-        final boolean isLendingRequired = (Boolean) lendingInfo.get("isLendingRequired") == Boolean.TRUE;
+        final Boolean isLendingRequired = (Boolean) lendingInfo.get("isLendingRequired");
+        final Boolean isPrintDisabledOnly = (Boolean) lendingInfo.get("isPrintDisabledOnly");
         String contentURLFormat = generateBookContentURL(identifier);
         final String bookId = brOptions.get("bookId").toString();
         String title = ((String) brOptions.get("bookTitle")).trim();
@@ -470,7 +471,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 if (isMultiVolumeBook) {
                     link.setProperty(ArchiveOrg.PROPERTY_BOOK_SUB_PREFIX, subPrefix);
                 }
-                if (Boolean.TRUE.equals(isLendingRequired)) {
+                if (Boolean.TRUE.equals(isLendingRequired) || Boolean.TRUE.equals(isPrintDisabledOnly)) {
                     link.setProperty(ArchiveOrg.PROPERTY_IS_LENDING_REQUIRED, true);
                 }
                 if (loanedSecondsLeft > 0) {
@@ -890,7 +891,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     query.add("subPrefix", subPrefix);
                     query.add("requestUri", "/details/" + identifier);
                     final String url = "https://" + server + "/BookReader/BookReaderJSIA.php?" + query.toString();
-                    final ArrayList<DownloadLink> thisBookResults = this.crawlBook(br, url, null);
+                    final ArrayList<DownloadLink> thisBookResults = this.crawlBook(br, url, account);
                     /* Make resulting items appear in linkgrabber now already. */
                     distribute(thisBookResults);
                     if (this.isAbort()) {
@@ -1028,18 +1029,21 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
         final Map<String, Object> filter_map = new HashMap<String, Object>();
         final String[] ands = new Regex(sourceurl, "and%5B%5D=([^&]+)").getColumn(0);
-        for (String and : ands) {
-            and = Encoding.htmlDecode(and);
-            if (!and.contains(":")) {
-                /* Skip invalid items */
-                continue;
+        if (ands != null && ands.length > 0) {
+            /* Filter parameters selected by the user. On the website you can find them on the left side as checkboxes. */
+            for (String and : ands) {
+                and = Encoding.htmlDecode(and);
+                if (!and.contains(":")) {
+                    /* Skip invalid items */
+                    continue;
+                }
+                final String key = and.substring(0, and.indexOf(":"));
+                String value = and.substring(and.indexOf(":") + 1);
+                value = value.replace("\"", "");
+                final Map<String, Object> thismap = new HashMap<String, Object>();
+                thismap.put(value, "inc");
+                filter_map.put(key, thismap);
             }
-            final String key = and.substring(0, and.indexOf(":"));
-            String value = and.substring(and.indexOf(":") + 1);
-            value = value.replace("\"", "");
-            final Map<String, Object> thismap = new HashMap<String, Object>();
-            thismap.put(value, "inc");
-            filter_map.put(key, thismap);
         }
         logger.info("Starting from page " + startPage);
         final int maxItemsPerPage = 100;
@@ -1165,7 +1169,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     }
 
     /** Returns true if given URL leads to content inside an archive. */
-    private static boolean isArchiveURL(final String url) throws MalformedURLException {
+    private static boolean isCompressedArchiveURL(final String url) throws MalformedURLException {
         return url.toLowerCase(Locale.ENGLISH).contains("view_archive.php");
     }
 
@@ -1188,7 +1192,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 hostPlugin.login(account, false);
             }
             URLConnectionAdapter con = null;
-            boolean isArchiveContentURL = isArchiveURL(contenturl);
+            boolean isArchiveContentURL = isCompressedArchiveURL(contenturl);
             if (isArchiveContentURL) {
                 br.getPage(contenturl);
             } else {
@@ -1196,7 +1200,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     /* Check if we have a direct URL --> Host plugin */
                     con = br.openGetConnection(contenturl);
                     /* Check again as URL could've changed. */
-                    isArchiveContentURL = isArchiveURL(con.getURL().toExternalForm());
+                    isArchiveContentURL = isCompressedArchiveURL(con.getURL().toExternalForm());
                     /*
                      * 2020-03-04: E.g. directurls will redirect to subdomain e.g. ia800503.us.archive.org --> Sometimes the only way to
                      * differ between a file or expected html.
