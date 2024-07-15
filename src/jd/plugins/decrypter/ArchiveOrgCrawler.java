@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
@@ -1025,6 +1026,21 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             logger.info("Starting from page 1");
             startPage = 1;
         }
+        final Map<String, Object> filter_map = new HashMap<String, Object>();
+        final String[] ands = new Regex(sourceurl, "and%5B%5D=([^&]+)").getColumn(0);
+        for (String and : ands) {
+            and = Encoding.htmlDecode(and);
+            if (!and.contains(":")) {
+                /* Skip invalid items */
+                continue;
+            }
+            final String key = and.substring(0, and.indexOf(":"));
+            String value = and.substring(and.indexOf(":") + 1);
+            value = value.replace("\"", "");
+            final Map<String, Object> thismap = new HashMap<String, Object>();
+            thismap.put(value, "inc");
+            filter_map.put(key, thismap);
+        }
         logger.info("Starting from page " + startPage);
         final int maxItemsPerPage = 100;
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -1034,6 +1050,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         query.add("page_target", Encoding.urlEncode(username));
         query.add("page_elements", "%5B%22uploads%22%5D");
         query.add("hits_per_page", Integer.toString(maxItemsPerPage));
+        if (!filter_map.isEmpty()) {
+            query.add("filter_map", Encoding.urlEncode(JSonStorage.serializeToJson(filter_map)));
+        }
         query.add("sort", "publicdate%3Adesc");
         query.add("aggregations", "false");
         if (sourceurl != null) {
@@ -1102,6 +1121,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 page++;
             }
         } while (!this.isAbort());
+        if (ret.isEmpty() && !filter_map.isEmpty()) {
+            logger.info("Got zero results which might be the case because the user has supplied filters which are too restrictive: " + filter_map);
+        }
         return ret;
     }
 
