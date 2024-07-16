@@ -138,7 +138,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (StringUtils.isEmpty(collectionIdentifier)) {
             throw new IllegalArgumentException();
         }
-        return crawlViaScrapeAPI(br, "collection:" + collectionIdentifier, null, -1);
+        return crawlViaScrapeAPI(br, "collection:" + collectionIdentifier, -1);
     }
 
     private ArrayList<DownloadLink> crawlSearchQueryURL(final Browser br, final CryptedLink param) throws Exception {
@@ -158,7 +158,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* User supplied invalid URL. */
             throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "INVALID_SEARCH_QUERY");
         }
-        final ArrayList<DownloadLink> searchResults = crawlViaScrapeAPI(br, searchQuery, parseFilterMap(param.getCryptedUrl()), maxResults);
+        final ArrayList<DownloadLink> searchResults = crawlViaScrapeAPI(br, searchQuery, maxResults);
         if (searchResults.isEmpty()) {
             throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "NO_SEARCH_RESULTS_FOR_QUERY_" + searchQuery);
         }
@@ -169,7 +169,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
      * Uses search APIv1 </br>
      * API: Docs: https://archive.org/help/aboutsearch.htm
      */
-    private ArrayList<DownloadLink> crawlViaScrapeAPI(final Browser br, final String searchTerm, Map<String, Object> filter_map, final int maxResultsLimit) throws Exception {
+    private ArrayList<DownloadLink> crawlViaScrapeAPI(final Browser br, final String searchTerm, final int maxResultsLimit) throws Exception {
         if (StringUtils.isEmpty(searchTerm)) {
             /* Developer mistake */
             throw new IllegalArgumentException();
@@ -184,10 +184,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final UrlQuery query = new UrlQuery();
         query.add("fields", "identifier");
         query.add("q", URLEncode.encodeURIComponent(searchTerm));
-        if (!filter_map.isEmpty()) {
-            final String json = new SimpleMapper().setPrettyPrintEnabled(false).objectToString(filter_map);
-            query.add("filter_map", URLEncode.encodeURIComponent(json));
-        }
         final int maxNumberofItemsPerPageForThisRun;
         if (maxResultsLimit == -1) {
             /* -1 means unlimited -> Use internal hardcoded limit. */
