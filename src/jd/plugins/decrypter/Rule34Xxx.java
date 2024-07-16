@@ -86,7 +86,6 @@ public class Rule34Xxx extends PluginForDecrypt {
         final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
         final String s = query.get("s");
         final String tags = query.get("tags");
-        final String parameter = Encoding.htmlDecode(param.getCryptedUrl());
         /* API docs: https://api.rule34.xxx/ */
         final String api_base = "https://api.rule34.xxx/index.php";
         if (s.equals("view")) {
@@ -96,7 +95,6 @@ public class Rule34Xxx extends PluginForDecrypt {
                 /* Developer mistake */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final boolean preferServerFilenames = PluginJsonConfig.get(this.getConfigInterface()).isPreferServerFilenamesOverPluginDefaultFilenames();
             final UrlQuery apiquery = new UrlQuery();
             apiquery.add("page", "dapi");
             apiquery.add("s", "post");
@@ -106,26 +104,15 @@ public class Rule34Xxx extends PluginForDecrypt {
             br.getPage(api_base + "?" + apiquery.toString());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (!br.getRequest().getHtmlCode().startsWith("{")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final List<Map<String, Object>> results = (List<Map<String, Object>>) restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
             if (results == null || results.size() == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (final Map<String, Object> result : results) {
-                final String link = result.get("file_url").toString();
-                final String id = result.get("id").toString();
-                final DownloadLink image = createDownloadlink(link);
-                image.setAvailable(true);
-                image.setLinkID(prefixLinkID + id);
-                final String originalFilename = result.get("image").toString();
-                final String extension = getFileNameExtensionFromString(originalFilename, ".bmp");
-                if (preferServerFilenames) {
-                    image.setFinalFileName(originalFilename);
-                } else {
-                    image.setFinalFileName("rule34xxx-" + id + extension);
-                }
-                image.setContentUrl(parameter);
-                image.setMD5Hash(result.get("hash").toString());
+                final DownloadLink image = processImageItem(result);
                 ret.add(image);
             }
         } else {
@@ -141,52 +128,37 @@ public class Rule34Xxx extends PluginForDecrypt {
             final int maxItemsPerPage = 100;
             final UrlQuery apiquery = new UrlQuery();
             apiquery.add("page", "dapi");
-            apiquery.add("s", "tag");
+            apiquery.add("s", "post");
             apiquery.add("q", "index");
-            apiquery.add("id", Encoding.urlEncode(tags));
+            apiquery.add("tags", Encoding.urlEncode(tags));
+            apiquery.add("json", "1");
             apiquery.add("limit", Integer.toString(maxItemsPerPage));
-            /* 2024-07-16: json is not available for this request(?) */
-            // apiquery.add("json", "1");
             do {
                 apiquery.addAndReplace("pid", Integer.toString(page));
                 br.getPage(api_base + "?" + apiquery.toString());
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (br.getRequest().getHtmlCode().length() <= 10) {
+                    /* No json response */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                // final String[] counts = br.getRegex("count=\"(\\d+)").getColumn(0);
-                final String[] names = br.getRegex("name=\"([^\"]+)").getColumn(0);
-                final String[] ids = br.getRegex("id=\"(\\d+)\"").getColumn(0);
-                if (ids == null || ids.length == 0) {
+                final List<Map<String, Object>> results = (List<Map<String, Object>>) restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
+                if (results == null || results.size() == 0) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 int numberofNewItems = 0;
-                int index = 0;
-                for (final String id : ids) {
+                for (final Map<String, Object> result : results) {
+                    final String id = result.get("id").toString();
                     if (!dupes.add(id)) {
                         continue;
                     }
+                    final DownloadLink image = processImageItem(result);
+                    ret.add(image);
+                    image._setFilePackage(fp);
+                    distribute(image);
                     numberofNewItems++;
-                    final DownloadLink dl = createDownloadlink("https://rule34.xxx/index.php?page=post&s=view&id=" + id);
-                    // we should set temp filename also
-                    String tempname = null;
-                    if (names != null && names.length == ids.length) {
-                        tempname = names[index];
-                    }
-                    dl.setLinkID(prefixLinkID + id);
-                    if (tempname != null) {
-                        dl.setName(tempname);
-                    } else {
-                        dl.setName(id);
-                    }
-                    /* Don't do this as items need to go through this crawler once again. */
-                    // dl.setAvailable(true);
-                    dl._setFilePackage(fp);
-                    distribute(dl);
-                    ret.add(dl);
-                    index++;
                 }
                 logger.info("Crawled page " + page + " | Found items so far: " + ret.size());
-                index += numberofNewItems;
                 if (this.isAbort()) {
                     logger.info("Stopping because: Aborted by user");
                     break;
@@ -201,6 +173,23 @@ public class Rule34Xxx extends PluginForDecrypt {
             } while (true);
         }
         return ret;
+    }
+
+    private DownloadLink processImageItem(final Map<String, Object> result) {
+        final String link = result.get("file_url").toString();
+        final String id = result.get("id").toString();
+        final DownloadLink image = createDownloadlink(link);
+        image.setAvailable(true);
+        image.setLinkID(prefixLinkID + id);
+        final String originalFilename = result.get("image").toString();
+        final String extension = getFileNameExtensionFromString(originalFilename, ".bmp");
+        if (PluginJsonConfig.get(this.getConfigInterface()).isPreferServerFilenamesOverPluginDefaultFilenames()) {
+            image.setFinalFileName(originalFilename);
+        } else {
+            image.setFinalFileName("rule34xxx-" + id + extension);
+        }
+        image.setMD5Hash(result.get("hash").toString());
+        return image;
     }
 
     @Deprecated
