@@ -99,4 +99,23 @@ public class XbabeCom extends KernelVideoSharingComV2 {
             return super.getDllink(link, br);
         }
     }
+
+    @Override
+    protected boolean isOfflineWebsite(final Browser br) {
+        final boolean isOffline = super.isOfflineWebsite(br);
+        if (isOffline) {
+            return true;
+        }
+        /* Not offline -> Check if we really have a link to a video */
+        String videoid = br.getRegex("/embed/(\\d+)").getMatch(0);
+        if (videoid == null) {
+            videoid = br.getRegex("\\['video_id'\\] = (\\d+)").getMatch(0);
+        }
+        if (videoid == null) {
+            /* Assume that we don't have a valid video-url e.g.: https://xbabe.com/videos/most-viewed/ */
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

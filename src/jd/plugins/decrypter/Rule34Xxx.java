@@ -18,7 +18,10 @@ package jd.plugins.decrypter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.parser.UrlQuery;
@@ -43,17 +46,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-/**
- *
- * @author raztoki
- *
- */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rule34.xxx" }, urls = { "https?://(?:www\\.)?rule34\\.xxx/index\\.php\\?page=post\\&s=(view\\&id=\\d+|list\\&tags=.+)" })
 public class Rule34Xxx extends PluginForDecrypt {
     private final String prefixLinkID = getHost().replaceAll("[\\.\\-]+", "") + "://";
 
     public Rule34Xxx(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -67,16 +72,148 @@ public class Rule34Xxx extends PluginForDecrypt {
         return Rule34xxxConfig.class;
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final boolean useAPI = true;
+        if (useAPI) {
+            return this.crawlAPI(param);
+        } else {
+            return this.crawlWebsite(param);
+        }
+    }
+
+    private ArrayList<DownloadLink> crawlAPI(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
+        final String s = query.get("s");
+        final String tags = query.get("tags");
+        final String parameter = Encoding.htmlDecode(param.getCryptedUrl());
+        /* API docs: https://api.rule34.xxx/ */
+        final String api_base = "https://api.rule34.xxx/index.php";
+        if (s.equals("view")) {
+            /* Crawl single post which can contain multiple images */
+            final String postID = query.get("id");
+            if (postID == null) {
+                /* Developer mistake */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final boolean preferServerFilenames = PluginJsonConfig.get(this.getConfigInterface()).isPreferServerFilenamesOverPluginDefaultFilenames();
+            final UrlQuery apiquery = new UrlQuery();
+            apiquery.add("page", "dapi");
+            apiquery.add("s", "post");
+            apiquery.add("q", "index");
+            apiquery.add("id", postID);
+            apiquery.add("json", "1");
+            br.getPage(api_base + "?" + apiquery.toString());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final List<Map<String, Object>> results = (List<Map<String, Object>>) restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
+            if (results == null || results.size() == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            for (final Map<String, Object> result : results) {
+                final String link = result.get("file_url").toString();
+                final String id = result.get("id").toString();
+                final DownloadLink image = createDownloadlink(link);
+                image.setAvailable(true);
+                image.setLinkID(prefixLinkID + id);
+                final String originalFilename = result.get("image").toString();
+                final String extension = getFileNameExtensionFromString(originalFilename, ".bmp");
+                if (preferServerFilenames) {
+                    image.setFinalFileName(originalFilename);
+                } else {
+                    image.setFinalFileName("rule34xxx-" + id + extension);
+                }
+                image.setContentUrl(parameter);
+                image.setMD5Hash(result.get("hash").toString());
+                ret.add(image);
+            }
+        } else {
+            /* Crawl tags */
+            if (tags == null) {
+                /* Developer mistake */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(tags);
+            final HashSet<String> dupes = new HashSet<String>();
+            int page = 0;
+            final int maxItemsPerPage = 100;
+            final UrlQuery apiquery = new UrlQuery();
+            apiquery.add("page", "dapi");
+            apiquery.add("s", "tag");
+            apiquery.add("q", "index");
+            apiquery.add("id", Encoding.urlEncode(tags));
+            apiquery.add("limit", Integer.toString(maxItemsPerPage));
+            /* 2024-07-16: json is not available for this request(?) */
+            // apiquery.add("json", "1");
+            do {
+                apiquery.addAndReplace("pid", Integer.toString(page));
+                br.getPage(api_base + "?" + apiquery.toString());
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                // final String[] counts = br.getRegex("count=\"(\\d+)").getColumn(0);
+                final String[] names = br.getRegex("name=\"([^\"]+)").getColumn(0);
+                final String[] ids = br.getRegex("id=\"(\\d+)\"").getColumn(0);
+                if (ids == null || ids.length == 0) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                int numberofNewItems = 0;
+                int index = 0;
+                for (final String id : ids) {
+                    if (!dupes.add(id)) {
+                        continue;
+                    }
+                    numberofNewItems++;
+                    final DownloadLink dl = createDownloadlink("https://rule34.xxx/index.php?page=post&s=view&id=" + id);
+                    // we should set temp filename also
+                    String tempname = null;
+                    if (names != null && names.length == ids.length) {
+                        tempname = names[index];
+                    }
+                    dl.setLinkID(prefixLinkID + id);
+                    if (tempname != null) {
+                        dl.setName(tempname);
+                    } else {
+                        dl.setName(id);
+                    }
+                    /* Don't do this as items need to go through this crawler once again. */
+                    // dl.setAvailable(true);
+                    dl._setFilePackage(fp);
+                    distribute(dl);
+                    ret.add(dl);
+                    index++;
+                }
+                logger.info("Crawled page " + page + " | Found items so far: " + ret.size());
+                index += numberofNewItems;
+                if (this.isAbort()) {
+                    logger.info("Stopping because: Aborted by user");
+                    break;
+                } else if (numberofNewItems == 0) {
+                    logger.info("Stopping because: Failed to find any new items on current page");
+                    break;
+                } else {
+                    sleep(1000, param);
+                    page++;
+                    continue;
+                }
+            } while (true);
+        }
+        return ret;
+    }
+
+    @Deprecated
+    /** 2024-07-16: Usage of this is not recommended anymore due to Cloudflare blocking the requests. */
+    private ArrayList<DownloadLink> crawlWebsite(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = Encoding.htmlDecode(param.getCryptedUrl());
-        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*No Images Found\\s*<|>\\s*This post was deleted")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("<h1>\\s*Nobody here but us chickens")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getURL().endsWith("/index.php?page=post&s=list&tags=all")) {
+        } else if (StringUtils.endsWithCaseInsensitive(br.getURL(), "/index.php?page=post&s=list&tags=all")) {
             // redirect to base list page of all content/tags.. we don't want to crawl the entire website
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -95,17 +232,12 @@ public class Rule34Xxx extends PluginForDecrypt {
                 }
             }
             if (image != null) {
-                // these should linkcheck as single event... but if from list its available = true.
-                // now core has changed we have to evaluate differently, as it doesn't re-enter decrypter if availablestatus is true.
-                final boolean isFromMassEvent = this.getCurrentLink().getSourceLink() != null && this.getCurrentLink().getSourceLink().getDownloadLink() != null && this.getCurrentLink().getSourceLink().getDownloadLink().getDownloadURL().contains("&s=view&");
                 final String link = HTMLEntities.unhtmlentities(image);
                 String url = Request.getLocation(link, br.getRequest());
                 // 2022-05-16: rewrite us location to wimg because us is missing some files(404 not found)
                 url = url.replaceFirst("(?i)/(us|wimg)\\.rule34\\.xxx/", "/wimg.rule34.xxx/");
                 final DownloadLink dl = createDownloadlink(url);
-                if (isFromMassEvent) {
-                    dl.setAvailable(true);
-                }
+                dl.setAvailable(true);
                 final String id = new Regex(parameter, "id=(\\d+)").getMatch(0);
                 // set by decrypter from list, but not set by view!
                 try { // Pevent NPE: https://svn.jdownloader.org/issues/84419
@@ -144,7 +276,7 @@ public class Rule34Xxx extends PluginForDecrypt {
                 fp.setName(fpName);
             }
             final HashSet<String> dupes = new HashSet<String>();
-            int maxIndex = getMaxIndex(br);
+            int maxIndex = getMaxIndexWebsite(br);
             int page = 0;
             int index = 0;
             final String relativeURLWithoutParams = br._getURL().getPath();
@@ -175,7 +307,7 @@ public class Rule34Xxx extends PluginForDecrypt {
                 }
                 logger.info("Crawled page " + page + "  Index: " + index + "/" + maxIndex + " | Found items so far: " + ret.size());
                 if (page == maxIndex) {
-                    final int newMaxIndex = this.getMaxIndex(br);
+                    final int newMaxIndex = this.getMaxIndexWebsite(br);
                     if (newMaxIndex > maxIndex) {
                         logger.info("Found new maxIndex | Old: " + maxIndex + " | New: " + newMaxIndex);
                         maxIndex = newMaxIndex;
@@ -204,7 +336,7 @@ public class Rule34Xxx extends PluginForDecrypt {
         return ret;
     }
 
-    private int getMaxIndex(final Browser br) {
+    private int getMaxIndexWebsite(final Browser br) {
         int maxPage = 0;
         final String[] pages = br.getRegex("pid=(\\d+)").getColumn(0);
         for (final String pageStr : pages) {

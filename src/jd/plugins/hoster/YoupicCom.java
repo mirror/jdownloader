@@ -17,21 +17,23 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLSearch;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class YoupicCom extends PluginForHost {
@@ -44,14 +46,19 @@ public class YoupicCom extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_HOST };
     }
 
-    /* Connection stuff */
-    private static final boolean free_resume        = true;
-    private static final int     free_maxchunks     = 1;
-    private static final int     free_maxdownloads  = -1;
-    private String               dllink             = null;
-    private final String         PROPERTY_TITLE     = "title";
-    private final String         PROPERTY_FULL_NAME = "full_name";
-    private final String         PROPERTY_USERNAME  = "user";
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        return 1;
+    }
+
+    private String       dllink             = null;
+    private final String PROPERTY_TITLE     = "title";
+    private final String PROPERTY_FULL_NAME = "full_name";
+    private final String PROPERTY_USERNAME  = "user";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -69,17 +76,20 @@ public class YoupicCom extends PluginForHost {
         return buildSupportedNames(getPluginDomains());
     }
 
+    private static final Pattern PATTERN_OLD = Pattern.compile("image/(\\d+)(/([\\w\\-]+))?");
+    private static final Pattern PATTERN_NEW = Pattern.compile("([\\w\\-]+)/([0-9]{15,})/([0-9]{15,})");
+
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/image/(\\d+)(/([\\w\\-]+))?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(" + PATTERN_OLD + "|" + PATTERN_NEW + ")");
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
     public String getAGBLink() {
-        return "https://youpic.com/termconditions";
+        return "https://" + getHost() + "/termconditions";
     }
 
     @Override
@@ -93,7 +103,11 @@ public class YoupicCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        String fid = new Regex(link.getPluginPatternMatcher(), PATTERN_NEW).getMatch(2);
+        if (fid == null) {
+            fid = new Regex(link.getPluginPatternMatcher(), PATTERN_OLD).getMatch(0);
+        }
+        return fid;
     }
 
     @Override
@@ -101,7 +115,7 @@ public class YoupicCom extends PluginForHost {
         dllink = null;
         final String extDefault = ".jpg";
         if (!link.isNameSet()) {
-            final String urlSlug = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+            final String urlSlug = new Regex(link.getPluginPatternMatcher(), PATTERN_OLD).getMatch(2);
             if (urlSlug != null) {
                 link.setName(urlSlug.replace("-", " ").trim() + extDefault);
             } else {
@@ -137,6 +151,11 @@ public class YoupicCom extends PluginForHost {
         } else {
             logger.warning("Failed to find username");
         }
+        final String appB64 = br.getRegex("\"app\"\\), \"([^\"]+)").getMatch(0);
+        if (appB64 != null) {
+            /* TODO: Fix this, encoding is wrong */
+            System.out.println(Encoding.Base64Decode(appB64));
+        }
         if (!StringUtils.isEmpty(dllink)) {
             dllink = dllink.replaceFirst("(?i)/large/", "/huge/"); // Higher image quality
             basicLinkCheck(br.cloneBrowser(), br.createGetRequest(dllink), link, title, extDefault);
@@ -150,7 +169,7 @@ public class YoupicCom extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(link, null));
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
@@ -168,7 +187,7 @@ public class YoupicCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

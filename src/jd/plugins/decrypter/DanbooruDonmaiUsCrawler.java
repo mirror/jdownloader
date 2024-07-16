@@ -61,7 +61,7 @@ public class DanbooruDonmaiUsCrawler extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlAPI(final CryptedLink param, final Account account) throws IOException, PluginException {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final UrlQuery addedUrlParams = UrlQuery.parse(param.getCryptedUrl());
         final String paramTags = addedUrlParams.get("tags");
         final long accountQueryLimit = account.getLongProperty(jd.plugins.hoster.DanbooruDonmaiUs.PROPERTY_ACCOUNT_QUERY_LIMIT, 3);
@@ -128,7 +128,7 @@ public class DanbooruDonmaiUsCrawler extends PluginForDecrypt {
                     dl.setAvailable(true);
                     dl._setFilePackage(fp);
                     distribute(dl);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                 }
             }
             /* Check for stop conditions */
@@ -142,8 +142,8 @@ public class DanbooruDonmaiUsCrawler extends PluginForDecrypt {
                 page++;
             }
         } while (!this.isAbort());
-        logger.info("Total numbero found items: " + decryptedLinks.size());
-        return decryptedLinks;
+        logger.info("Total numbero found items: " + ret.size());
+        return ret;
     }
 
     private ArrayList<DownloadLink> crawlWebsite(final CryptedLink param) throws AccountRequiredException, IOException {

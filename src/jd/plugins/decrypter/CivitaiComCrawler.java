@@ -144,8 +144,11 @@ public class CivitaiComCrawler extends PluginForDecrypt {
             /* Handles such links: https://civitai.com/user/test */
             /* https://github.com/civitai/civitai/wiki/REST-API-Reference#get-apiv1images */
             /* small limit/pagination size to avoid timeout issues */
-            String nextPage = apiBase + "/images?username=" + itemID + "&limit=10";
-            while (nextPage != null && !isAbort()) {
+            final int maxItemsPerPage = 100;
+            String nextPage = apiBase + "/images?username=" + itemID + "&limit=" + maxItemsPerPage;
+            int page = 0;
+            pagination: while (nextPage != null && !isAbort()) {
+                page++;
                 br.getPage(nextPage);
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -167,11 +170,20 @@ public class CivitaiComCrawler extends PluginForDecrypt {
                     ret.add(link);
                     distribute(link);
                 }
+                logger.info("Crawled page " + page + " | Found items so far: " + ret.size());
                 final Map<String, Object> metadata = (Map<String, Object>) entries.get("metadata");
                 if (metadata != null) {
                     nextPage = (String) metadata.get("nextPage");
                 } else {
                     nextPage = null;
+                }
+                if (nextPage == null) {
+                    logger.info("Stopping because: Failed to find nextPage");
+                    break;
+                } else if (images.size() < maxItemsPerPage) {
+                    /* Fail-safe */
+                    logger.info("Stopping because: Current page contains only " + images.size() + " / " + maxItemsPerPage + " items -> Reached end?");
+                    break;
                 }
             }
         } else {

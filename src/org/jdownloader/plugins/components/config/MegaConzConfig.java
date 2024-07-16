@@ -215,7 +215,6 @@ public interface MegaConzConfig extends PluginConfigInterface {
     void setMaxCacheFolderDetails(int minutes);
 
     public static enum InvalidOrMissingDecryptionKeyAction implements LabelInterface {
-
         ASK {
             @Override
             public String getLabel() {
@@ -229,7 +228,6 @@ public interface MegaConzConfig extends PluginConfigInterface {
             }
         },
         DEFAULT {
-
             @Override
             public String getLabel() {
                 return "Default: " + DEFAULT_ACTION.getLabel();
@@ -240,6 +238,7 @@ public interface MegaConzConfig extends PluginConfigInterface {
                 return DEFAULT_ACTION.getAction();
             }
         };
+
         private static final InvalidOrMissingDecryptionKeyAction DEFAULT_ACTION = InvalidOrMissingDecryptionKeyAction.ASK;
 
         public InvalidOrMissingDecryptionKeyAction getAction() {
@@ -250,7 +249,7 @@ public interface MegaConzConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("DEFAULT")
     @DefaultOnNull
-    @DescriptionForConfigEntry("MEGA links by default contain a key which is needed to decrypt the file- and file information. If you are adding a lot of links with invalid/missing key, JDownloader may ask you to enter it a lot of times which may be annoying for you. This setting allows you to customize how JDownloader should treat such links.")
+    @DescriptionForConfigEntry("MEGA links by default contain a key which is needed to decrypt the file- and file information. If you are adding a lot of links without key or key, JDownloader may ask you to enter it which may be annoying for you. This setting allows you to customize how JDownloader should treat such links.")
     @Order(130)
     InvalidOrMissingDecryptionKeyAction getInvalidOrMissingDecryptionKeyAction();
 

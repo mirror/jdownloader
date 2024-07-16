@@ -15,12 +15,16 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XxxsexzooCom extends KernelVideoSharingComV2 {
@@ -68,5 +72,16 @@ public class XxxsexzooCom extends KernelVideoSharingComV2 {
     @Override
     protected boolean isRequiresWWW() {
         return false;
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Browser br) throws PluginException, IOException {
+        /* 2024-07-16 */
+        final String dllink = br.getRegex("<source src=\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\"").getMatch(0);
+        if (dllink != null) {
+            return dllink;
+        } else {
+            return super.getDllink(link, br);
+        }
     }
 }
