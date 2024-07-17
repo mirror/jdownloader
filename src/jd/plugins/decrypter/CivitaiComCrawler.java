@@ -143,8 +143,8 @@ public class CivitaiComCrawler extends PluginForDecrypt {
             fp.setPackageKey("civitai://user/" + itemID);
             /* Handles such links: https://civitai.com/user/test */
             /* https://github.com/civitai/civitai/wiki/REST-API-Reference#get-apiv1images */
-            /* small limit/pagination size to avoid timeout issues */
-            final int maxItemsPerPage = 100;
+            /* 2024-07-17: use small limit/pagination size to avoid timeout issues */
+            final int maxItemsPerPage = 10;
             String nextPage = apiBase + "/images?username=" + itemID + "&limit=" + maxItemsPerPage;
             int page = 0;
             pagination: while (nextPage != null && !isAbort()) {

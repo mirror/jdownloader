@@ -16,8 +16,7 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "mega.co.nz", type = Type.HOSTER)
 public interface MegaConzConfig extends PluginConfigInterface {
-    public static final TRANSLATION TRANSLATION                                                     = new TRANSLATION();
-    final String                    text_AllowStartFromZeroIfDownloadWasStartedViaMultihosterBefore = "Automatically start from zero if file was downloaded partially via multihoster and is then tried to be resumed directly via MEGA?";
+    public static final TRANSLATION TRANSLATION = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getCheckReserverTraffic_label() {
@@ -52,16 +51,16 @@ public interface MegaConzConfig extends PluginConfigInterface {
             return "Set preferred limit mode";
         }
 
-        public String get5GBFreeLimitEnabled_label() {
-            return "Avoid trying to download files larger than 5Gb in free mode?";
-        }
-
         public String getMaxWaittimeOnLimitReachedMinutes_label() {
             return "Max. wait time minutes on limit reached";
         }
 
+        public String get5GBFreeLimitEnabled_label() {
+            return "Avoid trying to download files larger than 5Gb in free mode?";
+        }
+
         public String getAllowStartFromZeroIfDownloadWasStartedViaMultihosterBefore_label() {
-            return text_AllowStartFromZeroIfDownloadWasStartedViaMultihosterBefore;
+            return "Start from scratch if file was previously partially downloaded via multihoster?";
         }
 
         public String getCrawlerSetFullPathAsPackagename_label() {
@@ -141,7 +140,7 @@ public interface MegaConzConfig extends PluginConfigInterface {
         GLOBAL_WAIT {
             @Override
             public String getLabel() {
-                return "Global: wait";
+                return "Global: Wait";
             }
         },
         PER_FILE {
@@ -161,14 +160,6 @@ public interface MegaConzConfig extends PluginConfigInterface {
     void setLimitMode(final LimitMode limitMode);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Avoid trying to download files larger than 5Gb in free mode as they will most likely fail, see board.jdownloader.org/showthread.php?t=75268")
-    @Order(75)
-    boolean is5GBFreeLimitEnabled();
-
-    void set5GBFreeLimitEnabled(boolean b);
-
-    @AboutConfig
     @SpinnerValidator(min = 10, max = 360, step = 1)
     @DefaultIntValue(10)
     @TakeValueFromSubconfig("MAX_LIMIT_WAITTIME")
@@ -177,6 +168,14 @@ public interface MegaConzConfig extends PluginConfigInterface {
     int getMaxWaittimeOnLimitReachedMinutes();
 
     void setMaxWaittimeOnLimitReachedMinutes(int minutes);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Avoid trying to download files larger than 5Gb in free mode as they will most likely fail, see board.jdownloader.org/showthread.php?t=75268")
+    @Order(85)
+    boolean is5GBFreeLimitEnabled();
+
+    void set5GBFreeLimitEnabled(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(true)
@@ -190,7 +189,7 @@ public interface MegaConzConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("ALLOW_START_FROM_ZERO_IF_DOWNLOAD_WAS_STARTED_VIA_MULTIHOSTER")
-    @DescriptionForConfigEntry(text_AllowStartFromZeroIfDownloadWasStartedViaMultihosterBefore)
+    @DescriptionForConfigEntry("You cannot resume partially downloaded multihoster MEGA downloads via MEGA directly. Multihosters are delivering the files decrypted but when JDownloader is downloading straight from MEGA, it is downloading the encrypted file and decrypts it later.")
     @Order(100)
     boolean isAllowStartFromZeroIfDownloadWasStartedViaMultihosterBefore();
 
