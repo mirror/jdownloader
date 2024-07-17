@@ -31,7 +31,6 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 import jd.gui.swing.jdgui.views.settings.panels.proxy.ProxyDeleteAction;
 
 public class EventScripterConfigPanel extends ExtensionConfigPanel<EventScripterExtension> {
-
     /**
      *
      */
@@ -43,9 +42,7 @@ public class EventScripterConfigPanel extends ExtensionConfigPanel<EventScripter
 
     public EventScripterConfigPanel(EventScripterExtension extension) {
         super(extension);
-
         JLabel lbl;
-
         add(new JScrollPane(table = new EventScripterTable(model = new EventScripterTableModel(extension)) {
             @Override
             protected boolean onShortcutDelete(List<ScriptEntry> selectedObjects, KeyEvent evt, boolean direct) {
@@ -56,18 +53,14 @@ public class EventScripterConfigPanel extends ExtensionConfigPanel<EventScripter
         MigPanel toolbar = new MigPanel("ins 0", "0[][][][grow,fill]", "[]");
         toolbar.setOpaque(false);
         btnAdd = new ExtButton(new AbstractAddAction() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 ScriptEntry newScript = new ScriptEntry();
                 getExtension().addScriptEntry(newScript);
             }
-
         });
-
         ProxyDeleteAction dl;
         ExtButton btnRemove = new ExtButton(deleteSelectionAction = new AbstractRemoveAction() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 List<ScriptEntry> entries = model.getSelectedObjects();
@@ -82,9 +75,7 @@ public class EventScripterConfigPanel extends ExtensionConfigPanel<EventScripter
                 } catch (DialogCanceledException e1) {
                     e1.printStackTrace();
                 }
-
             }
-
         });
         final ExtButton btnDefault = new ExtButton(new AppAction() {
             {
@@ -100,9 +91,7 @@ public class EventScripterConfigPanel extends ExtensionConfigPanel<EventScripter
                 lst.add(new ExampleMenuEntry(getExtension(), "playsound.js", EventTrigger.ON_DOWNLOAD_CONTROLLER_STOPPED, T.T.example_play_sound()));
                 lst.add(new ExampleMenuEntry(getExtension(), "playWavWhenInactive.js", EventTrigger.INTERVAL, T.T.example_play_sound_when_inactive()));
                 lst.add(new ExampleMenuEntry(getExtension(), "speedReset.js", EventTrigger.INTERVAL, T.T.reset_link_on_low_speed()));
-
                 java.util.Collections.sort(lst, new Comparator<ExampleMenuEntry>() {
-
                     @Override
                     public int compare(ExampleMenuEntry o1, ExampleMenuEntry o2) {
                         int ret = o1.getName().compareTo(o2.getName());
@@ -112,21 +101,17 @@ public class EventScripterConfigPanel extends ExtensionConfigPanel<EventScripter
                 for (ExampleMenuEntry ee : lst) {
                     p.add(ee);
                 }
-
                 if (e.getSource() instanceof Component) {
                     Component button = (Component) e.getSource();
                     Dimension prefSize = p.getPreferredSize();
                     Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
                     p.show(button, -insets.left, -insets.top - prefSize.height);
-
                 }
             }
         });
-
         toolbar.add(btnAdd, "sg 1,height 26!");
         toolbar.add(btnRemove, "sg 1,height 26!");
         toolbar.add(btnDefault, "sg 1,height 26!");
-
         toolbar.add(Box.createHorizontalGlue(), "pushx,growx");
         //
         // toolbar.add(btImport, "sg 2,height 26!");
@@ -134,9 +119,7 @@ public class EventScripterConfigPanel extends ExtensionConfigPanel<EventScripter
         //
         // toolbar.add(btExport, "sg 2,height 26!");
         // toolbar.add(expPopup, "height 26!,width 12!,aligny top");
-
-        add(toolbar, "gapleft 32,growx,spanx");
-
+        add(toolbar, "gapleft" + getLeftGap() + ",spanx,growx,pushx,height 60:n:n,pushy,growy");
     }
 
     @Override
@@ -145,7 +128,6 @@ public class EventScripterConfigPanel extends ExtensionConfigPanel<EventScripter
 
     @Override
     public void updateContents() {
-
     }
 
     public void refresh() {

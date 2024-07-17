@@ -3,7 +3,7 @@
   "dependencies":null,
   "filter":null,
   "installed":{
-    "date":"2023-09-04T11:08:34 CEST",
+    "date":"2023-09-04T11:08:34+02:00",
     "dependencies":[
       {
         "groupId":"junit",
@@ -32,6 +32,34 @@
       }
     ],
     "description":"Pure Java Sqlite Library",
+    "files":[
+      "",
+      "meta.json",
+      "sqljet-javadoc.jar",
+      "sqljet-javadoc.jar.asc",
+      "sqljet-javadoc.jar.asc.md5",
+      "sqljet-javadoc.jar.asc.sha1",
+      "sqljet-javadoc.jar.md5",
+      "sqljet-javadoc.jar.sha1",
+      "sqljet-sources.jar",
+      "sqljet-sources.jar.asc",
+      "sqljet-sources.jar.asc.md5",
+      "sqljet-sources.jar.asc.sha1",
+      "sqljet-sources.jar.md5",
+      "sqljet-sources.jar.sha1",
+      "sqljet.jar",
+      "sqljet.jar.asc",
+      "sqljet.jar.asc.md5",
+      "sqljet.jar.asc.sha1",
+      "sqljet.jar.md5",
+      "sqljet.jar.sha1",
+      "sqljet.pom",
+      "sqljet.pom.asc",
+      "sqljet.pom.asc.md5",
+      "sqljet.pom.asc.sha1",
+      "sqljet.pom.md5",
+      "sqljet.pom.sha1"
+    ],
     "hashes":{"sqljet.jar":"df7463424e3560f5e8c8003e1816c0a6ea6e84673921ca5af05b90b0892b3c97"},
     "licenses":[{
       "name":"GPL (with dual licensing option)",

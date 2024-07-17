@@ -3,7 +3,7 @@
   "dependencies":null,
   "filter":null,
   "installed":{
-    "date":"2023-09-04T11:08:34 CEST",
+    "date":"2023-09-04T11:08:34+02:00",
     "dependencies":[{
       "groupId":"junit",
       "artifactId":"junit",
@@ -11,6 +11,34 @@
       "scope":"test"
     }],
     "description":"Java Image Processing Pages",
+    "files":[
+      "",
+      "filters-javadoc.jar",
+      "filters-javadoc.jar.asc",
+      "filters-javadoc.jar.asc.md5",
+      "filters-javadoc.jar.asc.sha1",
+      "filters-javadoc.jar.md5",
+      "filters-javadoc.jar.sha1",
+      "filters-sources.jar",
+      "filters-sources.jar.asc",
+      "filters-sources.jar.asc.md5",
+      "filters-sources.jar.asc.sha1",
+      "filters-sources.jar.md5",
+      "filters-sources.jar.sha1",
+      "filters.jar",
+      "filters.jar.asc",
+      "filters.jar.asc.md5",
+      "filters.jar.asc.sha1",
+      "filters.jar.md5",
+      "filters.jar.sha1",
+      "filters.pom",
+      "filters.pom.asc",
+      "filters.pom.asc.md5",
+      "filters.pom.asc.sha1",
+      "filters.pom.md5",
+      "filters.pom.sha1",
+      "meta.json"
+    ],
     "hashes":{"Filters.jar":"a37202f03eae99ab1faf2a89eeaee3665c8489f45b1aeb0d5926d78a54c613bf"},
     "licenses":[{
       "name":"Apache License, Version 2.0",

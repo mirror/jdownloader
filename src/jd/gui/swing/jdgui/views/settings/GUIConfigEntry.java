@@ -37,14 +37,14 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 
+import org.jdownloader.logging.LogController;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.GuiConfigListener;
 import jd.gui.swing.components.JDLabelContainer;
 import jd.gui.swing.components.JDTextArea;
 import jd.gui.swing.components.JDTextField;
-
-import org.jdownloader.logging.LogController;
 
 /**
  * Diese Klasse fasst ein label / input Paar zusammen und macht das lesen und schreiben einheitlich. Es lassen sich so Dialogelemente
@@ -151,7 +151,6 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
             if (decoration instanceof JLabel) {
                 final JLabel lbl = (JLabel) decoration;
                 final MouseListener listener = new MouseListener() {
-
                     @Override
                     public void mouseReleased(MouseEvent e) {
                     }
@@ -162,18 +161,18 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
 
                     @Override
                     public void mouseExited(MouseEvent e) {
-                        String text = lbl.getText();
-                        text = text.replaceFirst("^<html><U>", "<html>");
-                        text = text.replaceFirst("</U></html>$", "</html>");
-                        lbl.setText(text);
+                        // String text = lbl.getText();
+                        // text = text.replaceFirst("^<html><U>", "<html>");
+                        // text = text.replaceFirst("</U></html>$", "</html>");
+                        // lbl.setText(text);
                     }
 
                     @Override
                     public void mouseEntered(MouseEvent e) {
-                        String text = lbl.getText();
-                        text = text.replaceFirst("^<html>", "<html><U>");
-                        text = text.replaceFirst("</html>$", "</U></html>");
-                        lbl.setText(text);
+                        // String text = lbl.getText();
+                        // text = text.replaceFirst("^<html>", "<html><U>");
+                        // text = text.replaceFirst("</html>$", "</U></html>");
+                        // lbl.setText(text);
                     }
 
                     @Override

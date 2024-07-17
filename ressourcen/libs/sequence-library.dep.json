@@ -3,7 +3,7 @@
   "dependencies":null,
   "filter":null,
   "installed":{
-    "date":"2023-09-04T11:08:34 CEST",
+    "date":"2023-09-04T11:08:34+02:00",
     "dependencies":[{
       "groupId":"junit",
       "artifactId":"junit",
@@ -11,6 +11,34 @@
       "scope":"test"
     }],
     "description":"Textual Diff and Merge Library",
+    "files":[
+      "",
+      "meta.json",
+      "sequence-library-javadoc.jar",
+      "sequence-library-javadoc.jar.asc",
+      "sequence-library-javadoc.jar.asc.md5",
+      "sequence-library-javadoc.jar.asc.sha1",
+      "sequence-library-javadoc.jar.md5",
+      "sequence-library-javadoc.jar.sha1",
+      "sequence-library-sources.jar",
+      "sequence-library-sources.jar.asc",
+      "sequence-library-sources.jar.asc.md5",
+      "sequence-library-sources.jar.asc.sha1",
+      "sequence-library-sources.jar.md5",
+      "sequence-library-sources.jar.sha1",
+      "sequence-library.jar",
+      "sequence-library.jar.asc",
+      "sequence-library.jar.asc.md5",
+      "sequence-library.jar.asc.sha1",
+      "sequence-library.jar.md5",
+      "sequence-library.jar.sha1",
+      "sequence-library.pom",
+      "sequence-library.pom.asc",
+      "sequence-library.pom.asc.md5",
+      "sequence-library.pom.asc.sha1",
+      "sequence-library.pom.md5",
+      "sequence-library.pom.sha1"
+    ],
     "hashes":{"sequence-library.jar":"2f36485bec6bb5f7ba97a40241462f3ce8b4dde2ad1acfe08ea3712450d9e7ea"},
     "licenses":[{
       "name":"Sequence Library License",

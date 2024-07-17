@@ -120,7 +120,7 @@ public class ReconnectPluginController {
         try {
             Collections.sort(scripts, new Comparator<ReconnectResult>() {
                 public int compare(ReconnectResult o1, ReconnectResult o2) {
-                    return CompareUtils.compare(o1.getAverageSuccessDuration(), o2.getAverageSuccessDuration());
+                    return CompareUtils.compareLong(o1.getAverageSuccessDuration(), o2.getAverageSuccessDuration());
                 }
             });
         } catch (final Throwable e) {

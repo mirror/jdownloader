@@ -108,7 +108,7 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
             final Comparator<LazyHostPlugin> compar = new Comparator<LazyHostPlugin>() {
                 @Override
                 public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
-                    int ret = CompareUtils.compare(patternStarts.matcher(clean(o2.getHost())).matches(), patternStarts.matcher(clean(o1.getHost())).matches());
+                    int ret = CompareUtils.compareBoolean(patternStarts.matcher(clean(o2.getHost())).matches(), patternStarts.matcher(clean(o1.getHost())).matches());
                     if (ret == 0) {
                         ret = o1.getHost().compareToIgnoreCase(o2.getHost());
                     }

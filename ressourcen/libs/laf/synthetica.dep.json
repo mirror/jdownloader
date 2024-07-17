@@ -3,9 +3,10 @@
   "dependencies":null,
   "filter":null,
   "installed":{
-    "date":"2023-09-04T11:08:34 CEST",
+    "date":"2023-09-04T11:08:34+02:00",
     "dependencies":null,
     "description":"Synthetica Look And Feel Library",
+    "files":["", "meta.json", "synthetica.jar"],
     "hashes":{"synthetica.jar":"ae423de80385c34a925d2776b29bcca83707dcde60011a81f453a9a19819c66e"},
     "licenses":["Licensed by AppWork GmbH for all AppWork products."],
     "minJRE":"JVM_1_6",

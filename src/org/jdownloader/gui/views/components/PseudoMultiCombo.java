@@ -320,7 +320,7 @@ public class PseudoMultiCombo<Type> extends ExtButton {
             @Override
             public int compare(Type o1, Type o2) {
                 // sort based in the order of values. this is probably not the fastest solution
-                return CompareUtils.compare(values.indexOf(o1), values.indexOf(o2));
+                return CompareUtils.compareInt(values.indexOf(o1), values.indexOf(o2));
             }
         };
     }

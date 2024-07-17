@@ -122,13 +122,13 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
             if (pref2 == null) {
                 pref2 = Integer.MIN_VALUE;
             }
-            int ret = CompareUtils.compare(pref1, pref2);
+            int ret = CompareUtils.compareComparable(pref1, pref2);
             if (ret == 0) {
-                ret = CompareUtils.compare(((SubtitleVariant) o1).getGenericInfo()._isSpeechToText(), ((SubtitleVariant) o2).getGenericInfo()._isSpeechToText());
+                ret = CompareUtils.compareBoolean(((SubtitleVariant) o1).getGenericInfo()._isSpeechToText(), ((SubtitleVariant) o2).getGenericInfo()._isSpeechToText());
                 if (ret == 0) {
-                    ret = CompareUtils.compare(((SubtitleVariant) o1).getGenericInfo()._isTranslated(), ((SubtitleVariant) o2).getGenericInfo()._isTranslated());
+                    ret = CompareUtils.compareBoolean(((SubtitleVariant) o1).getGenericInfo()._isTranslated(), ((SubtitleVariant) o2).getGenericInfo()._isTranslated());
                     if (ret == 0) {
-                        ret = CompareUtils.compare(((SubtitleVariant) o1).getDisplayLanguage(), ((SubtitleVariant) o2).getDisplayLanguage());
+                        ret = CompareUtils.compareComparable(((SubtitleVariant) o1).getDisplayLanguage(), ((SubtitleVariant) o2).getDisplayLanguage());
                     }
                 }
             }

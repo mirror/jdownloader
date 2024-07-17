@@ -150,7 +150,7 @@ public class AutoDetectUpnpAction extends BasicAction {
                     }
                     Collections.sort(scripts, new Comparator<ReconnectResult>() {
                         public int compare(ReconnectResult o1, ReconnectResult o2) {
-                            return CompareUtils.compare(o2.getAverageSuccessDuration(), o1.getAverageSuccessDuration());
+                            return CompareUtils.compareLong(o2.getAverageSuccessDuration(), o1.getAverageSuccessDuration());
                         }
                     });
                     System.out.println("Scripts " + scripts);

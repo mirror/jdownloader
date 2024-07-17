@@ -189,7 +189,7 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
             // interrupt scxanning and use best script found so far
             Collections.sort(foundList, new Comparator<ReconnectResult>() {
                 public int compare(ReconnectResult o1, ReconnectResult o2) {
-                    return CompareUtils.compare(o2.getAverageSuccessDuration(), o1.getAverageSuccessDuration());
+                    return CompareUtils.compareLong(o2.getAverageSuccessDuration(), o1.getAverageSuccessDuration());
                 }
             });
             foundList.get(0).getInvoker().getPlugin().setSetup(foundList.get(0));

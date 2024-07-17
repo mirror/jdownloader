@@ -3,13 +3,41 @@
   "dependencies":null,
   "filter":null,
   "installed":{
-    "date":"2023-09-04T11:08:34 CEST",
+    "date":"2023-09-04T11:08:34+02:00",
     "dependencies":[{
       "groupId":"net.java.dev.jna",
       "artifactId":"jna",
       "version":"5.13.0"
     }],
     "description":"Java Native Access Platform",
+    "files":[
+      "",
+      "jna-platform-javadoc.jar",
+      "jna-platform-javadoc.jar.asc",
+      "jna-platform-javadoc.jar.asc.md5",
+      "jna-platform-javadoc.jar.asc.sha1",
+      "jna-platform-javadoc.jar.md5",
+      "jna-platform-javadoc.jar.sha1",
+      "jna-platform-sources.jar",
+      "jna-platform-sources.jar.asc",
+      "jna-platform-sources.jar.asc.md5",
+      "jna-platform-sources.jar.asc.sha1",
+      "jna-platform-sources.jar.md5",
+      "jna-platform-sources.jar.sha1",
+      "jna-platform.jar",
+      "jna-platform.jar.asc",
+      "jna-platform.jar.asc.md5",
+      "jna-platform.jar.asc.sha1",
+      "jna-platform.jar.md5",
+      "jna-platform.jar.sha1",
+      "jna-platform.pom",
+      "jna-platform.pom.asc",
+      "jna-platform.pom.asc.md5",
+      "jna-platform.pom.asc.sha1",
+      "jna-platform.pom.md5",
+      "jna-platform.pom.sha1",
+      "meta.json"
+    ],
     "hashes":{"jna_platform.jar":"474d7b88f6e97009b6ec1d98c3024dd95c23187c65dabfbc35331bcac3d173dd"},
     "licenses":[
       {

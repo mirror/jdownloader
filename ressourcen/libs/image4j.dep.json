@@ -3,9 +3,10 @@
   "dependencies":null,
   "filter":null,
   "installed":{
-    "date":"2023-09-04T11:08:34 CEST",
+    "date":"2023-09-04T11:08:34+02:00",
     "dependencies":null,
     "description":"The image4j library allows you to read and write certain image formats in 100% pure Java.",
+    "files":["", "image4j.jar", "meta.json"],
     "hashes":{"image4j.jar":"88f9d391a1bde218ae2bf1207415b7900282bd6be5c1c0efabab5efee7632d2d"},
     "licenses":["The image4j library is licensed under the GNU LGPL v2.1 so you are free to use it in your Free Software and Open Source projects, as well as commercial projects, under the terms of the LGPL v2.1."],
     "minJRE":"JVM_1_6",

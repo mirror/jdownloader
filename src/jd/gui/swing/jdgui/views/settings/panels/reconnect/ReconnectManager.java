@@ -11,11 +11,6 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
-import jd.controlling.reconnect.ReconnectPluginController;
-import jd.controlling.reconnect.RouterPlugin;
-import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -23,10 +18,14 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.swing.EDTRunner;
 
+import jd.controlling.reconnect.ReconnectPluginController;
+import jd.controlling.reconnect.RouterPlugin;
+import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+
 public class ReconnectManager extends MigPanel implements SettingsComponent, ActionListener, GenericConfigEventListener<String> {
     private static final long serialVersionUID = 1L;
     private JComboBox         combobox;
-
     private MigPanel          card;
     private ExtButton         autoSetupButton;
     private ExtButton         reconnectTestButton;
@@ -41,11 +40,9 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
 
     public void actionPerformed(final ActionEvent e) {
         ReconnectPluginController.getInstance().setActivePlugin((RouterPlugin) this.combobox.getSelectedItem());
-
     }
 
     private void layoutComponents() {
-
         setOpaque(false);
         this.add(this.combobox, "growx, pushx,height 26!");
         this.add(autoSetupButton = new ExtButton(new AutoSetupAction()).setTooltipsEnabled(true), "height 26!");
@@ -65,7 +62,6 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
                 setView(ReconnectPluginController.getInstance().getActivePlugin().getGUI());
             }
         };
-
     }
 
     public void addStateUpdateListener(StateUpdateListener listener) {
@@ -74,28 +70,24 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
 
     protected void setView(final JComponent gui) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 card.removeAll();
                 card.add(gui);
             }
         };
-
     }
 
     private void initComponents() {
         this.combobox = new JComboBox();
         final ListCellRenderer org = combobox.getRenderer();
         combobox.setRenderer(new ListCellRenderer() {
-
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 JLabel ret = (JLabel) org.getListCellRendererComponent(list, ((RouterPlugin) value).getName(), index, isSelected, cellHasFocus);
                 ret.setIcon(((RouterPlugin) value).getIcon16());
                 return ret;
             }
         });
-
         this.card = new MigPanel("ins 0", "[grow,fill]", "[grow,fill]");
         card.setOpaque(false);
     }
@@ -114,5 +106,4 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
     public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
         fill();
     }
-
 }

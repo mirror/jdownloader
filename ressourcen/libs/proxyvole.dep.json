@@ -3,9 +3,10 @@
   "dependencies":null,
   "filter":null,
   "installed":{
-    "date":"2023-09-04T11:08:34 CEST",
+    "date":"2023-09-04T11:08:34+02:00",
     "dependencies":null,
     "description":"Proxy Vole is a Java library to auto detect the platform network proxy settings. Modifications by AppWork GmbH (http://appwork.org) - Build Date: 08.10.2015  15:16:57",
+    "files":["", "meta.json", "proxyVole.jar"],
     "hashes":{"proxyVole.jar":"a59e60c3436335df10627478373d70193cc68ede00588bbe787e04c50e84da57"},
     "licenses":["Apache License, Version 2.0"],
     "minJRE":"JVM_1_6",

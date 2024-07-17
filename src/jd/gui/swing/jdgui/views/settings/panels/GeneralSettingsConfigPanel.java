@@ -13,24 +13,15 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.views.settings.panels;
 
-import javax.swing.Box;
 import javax.swing.Icon;
-import javax.swing.JCheckBox;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.swing.models.ConfigIntSpinnerModel;
-import org.appwork.swing.components.ExtCheckBox;
-import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
-import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.AutoDownloadStartOption;
@@ -44,17 +35,10 @@ import org.jdownloader.translate._JDT;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
-import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
-import net.miginfocom.layout.AC;
-import net.miginfocom.layout.ConstraintParser;
-import net.miginfocom.layout.LC;
-import net.miginfocom.swing.MigLayout;
 
 public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
-
     private static final long                  serialVersionUID = 3383448498625377495L;
-
     private FolderChooser                      downloadFolder;
     private Spinner                            maxSimPerHost;
     private ComboBox<CleanAfterDownloadAction> remove;
@@ -72,54 +56,21 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
 
     public GeneralSettingsConfigPanel() {
         super();
-
-        /*
-         * Override default implementation of MigLayout layout manager and use one more suitable to this panel
-         *
-         * Useful resources: http://www.migcalendar.com/miglayout/mavensite/apidocs/index.html
-         * http://www.migcalendar.com/miglayout/mavensite/docs/cheatsheet.pdf
-         */
-
-        // Layout constraints
-        LC layCons = new LC();
-        // Apply layout rules
-        layCons.setInsets(ConstraintParser.parseInsets("15", true));
-        layCons.wrapAfter(3);
-
-        // Axis constraints
-        AC axiCons = new AC();
-        // Column 1
-        // Default
-        // Column 2
-        axiCons.index(1).shrink();
-        // Column 3
-        axiCons.index(2).fill();
-        axiCons.index(2).grow();
-
-        // Override default layout
-
-        setLayout(new MigLayout(layCons, axiCons));
-
+      
         config = org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG;
-
         /* Download folder */
-
         downloadFolder = new FolderChooser();
         this.addHeader(_GUI.T.gui_config_general_downloaddirectory(), new AbstractIcon(IconKey.ICON_DOWNLOADPATH, 32));
         this.addDescription(_JDT.T.gui_settings_downloadpath_description());
         this.add(downloadFolder);
-
         /* Download management */
-
         String[] removeDownloads = new String[] { _GUI.T.gui_config_general_toDoWithDownloads_immediate(), _GUI.T.gui_config_general_toDoWithDownloads_atstart(), _GUI.T.gui_config_general_toDoWithDownloads_packageready(), _GUI.T.gui_config_general_toDoWithDownloads_never() };
         String[] fileExists = new String[] { _GUI.T.system_download_triggerfileexists_overwrite(), CFG_GENERAL.CFG.getOnSkipDueToAlreadyExistsAction().getLabel(), _GUI.T.system_download_triggerfileexists_rename(), _GUI.T.system_download_triggerfileexists_ask(), _GUI.T.system_download_triggerfileexists_ask() };
-
         maxSim = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS));
         maxSimPerHost = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST));
         maxchunks = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_CHUNKS_PER_FILE));
         remove = new ComboBox<CleanAfterDownloadAction>(CleanAfterDownloadAction.values(), removeDownloads);
         ifFileExists = new ComboBox<IfFileExistsAction>(IfFileExistsAction.values(), fileExists);
-
         this.addHeader(_JDT.T.gui_settings_downloadcontroll_title(), new AbstractIcon(IconKey.ICON_DOWNLOADMANAGMENT, 32));
         this.addDescription(_JDT.T.gui_settings_downloadcontroll_description());
         this.addPair(_GUI.T.gui_config_download_simultan_downloads(), null, maxSim);
@@ -127,34 +78,25 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
         this.addPair(_GUI.T.gui_config_download_max_chunks(), null, maxchunks);
         this.addPair(_GUI.T.gui_config_general_todowithdownloads(), null, remove);
         this.addPair(_GUI.T.system_download_triggerfileexists(), null, ifFileExists);
-
         /* Autostart downloads */
-
         startDownloadsAfterAppStart = new ComboBox<AutoDownloadStartOption>(CFG_GENERAL.SH.getKeyHandler("AutoStartDownloadOption", KeyHandler.class), AutoDownloadStartOption.values(), new String[] { _GUI.T.gui_config_general_AutoDownloadStartOption_always(), _GUI.T.gui_config_general_AutoDownloadStartOption_only_if_closed_running(), _GUI.T.gui_config_general_AutoDownloadStartOption_never() });
         startDownloadTimeout = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_START_COUNTDOWN_SECONDS));
         this.addHeader(_GUI.T.gui_config_download_autostart(), new AbstractIcon(IconKey.ICON_RESUME, 32));
         this.addDescription(_GUI.T.gui_config_download_autostart_desc());
         this.addPair(_GUI.T.system_download_autostart(), null, startDownloadsAfterAppStart);
         this.addPair(_GUI.T.system_download_autostart_countdown(), CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS, startDownloadTimeout);
-
         /* Linkgrabber */
-
         linkGrabberFilesPackages = new Checkbox(CFG_LINKGRABBER.VARIOUS_PACKAGE_ENABLED);
         this.addHeader(_GUI.T.GeneralSettingsConfigPanel_GeneralSettingsConfigPanel_linkgrabber(), new AbstractIcon(IconKey.ICON_LINKGRABBER, 32));
         this.addPair(_GUI.T.GeneralSettingsConfigPanel_GeneralSettingsConfigPanel_various_package(), null, linkGrabberFilesPackages);
-
         /* File Writing */
-
         autoCRC = new Checkbox();
         this.addHeader(_GUI.T.gui_config_download_write(), new AbstractIcon(IconKey.ICON_HASHSUM, 32));
         this.addDescription(_JDT.T.gui_settings_filewriting_description());
         this.addPair(_GUI.T.gui_config_download_crc(), null, autoCRC);
-
         restartFailedCRC = new Checkbox();
         this.addPair(_GUI.T.gui_config_restart_crc(), null, restartFailedCRC);
-
         /* Miscellaneous */
-
         simpleContainer = new Checkbox();
         this.addHeader(_GUI.T.gui_config_various(), new AbstractIcon(IconKey.ICON_SETTINGS, 32));
         this.addPair(_GUI.T.gui_config_simple_container(), null, simpleContainer);
@@ -168,54 +110,6 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
         return "settings";
     }
 
-    @Override
-    public <T extends SettingsComponent> Pair<T> addPair(String name, BooleanKeyHandler enabled, T comp) {
-        String lblConstraints = "gapleft: " + getLeftGap();
-        return addPair(name, lblConstraints, enabled, comp);
-    }
-
-    @Override
-    public <T extends SettingsComponent> Pair<T> addPair(String name, String lblConstraints, BooleanKeyHandler enabled, T comp) {
-
-        String con = "pushx,growy";
-        if (comp.getConstraints() != null) {
-            con += "," + comp.getConstraints();
-        }
-
-        // COL 1: Label
-
-        JLabel lbl;
-        ExtCheckBox cb = null;
-
-        lbl = createLabel(name);
-
-        // javax.swing.plaf.synth.SynthLabelUI.class
-        add(lbl, lblConstraints);
-
-        // COL 2/3: If T component enabled state is defined, add a checkbox to col 2 to toggle its state
-        // and add the T component to col 3
-        if (enabled != null) {
-            cb = new ExtCheckBox(enabled, lbl, (JComponent) comp);
-            cb.setToolTipText(_GUI.T.AbstractConfigPanel_addPair_enabled());
-            SwingUtils.setOpaque(cb, false);
-            add(cb, "width " + cb.getPreferredSize().width + "!, aligny " + (comp.isMultiline() ? "top" : "center"));
-            add((JComponent) comp, con);
-        }
-        // If the T component is only a checkbox, put it in col 2 and fill col 3 with glue
-        else if (comp instanceof JCheckBox) {
-            add((JComponent) comp, con);
-            add(Box.createHorizontalGlue(), "");
-        }
-        // If the T component has no enabled state, fill col 2 with glue and put the T component in col 3
-        else {
-            add(Box.createHorizontalGlue(), "");
-            add((JComponent) comp, con);
-        }
-
-        Pair<T> p = new Pair<T>(lbl, comp, cb);
-        pairs.add(p);
-        return p;
-    }
 
     @Override
     public Icon getIcon() {

@@ -12,7 +12,7 @@
   ],
   "filter":null,
   "installed":{
-    "date":"2023-09-04T11:08:34 CEST",
+    "date":"2023-09-04T11:08:34+02:00",
     "dependencies":[
       {
         "groupId":"com.jcraft",
@@ -64,6 +64,34 @@
       }
     ],
     "description":"Pure Java Subversion Library",
+    "files":[
+      "",
+      "meta.json",
+      "svnkit-javadoc.jar",
+      "svnkit-javadoc.jar.asc",
+      "svnkit-javadoc.jar.asc.md5",
+      "svnkit-javadoc.jar.asc.sha1",
+      "svnkit-javadoc.jar.md5",
+      "svnkit-javadoc.jar.sha1",
+      "svnkit-sources.jar",
+      "svnkit-sources.jar.asc",
+      "svnkit-sources.jar.asc.md5",
+      "svnkit-sources.jar.asc.sha1",
+      "svnkit-sources.jar.md5",
+      "svnkit-sources.jar.sha1",
+      "svnkit.jar",
+      "svnkit.jar.asc",
+      "svnkit.jar.asc.md5",
+      "svnkit.jar.asc.sha1",
+      "svnkit.jar.md5",
+      "svnkit.jar.sha1",
+      "svnkit.pom",
+      "svnkit.pom.asc",
+      "svnkit.pom.asc.md5",
+      "svnkit.pom.asc.sha1",
+      "svnkit.pom.md5",
+      "svnkit.pom.sha1"
+    ],
     "hashes":{"svnkit.jar":"09cb0908ec713b6aa307881c3fbd3f7b504430beae1d51120b974e2fc541fb6e"},
     "licenses":[{
       "name":"TMate Open Source License (with dual licensing option)",

@@ -941,7 +941,7 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
                 Order orderAn2 = o2.getAnnotation(Order.class);
                 int order1 = orderAn1 == null ? Integer.MAX_VALUE : orderAn1.value();
                 int order2 = orderAn2 == null ? Integer.MAX_VALUE : orderAn2.value();
-                int ret = CompareUtils.compare(order1, order2);
+                int ret = CompareUtils.compareInt(order1, order2);
                 if (ret == 0) {
                     return o1.getKey().compareToIgnoreCase(o2.getKey());
                 } else {

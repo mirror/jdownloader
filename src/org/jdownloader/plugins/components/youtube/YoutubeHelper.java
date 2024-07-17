@@ -2563,7 +2563,7 @@ public class YoutubeHelper {
             Collections.sort(es.getValue(), new Comparator<YoutubeStreamData>() {
                 @Override
                 public int compare(YoutubeStreamData o1, YoutubeStreamData o2) {
-                    int ret = CompareUtils.compare(o2.getUrl().contains("ei="), o1.getUrl().contains("ei="));
+                    int ret = CompareUtils.compareBoolean(o2.getUrl().contains("ei="), o1.getUrl().contains("ei="));
                     return ret;
                 }
             });

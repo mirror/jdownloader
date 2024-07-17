@@ -310,7 +310,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                         Collections.sort(download.getEmbedded().getVariations(), new Comparator<Variation>() {
                             @Override
                             public int compare(Variation o1, Variation o2) {
-                                return CompareUtils.compare(o2.getHeight(), o1.getHeight());
+                                return CompareUtils.compareInt(o2.getHeight(), o1.getHeight());
                             }
                         });
                         for (Variation v : download.getEmbedded().getVariations()) {

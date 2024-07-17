@@ -15,8 +15,6 @@ import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.table.JTableHeader;
 
-import jd.gui.swing.jdgui.AlternateHighlighter;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -52,6 +50,8 @@ import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
+import jd.gui.swing.jdgui.AlternateHighlighter;
+
 public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper> implements GenericConfigEventListener<Object> {
     protected static int globalCompare(int ret, AbstractVariantWrapper o1, AbstractVariantWrapper o2, boolean b) {
         if (ret != 0) {
@@ -66,7 +66,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
         if (ret != 0) {
             return ret;
         }
-        ret = CompareUtils.compare(o1.getProjection(), o2.getProjection());
+        ret = CompareUtils.compareComparable(o1.getProjection(), o2.getProjection());
         if (ret != 0) {
             return ret;
         }
@@ -74,15 +74,15 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
         if (ret != 0) {
             return ret;
         }
-        ret = CompareUtils.compare(o1.getHeight(), o2.getHeight());
+        ret = CompareUtils.compareInt(o1.getHeight(), o2.getHeight());
         if (ret != 0) {
             return ret;
         }
-        ret = CompareUtils.compare(o1.getWidth(), o2.getWidth());
+        ret = CompareUtils.compareInt(o1.getWidth(), o2.getWidth());
         if (ret != 0) {
             return ret;
         }
-        ret = CompareUtils.compare(o1.getFramerate(), o2.getFramerate());
+        ret = CompareUtils.compareInt(o1.getFramerate(), o2.getFramerate());
         if (ret != 0) {
             return ret;
         }
@@ -94,7 +94,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
         if (ret != 0) {
             return ret;
         }
-        ret = CompareUtils.compare(o1.getAudioBitrate(), o2.getAudioBitrate());
+        ret = CompareUtils.compareInt(o1.getAudioBitrate(), o2.getAudioBitrate());
         if (ret != 0) {
             return ret;
         }

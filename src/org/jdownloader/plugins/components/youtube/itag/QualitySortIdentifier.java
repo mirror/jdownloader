@@ -15,7 +15,7 @@ public enum QualitySortIdentifier implements LabelInterface {
         }
 
         public int compare(AbstractVariant o1, AbstractVariant o2) {
-            return CompareUtils.compare(VideoResolution.getSortId(o1), VideoResolution.getSortId(o2));
+            return CompareUtils.compareInt(VideoResolution.getSortId(o1), VideoResolution.getSortId(o2));
         }
     },
     VIDEO_CODEC {
@@ -25,7 +25,7 @@ public enum QualitySortIdentifier implements LabelInterface {
         }
 
         public int compare(AbstractVariant o1, AbstractVariant o2) {
-            return CompareUtils.compare(VideoCodec.getSortId(o1), VideoCodec.getSortId(o2));
+            return CompareUtils.compareInt(VideoCodec.getSortId(o1), VideoCodec.getSortId(o2));
         }
     },
     VIDEO_FRAMERATE {
@@ -35,7 +35,7 @@ public enum QualitySortIdentifier implements LabelInterface {
         }
 
         public int compare(AbstractVariant o1, AbstractVariant o2) {
-            return CompareUtils.compare(VideoFrameRate.getSortId(o1), VideoFrameRate.getSortId(o2));
+            return CompareUtils.compareInt(VideoFrameRate.getSortId(o1), VideoFrameRate.getSortId(o2));
         }
     },
     AUDIO_BITRATE {
@@ -45,7 +45,7 @@ public enum QualitySortIdentifier implements LabelInterface {
         }
 
         public int compare(AbstractVariant o1, AbstractVariant o2) {
-            return CompareUtils.compare(AudioBitrate.getSortId(o1), AudioBitrate.getSortId(o2));
+            return CompareUtils.compareInt(AudioBitrate.getSortId(o1), AudioBitrate.getSortId(o2));
         }
     },
     AUDIO_CODEC {
@@ -55,7 +55,7 @@ public enum QualitySortIdentifier implements LabelInterface {
         }
 
         public int compare(AbstractVariant o1, AbstractVariant o2) {
-            return CompareUtils.compare(AudioCodec.getSortId(o1), AudioCodec.getSortId(o2));
+            return CompareUtils.compareInt(AudioCodec.getSortId(o1), AudioCodec.getSortId(o2));
         }
     },
     CONTAINER {
@@ -65,7 +65,7 @@ public enum QualitySortIdentifier implements LabelInterface {
         }
 
         public int compare(AbstractVariant o1, AbstractVariant o2) {
-            return CompareUtils.compare(FileContainer.getSortId(o1), FileContainer.getSortId(o2));
+            return CompareUtils.compareInt(FileContainer.getSortId(o1), FileContainer.getSortId(o2));
         }
     },
     SEGMENT_STREAM {
@@ -77,7 +77,7 @@ public enum QualitySortIdentifier implements LabelInterface {
         public int compare(AbstractVariant o1, AbstractVariant o2) {
             boolean b1 = o1.getVariantInfo() != null && o1.getVariantInfo().hasDefaultSegmentsStream();
             boolean b2 = o2.getVariantInfo() != null && o2.getVariantInfo().hasDefaultSegmentsStream();
-            return CompareUtils.compare(b2, b1);
+            return CompareUtils.compareBoolean(b2, b1);
         }
     },
     DEMUX_AUDIO {
@@ -89,7 +89,7 @@ public enum QualitySortIdentifier implements LabelInterface {
         public int compare(AbstractVariant o1, AbstractVariant o2) {
             boolean b1 = o1 instanceof AudioVariant && o1.getBaseVariant().getiTagAudio() == null;
             boolean b2 = o2 instanceof AudioVariant && o2.getBaseVariant().getiTagAudio() == null;
-            return CompareUtils.compare(b2, b1);
+            return CompareUtils.compareBoolean(b2, b1);
         }
     };
     abstract public int compare(AbstractVariant o1, AbstractVariant o2);

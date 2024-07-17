@@ -30,13 +30,6 @@ import javax.swing.Icon;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-import jd.gui.swing.jdgui.views.settings.panels.urlordertable.UrlOrderTable;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
@@ -78,6 +71,13 @@ import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.translate.JdownloaderTranslation;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyRestartRequest;
+
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+import jd.gui.swing.jdgui.views.settings.panels.urlordertable.UrlOrderTable;
 
 public class GUISettings extends AbstractConfigPanel implements StateUpdateListener {
     private static final long                     serialVersionUID = 1L;
@@ -464,7 +464,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
         this.addHeader(_GUI.T.GUISettings_GUISettings_object_urls(), NewTheme.I().getIcon(IconKey.ICON_URL, 32));
         this.addDescription(_GUI.T.GUISettings_GUISettings_object_urls_description());
         UrlOrderContainer container = new UrlOrderContainer(new UrlOrderTable());
-        addPair("", null, container);
+        add(container);
         this.addHeader(_GUI.T.gui_config_menumanager_header(), new AbstractIcon(IconKey.ICON_MENU, 32));
         this.addDescription(_GUI.T.gui_config_menumanager_desc());
         this.addPair("", null, contextMenuManagerDownloadList);

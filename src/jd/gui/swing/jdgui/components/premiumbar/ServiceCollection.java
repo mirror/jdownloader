@@ -24,15 +24,15 @@ public abstract class ServiceCollection<T> extends ArrayList<T> implements Compa
 
     @Override
     public int compareTo(ServiceCollection<?> o) {
-        int ret = CompareUtils.compare(o.isEnabled(), isEnabled());
+        int ret = CompareUtils.compareBoolean(o.isEnabled(), isEnabled());
         if (ret == 0) {
-            ret = CompareUtils.compare(o.isInUse(), isInUse());
+            ret = CompareUtils.compareBoolean(o.isInUse(), isInUse());
             if (ret == 0) {
-                ret = CompareUtils.compare(getInvalidCount(), o.getInvalidCount());
+                ret = CompareUtils.compareInt(getInvalidCount(), o.getInvalidCount());
                 if (ret == 0) {
                     ret = getName().compareTo(o.getName());
                 } else {
-                    ret = CompareUtils.compare(o.getLastActiveTimestamp(), getLastActiveTimestamp());
+                    ret = CompareUtils.compareLong(o.getLastActiveTimestamp(), getLastActiveTimestamp());
                 }
             }
         }
