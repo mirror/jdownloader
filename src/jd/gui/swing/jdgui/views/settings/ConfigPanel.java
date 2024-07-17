@@ -13,11 +13,15 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.views.settings;
 
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -27,6 +31,16 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.swing.MigPanel;
+import org.appwork.utils.ColorUtils;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.updatev2.RestartController;
+import org.jdownloader.updatev2.SmartRlyRestartRequest;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -38,31 +52,18 @@ import jd.gui.swing.Factory;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.shutdown.ShutdownController;
-import org.appwork.swing.MigPanel;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.updatev2.RestartController;
-import org.jdownloader.updatev2.SmartRlyRestartRequest;
-
 public abstract class ConfigPanel extends SwitchPanel {
-
     private static final long              serialVersionUID = 3383448498625377495L;
-
     public static final int                ICON_SIZE        = 32;
-
     private java.util.List<GUIConfigEntry> entries          = new ArrayList<GUIConfigEntry>();
-
     protected JPanel                       panel;
-
     private ConfigGroup                    currentGroup;
+    protected GUIConfigEntry               over;
+    private MouseMotionListener            ml;
 
     public class ScrollablePanel extends MigPanel implements Scrollable {
-
         public ScrollablePanel() {
             super("ins 0, wrap 2", "[fill,grow 10]10[fill,grow]", "[]");
-
         }
 
         public Dimension getPreferredScrollableViewportSize() {
@@ -84,16 +85,67 @@ public abstract class ConfigPanel extends SwitchPanel {
         public boolean getScrollableTracksViewportHeight() {
             return false;
         }
-
     }
 
     public ConfigPanel() {
         this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
         // this.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         setOpaque(false);
-        panel = new ScrollablePanel();
-
+        panel = new ScrollablePanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                GUIConfigEntry p = over;
+                if (p != null) {
+                    Graphics2D g2 = (Graphics2D) ((Graphics2D) g).create(0, p.getYMin(), getWidth(), p.getYMax() - p.getYMin());
+                    g2.setClip(null);
+                    g2.setColor(ColorUtils.getAlphaInstance(getForeground(), 15));
+                    g2.fillRect(0, 0, getWidth(), p.getYMax() - p.getYMin());
+                }
+                super.paintComponent(g);
+            }
+        };
         panel.setOpaque(false);
+        ml = new MouseMotionListener() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                boolean found = false;
+                Point point = e.getPoint();
+                point = SwingUtilities.convertPoint(e.getComponent(), point, panel);
+                for (GUIConfigEntry p : entries) {
+                    if (point.y >= p.getYMin() - 5 && point.y < p.getYMax()) {
+                        found = true;
+                        if (over != p) {
+                            GUIConfigEntry last = over;
+                            over = p;
+                            {
+                                int yMin = p.getYMin();
+                                if (last != null) {
+                                    yMin = Math.min(yMin, last.getYMin());
+                                }
+                                int yMax = p.getYMax();
+                                if (last != null) {
+                                    yMax = Math.max(yMax, last.getYMax());
+                                }
+                                repaint(0, yMin - 10, getWidth(), yMax - yMin + 20);
+                            }
+                        }
+                        break;
+                    }
+                }
+                if (!found) {
+                    if (over != null) {
+                        GUIConfigEntry last = over;
+                        over = null;
+                        repaint(0, last.getYMin(), getWidth(), last.getYMax() - last.getYMin());
+                    }
+                }
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+            }
+        };
+        panel.addMouseMotionListener(ml);
     }
 
     public void init() {
@@ -115,7 +167,7 @@ public abstract class ConfigPanel extends SwitchPanel {
 
     private void addConfigEntry(ConfigEntry entry) {
         GUIConfigEntry guiEntry = new GUIConfigEntry(entry);
-
+        guiEntry.addMouseMotionListener(ml);
         ConfigGroup group = showGroups() ? entry.getGroup() : null;
         if (currentGroup != group) {
             if (group != null) {
@@ -125,7 +177,6 @@ public abstract class ConfigPanel extends SwitchPanel {
             }
             currentGroup = group;
         }
-
         String gapLeft = (group == null) ? "" : "gapleft 37,";
         if (guiEntry.getDecoration() != null) {
             switch (entry.getType()) {
@@ -140,7 +191,6 @@ public abstract class ConfigPanel extends SwitchPanel {
                 break;
             }
         }
-
         if (guiEntry.getInput() != null) {
             switch (entry.getType()) {
             case ConfigContainer.TYPE_BUTTON:
@@ -154,7 +204,6 @@ public abstract class ConfigPanel extends SwitchPanel {
                 break;
             }
         }
-
         entries.add(guiEntry);
     }
 
@@ -241,7 +290,6 @@ public abstract class ConfigPanel extends SwitchPanel {
             }
             akt.save();
         }
-
         for (SubConfiguration subConfiguration : subs) {
             subConfiguration.save();
         }
@@ -254,5 +302,4 @@ public abstract class ConfigPanel extends SwitchPanel {
     public Icon getIcon() {
         return new AbstractIcon(IconKey.ICON_SETTINGS, 32);
     }
-
 }
