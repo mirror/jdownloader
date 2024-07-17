@@ -1721,14 +1721,26 @@ public class RapidGatorNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(">\\s*404 File not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (doExtendedOfflineCheck && !br.getURL().contains(this.getFID(link))) {
+        } else if (doExtendedOfflineCheck && !br.getURL().contains(this.getFID(link)) && !this.isBuyFile(br, link, null)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
     /** Returns true if this is a file which needs to be bought separately. */
     private boolean isBuyFile(final Browser br, final DownloadLink link, final Account account) {
-        return br.containsHTML("(?i)/wallet/BuyFile/id/");
+        if (StringUtils.containsIgnoreCase(br.getURL(), "/site/PleaseLogin")) {
+            /*
+             * 2024-07-17: Special links which display a long prompt when accessed without account and later on when logged in need to be
+             * bought separately.
+             */
+            return true;
+        } else if (StringUtils.containsIgnoreCase(br.getURL(), "/subscription/create")) {
+            return true;
+        } else if (br.containsHTML("(?i)/wallet/BuyFile/id/")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
