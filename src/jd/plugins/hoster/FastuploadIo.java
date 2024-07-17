@@ -106,7 +106,7 @@ public class FastuploadIo extends YetiShareCore {
     public String[] scanInfo(final DownloadLink link, final String[] fileInfo) {
         super.scanInfo(link, fileInfo);
         // 2024-06-19
-        final String betterfilesize = br.getRegex("Filesize</p>\\s*<h5[^>]*>([^<]+)</h5>").getMatch(0);
+        final String betterfilesize = br.getRegex("Filesize\\s*</p>\\s*<h5[^>]*>([^<]+)</h5>").getMatch(0);
         if (betterfilesize != null) {
             fileInfo[1] = betterfilesize;
         }

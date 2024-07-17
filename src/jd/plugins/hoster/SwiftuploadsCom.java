@@ -48,6 +48,8 @@ public class SwiftuploadsCom extends PluginForHost {
     public Browser createNewBrowserInstance() {
         final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
+        br.setCookie(getHost(), "adb", "0");
+        br.setCookie(getHost(), "gdpr_cookie", "1");
         return br;
     }
 

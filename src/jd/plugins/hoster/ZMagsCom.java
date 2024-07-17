@@ -84,7 +84,7 @@ public class ZMagsCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, baseErrortext);
             }
-        } else if (br.getHttpConnection().getResponseCode() == 404 | br.containsHTML("(>Publication not found<|>The publication you are trying to view does not exist or may have been deleted|Please check the URL and re\\-enter it in the address line of your browser)")) {
+        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>\\s*Publication not found\\s*<|>\\s*The publication you are trying to view does not exist or may have been deleted|Please check the URL and re\\-enter it in the address line of your browser)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"/>").getMatch(0);
@@ -101,7 +101,8 @@ public class ZMagsCom extends PluginForHost {
         if (title != null) {
             title = Encoding.htmlDecode(title.trim());
             link.setProperty(PROPERTY_TITLE, title);
-            link.setName(title + extDefault);
+            /* 2024-07-17: Set final filename here because website will respond with filename "pages.pdf" via Content-Disposition header. */
+            link.setFinalFileName(title + extDefault);
         }
         return AvailableStatus.TRUE;
     }
@@ -123,7 +124,7 @@ public class ZMagsCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override

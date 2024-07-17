@@ -164,6 +164,8 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "uploadbuzz.cc", "uploadbuzz.net", "uploadbuzz.org" });
         ret.add(new String[] { "pornxs.com", "videarn.com" }); // 2024-07-10
         ret.add(new String[] { "xueqiupan.com" }); // 2024-07-16
+        ret.add(new String[] { "upload.ac" });
+        ret.add(new String[] { "uploadcorner.com" });
         if (cache != null) {
             cache.put(cacheID, ret);
         }
