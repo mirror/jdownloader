@@ -108,7 +108,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final String contenturl = param.getCryptedUrl();
         final String identifier;
         if (new Regex(contenturl, PATTERN_SEARCH).patternFind()) {
-            return this.crawlSearchQueryURL(br, param);
+            return this.crawlBetaSearchAPI(null, contenturl);
         } else if ((identifier = getIdentifierFromURL(contenturl)) != null) {
             return this.crawlMetadataJsonV2(identifier, contenturl);
         } else if (isCompressedArchiveURL(contenturl)) {
@@ -1007,8 +1007,11 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
     }
 
-    private Map<String, Object> parseFilterMap(String url) {
+    private Map<String, Object> parseFilterMap(final String url) {
         final Map<String, Object> filter_map = new HashMap<String, Object>();
+        /* Some keys need to be renamed. */
+        final Map<String, String> replacements = new HashMap<String, String>();
+        replacements.put("lending", "lending___status");
         final String[] andValueStrings = new Regex(url, "and%5B%5D=([^&]+)").getColumn(0);
         if (andValueStrings != null && andValueStrings.length > 0) {
             /* Filter parameters selected by the user. On the website you can find them on the left side as checkboxes. */
@@ -1020,20 +1023,24 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 }
                 final String keyValue[] = new Regex(andValueString, "(.*?)\\s*:\\s*\"(.*?)\"").getRow(0);
                 if (keyValue != null) {
-                    Map<String, Object> valueMap = (Map<String, Object>) filter_map.get(keyValue[0]);
+                    String key = keyValue[0];
+                    key = replacements.getOrDefault(key, key);
+                    Map<String, Object> valueMap = (Map<String, Object>) filter_map.get(key);
                     if (valueMap == null) {
                         valueMap = new HashMap<String, Object>();
-                        filter_map.put(keyValue[0], valueMap);
+                        filter_map.put(key, valueMap);
                     }
                     valueMap.put(keyValue[1], "inc");
                     continue;
                 }
                 final String range[] = new Regex(andValueString, "(.*?)\\s*:\\s*\\[\\s*(\\d+)(?:\\+\\s*)?TO\\s*(?:\\+\\s*)?(\\d+)\\s*\\]").getRow(0);
                 if (range != null) {
-                    Map<String, Object> valueMap = (Map<String, Object>) filter_map.get(range[0]);
+                    String key = range[0];
+                    key = replacements.getOrDefault(key, key);
+                    Map<String, Object> valueMap = (Map<String, Object>) filter_map.get(key);
                     if (valueMap == null) {
                         valueMap = new HashMap<String, Object>();
-                        filter_map.put(range[0], valueMap);
+                        filter_map.put(key, valueMap);
                     }
                     valueMap.put(range[1], "gte");
                     valueMap.put(range[2], "lte");
@@ -1051,10 +1058,12 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     continue;
                 }
                 String keyValue[] = new Regex(notValueString, "(.*?)\\s*:\\s*\"(.*?)\"").getRow(0);
-                Map<String, Object> valueMap = (Map<String, Object>) filter_map.get(keyValue[0]);
+                String key = keyValue[0];
+                key = replacements.getOrDefault(key, key);
+                Map<String, Object> valueMap = (Map<String, Object>) filter_map.get(key);
                 if (valueMap == null) {
                     valueMap = new HashMap<String, Object>();
-                    filter_map.put(keyValue[0], valueMap);
+                    filter_map.put(key, valueMap);
                 }
                 valueMap.put(keyValue[1], "exc");
             }
@@ -1071,7 +1080,20 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* Curate given parameter. */
             username += "@";
         }
+        return crawlBetaSearchAPI(username, sourceurl);
+    }
+
+    /** Crawls items using the archive.org "BETA Search API" which, funnily enough, they are also using in production on their website. */
+    private ArrayList<DownloadLink> crawlBetaSearchAPI(final String identifier, final String sourceurl) throws Exception {
+        if (StringUtils.isEmpty(sourceurl)) {
+            throw new IllegalArgumentException();
+        }
+        final boolean isUserProfile = identifier != null && identifier.startsWith("@");
         final UrlQuery sourceurlquery = UrlQuery.parse(sourceurl);
+        String userSearchQuery = sourceurlquery.get("query");
+        if (userSearchQuery == null) {
+            userSearchQuery = "";
+        }
         final String startPageStr = sourceurlquery.get("page");
         /* Allow user to define custom start-page in given URL. */
         final int startPage;
@@ -1084,24 +1106,27 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
         logger.info("Starting from page " + startPage);
         final int maxItemsPerPage = 100;
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final UrlQuery query = new UrlQuery();
-        query.add("user_query", "");
-        query.add("page_type", "account_details");
-        query.add("page_target", URLEncode.encodeURIComponent(username));
-        query.add("page_elements", "%5B%22uploads%22%5D");
+        query.add("user_query", userSearchQuery);
+        if (isUserProfile) {
+            query.add("page_type", "account_details");
+            query.add("page_target", URLEncode.encodeURIComponent(identifier));
+            query.add("page_elements", "%5B%22uploads%22%5D");
+        }
         query.add("hits_per_page", Integer.toString(maxItemsPerPage));
         final Map<String, Object> filter_map = parseFilterMap(sourceurl);
         if (!filter_map.isEmpty()) {
             final String json = new SimpleMapper().setPrettyPrintEnabled(false).objectToString(filter_map);
             query.add("filter_map", URLEncode.encodeURIComponent(json));
         }
-        query.add("sort", "publicdate%3Adesc");
+        /* Not needed. If not given, server-side decides how results are sorted. */
+        // query.add("sort", "publicdate%3Adesc");
         query.add("aggregations", "false");
-        if (sourceurl != null) {
-            /* Not important */
-            query.add("client_url", URLEncode.encodeURIComponent(sourceurl));
-        }
+        /* Not important */
+        // query.add("uid", "NOT_NEEDED");
+        query.add("client_url", URLEncode.encodeURIComponent(sourceurl));
+        // query.add("client_url", sourceurl);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Browser brc = br.cloneBrowser();
         brc.setAllowedResponseCodes(400);
         int page = startPage;
@@ -1115,27 +1140,32 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 if (ret.size() > 0) {
                     logger.info("Stopping because: Surprisingly got http response 400 | Possibly missing items: " + (totalNumberofItems - ret.size()));
                     if (ret.size() < totalNumberofItems) {
-                        displayBubbleNotification(username + "| Profile crawler stopped early", "Found items: " + ret.size() + "/" + totalNumberofItems);
+                        displayBubbleNotification(identifier + "| Beta search crawler stopped early", "Found items: " + ret.size() + "/" + totalNumberofItems);
                     }
                     break;
                 } else {
                     /* This happened on the first page -> Assume that this profile is invalid/offline */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid profile name");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid search query");
                 }
             }
             final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
-            final Map<String, Object> hitsmap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "response/body/page_elements/uploads/hits");
+            final Map<String, Object> hitsmap;
+            if (isUserProfile) {
+                hitsmap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "response/body/page_elements/uploads/hits");
+            } else {
+                hitsmap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "response/body/hits");
+            }
             totalNumberofItems = ((Number) hitsmap.get("total")).intValue();
             final List<Map<String, Object>> hits = (List<Map<String, Object>>) hitsmap.get("hits");
             int numberofNewItemsThisPage = 0;
             for (final Map<String, Object> hit : hits) {
                 final Map<String, Object> fields = (Map<String, Object>) hit.get("fields");
-                final String identifier = fields.get("identifier").toString();
-                if (!dupes.add(identifier)) {
+                final String this_identifier = fields.get("identifier").toString();
+                if (!dupes.add(this_identifier)) {
                     continue;
                 }
                 numberofNewItemsThisPage++;
-                final DownloadLink result = this.createDownloadlink("https://" + this.getHost() + "/download/" + identifier);
+                final DownloadLink result = this.createDownloadlink("https://" + this.getHost() + "/download/" + this_identifier);
                 ret.add(result);
                 /* Distribute results live as pagination can run for a very very long time. */
                 /* The following statement makes debugging easier. */
@@ -1144,7 +1174,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 }
             }
             logger.info("Crawled page " + page + " | Crawled new items this page: " + numberofNewItemsThisPage + " | Crawled items so far: " + ret.size() + "/" + totalNumberofItems);
-            if (this.isAbort()) {
+            if (totalNumberofItems == 0) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Search query without any results");
+            } else if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
             } else if (hits.size() < maxItemsPerPage) {

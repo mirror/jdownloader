@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -73,18 +75,20 @@ public class AkwamCcCrawler extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final boolean isSingleRedirectLink = br.getURL().matches("^https?://[^/]+/link/\\d+$");
+        final boolean isSingleRedirectLink = br.getURL().matches("(?i)^https?://[^/]+/link/\\d+$");
         final FilePackage fp = FilePackage.getInstance();
-        String title = new Regex(html, "<title>(.*)</title>").getMatch(0);
+        String title = new Regex(html, "<title>([^<]+)</title>").getMatch(0);
         if (title != null) {
             title = title.replace(" | اكوام", "");
             fp.setName(title);
         }
         String[][] links;
-        final boolean isSeries = (html.contains("series-episodes") || html.contains("show-episodes")) && !br.getURL().matches("https?://[^/]+/movie/.+");
+        final boolean isSeries = (StringUtils.containsIgnoreCase(html, "series-episodes") || StringUtils.containsIgnoreCase(html, "show-episodes")) && !br.getURL().matches("(?i)https?://[^/]+/movie/.+");
         if (isSeries) {
             final String bulkHtml = new Regex(html, "(?i)(id=\"(?:series|show)-episodes\"[\\s\\S]+widget-4)").getMatch(0);
             links = new Regex(bulkHtml, "<a href=\"(https://" + Pattern.quote(br.getHost()) + "/[^\"]+)\"").getMatches();
+            /* E.g. episodes of a series -> Allow subsequent crawled items to be auto merged into this one. */
+            fp.setAllowInheritance(true);
         } else {
             links = new Regex(html, "<a href=\"([^\"]+)\"[^>]+(?:link-download|download-link)").getMatches();
         }
