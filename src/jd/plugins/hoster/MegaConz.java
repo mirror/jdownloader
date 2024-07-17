@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -48,7 +49,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.JDK8BufferHelper;
 import org.appwork.utils.JVMVersion;
@@ -73,6 +73,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.components.config.MegaConzConfig;
+import org.jdownloader.plugins.components.config.MegaConzConfig.InvalidOrMissingDecryptionKeyAction;
 import org.jdownloader.plugins.components.config.MegaConzConfig.LimitMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -106,16 +107,11 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashResult;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/.*?(#!?N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21|\\?)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((=###n=|!)[a-zA-Z0-9]+)?|mega:/*#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9_,\\-%]{16,}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MegaConz extends PluginForHost {
     private final String       USED_PLUGIN = "usedPlugin";
     private final String       encrypted   = ".encrypted";
     public final static String MAIN_DOMAIN = "mega.nz";
-
-    @Override
-    public String[] siteSupportedNames() {
-        return new String[] { MAIN_DOMAIN, "mega.co.nz", "mega.io", "mega" };
-    }
 
     public MegaConz(PluginWrapper wrapper) {
         super(wrapper);
@@ -125,6 +121,321 @@ public class MegaConz extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "https://mega.co.nz/#terms";
+    }
+
+    public static List<String[]> getPluginDomains() {
+        return jd.plugins.decrypter.MegaConz.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        // return buildSupportedNames(getPluginDomains());
+        return new String[] { MAIN_DOMAIN, "mega.co.nz", "mega.io", "mega" };
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static final Pattern PATTERN_FILE_FOLDER_ID = Pattern.compile("[a-zA-Z0-9]{8}");
+    public static final Pattern PATTERN_ENCRYPTION_KEY = Pattern.compile("[a-zA-Z0-9_\\-\\+]{43}=*");
+    public static final Pattern PATTERN_FILE_OLD       = Pattern.compile("#!([A-Za-z0-9]+)(!([a-zA-Z0-9_-]+))?");
+    public static final Pattern PATTERN_FILE_NEW       = Pattern.compile("(embed|file)/([a-zA-Z0-9]+)(#([a-zA-Z0-9_-]+))?", Pattern.CASE_INSENSITIVE);
+    public static final Pattern PATTERN_FILE_IN_FOLDER = Pattern.compile("folder/([a-zA-Z0-9]+)#([a-zA-Z0-9_-]+)/file/([a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
+
+    public static boolean isValidDecryptionKey(final String str) {
+        if (str != null && new Regex(str, PATTERN_ENCRYPTION_KEY).patternFind()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            String regex = jd.plugins.decrypter.MegaConz.getUrlPatternBase(domains);
+            /* Add domain-unspecific patterns */
+            regex += "(" + PATTERN_FILE_OLD.pattern() + "|" + PATTERN_FILE_NEW.pattern() + ")";
+            ret.add(regex);
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    private static String getDecodedPluginPatternMatcher(final String url) {
+        return url.replace("%21", "!");
+    }
+
+    private static String getPublicFileID(final String url) {
+        String fid = new Regex(url, PATTERN_FILE_NEW).getMatch(1);
+        if (fid == null) {
+            fid = new Regex(url, PATTERN_FILE_OLD).getMatch(0);
+            if (fid == null) {
+                fid = getNodeFileID(url);
+            }
+        }
+        return fid;
+    }
+
+    private static String getPublicFileKey(final DownloadLink link) {
+        String key = getPublicFileKey(getDecodedPluginPatternMatcher(link.getPluginPatternMatcher()));
+        boolean allowPreferDownloadPasswordAsKey = true;
+        if (key == null) {
+            // TODO: Check this
+            /* Legacy compatibility, see getNodeFileKey */
+            key = getNodeFileKey(link);
+            // allowPreferDownloadPasswordAsKey = false;
+        }
+        // TODO: Maybe don't allow key from download-password if file is part of folder node because user cannot know the key in this case.
+        if (allowPreferDownloadPasswordAsKey && isValidDecryptionKey(link.getDownloadPassword())) {
+            // logger.fine("Prefer decryption key from download password over key from URL: " + keyString);
+            key = link.getDownloadPassword();
+        }
+        return key;
+    }
+
+    private static String getPublicFileKey(final String url) {
+        String key = new Regex(url, PATTERN_FILE_NEW).getMatch(3);
+        if (key == null) {
+            key = new Regex(url, PATTERN_FILE_OLD).getMatch(2);
+        }
+        return key;
+    }
+
+    private static String getNodeFileID(final DownloadLink link) {
+        // TODO: Remove this
+        final String url = getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
+        return getNodeFileID(url);
+    }
+
+    private static String getNodeFileID(final String url) {
+        // TODO: Remove this
+        String nodeFileID = new Regex(url, PATTERN_FILE_IN_FOLDER).getMatch(2);
+        if (nodeFileID == null) {
+            /* Legacy compatibility */
+            nodeFileID = new Regex(url, "#!?N(!|%21|\\?)([a-zA-Z0-9]+)(!|%21)").getMatch(1);
+        }
+        return nodeFileID;
+    }
+
+    private static String getParentNodeID(final DownloadLink link) {
+        String ret = link.getStringProperty("pn", null);
+        if (ret == null) {
+            // TODO: Remove this because for links matching this regex, the above "pn" property should always be available.
+            /* Legacy compatibility to old internal links */
+            ret = new Regex(link.getPluginPatternMatcher(), "###n=([a-zA-Z0-9]+)$").getMatch(0);
+        }
+        return ret;
+    }
+
+    @Deprecated
+    private static String getNodeFileKey(final DownloadLink link) {
+        // TODO: Remove this
+        String ret = link.getStringProperty("fk");
+        if (ret == null) {
+            /* Backward compatibility */
+            ret = new Regex(link.getPluginPatternMatcher(), "#!?N(!|%21|\\?)[a-zA-Z0-9]+(!|%21)([a-zA-Z0-9_,\\-%]+)").getMatch(2);
+            if (ret != null && ret.contains("%20")) {
+                ret = ret.replace("%20", "");
+            }
+        }
+        return ret;
+    }
+
+    private static String getFolderMasterKey(final DownloadLink link) {
+        final String ret = jd.plugins.decrypter.MegaConz.getFolderMasterKey(link.getContainerUrl());
+        if (ret != null) {
+            return ret;
+        } else {
+            return link.getStringProperty("mk");
+        }
+    }
+
+    private String getFallbackFilename(final DownloadLink link) {
+        final String decodedPluginPatternMatcher = getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
+        String ret = getPublicFileID(decodedPluginPatternMatcher);
+        final String type = new Regex(decodedPluginPatternMatcher, PATTERN_FILE_NEW).getMatch(0);
+        if (StringUtils.equalsIgnoreCase(type, "embed")) {
+            ret += ".mp4";
+        }
+        return ret;
+    }
+
+    private String getFallbackFilenameForErrorMissingDecryptionKey(final DownloadLink link) {
+        final String fallbackFilename = getFallbackFilename(link);
+        if (fallbackFilename != null) {
+            return "INVALID_OR_MISSING_DECRYPTION_KEY_" + fallbackFilename;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        setBrowserExclusive();
+        final String fallbackFilenameForErrorMissingDecryptionKey = this.getFallbackFilenameForErrorMissingDecryptionKey(link);
+        if (!link.isNameSet() || (fallbackFilenameForErrorMissingDecryptionKey != null && fallbackFilenameForErrorMissingDecryptionKey.equals(link.getName()))) {
+            link.setName(getFallbackFilename(link));
+        }
+        final String decodedPluginPatternMatcher = getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
+        final String fileID = getPublicFileID(decodedPluginPatternMatcher);
+        String fileKey = getPublicFileKey(link);
+        final String nodeFileKey = getNodeFileKey(link);
+        if (nodeFileKey != null && isPublic(link)) {
+            // TODO: Check this
+            // update existing links
+            link.setProperty("public", false);
+        }
+        final InvalidOrMissingDecryptionKeyAction action = PluginJsonConfig.get(MegaConzConfig.class).getInvalidOrMissingDecryptionKeyAction();
+        if (!jd.plugins.decrypter.MegaConz.isValidFileFolderNodeID(fileID)) {
+            /* Broken item or invalid URL -> A file with this ID cannot exist! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid fileID");
+        }
+        if (!isValidDecryptionKey(fileKey) && action != InvalidOrMissingDecryptionKeyAction.ASK) {
+            errorInvalidOrMissingDecryptionKey(link);
+            /* This code should never be reached */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final boolean isDownload = Thread.currentThread() instanceof SingleDownloadController;
+        Map<String, Object> response = null;
+        Account account = null;
+        try {
+            final String parentNode = getParentNodeID(link);
+            if (isDownload) {
+                account = ((SingleDownloadController) (Thread.currentThread())).getAccount();
+                if (account != null && !getHost().equals(account.getHosterByPlugin())) {
+                    account = null;
+                }
+            }
+            if (account != null) {
+                response = apiRequest(account, getSID(account), parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { isPublic(link) ? "p" : "n", fileID });
+            } else {
+                response = apiRequest(null, null, parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { isPublic(link) ? "p" : "n", fileID });
+            }
+        } catch (final IOException e) {
+            logger.log(e);
+            checkServerBusy(br.getHttpConnection(), e);
+            throw e;
+        }
+        if (response == null) {
+            // https://github.com/meganz/sdk/blob/master/include/mega/types.h
+            final String error = getError(br);
+            if ("-2".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid URL format");
+            } else if ("-6".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Too many requests for this resource");
+            } else if ("-7".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Resource access out of range");
+            } else if ("-8".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Resource expired");
+            } else if ("-9".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Resource does not exist");
+            } else if ("-11".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Access denied");
+            } else if ("-16".equals(error)) {
+                // file offline, maybe preview is still available
+                if (getPreviewURL(link) != null) {
+                    try {
+                        if (link.getInternalTmpFilename() == null) {
+                            link.setInternalTmpFilenameAppend(encrypted);
+                        }
+                    } catch (final Throwable e) {
+                    }
+                    if (link.getFinalFileName() != null) {
+                        link.setProperty("fallbackFilename", link.getFinalFileName());
+                    } else {
+                        link.setFinalFileName(link.getStringProperty("fallbackFilename", null));
+                    }
+                    return AvailableStatus.TRUE;
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Resource administratively blocked");
+                }
+            }
+            checkServerBusy(br.getHttpConnection(), null);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled error code: " + error);
+        }
+        final String fileSize = valueOf(response.get("s"));
+        if (fileSize == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        link.setDownloadSize(Long.parseLong(fileSize));
+        link.setVerifiedFileSize(Long.parseLong(fileSize));
+        final String at = valueOf(response.get("at"));
+        if (at == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        boolean askedUserForDecryptKey = false;
+        Map<String, Object> fileInfo = null;
+        int attempt = 0;
+        boolean keySuccess = false;
+        while (attempt <= 3 && !keySuccess) {
+            logger.info("Decryption handling attempt: " + attempt + " | key: " + fileKey);
+            try {
+                if (!isValidDecryptionKey(fileKey) || attempt > 0) {
+                    if (action != InvalidOrMissingDecryptionKeyAction.ASK) {
+                        logger.info("User doesn't want to be asked for decryption key");
+                        break;
+                    } else if (!isDownload) {
+                        /* Do not ask user for decryption key during availablecheck */
+                        return AvailableStatus.TRUE;
+                    }
+                    fileKey = getUserInput("Decryption key?", link);
+                    askedUserForDecryptKey = true;
+                }
+                fileInfo = decrypt(at, fileKey);
+                keySuccess = true;
+                break;
+            } catch (final InvalidKeyException e) {
+                // TODO: Properly detect wrong key inside URL, then ask user
+                /* Invalid key */
+                logger.info("Invalid decryption key: " + fileKey);
+                link.setDownloadPassword(null);
+                attempt++;
+                continue;
+            }
+        }
+        if (!keySuccess) {
+            if (askedUserForDecryptKey || StringUtils.equals(fileKey, link.getDownloadPassword())) {
+                /*
+                 * User has entered wrong key or key from URL is wrong while key that is set as download password is also wrong (theoretical
+                 * rare edge case).
+                 */
+                link.setDownloadPassword(null);
+            }
+            errorInvalidOrMissingDecryptionKey(link);
+            /* This code should never be reached */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (askedUserForDecryptKey) {
+            /* Key was entered by user -> Save valid key to re-use it later */
+            link.setDownloadPassword(fileKey);
+        }
+        final String fileName = valueOf(fileInfo.get("n"));
+        if (fileName == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        link.setFinalFileName(fileName.replaceAll("\\\\", ""));
+        try {
+            if (link.getInternalTmpFilename() == null) {
+                link.setInternalTmpFilenameAppend(encrypted);
+            }
+        } catch (final Throwable e) {
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    private void errorInvalidOrMissingDecryptionKey(final DownloadLink link) throws PluginException {
+        if (link.getFinalFileName() == null) {
+            final String fallbackFilename = this.getFallbackFilenameForErrorMissingDecryptionKey(link);
+            if (fallbackFilename != null) {
+                link.setName(fallbackFilename);
+            }
+        }
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid or missing decryption key");
     }
 
     private Number getNumber(Map<String, Object> map, final String key, final Number defaultValue) {
@@ -710,40 +1021,40 @@ public class MegaConz extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() == null) {
+            return super.getLinkID(link);
+        }
+        final String pluginPatternMatcherDecoded = getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
+        final String fileID = getPublicFileID(pluginPatternMatcherDecoded);
+        if (fileID != null) {
+            return getHost() + "F" + fileID;
+        } else {
+            final String nodeID = getNodeFileID(link);
+            if (nodeID != null) {
+                link.setProperty("public", false);
+                link.setLinkID(getHost() + "N" + nodeID);
+            }
+        }
+        return super.getLinkID(link);
+    }
+
+    @Override
     public void correctDownloadLink(final DownloadLink link) {
+        // TODO: Remove this
         String url = link.getPluginPatternMatcher();
-        final String linkID = link.getSetLinkID();
         if (url.contains(".nz/$!")) {
             url = url.replaceFirst("nz/\\$!", "nz/#!");
             link.setUrlDownload(url);
         }
-        final String fileID = getPublicFileID(link);
-        if (linkID == null) {
-            if (fileID != null) {
-                link.setLinkID(getHost() + "F" + fileID);
-            } else {
-                final String nodeID = getNodeFileID(link);
-                if (nodeID != null) {
-                    link.setProperty("public", false);
-                    link.setLinkID(getHost() + "N" + nodeID);
-                }
-            }
-        }
+        final String pluginPatternMatcherDecoded = getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
         if (StringUtils.startsWithCaseInsensitive(url, "chrome:") || StringUtils.startsWithCaseInsensitive(url, "mega:")) {
-            final String keyString = getPublicFileKey(link);
-            if (fileID != null && keyString != null) {
-                link.setUrlDownload("https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#!" + fileID + "!" + keyString);
-            }
+            // final String keyString = getPublicFileKey(link);
+            // if (fileID != null && keyString != null) {
+            // link.setUrlDownload("https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#!" + fileID + "!" + keyString);
+            // }
         } else {
             link.setUrlDownload(url.replaceAll("%21", "!").replaceAll("%20", ""));
-        }
-        String parentNode = link.getStringProperty("pn", null);
-        if (parentNode == null) {
-            parentNode = getParentNodeID(link);
-            if (parentNode != null) {
-                link.setProperty("public", false);
-                link.setProperty("pn", parentNode);
-            }
         }
     }
 
@@ -787,152 +1098,6 @@ public class MegaConz extends PluginForHost {
             }
         }
         return null;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        setBrowserExclusive();
-        String fileID = getPublicFileID(link);
-        String keyString = getPublicFileKey(link);
-        if (fileID == null) {
-            fileID = getNodeFileID(link);
-            keyString = getNodeFileKey(link);
-            if (isPublic(link)) {
-                // update existing links
-                link.setProperty("public", false);
-            }
-        }
-        if (!jd.plugins.decrypter.MegaConz.isValidFileFolderNodeID(fileID) || keyString == null) {
-            /* Broken item or invalid URL -> File can only be offline. */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        // if (!jd.plugins.decrypter.MegaConz.isValidDecryptionKey(keyString)) {
-        // keyString = link.getDownloadPassword();
-        // }
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            if (jd.plugins.decrypter.MegaConz.isValidDecryptionKey(link.getDownloadPassword())) {
-                logger.info("Prefer decryption key from download password over key from URL: " + keyString);
-                keyString = link.getDownloadPassword();
-            }
-        }
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            final boolean treatInvalidOrMissingKeyAsOffline = true;
-            if (!jd.plugins.decrypter.MegaConz.isValidDecryptionKey(keyString) && treatInvalidOrMissingKeyAsOffline) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid or missing decryption key");
-            }
-        }
-        final boolean isDownload = Thread.currentThread() instanceof SingleDownloadController;
-        Map<String, Object> response = null;
-        Account account = null;
-        final String parentNode;
-        try {
-            parentNode = getParentNodeID(link);
-            if (isDownload) {
-                account = ((SingleDownloadController) (Thread.currentThread())).getAccount();
-                if (account != null && !getHost().equals(account.getHosterByPlugin())) {
-                    account = null;
-                }
-            }
-            if (account != null) {
-                response = apiRequest(account, getSID(account), parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { isPublic(link) ? "p" : "n", fileID });
-            } else {
-                response = apiRequest(null, null, parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { isPublic(link) ? "p" : "n", fileID });
-            }
-        } catch (IOException e) {
-            logger.log(e);
-            checkServerBusy(br.getHttpConnection(), e);
-            throw e;
-        }
-        if (response == null) {
-            // https://github.com/meganz/sdk/blob/master/include/mega/types.h
-            final String error = getError(br);
-            if ("-2".equals(error)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid URL format");
-            } else if ("-6".equals(error)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Too many requests for this resource");
-            } else if ("-7".equals(error)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Resource access out of range");
-            } else if ("-8".equals(error)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Resource expired");
-            } else if ("-9".equals(error)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Resource does not exist");
-            } else if ("-11".equals(error)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Access denied");
-            } else if ("-16".equals(error)) {
-                // file offline, maybe preview is still available
-                if (getPreviewURL(link) != null) {
-                    try {
-                        if (link.getInternalTmpFilename() == null) {
-                            link.setInternalTmpFilenameAppend(encrypted);
-                        }
-                    } catch (final Throwable e) {
-                    }
-                    if (link.getFinalFileName() != null) {
-                        link.setProperty("fallbackFilename", link.getFinalFileName());
-                    } else {
-                        link.setFinalFileName(link.getStringProperty("fallbackFilename", null));
-                    }
-                    return AvailableStatus.TRUE;
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Resource administratively blocked");
-                }
-            }
-            checkServerBusy(br.getHttpConnection(), null);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled error code: " + error);
-        }
-        final String fileSize = valueOf(response.get("s"));
-        if (fileSize == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        link.setDownloadSize(Long.parseLong(fileSize));
-        link.setVerifiedFileSize(Long.parseLong(fileSize));
-        final String at = valueOf(response.get("at"));
-        if (at == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        boolean askedUserForDecryptKey = false;
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            if (!jd.plugins.decrypter.MegaConz.isValidDecryptionKey(keyString)) {
-                final boolean allowAskForKey = true;
-                if (isDownload && allowAskForKey) {
-                    /* Ask user to enter decryption key */
-                    keyString = getUserInput("Decryption key", link);
-                    if (!jd.plugins.decrypter.MegaConz.isValidDecryptionKey(keyString)) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid decryption key");
-                    }
-                    askedUserForDecryptKey = true;
-                } else {
-                    /* Do not ask user for decryption key during availablecheck */
-                    return AvailableStatus.UNCHECKABLE;
-                }
-            }
-        }
-        final Map<String, Object> fileInfo;
-        try {
-            fileInfo = decrypt(at, keyString);
-            if (askedUserForDecryptKey) {
-                link.setDownloadPassword(keyString);
-            }
-        } catch (final StringIndexOutOfBoundsException e) {
-            /* Invalid key */
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                link.setDownloadPassword(null);
-            }
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid decryption key", e);
-            // throw new PluginException(LinkStatus.ERROR_FATAL, "Invalid decryption key", e);
-        }
-        final String fileName = valueOf(fileInfo.get("n"));
-        if (fileName == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        link.setFinalFileName(fileName.replaceAll("\\\\", ""));
-        try {
-            if (link.getInternalTmpFilename() == null) {
-                link.setInternalTmpFilenameAppend(encrypted);
-            }
-        } catch (final Throwable e) {
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -980,12 +1145,9 @@ public class MegaConz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l);
         }
         final String sid = getSID(account);
-        String fileID = getPublicFileID(link);
-        String keyString = getPublicFileKey(link);
-        if (fileID == null) {
-            fileID = getNodeFileID(link);
-            keyString = getNodeFileKey(link);
-        }
+        final String pluginPatternMatcherDecoded = this.getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
+        final String fileID = getPublicFileID(pluginPatternMatcherDecoded);
+        final String keyString = getPublicFileKey(link);
         // check finished encrypted file. if the decryption interrupted - for whatever reason
         final String path = link.getFileOutput();
         final File src = new File(path);
@@ -1228,12 +1390,14 @@ public class MegaConz extends PluginForHost {
         }
     }
 
-    private Map<String, Object> decrypt(String input, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, PluginException {
+    private Map<String, Object> decrypt(final String input, final String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, PluginException {
+        if (!isValidDecryptionKey(keyString)) {
+            throw new InvalidKeyException();
+        }
         byte[] b64Dec = b64decode(keyString);
         int[] intKey = aByte_to_aInt(b64Dec);
         if (intKey.length < 8) {
-            /* key is not given in link */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new InvalidKeyException();
         }
         byte[] key = aInt_to_aByte(intKey[0] ^ intKey[4], intKey[1] ^ intKey[5], intKey[2] ^ intKey[6], intKey[3] ^ intKey[7]);
         byte[] iv = aInt_to_aByte(0, 0, 0, 0);
@@ -1565,46 +1729,6 @@ public class MegaConz extends PluginForHost {
         }
     }
 
-    private static String getPublicFileID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "#(!|%21)([a-zA-Z0-9]+)(!|%21)").getMatch(1);
-    }
-
-    private static String getPublicFileKey(DownloadLink link) {
-        String ret = new Regex(link.getPluginPatternMatcher(), "#(!|%21)[a-zA-Z0-9]+(!|%21)([a-zA-Z0-9_,\\-%]+)").getMatch(2);
-        if (ret != null && ret.contains("%20")) {
-            ret = ret.replace("%20", "");
-        }
-        if (ret != null && ret.length() >= 43) {
-            // fileKey is 43 base64 chars
-            return ret.substring(0, 43);
-        } else {
-            return null;
-        }
-    }
-
-    private static String getNodeFileID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "#!?N(!|%21|\\?)([a-zA-Z0-9]+)(!|%21)").getMatch(1);
-    }
-
-    private static String getParentNodeID(final DownloadLink link) {
-        final String ret = new Regex(link.getPluginPatternMatcher(), "(=###n=|!|%21)([a-zA-Z0-9]+)$").getMatch(1);
-        final String publicFileKey = getPublicFileKey(link);
-        final String nodeFileKey = getNodeFileKey(link);
-        if (ret != null && !StringUtils.startsWithCaseInsensitive(ret, publicFileKey) && !StringUtils.startsWithCaseInsensitive(ret, nodeFileKey)) {
-            return ret;
-        } else {
-            return link.getStringProperty("pn", null);
-        }
-    }
-
-    private static String getNodeFileKey(DownloadLink link) {
-        String ret = new Regex(link.getDownloadURL(), "#!?N(!|%21|\\?)[a-zA-Z0-9]+(!|%21)([a-zA-Z0-9_,\\-%]+)").getMatch(2);
-        if (ret != null && ret.contains("%20")) {
-            ret = ret.replace("%20", "");
-        }
-        return ret;
-    }
-
     public static byte[] b64decode(String data) {
         data = data.replace(",", "");
         data += "==".substring((2 - data.length() * 3) & 3);
@@ -1667,30 +1791,27 @@ public class MegaConz extends PluginForHost {
     }
 
     @Override
-    public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
-        if (isPublic(downloadLink)) {
-            return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
+    public String buildExternalDownloadURL(final DownloadLink link, final PluginForHost buildForThisPlugin) {
+        if (isPublic(link)) {
+            return super.buildExternalDownloadURL(link, buildForThisPlugin);
         } else {
             if (StringUtils.equals(getHost(), buildForThisPlugin.getHost())) {
-                return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
+                return super.buildExternalDownloadURL(link, buildForThisPlugin);
             } else if (isMULTIHOST(buildForThisPlugin)) {
-                String fileID = getPublicFileID(downloadLink);
-                String keyString = getPublicFileKey(downloadLink);
-                if (fileID == null) {
-                    fileID = getNodeFileID(downloadLink);
-                    keyString = getNodeFileKey(downloadLink);
-                }
-                final String parentNodeID = getParentNodeID(downloadLink);
+                final String pluginPatternMatcherDecoded = getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
+                final String fileID = getPublicFileID(pluginPatternMatcherDecoded);
+                final String fileKey = getPublicFileKey(link);
+                final String parentNodeID = getParentNodeID(link);
                 if (StringUtils.equals("linksnappy.com", buildForThisPlugin.getHost())) {
                     // legacy special internal URL format
                     /* 2024-07-10: This format is still mandatory! */
-                    return "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#N!" + fileID + "!" + keyString + "!" + parentNodeID;
+                    return "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#N!" + fileID + "!" + fileKey + "!" + parentNodeID;
                 } else if (StringUtils.equals("alldebrid.com", buildForThisPlugin.getHost())) {
                     // legacy special internal URL format
                     /* 2024-07-10: This format is still mandatory! */
-                    return "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#!" + fileID + "!" + keyString + "=~~" + parentNodeID;
+                    return "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#!" + fileID + "!" + fileKey + "=~~" + parentNodeID;
                 } else {
-                    return buildFileLink(downloadLink);
+                    return buildFileLink(link);
                 }
             } else {
                 return null;
@@ -1704,21 +1825,37 @@ public class MegaConz extends PluginForHost {
     }
 
     /* 2024-07-10: This returns the URL for "single public file" or "file as part of a folder". */
-    public static String buildFileLink(DownloadLink downloadLink) {
-        if (isPublic(downloadLink)) {
-            return downloadLink.getPluginPatternMatcher();
-        } else {
-            String fileID = getPublicFileID(downloadLink);
-            if (fileID == null) {
-                fileID = getNodeFileID(downloadLink);
-            }
-            final String parentNodeID = getParentNodeID(downloadLink);
-            final String folderMasterKey = getFolderMasterKey(downloadLink);
-            if (parentNodeID != null && folderMasterKey != null) {
-                return "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/folder/" + parentNodeID + "#" + folderMasterKey + "/file/" + fileID;
-            }
+    public static String buildFileLink(final DownloadLink link) {
+        final String pluginPatternMatcherDecoded = getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
+        final String fileID = getPublicFileID(pluginPatternMatcherDecoded);
+        final String fileKey = getPublicFileKey(link);
+        final String parentNodeID = getParentNodeID(link);
+        final String folderMasterKey = getFolderMasterKey(link);
+        if (fileID != null && parentNodeID != null && folderMasterKey != null) {
+            return buildFileFolderLink(parentNodeID, folderMasterKey, "file", fileID);
+        } else if (fileID != null) {
+            return buildFileLink(fileID, fileKey);
         }
-        return null;
+        return link.getPluginPatternMatcher();
+    }
+
+    public static String buildFileLink(final String fileID, final String fileKey) {
+        String url = "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/file/" + fileID;
+        if (fileKey != null) {
+            url += "#" + fileKey;
+        }
+        return url;
+    }
+
+    public static String buildFileFolderLink(final String folderID, final String folderKey, final String subnodeType, final String subnodeID) {
+        String url = "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/folder/" + folderID;
+        if (folderKey != null) {
+            url += "#" + folderKey;
+        }
+        if (subnodeType != null) {
+            url += "/" + subnodeType + "/" + subnodeID;
+        }
+        return url;
     }
 
     @Override
@@ -1740,15 +1877,6 @@ public class MegaConz extends PluginForHost {
             }
         }
         return true;
-    }
-
-    private static String getFolderMasterKey(final DownloadLink link) {
-        final String ret = jd.plugins.decrypter.MegaConz.getFolderMasterKey(link.getContainerUrl());
-        if (ret != null) {
-            return ret;
-        } else {
-            return link.getStringProperty("fmk", null);
-        }
     }
 
     @Override
