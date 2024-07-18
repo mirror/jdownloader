@@ -146,7 +146,7 @@ public class CivitaiComCrawler extends PluginForDecrypt {
             /* 2024-07-17: use small limit/pagination size to avoid timeout issues */
             /**
              * 2024-07-18: About the "nsfw" parameter: According to their docs, without nsfw parameter, all items will be rerturned but that
-             * is wrong. </br>
+             * is wrong --> Wrong API docs or bug in API. </br>
              * Only with the nsfw parameter set to "X", all items will be returned.
              */
             final int maxItemsPerPage = 10;
