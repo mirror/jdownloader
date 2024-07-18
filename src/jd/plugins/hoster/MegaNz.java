@@ -391,6 +391,14 @@ public class MegaNz extends PluginForHost {
                         break;
                     } else if (!isDownload) {
                         /* Do not ask user for decryption key during availablecheck */
+                        logger.info("Decryption key is missing/invalid but we will not ask the user for it during availablecheck");
+                        final boolean setDummyFilenameWhenDecryptionKeyIsWrongOrMissing = true;
+                        if (link.getFinalFileName() == null && setDummyFilenameWhenDecryptionKeyIsWrongOrMissing) {
+                            final String tempName = getFallbackFilenameForErrorMissingDecryptionKey(link);
+                            if (tempName != null) {
+                                link.setName(tempName);
+                            }
+                        }
                         return AvailableStatus.TRUE;
                     }
                     fileKey = getUserInput("Decryption key?", link);
@@ -1813,26 +1821,20 @@ public class MegaNz extends PluginForHost {
 
     @Override
     public String buildExternalDownloadURL(final DownloadLink link, final PluginForHost buildForThisPlugin) {
-        if (isPublic(link)) {
-            return super.buildExternalDownloadURL(link, buildForThisPlugin);
-        } else {
-            if (StringUtils.equals(getHost(), buildForThisPlugin.getHost())) {
-                return super.buildExternalDownloadURL(link, buildForThisPlugin);
-            } else if (isMULTIHOST(buildForThisPlugin)) {
-                final String pluginPatternMatcherDecoded = getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
-                final String fileID = getPublicFileID(pluginPatternMatcherDecoded);
-                final String fileKey = getPublicFileKey(link);
-                final String parentNodeID = getParentNodeID(link);
-                if (StringUtils.equals("linksnappy.com", buildForThisPlugin.getHost())) {
-                    // legacy special internal URL format
-                    /* 2024-07-10: This format is still mandatory! */
-                    return "https://" + jd.plugins.hoster.MegaNz.MAIN_DOMAIN + "/#N!" + fileID + "!" + fileKey + "!" + parentNodeID;
-                } else {
-                    return buildFileLink(link);
-                }
+        if (isMULTIHOST(buildForThisPlugin)) {
+            final String pluginPatternMatcherDecoded = getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
+            final String fileID = getPublicFileID(pluginPatternMatcherDecoded);
+            final String fileKey = getPublicFileKey(link);
+            final String parentNodeID = getParentNodeID(link);
+            if (StringUtils.equals("linksnappy.com", buildForThisPlugin.getHost())) {
+                // legacy special internal URL format
+                /* 2024-07-10: This format is still mandatory! */
+                return "https://" + jd.plugins.hoster.MegaNz.MAIN_DOMAIN + "/#N!" + fileID + "!" + fileKey + "!" + parentNodeID;
             } else {
-                return null;
+                return buildFileLink(link);
             }
+        } else {
+            return super.buildExternalDownloadURL(link, buildForThisPlugin);
         }
     }
 
@@ -1878,8 +1880,12 @@ public class MegaNz extends PluginForHost {
 
     @Override
     public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
-        if (!getMegaNzConfig().isAllowMultihostUsage() && !plugin.getHost().equals(this.getHost())) {
+        final boolean isMultihoster = !plugin.getHost().equals(this.getHost());
+        if (isMultihoster && !getMegaNzConfig().isAllowMultihostUsage()) {
             /* Disabled by user */
+            return false;
+        } else if (isMultihoster && !isValidDecryptionKey(getPublicFileKey(link))) {
+            /* no decryption key available */
             return false;
         } else if (link != null) {
             if (plugin != null) {
