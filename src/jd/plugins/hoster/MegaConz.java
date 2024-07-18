@@ -290,7 +290,7 @@ public class MegaConz extends PluginForHost {
             // update existing links
             link.setProperty("public", false);
         }
-        final InvalidOrMissingDecryptionKeyAction action = PluginJsonConfig.get(MegaConzConfig.class).getInvalidOrMissingDecryptionKeyAction();
+        final InvalidOrMissingDecryptionKeyAction action = PluginJsonConfig.get(MegaConzConfig.class).getInvalidOrMissingDecryptionKeyAction().getAction();
         if (!jd.plugins.decrypter.MegaConz.isValidFileFolderNodeID(fileID)) {
             /* Broken item or invalid URL -> A file with this ID cannot exist! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid fileID");
