@@ -57,7 +57,8 @@ public class InternetShortcut extends PluginsC {
                         cls = retLinks;
                     }
                 } else {
-                    throw new IOException("No InternetShortcut:" + lc);
+                    // can also be user generated .url files and no [InternetShortcut]
+                    // throw new IOException("No InternetShortcut:" + lc);
                 }
             } finally {
                 fis.close();
