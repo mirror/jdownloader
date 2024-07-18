@@ -1854,7 +1854,7 @@ public class MegaNz extends PluginForHost {
 
     @Override
     public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
-        final boolean isMultihoster = !plugin.getHost().equals(this.getHost());
+        final boolean isMultihoster = isMULTIHOST(plugin);
         if (isMultihoster && !getMegaNzConfig().isAllowMultihostUsage()) {
             /* Disabled by user */
             return false;
