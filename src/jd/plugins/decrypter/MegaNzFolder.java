@@ -23,22 +23,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.config.MaxTimeSoftReference;
-import org.appwork.storage.config.MaxTimeSoftReferenceCleanupCallback;
-import org.appwork.storage.simplejson.JSonParser;
-import org.appwork.storage.simplejson.JSonValue;
-import org.appwork.storage.simplejson.MinimalMemoryMap;
-import org.appwork.utils.ByteArrayWrapper;
-import org.appwork.utils.IO;
-import org.appwork.utils.JVMVersion;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.MegaConzConfig;
-import org.jdownloader.plugins.components.config.MegaConzConfig.InvalidOrMissingDecryptionKeyAction;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -55,23 +39,39 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.MegaNz;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.MaxTimeSoftReference;
+import org.appwork.storage.config.MaxTimeSoftReferenceCleanupCallback;
+import org.appwork.storage.simplejson.JSonParser;
+import org.appwork.storage.simplejson.JSonValue;
+import org.appwork.storage.simplejson.MinimalMemoryMap;
+import org.appwork.utils.ByteArrayWrapper;
+import org.appwork.utils.IO;
+import org.appwork.utils.JVMVersion;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.MegaNzConfig.InvalidOrMissingDecryptionKeyAction;
+import org.jdownloader.plugins.components.config.MegaNzFolderConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class MegaConz extends PluginForDecrypt {
+@PluginDependencies(dependencies = { MegaNz.class })
+public class MegaNzFolder extends PluginForDecrypt {
     private static AtomicLong CS = new AtomicLong(System.currentTimeMillis());
 
-    public MegaConz(PluginWrapper wrapper) {
+    public MegaNzFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "mega.co.nz", "mega.nz" });
-        return ret;
+    private static List<String[]> getPluginDomains() {
+        return MegaNz.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -89,13 +89,12 @@ public class MegaConz extends PluginForDecrypt {
 
     public static final Pattern PATTERN_FILE_FOLDER_ID        = Pattern.compile("[a-zA-Z0-9]{8}");
     // TODO: Update pattern to match folder keys only (length of 22)
-    public static final Pattern PATTERN_FOLDER_ENCRYPTION_KEY = Pattern.compile("[a-zA-Z0-9_\\-\\+]{22}=*|[a-zA-Z0-9_\\-\\+]{43}=*");
+    public static final Pattern PATTERN_FOLDER_ENCRYPTION_KEY = Pattern.compile("[a-zA-Z0-9_\\-\\+]{22}={0,2}");
     public static final Pattern PATTERN_FOLDER_OLD            = Pattern.compile("#F!([a-zA-Z0-9]+)(!([a-zA-Z0-9_-]+))?(!([a-zA-Z0-9]+))?");
     public static final Pattern PATTERN_FOLDER_NEW            = Pattern.compile("folder/([a-zA-Z0-9]+)(#([a-zA-Z0-9_-]+))?(/(file|folder)/([a-zA-Z0-9]+))?", Pattern.CASE_INSENSITIVE);
 
     /**
-     * Returns ID of preferred subfolder or file. </br>
-     * Returns non-validated result!
+     * Returns ID of preferred subfolder or file. </br> Returns non-validated result!
      */
     private static String getPreferredNodeID(final String url) {
         String id = new Regex(url, PATTERN_FOLDER_NEW).getMatch(5);
@@ -134,6 +133,17 @@ public class MegaConz extends PluginForDecrypt {
 
     public static String getUrlPatternBase(final String[] domains) {
         return "(https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/|chrome://mega/content/secure\\.html|mega:/*)";
+    }
+
+    private Cipher cipher = null;
+
+    @Override
+    public void clean() {
+        try {
+            cipher = null;
+        } finally {
+            super.clean();
+        }
     }
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
@@ -206,12 +216,18 @@ public class MegaConz extends PluginForDecrypt {
     }
 
     @Override
+    public Class<? extends MegaNzFolderConfig> getConfigInterface() {
+        return MegaNzFolderConfig.class;
+    }
+
+    @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        cipher = Cipher.getInstance("AES/CBC/nopadding");
         final String contenturl = Encoding.htmlDecode(param.getCryptedUrl());
         final String folderID = getFolderID(contenturl);
         String folderMasterKey = getFolderMasterKey(contenturl);
         final String preferredNodeIDFromURL = getPreferredNodeID(contenturl);
-        final MegaConzConfig config = PluginJsonConfig.get(MegaConzConfig.class);
+        final MegaNzFolderConfig config = PluginJsonConfig.get(getConfigInterface());
         String preferredNodeType = null;
         final String preferredNodeID;
         if (isValidFileFolderNodeID(preferredNodeIDFromURL)) {
@@ -298,9 +314,9 @@ public class MegaConz extends PluginForDecrypt {
                         }
                     } else {
                         con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID
-                        /*
-                         * + "&domain=meganz
-                         */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
+                                /*
+                                 * + "&domain=meganz
+                                 */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
                         // ->
                         // !nocache,
                         // commands.cpp
@@ -457,22 +473,20 @@ public class MegaConz extends PluginForDecrypt {
                     boolean success = false;
                     int password_tries = 0;
                     String nodeKey = null;
-                    while (!this.isAbort() && password_tries <= 3) {
-                        String nodeKeyTmp = null;
+                    password: while (!this.isAbort() && password_tries <= 3) {
                         if (password_tries > 0 || !isValidFolderDecryptionKey(folderMasterKey)) {
                             folderMasterKey = getUserInput("Decryption key", param);
                         }
                         try {
                             nodeKey = decryptNodeKey(encryptedNodeKey, folderMasterKey);
                             success = true;
-                            break;
+                            break password;
                         } catch (final InvalidKeyException e) {
-                            if (!InvalidOrMissingDecryptionKeyAction.ASK.equals(config.getInvalidOrMissingDecryptionKeyAction().getAction())) {
-                                break;
-                            }
                             password_tries++;
+                            if (!InvalidOrMissingDecryptionKeyAction.ASK.equals(config.getInvalidOrMissingDecryptionKeyAction().getAction())) {
+                                break password;
+                            }
                         }
-                        nodeKey = nodeKeyTmp;
                     }
                     if (!success) {
                         throw new DecrypterException(DecrypterException.PASSWORD);
@@ -596,46 +610,23 @@ public class MegaConz extends PluginForDecrypt {
                 }
                 final String nodeName = toString(folderNode.get("nodeName"));
                 final String nodeKey = toString(folderNode.get("nodeKey"));
-                final String safeNodeKey = nodeKey.replace("+", "-").replace("/", "_");
-                final DownloadLink link;
-                if (folderID != null) {
-                    final String folderFileUrl = jd.plugins.hoster.MegaConz.buildFileFolderLink(folderID, folderMasterKey, "file", nodeID);
-                    // if (safeNodeKey.endsWith("=")) {
-                    // link = createDownloadlink("https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#N!" + nodeID + "!" + safeNodeKey +
-                    // "###n=" + folderID);
-                    // } else {
-                    // link = createDownloadlink("https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#N!" + nodeID + "!" + safeNodeKey +
-                    // "=###n=" + folderID);
-                    // }
-                    link = createDownloadlink(folderFileUrl);
-                } else {
-                    // TODO: Update generated URL
-                    final String fileURL = jd.plugins.hoster.MegaConz.buildFileLink(nodeID, safeNodeKey);
-                    // link = createDownloadlink(fileURL);
-                    link = createDownloadlink("https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#N!" + nodeID + "!" + safeNodeKey);
-                }
+                final String folderFileUrl = jd.plugins.hoster.MegaNz.buildFileFolderLink(folderID, folderMasterKey, "file", nodeID);
+                final DownloadLink link = createDownloadlink(folderFileUrl);
                 link.setDefaultPlugin(megaplugin);
                 final MegaFolder parentFolder = folders.get(nodeParentID);
                 if (parentFolder != null) {
                     parentFolder.put(nodeID, link);
                 }
-                if (folderID != null) {
-                    /* folder nodes (files inside folders) can only be downloaded with knowledge of the folderNodeID */
-                    link.setProperty("public", false);
-                    link.setProperty("pn", folderID);
-                    link.setProperty("mk", folderMasterKey);
-                    link.setProperty("fk", nodeKey);
-                    // TODO: Do not set linkID here
-                    link.setLinkID(getHost() + "N" + "/" + folderID + "/" + nodeID);
-                } else {
-                    // TODO: Do not set linkID here
-                    link.setLinkID(getHost() + "N" + "/" + nodeID);
-                }
+                /* folder nodes (files inside folders) can only be downloaded with knowledge of the folderNodeID */
+                link.setProperty("public", false);
+                link.setProperty("pn", folderID);
+                link.setProperty("mk", folderMasterKey);
+                link.setProperty("fk", nodeKey);
                 // alternative: https://mega.nz/folder/folderID#masterKey/file/nodeID
                 link.setProperty("fa", toObject(folderNode.get("fa")));// file attributes
                 link.setFinalFileName(nodeName);
-                link.setRelativeDownloadFolderPath(path);
                 if (path != null) {
+                    link.setRelativeDownloadFolderPath(path);
                     /*
                      * Packagizer property so user can e.g. merge all files of a folder and subfolders in a package named after the name of
                      * the root dir.
@@ -661,20 +652,16 @@ public class MegaConz extends PluginForDecrypt {
                 }
             }
         }
-        String containerURL = "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/folder/" + folderID + "#" + folderMasterKey;
+        if (desiredItems.size() > 0) {
+            ret.clear();
+            ret.addAll(desiredItems);
+        }
+        String containerURL = "https://" + jd.plugins.hoster.MegaNz.MAIN_DOMAIN + "/folder/" + folderID + "#" + folderMasterKey;
         if (preferredNodeID != null && preferredNodeType != null) {
             containerURL += "/" + preferredNodeType + "/" + preferredNodeID;
         }
-        if (desiredItems.size() > 0) {
-            for (DownloadLink link : desiredItems) {
-                link.setContainerUrl(containerURL);
-            }
-            /* Return only items which the user wants such as a specific subfolder or specific file as part of folder. */
-            return desiredItems;
-        } else {
-            for (DownloadLink link : ret) {
-                link.setContainerUrl(containerURL);
-            }
+        for (DownloadLink link : ret) {
+            link.setContainerUrl(containerURL);
         }
         if (!isAbort()) {
             if (preferredNodeID != null) {
@@ -747,14 +734,13 @@ public class MegaConz extends PluginForDecrypt {
     }
 
     private String decryptNodeKey(String encryptedNodeKey, String masterKey) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
-        final byte[] masterKeyBytes = jd.plugins.hoster.MegaConz.b64decode(masterKey);
-        final byte[] encryptedNodeKeyBytes = jd.plugins.hoster.MegaConz.b64decode(encryptedNodeKey);
+        final byte[] masterKeyBytes = jd.plugins.hoster.MegaNz.b64decode(masterKey);
+        final byte[] encryptedNodeKeyBytes = jd.plugins.hoster.MegaNz.b64decode(encryptedNodeKey);
         final byte[] ret = new byte[encryptedNodeKeyBytes.length];
-        final byte[] iv = jd.plugins.hoster.MegaConz.aInt_to_aByte(0, 0, 0, 0);
+        final byte[] iv = jd.plugins.hoster.MegaNz.aInt_to_aByte(0, 0, 0, 0);
         for (int index = 0; index < ret.length; index = index + 16) {
             final IvParameterSpec ivSpec = new IvParameterSpec(iv);
             final SecretKeySpec skeySpec = new SecretKeySpec(masterKeyBytes, "AES");
-            final Cipher cipher = Cipher.getInstance("AES/CBC/nopadding");
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
             System.arraycopy(cipher.doFinal(Arrays.copyOfRange(encryptedNodeKeyBytes, index, index + 16)), 0, ret, index, 16);
         }
@@ -762,22 +748,21 @@ public class MegaConz extends PluginForDecrypt {
     }
 
     private String decrypt(String input, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, PluginException {
-        byte[] b64Dec = jd.plugins.hoster.MegaConz.b64decode(keyString);
-        int[] intKey = jd.plugins.hoster.MegaConz.aByte_to_aInt(b64Dec);
+        byte[] b64Dec = jd.plugins.hoster.MegaNz.b64decode(keyString);
+        int[] intKey = jd.plugins.hoster.MegaNz.aByte_to_aInt(b64Dec);
         byte[] key = null;
         if (intKey.length == 4) {
             /* folder key */
             key = b64Dec;
         } else {
             /* file key */
-            key = jd.plugins.hoster.MegaConz.aInt_to_aByte(intKey[0] ^ intKey[4], intKey[1] ^ intKey[5], intKey[2] ^ intKey[6], intKey[3] ^ intKey[7]);
+            key = jd.plugins.hoster.MegaNz.aInt_to_aByte(intKey[0] ^ intKey[4], intKey[1] ^ intKey[5], intKey[2] ^ intKey[6], intKey[3] ^ intKey[7]);
         }
-        byte[] iv = jd.plugins.hoster.MegaConz.aInt_to_aByte(0, 0, 0, 0);
+        byte[] iv = jd.plugins.hoster.MegaNz.aInt_to_aByte(0, 0, 0, 0);
         final IvParameterSpec ivSpec = new IvParameterSpec(iv);
         final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-        Cipher cipher = Cipher.getInstance("AES/CBC/nopadding");
         cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-        byte[] unPadded = jd.plugins.hoster.MegaConz.b64decode(input);
+        byte[] unPadded = jd.plugins.hoster.MegaNz.b64decode(input);
         int len = 16 - ((unPadded.length - 1) & 15) - 1;
         byte[] payLoadBytes = new byte[unPadded.length + len];
         System.arraycopy(unPadded, 0, payLoadBytes, 0, unPadded.length);

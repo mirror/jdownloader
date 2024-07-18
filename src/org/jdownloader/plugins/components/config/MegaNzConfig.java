@@ -14,8 +14,8 @@ import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.TakeValueFromSubconfig;
 import org.jdownloader.plugins.config.Type;
 
-@PluginHost(host = "mega.co.nz", type = Type.HOSTER)
-public interface MegaConzConfig extends PluginConfigInterface {
+@PluginHost(host = "mega.nz", type = Type.HOSTER)
+public interface MegaNzConfig extends PluginConfigInterface {
     public static final TRANSLATION TRANSLATION = new TRANSLATION();
 
     public static class TRANSLATION {
@@ -61,14 +61,6 @@ public interface MegaConzConfig extends PluginConfigInterface {
 
         public String getAllowStartFromZeroIfDownloadWasStartedViaMultihosterBefore_label() {
             return "Start from scratch if file was previously partially downloaded via multihoster?";
-        }
-
-        public String getCrawlerSetFullPathAsPackagename_label() {
-            return "Folder crawler: Set full path as package name (if disabled, only name of respective folder will be used as packagename)?";
-        }
-
-        public String getMaxCacheFolderDetails_label() {
-            return "Folder crawler: Max. time(minutes) to cache folder details for faster crawling";
         }
 
         public String getInvalidOrMissingDecryptionKeyAction_label() {
@@ -194,24 +186,6 @@ public interface MegaConzConfig extends PluginConfigInterface {
     boolean isAllowStartFromZeroIfDownloadWasStartedViaMultihosterBefore();
 
     void setAllowStartFromZeroIfDownloadWasStartedViaMultihosterBefore(boolean b);
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @TakeValueFromSubconfig("CRAWLER_SET_FULL_PATH_AS_PACKAGENAME")
-    @DescriptionForConfigEntry("Folder crawler: Set full path as package name (if disabled, only name of respective folder will be used as packagename)?")
-    @Order(110)
-    boolean isCrawlerSetFullPathAsPackagename();
-
-    void setCrawlerSetFullPathAsPackagename(boolean b);
-
-    @AboutConfig
-    @SpinnerValidator(min = 0, max = 60, step = 1)
-    @DefaultIntValue(5)
-    @DescriptionForConfigEntry("Max. time(minutes) to cache folder details for faster crawling")
-    @Order(120)
-    int getMaxCacheFolderDetails();
-
-    void setMaxCacheFolderDetails(int minutes);
 
     public static enum InvalidOrMissingDecryptionKeyAction implements LabelInterface {
         ASK {

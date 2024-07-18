@@ -19,7 +19,6 @@ import javax.swing.JScrollPane;
 import javax.swing.Scrollable;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
@@ -65,7 +64,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
      *
      */
     private static final long             serialVersionUID = 1L;
-    private Icon                          decryterIcon;
+    private final Icon                    decryterIcon;
     private MigPanel                      card;
     protected SwitchPanel                 configPanel;
     protected List<Pattern>               filter;
@@ -276,45 +275,22 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     }
 
     public List<LazyPlugin<?>> fillModel() {
-        ArrayList<LazyPlugin<?>> lst = new ArrayList<LazyPlugin<?>>();
-        for (LazyHostPlugin plg : HostPluginController.getInstance().list()) {
+        final List<LazyPlugin<?>> lst = new ArrayList<LazyPlugin<?>>();
+        for (final LazyHostPlugin plg : HostPluginController.getInstance().list()) {
             if (plg.isHasConfig() || plg.isPremium()) {
                 lst.add(plg);
             }
         }
-        for (LazyCrawlerPlugin plg : CrawlerPluginController.getInstance().list()) {
+        for (final LazyCrawlerPlugin plg : CrawlerPluginController.getInstance().list()) {
             if (plg.isHasConfig()) {
                 lst.add(plg);
             }
         }
         Collections.sort(lst, new Comparator<LazyPlugin<?>>() {
-            @Override
-            public int compare(LazyPlugin<?> o1, LazyPlugin<?> o2) {
-                return o1.getDisplayName().compareToIgnoreCase(o2.getDisplayName());
-            }
-        });
-        Collections.sort(lst, new Comparator<LazyPlugin<?>>() {
-            public int compare(int x, int y) {
-                return (x < y) ? -1 : ((x == y) ? 0 : 1);
-            }
 
             @Override
             public int compare(LazyPlugin<?> o1, LazyPlugin<?> o2) {
-                final int o1Num;
-                if (o1 instanceof LazyHostPlugin && ((LazyHostPlugin) o1).isPremium()) {
-                    o1Num = AccountController.getInstance().getAccountsSize(o1.getDisplayName());
-                } else {
-                    o1Num = 0;
-                }
-                final int o2Num;
-                if (o1 == o2) {
-                    o2Num = o1Num;
-                } else if (o2 instanceof LazyHostPlugin && ((LazyHostPlugin) o2).isPremium()) {
-                    o2Num = AccountController.getInstance().getAccountsSize(o2.getDisplayName());
-                } else {
-                    o2Num = 0;
-                }
-                return compare(o2Num, o1Num);
+                return o1.getDisplayName().compareToIgnoreCase(o2.getDisplayName());
             }
         });
         return lst;
@@ -345,7 +321,6 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         new EDTRunner() {
             @Override
             protected void runInEDT() {
-                final long start = System.currentTimeMillis();
                 card.removeAll();
                 if (configPanel != null) {
                     configPanel.setHidden();
@@ -353,7 +328,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                 currentItem = selectedItem;
                 try {
                     JDGui.getInstance().setWaiting(true);
-                    Plugin protoType = selectedItem.getPrototype(null);
+                    final Plugin protoType = selectedItem.getPrototype(null);
                     newCP = protoType.getConfigPanel();
                     if (newCP == null) {
                         if (selectedItem instanceof LazyHostPlugin) {
@@ -377,16 +352,20 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                         if (selectedItem != null) {
                             if (selectedItem instanceof LazyHostPlugin) {
                                 header.setText(_GUI.T.PluginSettingsPanel_runInEDT_plugin_header_text_host(selectedItem.getDisplayName()));
-                                // IconIO.
-                                Icon fav = DomainInfo.getInstance(((LazyHostPlugin) selectedItem).getHost()).getFavIcon(false);
+                                final Icon fav = DomainInfo.getInstance(((LazyHostPlugin) selectedItem).getHost()).getFavIcon(false);
                                 header.setIcon(fav);
                             } else {
                                 header.setText(_GUI.T.PluginSettingsPanel_runInEDT_plugin_header_text_decrypt(selectedItem.getDisplayName()));
-                                Icon fav = DomainInfo.getInstance(((LazyCrawlerPlugin) selectedItem).getDisplayName()).getFavIcon(false);
+                                final Icon fav = DomainInfo.getInstance(((LazyCrawlerPlugin) selectedItem).getDisplayName()).getFavIcon(false);
                                 if (fav == null) {
                                     header.setIcon(decryterIcon);
                                 } else {
-                                    header.setIcon(fav);
+                                    final Icon ret = new ExtMergedIcon(fav) {
+                                        @Override
+                                        protected void idIconCheck(Entry entry) {
+                                        };
+                                    }.add(decryterIcon, 6, 6);
+                                    header.setIcon(ret);
                                 }
                             }
                             header.setVisible(true);

@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.html.Form;
@@ -28,6 +25,9 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ClicknuploadOrg extends XFileSharingProBasic {
@@ -125,11 +125,16 @@ public class ClicknuploadOrg extends XFileSharingProBasic {
                 final Browser brc = br.cloneBrowser();
                 logger.info("Found download1 Form");
                 final String correctedBR = this.correctedBR;
+                final String existingFilename = fileInfo[0];
                 try {
                     submitForm(brc, download1, true);
                     scanInfo(fileInfo);
                 } finally {
                     this.correctedBR = correctedBR;
+                    if (existingFilename != null) {
+                        // nice/full filename already parsed from fname in scaninfo
+                        fileInfo[0] = existingFilename;
+                    }
                 }
             }
         } catch (Exception e) {

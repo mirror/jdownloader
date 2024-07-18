@@ -322,7 +322,7 @@ public class FirefileCc extends PluginForHost {
     }
 
     private String decryptString(String data, String plainKey) throws Exception {
-        byte[] dataArr = MegaConz.b64decode(data);
+        byte[] dataArr = MegaNz.b64decode(data);
         byte[] decrypted = this.decryptBytes(dataArr, plainKey);
         final String decryptedStr = new String(decrypted, "UTF-8").trim();
         return decryptedStr;

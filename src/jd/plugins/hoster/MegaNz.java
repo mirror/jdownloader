@@ -41,6 +41,31 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import jd.PluginWrapper;
+import jd.config.Property;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashResult;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -72,9 +97,9 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.config.MegaConzConfig;
-import org.jdownloader.plugins.components.config.MegaConzConfig.InvalidOrMissingDecryptionKeyAction;
-import org.jdownloader.plugins.components.config.MegaConzConfig.LimitMode;
+import org.jdownloader.plugins.components.config.MegaNzConfig;
+import org.jdownloader.plugins.components.config.MegaNzConfig.InvalidOrMissingDecryptionKeyAction;
+import org.jdownloader.plugins.components.config.MegaNzConfig.LimitMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
@@ -82,38 +107,13 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
 
-import jd.PluginWrapper;
-import jd.config.Property;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.HashResult;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class MegaConz extends PluginForHost {
+public class MegaNz extends PluginForHost {
     private final String       USED_PLUGIN = "usedPlugin";
     private final String       encrypted   = ".encrypted";
     public final static String MAIN_DOMAIN = "mega.nz";
 
-    public MegaConz(PluginWrapper wrapper) {
+    public MegaNz(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("https://mega.nz/#register");
     }
@@ -124,7 +124,17 @@ public class MegaConz extends PluginForHost {
     }
 
     public static List<String[]> getPluginDomains() {
-        return jd.plugins.decrypter.MegaConz.getPluginDomains();
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "mega.nz", "mega.co.nz", });
+        return ret;
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* This host is frequently changing its' main domain. */
+        /* 2023-01-03: Main domain changed from bunkr.la to bunkrr.su */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {
@@ -142,7 +152,7 @@ public class MegaConz extends PluginForHost {
     }
 
     public static final Pattern PATTERN_FILE_FOLDER_ID = Pattern.compile("[a-zA-Z0-9]{8}");
-    public static final Pattern PATTERN_ENCRYPTION_KEY = Pattern.compile("[a-zA-Z0-9_\\-\\+]{43}=*");
+    public static final Pattern PATTERN_ENCRYPTION_KEY = Pattern.compile("[a-zA-Z0-9_\\-\\+]{43}={0,2}");
     public static final Pattern PATTERN_FILE_OLD       = Pattern.compile("#!([A-Za-z0-9]+)(!([a-zA-Z0-9_-]+))?");
     public static final Pattern PATTERN_FILE_NEW       = Pattern.compile("(embed|file)/([a-zA-Z0-9]+)(#([a-zA-Z0-9_-]+))?", Pattern.CASE_INSENSITIVE);
     public static final Pattern PATTERN_FILE_IN_FOLDER = Pattern.compile("folder/([a-zA-Z0-9]+)#([a-zA-Z0-9_-]+)/file/([a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
@@ -158,7 +168,7 @@ public class MegaConz extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            String regex = jd.plugins.decrypter.MegaConz.getUrlPatternBase(domains);
+            String regex = jd.plugins.decrypter.MegaNzFolder.getUrlPatternBase(domains);
             /* Add domain-unspecific patterns */
             regex += "(" + PATTERN_FILE_OLD.pattern() + "|" + PATTERN_FILE_NEW.pattern() + ")";
             ret.add(regex);
@@ -247,7 +257,7 @@ public class MegaConz extends PluginForHost {
     }
 
     private static String getFolderMasterKey(final DownloadLink link) {
-        final String ret = jd.plugins.decrypter.MegaConz.getFolderMasterKey(link.getContainerUrl());
+        final String ret = jd.plugins.decrypter.MegaNzFolder.getFolderMasterKey(link.getContainerUrl());
         if (ret != null) {
             return ret;
         } else {
@@ -290,8 +300,8 @@ public class MegaConz extends PluginForHost {
             // update existing links
             link.setProperty("public", false);
         }
-        final InvalidOrMissingDecryptionKeyAction action = PluginJsonConfig.get(MegaConzConfig.class).getInvalidOrMissingDecryptionKeyAction().getAction();
-        if (!jd.plugins.decrypter.MegaConz.isValidFileFolderNodeID(fileID)) {
+        final InvalidOrMissingDecryptionKeyAction action = getMegaNzConfig().getInvalidOrMissingDecryptionKeyAction().getAction();
+        if (!jd.plugins.decrypter.MegaNzFolder.isValidFileFolderNodeID(fileID)) {
             /* Broken item or invalid URL -> A file with this ID cannot exist! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid fileID");
         }
@@ -381,14 +391,6 @@ public class MegaConz extends PluginForHost {
                         break;
                     } else if (!isDownload) {
                         /* Do not ask user for decryption key during availablecheck */
-                        logger.info("Decryption key is missing/invalid but we will not ask the user for it during availablecheck");
-                        final boolean setDummyFilenameWhenDecryptionKeyIsWrongOrMissing = true;
-                        if (link.getFinalFileName() == null && setDummyFilenameWhenDecryptionKeyIsWrongOrMissing) {
-                            final String tempName = getFallbackFilenameForErrorMissingDecryptionKey(link);
-                            if (tempName != null) {
-                                link.setName(tempName);
-                            }
-                        }
                         return AvailableStatus.TRUE;
                     }
                     fileKey = getUserInput("Decryption key?", link);
@@ -470,8 +472,7 @@ public class MegaConz extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (account) {
             final String sid = apiLogin(account);
-            final Map<String, Object> uq = apiRequest(account, sid, null, "uq"/* userQuota */, new Object[] { "xfer"/* xfer */, 1 },
-                    new Object[] { "pro"/* pro */, 1 });
+            final Map<String, Object> uq = apiRequest(account, sid, null, "uq"/* userQuota */, new Object[] { "xfer"/* xfer */, 1 }, new Object[] { "pro"/* pro */, 1 });
             if (uq == null || uq.size() == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -608,7 +609,7 @@ public class MegaConz extends PluginForHost {
                 final Number uncommitedServed = getNumber(uq, "tua", 0l);
                 final long transfer_srv_used = usedServed.longValue() + uncommitedServed.longValue();
                 final long reserved;
-                if (PluginJsonConfig.get(MegaConzConfig.class).isCheckReserverTraffic()) {
+                if (getMegaNzConfig().isCheckReserverTraffic()) {
                     // Reserved transfer quota for ongoing transfers (currently ignored by clients)
                     final long transfer_own_reserved = getNumber(uq, "ruo", 0l).longValue(); // own account
                     final long transfer_srv_reserved = getNumber(uq, "rua", 0l).longValue();// 3rd party
@@ -729,8 +730,7 @@ public class MegaConz extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     try {
-                        response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail },
-                                new Object[] { "uh"/* emailHash */, uh });
+                        response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail }, new Object[] { "uh"/* emailHash */, uh });
                     } catch (PluginException e) {
                         if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM && e.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE && account.getBooleanProperty("mfa", Boolean.FALSE)) {
                             try {
@@ -738,8 +738,7 @@ public class MegaConz extends PluginForHost {
                                 mfaDialog.setTimeout(5 * 60 * 1000);
                                 final InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, mfaDialog);
                                 handler.throwCloseExceptions();
-                                response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail },
-                                        new Object[] { "uh"/* emailHash */, uh }, new Object[] { "mfa"/* ping */, handler.getText() });
+                                response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail }, new Object[] { "uh"/* emailHash */, uh }, new Object[] { "mfa"/* ping */, handler.getText() });
                             } catch (DialogNoAnswerException e2) {
                                 throw Exceptions.addSuppressed(e, e2);
                             }
@@ -804,7 +803,7 @@ public class MegaConz extends PluginForHost {
             query.addAll(additionalUrlQuery.list());
         }
         final PostRequest request = new PostRequest(getAPI() + "/cs?" + query);
-        if (PluginJsonConfig.get(MegaConzConfig.class).isHideApplication()) {
+        if (getMegaNzConfig().isHideApplication()) {
             request.getHeaders().put(new HTTPHeader("User-Agent", null, false));
             request.getHeaders().put(new HTTPHeader("Accept", null, false));
             request.getHeaders().put(new HTTPHeader("Accept-Language", null, false));
@@ -1030,18 +1029,16 @@ public class MegaConz extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        if (link.getPluginPatternMatcher() == null) {
-            return super.getLinkID(link);
-        }
-        final String pluginPatternMatcherDecoded = getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
-        final String fileID = getPublicFileID(pluginPatternMatcherDecoded);
-        if (fileID != null) {
-            return getHost() + "F" + fileID;
-        } else {
-            final String nodeID = getNodeFileID(link);
-            if (nodeID != null) {
-                link.setProperty("public", false);
-                link.setLinkID(getHost() + "N" + nodeID);
+        if (link.getPluginPatternMatcher() != null) {
+            final String pluginPatternMatcherDecoded = getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
+            final String nodeID = getNodeFileID(pluginPatternMatcherDecoded);
+            final String parentNodeID = getParentNodeID(link);
+            if (parentNodeID != null && nodeID != null) {
+                return getHost() + "://N/" + parentNodeID + "/" + nodeID;
+            }
+            final String fileID = getPublicFileID(pluginPatternMatcherDecoded);
+            if (fileID != null) {
+                return getHost() + "://F/" + fileID;
             }
         }
         return super.getLinkID(link);
@@ -1072,7 +1069,7 @@ public class MegaConz extends PluginForHost {
             final boolean isPremium = account != null && AccountType.PREMIUM.equals(account.getType());
             if (!StringUtils.equals((String) downloadLink.getProperty(USED_PLUGIN, getHost()), getHost())) {
                 return false;
-            } else if (!isPremium && downloadLink.getVerifiedFileSize() > 5368709120l && PluginJsonConfig.get(MegaConzConfig.class).is5GBFreeLimitEnabled()) {
+            } else if (!isPremium && downloadLink.getVerifiedFileSize() > 5368709120l && getMegaNzConfig().is5GBFreeLimitEnabled()) {
                 /**
                  * 2024-07-02: Skip files over 5GB as we cannot download them in free mode, see: </br>
                  * https://board.jdownloader.org/showthread.php?t=75268
@@ -1138,7 +1135,7 @@ public class MegaConz extends PluginForHost {
         boolean resume = true;
         if (link.getDownloadCurrent() > 0 && !StringUtils.equalsIgnoreCase(getHost(), link.getStringProperty(USED_PLUGIN, getHost()))) {
             logger.info("Resume impossible due to previous multihoster download:" + link.getDownloadCurrent() + "/" + link.getKnownDownloadSize() + "|" + link.getStringProperty(USED_PLUGIN));
-            if (PluginJsonConfig.get(MegaConzConfig.class).isAllowStartFromZeroIfDownloadWasStartedViaMultihosterBefore()) {
+            if (getMegaNzConfig().isAllowStartFromZeroIfDownloadWasStartedViaMultihosterBefore()) {
                 logger.info("Auto-download from scratch = true");
                 resume = false;
             } else {
@@ -1173,12 +1170,12 @@ public class MegaConz extends PluginForHost {
 
             @Override
             public Object getOwner() {
-                return MegaConz.this;
+                return MegaNz.this;
             }
 
             @Override
             public LogInterface getLogger() {
-                return MegaConz.this.getLogger();
+                return MegaNz.this.getLogger();
             }
         };
         final AtomicBoolean successfulFlag = new AtomicBoolean(false);
@@ -1250,7 +1247,7 @@ public class MegaConz extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled error code: " + error);
                     }
                 }
-                if (PluginJsonConfig.get(MegaConzConfig.class).isHideApplication()) {
+                if (getMegaNzConfig().isHideApplication()) {
                     br.setRequest(null);
                     br.getHeaders().put(new HTTPHeader("User-Agent", null, false));
                     br.getHeaders().put(new HTTPHeader("Accept", null, false));
@@ -1267,7 +1264,7 @@ public class MegaConz extends PluginForHost {
                     final String fa = link.getStringProperty("fa");
                     final String preview = new Regex(fa, "\\d+:1\\*([\\w-]+)").getMatch(0);
                     if (preview != null) {
-                        final byte[] data = Base64.decodeFast(preview.replace("-", "+").replace("_", "/"));
+                        final byte[] data = Base64.decodeFast(toBase64(preview));
                         request.setPostBytes(data);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1322,11 +1319,11 @@ public class MegaConz extends PluginForHost {
     /**
      * MEGA limits can be tricky: They can sit on specific files, on IP ("global limit") or also quota based (also global) e.g. 5GB per day
      * per IP or per Free-Account. For these reasons the user can define the max wait time. The wait time given by MEGA must not be true.
-     * </br>
-     * 2021-01-21 TODO: Use this for ALL limit based errors
+     * </br> 2021-01-21 TODO: Use this for ALL limit based errors
      */
     private void fileOrIPDownloadlimitReached(final Account account, final String msg, final long waitMilliseconds) throws PluginException {
-        final long userDefinedMaxWaitMilliseconds = PluginJsonConfig.get(MegaConzConfig.class).getMaxWaittimeOnLimitReachedMinutes() * 60 * 1000;
+        final MegaNzConfig config = getMegaNzConfig();
+        final long userDefinedMaxWaitMilliseconds = config.getMaxWaittimeOnLimitReachedMinutes() * 60 * 1000;
         if (waitMilliseconds == 0) {
             /* Special handling for zero given serverside waittime -> Old stuff - no idea whether this is still relevant */
             /** 2021-01-21: TODO: Re-Check this account limit handling */
@@ -1339,7 +1336,7 @@ public class MegaConz extends PluginForHost {
         } else if (account != null) {
             throw new AccountUnavailableException("Bandwidth Limit Exceeded", Math.min(userDefinedMaxWaitMilliseconds, waitMilliseconds));
         } else {
-            final LimitMode mode = PluginJsonConfig.get(MegaConzConfig.class).getLimitMode();
+            final LimitMode mode = config.getLimitMode();
             if (mode == LimitMode.GLOBAL_RECONNECT) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg, Math.min(userDefinedMaxWaitMilliseconds, waitMilliseconds));
             } else if (mode == LimitMode.GLOBAL_WAIT) {
@@ -1491,7 +1488,7 @@ public class MegaConz extends PluginForHost {
             if (path.endsWith(encrypted)) {
                 src = new File(path);
                 String path2 = path.substring(0, path.length() - encrypted.length());
-                if (PluginJsonConfig.get(MegaConzConfig.class).isUseTmpDecryptingFile()) {
+                if (getMegaNzConfig().isUseTmpDecryptingFile()) {
                     tmp = new File(path2 + ".decrypted");
                 }
                 dst = new File(path2);
@@ -1638,7 +1635,7 @@ public class MegaConz extends PluginForHost {
     private static Object GLOBAL_DECRYPTION_LOCK = new Object();
 
     private Object getDecryptionLock(final DownloadLink link) {
-        if (PluginJsonConfig.get(MegaConzConfig.class).isAllowConcurrentDecryption()) {
+        if (getMegaNzConfig().isAllowConcurrentDecryption()) {
             return new AtomicReference<DownloadLink>(link);
         } else {
             return GLOBAL_DECRYPTION_LOCK;
@@ -1739,14 +1736,24 @@ public class MegaConz extends PluginForHost {
 
     public static byte[] b64decode(String data) {
         data = data.replace(",", "");
-        data += "==".substring((2 - data.length() * 3) & 3);
-        data = data.replace("-", "+").replace("_", "/");
+        data = toBase64(data);
         return Base64.decode(data);
     }
 
     public static String b64encode(byte[] data) {
         final String ret = Base64.encodeToString(data, true);
-        return ret.replaceAll("\\+", "-").replaceAll("/", "_").replaceAll("=", "");
+        return toBase64URL(ret);
+    }
+
+    private static String toBase64(final String base64URL) {
+        String ret = base64URL;
+        ret += "==".substring((2 - ret.length() * 3) & 3);
+        return ret.replace("-", "+").replace("_", "/");
+    }
+
+    private static String toBase64URL(final String base64) {
+        final String ret = base64.replace("+", "-").replace("/", "_").replace("=", "");
+        return ret;
     }
 
     public static byte[] aInt_to_aByte(final int... aInt) {
@@ -1768,8 +1775,9 @@ public class MegaConz extends PluginForHost {
     }
 
     private String useSSL() {
-        if (PluginJsonConfig.get(MegaConzConfig.class).isUseSSL()) {
-            if (PluginJsonConfig.get(MegaConzConfig.class).isHideApplication()) {
+        final MegaNzConfig config = getMegaNzConfig();
+        if (config.isUseSSL()) {
+            if (config.isHideApplication()) {
                 return "2";// can also be 2, see meganz/webclient/blob/master/js/crypto.js
             } else {
                 return "1";
@@ -1777,6 +1785,11 @@ public class MegaConz extends PluginForHost {
         } else {
             return "0";
         }
+    }
+
+    private MegaNzConfig getMegaNzConfig() {
+        final MegaNzConfig ret = PluginJsonConfig.get(getConfigInterface());
+        return ret;
     }
 
     @Override
@@ -1800,28 +1813,32 @@ public class MegaConz extends PluginForHost {
 
     @Override
     public String buildExternalDownloadURL(final DownloadLink link, final PluginForHost buildForThisPlugin) {
-        if (StringUtils.equals(getHost(), buildForThisPlugin.getHost())) {
+        if (isPublic(link)) {
             return super.buildExternalDownloadURL(link, buildForThisPlugin);
-        } else if (isMULTIHOST(buildForThisPlugin)) {
-            final String pluginPatternMatcherDecoded = getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
-            final String fileID = getPublicFileID(pluginPatternMatcherDecoded);
-            final String fileKey = getPublicFileKey(link);
-            final String parentNodeID = getParentNodeID(link);
-            if (StringUtils.equals("linksnappy.com", buildForThisPlugin.getHost())) {
-                // legacy special internal URL format
-                /* 2024-07-10: This format is still mandatory! */
-                return "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#N!" + fileID + "!" + fileKey + "!" + parentNodeID;
-            } else {
-                return buildFileLink(link);
-            }
         } else {
-            return super.buildExternalDownloadURL(link, buildForThisPlugin);
+            if (StringUtils.equals(getHost(), buildForThisPlugin.getHost())) {
+                return super.buildExternalDownloadURL(link, buildForThisPlugin);
+            } else if (isMULTIHOST(buildForThisPlugin)) {
+                final String pluginPatternMatcherDecoded = getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
+                final String fileID = getPublicFileID(pluginPatternMatcherDecoded);
+                final String fileKey = getPublicFileKey(link);
+                final String parentNodeID = getParentNodeID(link);
+                if (StringUtils.equals("linksnappy.com", buildForThisPlugin.getHost())) {
+                    // legacy special internal URL format
+                    /* 2024-07-10: This format is still mandatory! */
+                    return "https://" + jd.plugins.hoster.MegaNz.MAIN_DOMAIN + "/#N!" + fileID + "!" + fileKey + "!" + parentNodeID;
+                } else {
+                    return buildFileLink(link);
+                }
+            } else {
+                return null;
+            }
         }
     }
 
     @Override
     public String getPluginContentURL(DownloadLink link) {
-        return jd.plugins.hoster.MegaConz.buildFileLink(link);
+        return jd.plugins.hoster.MegaNz.buildFileLink(link);
     }
 
     /* 2024-07-10: This returns the URL for "single public file" or "file as part of a folder". */
@@ -1841,19 +1858,19 @@ public class MegaConz extends PluginForHost {
     }
 
     public static String buildFileLink(final String fileID, final String fileKey) {
-        String url = "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/file/" + fileID;
+        String url = "https://" + jd.plugins.hoster.MegaNz.MAIN_DOMAIN + "/file/" + fileID;
         if (fileKey != null) {
-            url += "#" + fileKey;
+            url += "#" + toBase64URL(fileKey);
         }
         return url;
     }
 
     public static String buildFileFolderLink(final String folderID, final String folderKey, final String subnodeType, final String subnodeID) {
-        String url = "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/folder/" + folderID;
+        String url = "https://" + jd.plugins.hoster.MegaNz.MAIN_DOMAIN + "/folder/" + folderID;
         if (folderKey != null) {
-            url += "#" + folderKey;
+            url += "#" + toBase64URL(folderKey);
         }
-        if (subnodeType != null) {
+        if (subnodeType != null && subnodeID != null) {
             url += "/" + subnodeType + "/" + subnodeID;
         }
         return url;
@@ -1861,16 +1878,8 @@ public class MegaConz extends PluginForHost {
 
     @Override
     public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
-        final boolean isMultihoster;
-        if (plugin.getHost().equals(this.getHost())) {
-            isMultihoster = false;
-        } else {
-            isMultihoster = true;
-        }
-        if (isMultihoster && !PluginJsonConfig.get(MegaConzConfig.class).isAllowMultihostUsage()) {
+        if (!getMegaNzConfig().isAllowMultihostUsage() && !plugin.getHost().equals(this.getHost())) {
             /* Disabled by user */
-            return false;
-        } else if (isMultihoster && !isValidDecryptionKey(getPublicFileKey(link))) {
             return false;
         } else if (link != null) {
             if (plugin != null) {
@@ -1900,7 +1909,7 @@ public class MegaConz extends PluginForHost {
     }
 
     @Override
-    public Class<? extends MegaConzConfig> getConfigInterface() {
-        return MegaConzConfig.class;
+    public Class<? extends MegaNzConfig> getConfigInterface() {
+        return MegaNzConfig.class;
     }
 }
