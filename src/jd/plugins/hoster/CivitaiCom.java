@@ -139,7 +139,7 @@ public class CivitaiCom extends PluginForHost {
         final String mimeType = (String) imagemap.get("mimeType");
         final String ext = getExtensionFromMimeType(mimeType);
         if (ext != null) {
-            link.setName(this.applyFilenameExtension(filename, "." + ext));
+            link.setFinalFileName(this.applyFilenameExtension(filename, "." + ext));
         } else {
             link.setName(filename);
         }

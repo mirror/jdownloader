@@ -116,7 +116,7 @@ public class MegaConz extends PluginForDecrypt {
     }
 
     /** Returns non-validated result! */
-    public static String getFolderMasterKey__hahacompile_error(final String url) {
+    public static String getFolderMasterKey(final String url) {
         String key = new Regex(url, PATTERN_FOLDER_NEW).getMatch(2);
         if (key == null) {
             key = new Regex(url, PATTERN_FOLDER_OLD).getMatch(2);

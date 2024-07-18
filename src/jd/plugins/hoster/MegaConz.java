@@ -1806,10 +1806,6 @@ public class MegaConz extends PluginForHost {
                     // legacy special internal URL format
                     /* 2024-07-10: This format is still mandatory! */
                     return "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#N!" + fileID + "!" + fileKey + "!" + parentNodeID;
-                } else if (StringUtils.equals("alldebrid.com", buildForThisPlugin.getHost())) {
-                    // legacy special internal URL format
-                    /* 2024-07-10: This format is still mandatory! */
-                    return "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#!" + fileID + "!" + fileKey + "=~~" + parentNodeID;
                 } else {
                     return buildFileLink(link);
                 }

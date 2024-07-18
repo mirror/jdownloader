@@ -20,7 +20,7 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
     final String                    text_BookImageQuality                                        = "Book image quality (0 = highest, 10 = lowest)";
     final String                    text_BookCrawlMode                                           = "Book crawl mode";
     final String                    text_MarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable = "Mark non viewable book pages as offline if no account is available?";
-    final String                    text_SearchTermCrawlerMaxResultsLimit                        = "Search term crawler: Limit max results [0 = disable this crawler]";
+    final String                    text_SearchTermCrawlerMaxResultsLimit                        = "Search term and profile crawler: Limit max results [0 = disable this crawler]";
     public static final TRANSLATION TRANSLATION                                                  = new TRANSLATION();
 
     public static class TRANSLATION {
