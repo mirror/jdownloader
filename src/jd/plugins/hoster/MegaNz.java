@@ -195,12 +195,12 @@ public class MegaNz extends PluginForHost {
         String key = getPublicFileKey(getDecodedPluginPatternMatcher(link.getPluginPatternMatcher()));
         boolean allowPreferDownloadPasswordAsKey = true;
         if (key == null) {
-            // TODO: Check this
-            /* Legacy compatibility, see getNodeFileKey */
+            /* File as part of folder */
             key = getNodeFileKey(link);
-            // allowPreferDownloadPasswordAsKey = false;
+            allowPreferDownloadPasswordAsKey = false;
         }
-        // TODO: Maybe don't allow key from download-password if file is part of folder node because user cannot know the key in this case.
+        // Don't allow key from download-password if file is part of folder node because user cannot know the key in this case and we
+        // usually already have the correct key.
         if (allowPreferDownloadPasswordAsKey && isValidDecryptionKey(link.getDownloadPassword())) {
             // logger.fine("Prefer decryption key from download password over key from URL: " + keyString);
             key = link.getDownloadPassword();
@@ -1042,25 +1042,6 @@ public class MegaNz extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        // TODO: Remove this
-        String url = link.getPluginPatternMatcher();
-        if (url.contains(".nz/$!")) {
-            url = url.replaceFirst("nz/\\$!", "nz/#!");
-            link.setUrlDownload(url);
-        }
-        final String pluginPatternMatcherDecoded = getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
-        if (StringUtils.startsWithCaseInsensitive(url, "chrome:") || StringUtils.startsWithCaseInsensitive(url, "mega:")) {
-            // final String keyString = getPublicFileKey(link);
-            // if (fileID != null && keyString != null) {
-            // link.setUrlDownload("https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#!" + fileID + "!" + keyString);
-            // }
-        } else {
-            link.setUrlDownload(url.replaceAll("%21", "!").replaceAll("%20", ""));
-        }
-    }
-
-    @Override
     public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         if (downloadLink != null) {
             final boolean isPremium = account != null && AccountType.PREMIUM.equals(account.getType());
@@ -1078,6 +1059,7 @@ public class MegaNz extends PluginForHost {
     }
 
     private static final boolean isPublic(final DownloadLink downloadLink) {
+        // TODO: Remove this
         return downloadLink.getBooleanProperty("public", true);
     }
 
@@ -1414,7 +1396,7 @@ public class MegaNz extends PluginForHost {
         System.arraycopy(unPadded, 0, payLoadBytes, 0, unPadded.length);
         payLoadBytes = cipher.doFinal(payLoadBytes);
         String ret = new String(payLoadBytes, "UTF-8");
-        ret = new Regex(ret, "MEGA(\\{.+\\})").getMatch(0);
+        ret = new Regex(ret, "(?i)MEGA(\\{.+\\})").getMatch(0);
         if (ret == null) {
             /* verify if the keyString is correct */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -1849,6 +1831,7 @@ public class MegaNz extends PluginForHost {
         }
     }
 
+    /** Builds URL for a single file. */
     public static String buildFileLink(final String fileID, final String fileKey) {
         String url = "https://" + jd.plugins.hoster.MegaNz.MAIN_DOMAIN + "/file/" + fileID;
         if (fileKey != null) {
@@ -1857,6 +1840,7 @@ public class MegaNz extends PluginForHost {
         return url;
     }
 
+    /** Builds URL for file which is part of a folder. */
     public static String buildFileFolderLink(final String folderID, final String folderKey, final String subnodeType, final String subnodeID) {
         String url = "https://" + jd.plugins.hoster.MegaNz.MAIN_DOMAIN + "/folder/" + folderID;
         if (folderKey != null) {
@@ -1875,7 +1859,7 @@ public class MegaNz extends PluginForHost {
             /* Disabled by user */
             return false;
         } else if (isMultihoster && !isValidDecryptionKey(getPublicFileKey(link))) {
-            /* no decryption key available */
+            /* no decryption key available -> Do not allow multihoster usage */
             return false;
         } else if (link != null) {
             if (plugin != null) {
