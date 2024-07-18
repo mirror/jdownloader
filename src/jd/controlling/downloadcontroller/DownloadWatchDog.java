@@ -4147,6 +4147,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     logger.info("Cannot shorten filename because file extension wouldn't fit");
                                     throw e;
                                 }
+                                // TODO: Add detection of archives / multipart archives and do not offer auto rename for such items.
                                 // final String filenameWithoutExt = pfilename.getFilenameWithoutExtensionAdvanced();
                                 final int shortenToLength = Math.min(maxFilenameLength - ext.length(), filename.length() - ext.length());
                                 shortenedFilename = filename.substring(0, shortenToLength);
