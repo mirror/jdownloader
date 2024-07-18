@@ -1792,26 +1792,22 @@ public class MegaConz extends PluginForHost {
 
     @Override
     public String buildExternalDownloadURL(final DownloadLink link, final PluginForHost buildForThisPlugin) {
-        if (isPublic(link)) {
+        if (StringUtils.equals(getHost(), buildForThisPlugin.getHost())) {
             return super.buildExternalDownloadURL(link, buildForThisPlugin);
-        } else {
-            if (StringUtils.equals(getHost(), buildForThisPlugin.getHost())) {
-                return super.buildExternalDownloadURL(link, buildForThisPlugin);
-            } else if (isMULTIHOST(buildForThisPlugin)) {
-                final String pluginPatternMatcherDecoded = getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
-                final String fileID = getPublicFileID(pluginPatternMatcherDecoded);
-                final String fileKey = getPublicFileKey(link);
-                final String parentNodeID = getParentNodeID(link);
-                if (StringUtils.equals("linksnappy.com", buildForThisPlugin.getHost())) {
-                    // legacy special internal URL format
-                    /* 2024-07-10: This format is still mandatory! */
-                    return "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#N!" + fileID + "!" + fileKey + "!" + parentNodeID;
-                } else {
-                    return buildFileLink(link);
-                }
+        } else if (isMULTIHOST(buildForThisPlugin)) {
+            final String pluginPatternMatcherDecoded = getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
+            final String fileID = getPublicFileID(pluginPatternMatcherDecoded);
+            final String fileKey = getPublicFileKey(link);
+            final String parentNodeID = getParentNodeID(link);
+            if (StringUtils.equals("linksnappy.com", buildForThisPlugin.getHost())) {
+                // legacy special internal URL format
+                /* 2024-07-10: This format is still mandatory! */
+                return "https://" + jd.plugins.hoster.MegaConz.MAIN_DOMAIN + "/#N!" + fileID + "!" + fileKey + "!" + parentNodeID;
             } else {
-                return null;
+                return buildFileLink(link);
             }
+        } else {
+            return super.buildExternalDownloadURL(link, buildForThisPlugin);
         }
     }
 
@@ -1831,8 +1827,9 @@ public class MegaConz extends PluginForHost {
             return buildFileFolderLink(parentNodeID, folderMasterKey, "file", fileID);
         } else if (fileID != null) {
             return buildFileLink(fileID, fileKey);
+        } else {
+            return link.getPluginPatternMatcher();
         }
-        return link.getPluginPatternMatcher();
     }
 
     public static String buildFileLink(final String fileID, final String fileKey) {
@@ -1856,8 +1853,16 @@ public class MegaConz extends PluginForHost {
 
     @Override
     public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
-        if (!PluginJsonConfig.get(MegaConzConfig.class).isAllowMultihostUsage() && !plugin.getHost().equals(this.getHost())) {
+        final boolean isMultihoster;
+        if (plugin.getHost().equals(this.getHost())) {
+            isMultihoster = false;
+        } else {
+            isMultihoster = true;
+        }
+        if (isMultihoster && !PluginJsonConfig.get(MegaConzConfig.class).isAllowMultihostUsage()) {
             /* Disabled by user */
+            return false;
+        } else if (isMultihoster && !isValidDecryptionKey(getPublicFileKey(link))) {
             return false;
         } else if (link != null) {
             if (plugin != null) {
