@@ -381,6 +381,14 @@ public class MegaConz extends PluginForHost {
                         break;
                     } else if (!isDownload) {
                         /* Do not ask user for decryption key during availablecheck */
+                        logger.info("Decryption key is missing/invalid but we will not ask the user for it during availablecheck");
+                        final boolean setDummyFilenameWhenDecryptionKeyIsWrongOrMissing = true;
+                        if (link.getFinalFileName() == null && setDummyFilenameWhenDecryptionKeyIsWrongOrMissing) {
+                            final String tempName = getFallbackFilenameForErrorMissingDecryptionKey(link);
+                            if (tempName != null) {
+                                link.setName(tempName);
+                            }
+                        }
                         return AvailableStatus.TRUE;
                     }
                     fileKey = getUserInput("Decryption key?", link);

@@ -107,11 +107,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlNEW(final CryptedLink param) throws Exception {
         final String contenturl = param.getCryptedUrl();
         final String identifier;
-        // final Map<String, Object> filterMap = this.parseFilterMap(contenturl);
-        // if (filterMap != null && !filterMap.isEmpty()) {
-        // /* E.g. https://archive.org/details/archiveteam_imgur?and%5B%5D=mediatype%3A%22data%22 */
-        // return this.crawlSearchQueryURL(param);
-        // }
         if (new Regex(contenturl, PATTERN_SEARCH).patternFind()) {
             return this.crawlSearchQueryURL(param);
         } else if ((identifier = getIdentifierFromURL(contenturl)) != null) {

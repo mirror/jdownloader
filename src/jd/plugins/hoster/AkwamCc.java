@@ -135,7 +135,7 @@ public class AkwamCc extends PluginForHost {
                 if (StringUtils.isEmpty(dllink)) {
                     logger.warning("Failed to find final downloadurl");
                     if (br.containsHTML("text-danger")) {
-                        /* Very rudimenditary error handling */
+                        /* Very rudimentary error handling */
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily unavailable");
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
