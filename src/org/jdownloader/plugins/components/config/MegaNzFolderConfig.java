@@ -19,7 +19,6 @@ public interface MegaNzFolderConfig extends PluginConfigInterface {
     public static final TRANSLATION TRANSLATION = new TRANSLATION();
 
     public static class TRANSLATION {
-
         public String getCrawlerSetFullPathAsPackagename_label() {
             return "Folder crawler: Set full path as package name (if disabled, only name of respective folder will be used as packagename)?";
         }
@@ -54,7 +53,7 @@ public interface MegaNzFolderConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("DEFAULT")
     @DefaultOnNull
-    @DescriptionForConfigEntry("MEGA links by default contain a key which is needed to decrypt the file- and file information. If you are adding a lot of links without key or key, JDownloader may ask you to enter it which may be annoying for you. This setting allows you to customize how JDownloader should treat such links.")
+    @DescriptionForConfigEntry("MEGA links by default contain a key which is needed to decrypt the file- and file/folder information. If you are adding a lot of links without key or invalid key, JDownloader can ask you to enter it which may be annoying for you. This setting allows you to customize how JDownloader should treat such links.")
     @Order(130)
     InvalidOrMissingDecryptionKeyAction getInvalidOrMissingDecryptionKeyAction();
 
