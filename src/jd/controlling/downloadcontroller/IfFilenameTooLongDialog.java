@@ -94,7 +94,8 @@ public class IfFilenameTooLongDialog extends AbstractDialog<IfFilenameTooLongAct
         final ExtTextArea txt = new ExtTextArea();
         txt.setLabelMode(true);
         txt.setToolTipText(path);
-        txt.setText("The name of this file is too long to write it to your filesystem.\r\nJDownloader can automatically shorten it, you can shorten it yourself, skip it or update your OS' settings to allow longer filenames.");
+        // TODO: Maybe only display the 'subfolder y package name' hint if we know that that setting is enabled.
+        txt.setText("The name of this file is too long to write it to your filesystem.\r\nWhat should we do about it?\r\nHint: If you are running into this problem frequently, turn off 'subfolder by package name'.");
         p.add(txt);
         final JTextField textfieldFilenameOld = new JTextField(this.downloadLink.getName());
         final JTextField textfieldFilenameNew = new JTextField(this.autoShortenedFilenameSuggestion);
