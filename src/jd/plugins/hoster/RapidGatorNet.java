@@ -991,7 +991,7 @@ public class RapidGatorNet extends PluginForHost {
             String expireDate = br.getRegex("Premium services will end on ([^<>\"]*?)\\.<br").getMatch(0);
             if (expireDate == null) {
                 if (expireDate == null) {
-                    expireDate = br.getRegex(">\\*Premium till (\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+                    expireDate = br.getRegex(">\\s*Premium till (\\d{4}-\\d{2}-\\d{2})").getMatch(0);
                     if (expireDate == null) {
                         expireDate = br.getRegex("(?:box-login|login-open).*Premium till (\\d{4}-\\d{2}-\\d{2})").getMatch(0);
                     }
