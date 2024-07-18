@@ -1109,11 +1109,19 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         } else {
             maxNumberofItemsPerPageForThisRun = defaultMaxNumberofItemsPerPage;
         }
-        final boolean isUserProfile = identifier != null && identifier.startsWith("@");
         final UrlQuery sourceurlquery = UrlQuery.parse(sourceurl);
         String userSearchQuery = sourceurlquery.get("query");
         if (userSearchQuery == null) {
             userSearchQuery = "";
+        }
+        final String titleHumanReadable;
+        final boolean isUserProfile = identifier != null && identifier.startsWith("@");
+        if (isUserProfile) {
+            titleHumanReadable = "Profile " + identifier;
+        } else if (!StringUtils.isEmpty(userSearchQuery)) {
+            titleHumanReadable = "Search " + userSearchQuery;
+        } else {
+            titleHumanReadable = "Search " + new URL(sourceurl).getPath();
         }
         final String startPageStr = sourceurlquery.get("page");
         /* Allow user to define custom start-page in given URL. */
@@ -1152,6 +1160,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         int page = startPage;
         final HashSet<String> dupes = new HashSet<String>();
         int totalNumberofItems = -1;
+        boolean displayedSearchNotification = false;
         do {
             query.addAndReplace("page", Integer.toString(page));
             /* This looks to be an internally used version of public crawl/search API v2 beta, see: https://archive.org/services/swagger/ */
@@ -1160,7 +1169,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 if (ret.size() > 0) {
                     logger.info("Stopping because: Surprisingly got http response 400 | Possibly missing items: " + (totalNumberofItems - ret.size()));
                     if (ret.size() < totalNumberofItems) {
-                        displayBubbleNotification(identifier + "| Search crawler stopped early", "Found items: " + ret.size() + "/" + totalNumberofItems);
+                        displayBubbleNotification(titleHumanReadable + " | Search crawler stopped early", "Found items: " + ret.size() + "/" + totalNumberofItems);
                     }
                     break;
                 } else {
@@ -1176,6 +1185,17 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 hitsmap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "response/body/hits");
             }
             totalNumberofItems = ((Number) hitsmap.get("total")).intValue();
+            if (!displayedSearchNotification) {
+                String message = "This item leads to " + totalNumberofItems + " results.";
+                if (maxResults != -1 && maxResults < totalNumberofItems) {
+                    message += "\r\nImportant: Due to your currently defined limits in the plugin settings, only " + maxResults + " of these items will be crawled.";
+                }
+                if (startPage > 1) {
+                    message += "\r\nImportant: According to the parameters in your added URL, this crawl process will not start from the first page but from page " + startPage + " so this will not find any items of previous pages.";
+                }
+                displayBubbleNotification(titleHumanReadable + " | Crawling", message);
+                displayedSearchNotification = true;
+            }
             final List<Map<String, Object>> hits = (List<Map<String, Object>>) hitsmap.get("hits");
             int numberofNewItemsThisPage = 0;
             boolean stopDueToCrawlLimitReached = false;
