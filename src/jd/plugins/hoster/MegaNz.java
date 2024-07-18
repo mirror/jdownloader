@@ -199,8 +199,10 @@ public class MegaNz extends PluginForHost {
             key = getNodeFileKey(link);
             allowPreferDownloadPasswordAsKey = false;
         }
-        // Don't allow key from download-password if file is part of folder node because user cannot know the key in this case and we
-        // usually already have the correct key.
+        /*
+         * Don't allow key from download-password if file is part of folder node because user cannot know the key in this case and we
+         * usually already have the correct key.
+         */
         if (allowPreferDownloadPasswordAsKey && isValidDecryptionKey(link.getDownloadPassword())) {
             // logger.fine("Prefer decryption key from download password over key from URL: " + keyString);
             key = link.getDownloadPassword();
