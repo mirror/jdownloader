@@ -16,6 +16,9 @@ public class ParsedFilename {
     private final CompiledFiletypeExtension extCompiled;
 
     public ParsedFilename(final String filename) {
+        if (filename == null) {
+            throw new IllegalArgumentException();
+        }
         originalfilename = filename;
         String extAdvanced = null;
         if (filename.contains(".")) {

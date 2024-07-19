@@ -22,6 +22,8 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensio
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
+import jd.plugins.ParsedFilename;
+
 public class LinknameCleaner {
     public static final Pattern   pat0     = Pattern.compile("(.*)(\\.|_|-)pa?r?t?\\.?[0-9]+.(rar|rev|exe)($|\\.html?)", Pattern.CASE_INSENSITIVE);
     public static final Pattern   pat1     = Pattern.compile("(.*)(\\.|_|-)part\\.?[0]*[1].(rar|rev|exe)($|\\.html?)", Pattern.CASE_INSENSITIVE);
@@ -48,11 +50,11 @@ public class LinknameCleaner {
             /* not loaded yet */
         }
     }
-    public static final Pattern   pat13    = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat17    = Pattern.compile("(.+)\\.\\d+\\.xtm($|\\.html?)");
-    public static final Pattern   pat18    = Pattern.compile("(.*)\\.isz($|\\.html?)", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat19    = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern[] iszPats  = new Pattern[] { pat18, pat19 };
+    public static final Pattern   pat13   = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat17   = Pattern.compile("(.+)\\.\\d+\\.xtm($|\\.html?)");
+    public static final Pattern   pat18   = Pattern.compile("(.*)\\.isz($|\\.html?)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat19   = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern[] iszPats = new Pattern[] { pat18, pat19 };
 
     public static enum EXTENSION_SETTINGS {
         KEEP,
@@ -60,8 +62,8 @@ public class LinknameCleaner {
         REMOVE_ALL
     }
 
-    private static volatile Map<Pattern, String> FILENAME_REPLACEMAP            = new HashMap<Pattern, String>();
-    private static volatile Map<String, String>  FILENAME_REPLACEMAP_DEFAULT    = new HashMap<String, String>();
+    private static volatile Map<Pattern, String> FILENAME_REPLACEMAP         = new HashMap<Pattern, String>();
+    private static volatile Map<String, String>  FILENAME_REPLACEMAP_DEFAULT = new HashMap<String, String>();
     static {
         final ObjectKeyHandler replaceMapKeyHandler = CFG_GENERAL.FILENAME_CHARACTER_REGEX_REPLACEMAP;
         FILENAME_REPLACEMAP_DEFAULT = (Map<String, String>) replaceMapKeyHandler.getDefaultValue();
@@ -76,6 +78,23 @@ public class LinknameCleaner {
             }
         });
         FILENAME_REPLACEMAP = convertReplaceMap(FILENAME_REPLACEMAP_DEFAULT, (Map<String, String>) replaceMapKeyHandler.getValue());
+    }
+    private static volatile Map<Pattern, String> FILENAME_TOO_LONG_REPLACEMAP         = new HashMap<Pattern, String>();
+    private static volatile Map<String, String>  FILENAME_TOO_LONG_REPLACEMAP_DEFAULT = new HashMap<String, String>();
+    static {
+        final ObjectKeyHandler replaceMapKeyHandler = CFG_GENERAL.FILENAME_TOO_LONG_REGEX_REPLACEMAP;
+        FILENAME_TOO_LONG_REPLACEMAP_DEFAULT = (Map<String, String>) replaceMapKeyHandler.getDefaultValue();
+        replaceMapKeyHandler.getEventSender().addListener(new GenericConfigEventListener<Object>() {
+            @Override
+            public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
+                FILENAME_TOO_LONG_REPLACEMAP = convertReplaceMap(FILENAME_TOO_LONG_REPLACEMAP_DEFAULT, (Map<String, String>) newValue);
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
+            }
+        });
+        FILENAME_TOO_LONG_REPLACEMAP = convertReplaceMap(FILENAME_TOO_LONG_REPLACEMAP_DEFAULT, (Map<String, String>) replaceMapKeyHandler.getValue());
     }
     private static volatile Map<Pattern, String> PACKAGENAME_REPLACEMAP         = new HashMap<Pattern, String>();
     private static volatile Map<String, String>  PACKAGENAME_REPLACEMAP_DEFAULT = new HashMap<String, String>();
@@ -166,8 +185,8 @@ public class LinknameCleaner {
             }
         }
         /**
-         * Users can put anything into that replace map. </br> Try to avoid the results of adding something like ".+" resulting in empty
-         * filenames.
+         * Users can put anything into that replace map. </br>
+         * Try to avoid the results of adding something like ".+" resulting in empty filenames.
          */
         if (!StringUtils.isEmpty(newstr)) {
             return newstr;
@@ -181,6 +200,48 @@ public class LinknameCleaner {
         String ret = replaceCharactersByMap(fileName, FILENAME_REPLACEMAP);
         ret = CrossSystem.alleviatePathParts(ret, false);
         return ret;
+    }
+
+    /**
+     * Shortens given filename to max length. </br>
+     * Keeps file extension. </br>
+     * Returns null if filename can't be shortened.
+     */
+    public static String shortenFilename(final ParsedFilename pfilename, final int maxLength) {
+        if (pfilename == null) {
+            throw new IllegalArgumentException();
+        } else if (maxLength <= 0) {
+            throw new IllegalArgumentException();
+        }
+        String filenameWithoutExtension = pfilename.getFilenameWithoutExtensionAdvanced();
+        final String ext = pfilename.getExtensionAdvanced();
+        if (ext != null && ext.length() > maxLength) {
+            /* Edge case */
+            // logger.info("Cannot shorten filename because file extension wouldn't fit");
+            return null;
+        }
+        // final int shortenToLength = Math.min(maxLength - ext.length(), pfilename.getOriginalfilename().length() - ext.length());
+        final int maxLengthForFilenameWithoutExt;
+        if (ext != null) {
+            maxLengthForFilenameWithoutExt = maxLength - ext.length();
+        } else {
+            maxLengthForFilenameWithoutExt = maxLength;
+        }
+        // TODO: Add detection of archives / multipart archives and do not offer auto rename for such items.
+        filenameWithoutExtension = replaceCharactersByMap(filenameWithoutExtension, FILENAME_TOO_LONG_REPLACEMAP);
+        /* Trim in case after cutting it, it randomly ends with a space. */
+        filenameWithoutExtension = filenameWithoutExtension.trim();
+        if (filenameWithoutExtension.length() > maxLengthForFilenameWithoutExt) {
+            /* Filename is still too long -> Shorten it by cutting it from the end. */
+            filenameWithoutExtension = filenameWithoutExtension.substring(0, maxLengthForFilenameWithoutExt);
+            /* Trim in case after cutting it, it randomly ends with a space. */
+            filenameWithoutExtension = filenameWithoutExtension.trim();
+        }
+        /* Re-Add file-extension if there is one. */
+        if (ext != null) {
+            filenameWithoutExtension += ext;
+        }
+        return filenameWithoutExtension;
     }
 
     public static String cleanPackagename(final String packageName, boolean allowCleanup) {
@@ -326,7 +387,7 @@ public class LinknameCleaner {
         return name;
     }
 
-    private static String getNameMatch(String name, Pattern pattern) {
+    private static String getNameMatch(final String name, final Pattern pattern) {
         String match = new Regex(name, pattern).getMatch(0);
         if (match != null) {
             return match;

@@ -360,6 +360,15 @@ public interface GeneralSettings extends ConfigInterface {
 
     public void setFilenameReplaceMap(Map<String, String> map);
 
+    @AboutConfig
+    @DescriptionForConfigEntry("Returns map of regular expressions which will be used to shorten filenames that are too long for the users' filesystem. Feel free to let this replace dots since the replacements of this map will not be applied to the file extension.")
+    @DefaultJsonObject("{}")
+    @DefaultOnNull
+    @ValidatorFactory(ReplaceMapValidator.class)
+    Map<String, String> getFilenameTooLongRegexReplaceMap();
+
+    public void setFilenameTooLongRegexReplaceMap(Map<String, String> map);
+
     /**
      * Important: Developers: Keep default value the same for: getPackagenameCharacterRegexReplaceMap and
      * getFilenameCharacterRegexReplaceMap !!

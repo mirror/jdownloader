@@ -239,5 +239,6 @@ public class CFG_GENERAL {
      **/
     public static final IntegerKeyHandler               WAITTIME_ON_CONNECTION_LOSS                                      = SH.getKeyHandler("WaittimeOnConnectionLoss", IntegerKeyHandler.class);
     public static final ObjectKeyHandler                FILENAME_CHARACTER_REGEX_REPLACEMAP                              = SH.getKeyHandler("FilenameReplaceMap", ObjectKeyHandler.class);
+    public static final ObjectKeyHandler                FILENAME_TOO_LONG_REGEX_REPLACEMAP                               = SH.getKeyHandler("FilenameTooLongRegexReplaceMap", ObjectKeyHandler.class);
     public static final ObjectKeyHandler                PACKAGE_NAME_CHARACTER_REGEX_REPLACEMAP                          = SH.getKeyHandler("PackagenameReplaceMap", ObjectKeyHandler.class);
 }

@@ -139,6 +139,7 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -164,7 +165,6 @@ import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
 import jd.plugins.LinkStatus;
-import jd.plugins.ParsedFilename;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
@@ -4108,16 +4108,17 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 }
                             }
                         }
+                        final int maxPathLengthWindows = 259; // 260 but only 259 usable
                         try {
                             FilePathChecker.createFilePath(writeTest1);
                             /* Test-boolean to test this on OS which do not have any path limitations. */
                             final boolean devtestForceLongfilenameException = false;
-                            if (devtestForceLongfilenameException && fileOutput.getAbsolutePath().length() > 259) {
+                            if (devtestForceLongfilenameException && fileOutput.getAbsolutePath().length() > maxPathLengthWindows) {
                                 throw new BadFilePathException(writeTest1, PathFailureReason.PATH_SEGMENT_TOO_LONG);
                             }
                         } catch (final BadFilePathException e) {
                             /* Looks like filename might be too long -> Check if writing a shortened filename would be possible. */
-                            int maxFilenameLength = 259 - fileOutput.getParentFile().getAbsolutePath().length();
+                            int maxFilenameLength = maxPathLengthWindows - fileOutput.getParentFile().getAbsolutePath().length();
                             if (fileOutput.getName().length() > filename.length()) {
                                 /*
                                  * Name of write-test file was longer than name of filename -> Filename needs to be smaller to compensate
@@ -4137,29 +4138,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
                             }
                             /* Shorten filename and try again */
-                            String shortenedFilename;
-                            final ParsedFilename pfilename = new jd.plugins.ParsedFilename(filename);
-                            String ext = pfilename.getExtensionAdvanced();
-                            if (ext != null) {
-                                /* Filename contains extension -> Shorten name and keep extension */
-                                if (ext.length() > maxFilenameLength) {
-                                    /* Edge case */
-                                    logger.info("Cannot shorten filename because file extension wouldn't fit");
-                                    throw e;
-                                }
-                                // TODO: Add detection of archives / multipart archives and do not offer auto rename for such items.
-                                // final String filenameWithoutExt = pfilename.getFilenameWithoutExtensionAdvanced();
-                                final int shortenToLength = Math.min(maxFilenameLength - ext.length(), filename.length() - ext.length());
-                                shortenedFilename = filename.substring(0, shortenToLength);
-                            } else {
-                                /* Filename does not contain extension -> Just shorten it to max allowed length. */
-                                shortenedFilename = filename.substring(0, maxFilenameLength);
-                            }
-                            /* Trim in case after cutting it, it randomly ends with a space. */
-                            shortenedFilename = shortenedFilename.trim();
-                            /* Re-Add file-extension if there is one. */
-                            if (ext != null) {
-                                shortenedFilename += ext;
+                            final String shortenedFilename = LinknameCleaner.shortenFilename(new jd.plugins.ParsedFilename(filename), maxFilenameLength);
+                            if (shortenedFilename == null) {
+                                /* Shortening this filename was not possible -> Throw exception */
+                                throw e;
                             }
                             final IfFilenameTooLongDialogInterface io = new IfFilenameTooLongDialog(downloadLink, shortenedFilename).show();
                             IfFilenameTooLongAction doAction;
