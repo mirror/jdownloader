@@ -18,19 +18,20 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class NovelcoolCom extends PluginForHost {
@@ -43,18 +44,14 @@ public class NovelcoolCom extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
-    /* Connection stuff */
-    private static final boolean free_resume             = false;
-    private static final int     free_maxchunks          = 1;
-    private static final int     free_maxdownloads       = -1;
-    private String               dllink                  = null;
-    public static final String   PROPERTY_BOOK_ID        = "book_id";
-    public static final String   PROPERTY_CHAPTER_ID     = "chapter_id";
-    public static final String   PROPERTY_SERIES_TITLE   = "series_title";
-    public static final String   PROPERTY_CHAPTER_NUMBER = "chapter_number";
-    public static final String   PROPERTY_PAGE_NUMBER    = "page_number";
-    public static final String   PROPERTY_PAGE_MAX       = "page_max";
-    public static final String   extDefault              = ".jpg";
+    private String             dllink                  = null;
+    public static final String PROPERTY_BOOK_ID        = "book_id";
+    public static final String PROPERTY_CHAPTER_ID     = "chapter_id";
+    public static final String PROPERTY_SERIES_TITLE   = "series_title";
+    public static final String PROPERTY_CHAPTER_NUMBER = "chapter_number";
+    public static final String PROPERTY_PAGE_NUMBER    = "page_number";
+    public static final String PROPERTY_PAGE_MAX       = "page_max";
+    public static final String extDefault              = ".jpg";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -98,6 +95,15 @@ public class NovelcoolCom extends PluginForHost {
     }
 
     @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        return 1;
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
     }
@@ -109,7 +115,7 @@ public class NovelcoolCom extends PluginForHost {
         }
         final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
         final String chapterNumber = urlinfo.getMatch(0);
-        final String pageNumber = urlinfo.getMatch(2);
+        final String pageNumber = urlinfo.getMatch(3);
         link.setProperty(PROPERTY_CHAPTER_NUMBER, chapterNumber);
         link.setProperty(PROPERTY_PAGE_NUMBER, pageNumber);
         this.setBrowserExclusive();
@@ -162,14 +168,14 @@ public class NovelcoolCom extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(link, null));
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

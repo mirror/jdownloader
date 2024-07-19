@@ -18,8 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -30,13 +33,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AporntvCom extends PluginForHost {
     public AporntvCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -71,8 +78,8 @@ public class AporntvCom extends PluginForHost {
         return buildSupportedNames(getPluginDomains());
     }
 
-    private static final String PATTERN_EMBED  = "/embed/(\\d+)";
-    private static final String PATTERN_NORMAL = "/video/([a-z0-9\\-]+)-(\\d+)\\.html";
+    private static final String PATTERN_EMBED  = "(?i)/embed/(\\d+)";
+    private static final String PATTERN_NORMAL = "(?i)/video/([a-z0-9\\-]+)-(\\d+)\\.html";
 
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
@@ -132,27 +139,9 @@ public class AporntvCom extends PluginForHost {
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            link.setFinalFileName(title + extDefault);
+            link.setFinalFileName(this.applyFilenameExtension(title, extDefault));
         }
-        if (!StringUtils.isEmpty(dllink)) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(this.dllink);
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
+        this.basicLinkCheck(br, br.createHeadRequest(this.dllink), link, title, extDefault);
         return AvailableStatus.TRUE;
     }
 
