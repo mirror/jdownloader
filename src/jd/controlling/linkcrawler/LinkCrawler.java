@@ -4103,13 +4103,19 @@ public class LinkCrawler {
                     }
                     urlConnection.disconnect();
                     final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
-                    final CrawledLink direct = createDirectHTTPCrawledLink(link, null, urlConnection);
+                    final CrawledLink direct = lc.createDirectHTTPCrawledLink(link, null, urlConnection);
                     if (direct != null) {
                         ret.add(direct);
                     }
                     return ret;
                 } else {
                     br.followConnection();
+                    if ((rule == null || RULE.DEEPDECRYPT.equals(rule)) && br.containsHTML("^#EXTM3U")) {
+                        // auto m3u8 handling of URLs without .m3u8 in URL
+                        final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
+                        ret.add(lc.crawledLinkFactorybyURL("m3u8://" + br.getURL()));
+                        return ret;
+                    }
                     return null;
                 }
             }
