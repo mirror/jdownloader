@@ -4,8 +4,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.UniqueAlltimeID;
@@ -14,17 +20,17 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
-
 public class PluginFinder {
-    private final HashMap<String, LazyHostPlugin> hostMappings            = new HashMap<String, LazyHostPlugin>();
-    private final HashMap<String, PluginForHost>  pluginCaches            = new HashMap<String, PluginForHost>();
-    private static volatile List<LazyHostPlugin>  ASSIGN_PLUGINS          = new ArrayList<LazyHostPlugin>();
-    private final static Set<String>              BROKEN_PLUGINS          = new HashSet<String>();
-    private final static AtomicLong               PLUGINSLASTMODIFICATION = new AtomicLong(-1);
-    private final LogInterface                    logger;
+    private final HashMap<String, PluginForHost> pluginCaches            = new HashMap<String, PluginForHost>();
+    private Map<String, Object>                  hostMappings            = new HashMap<String, Object>();
+
+    private static volatile List<LazyHostPlugin> ASSIGN_PLUGINS          = new ArrayList<LazyHostPlugin>();
+    private static volatile Map<String, Object>  HOST_MAPPINGS           = new ConcurrentHashMap<String, Object>();
+
+    private final static Set<String>             BROKEN_PLUGINS          = new HashSet<String>();
+    private final static AtomicLong              PLUGINSLASTMODIFICATION = new AtomicLong(-1);
+    private final LogInterface                   logger;
+    private final static Object                  NULL                    = new Object();
 
     public PluginFinder() {
         this(null);
@@ -79,17 +85,19 @@ public class PluginFinder {
         }
     }
 
-    protected synchronized void updateCache() {
+    protected void updateCache() {
         synchronized (PLUGINSLASTMODIFICATION) {
             final long lastmodification = HostPluginController.getInstance().getLastModification();
             if (PLUGINSLASTMODIFICATION.get() != lastmodification) {
                 try {
+                    hostMappings = HOST_MAPPINGS = new ConcurrentHashMap<String, Object>();
                     updateAssignPluginsCache();
                     blacklistBrokenPlugins();
                 } finally {
                     PLUGINSLASTMODIFICATION.set(lastmodification);
                 }
             }
+            hostMappings = HOST_MAPPINGS;
         }
     }
 
@@ -160,11 +168,14 @@ public class PluginFinder {
                         }
                     }
                 }
-                hostMappings.put(host, null);
+                hostMappings.put(host, NULL);
                 logger.severe("Could not assign any host for: " + host);
                 return null;
             }
-            return hostMappings.get(host);
+            final Object ret = hostMappings.get(host);
+            if (ret instanceof LazyHostPlugin) {
+                return (LazyHostPlugin) ret;
+            }
         }
         return null;
     }
