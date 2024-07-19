@@ -1102,64 +1102,99 @@ public class LinkCrawler {
         return null;
     }
 
-    protected URLConnectionAdapter openCrawlDeeperConnection(final LinkCrawlerGeneration generation, final LogInterface logger, final LinkCrawlerRule matchingRule, final Browser br, final CrawledLink source) throws Exception {
+    protected interface LazyCrawlerPluginInvokation<T> {
+        public T invoke(PluginForDecrypt plugin) throws Exception;
+    }
+
+    protected <T> T invokeLazyCrawlerPlugin(final LinkCrawlerGeneration generation, LogInterface logger, final LazyCrawlerPlugin lazyC, final CrawledLink link, final LazyCrawlerPluginInvokation<T> invoker) throws Exception {
+        final LinkCrawlerTask task;
+        if ((task = checkStartNotify(generation, "invokeLazyCrawlerPlugin:" + lazyC + "|" + link.getURL())) != null) {
+            try {
+                final boolean newLogger = logger == null;
+                final PluginForDecrypt wplg = lazyC.newInstance(getPluginClassLoaderChild());
+                final AtomicReference<LinkCrawler> nextLinkCrawler = new AtomicReference<LinkCrawler>(this);
+                wplg.setBrowser(wplg.createNewBrowserInstance());
+                if (logger != null) {
+                    logger = LogController.getFastPluginLogger(wplg.getCrawlerLoggerID(link));
+                }
+                wplg.setLogger(logger);
+                wplg.init();
+                LogInterface oldLogger = null;
+                boolean oldVerbose = false;
+                boolean oldDebug = false;
+                /* now we run the plugin and let it find some links */
+                final LinkCrawlerThread lct = getCurrentLinkCrawlerThread();
+                Object owner = null;
+                LinkCrawler previousCrawler = null;
+                try {
+                    if (lct != null) {
+                        /* mark thread to be used by decrypter plugin */
+                        owner = lct.getCurrentOwner();
+                        lct.setCurrentOwner(wplg);
+                        previousCrawler = lct.getCurrentLinkCrawler();
+                        lct.setCurrentLinkCrawler(this);
+                        /* save old logger/states */
+                        oldLogger = lct.getLogger();
+                        oldDebug = lct.isDebug();
+                        oldVerbose = lct.isVerbose();
+                        /* set new logger and set verbose/debug true */
+                        lct.setLogger(logger);
+                        lct.setVerbose(true);
+                        lct.setDebug(true);
+                    }
+                    final long startTime = System.currentTimeMillis();
+                    try {
+                        wplg.setCrawler(this);
+                        wplg.setLinkCrawlerGeneration(generation);
+                        wplg.setCurrentLink(link);
+                        final LinkCrawler pluginNextLinkCrawler = wplg.getCustomNextCrawler();
+                        if (pluginNextLinkCrawler != null) {
+                            nextLinkCrawler.set(pluginNextLinkCrawler);
+                        }
+                        return invoker.invoke(wplg);
+                    } finally {
+                        wplg.clean();
+                        wplg.setLinkCrawlerGeneration(null);
+                        wplg.setCurrentLink(null);
+                        final long endTime = System.currentTimeMillis() - startTime;
+                        lazyC.updateCrawlRuntime(endTime);
+                    }
+                } finally {
+                    if (lct != null) {
+                        /* reset thread to last known used state */
+                        lct.setCurrentOwner(owner);
+                        lct.setCurrentLinkCrawler(previousCrawler);
+                        lct.setLogger(oldLogger);
+                        lct.setVerbose(oldVerbose);
+                        lct.setDebug(oldDebug);
+                    }
+                    /* close the logger */
+                    if (newLogger && logger instanceof ClosableLogInterface) {
+                        ((ClosableLogInterface) logger).close();
+                    }
+                }
+
+            } finally {
+                /* restore old ClassLoader for current Thread */
+                checkFinishNotify(task);
+            }
+        }
+        return null;
+    }
+
+    protected URLConnectionAdapter openCrawlDeeperConnection(final LinkCrawlerGeneration generation, final LogInterface logger, final LinkCrawlerRule matchingRule, final Browser br, final CrawledLink link) throws Exception {
         final LazyCrawlerPlugin lazyC = getDeepCrawlingPlugin();
         if (lazyC == null) {
             throw new UpdateRequiredClassNotFoundException("could not find 'LinkCrawlerDeepHelper' crawler plugin");
-        }
-        final PluginForDecrypt wplg = lazyC.newInstance(getPluginClassLoaderChild());
-        final AtomicReference<LinkCrawler> nextLinkCrawler = new AtomicReference<LinkCrawler>(this);
-        wplg.setBrowser(br);
-        wplg.setLogger(logger);
-        wplg.init();
-        LogInterface oldLogger = null;
-        boolean oldVerbose = false;
-        boolean oldDebug = false;
-        /* now we run the plugin and let it find some links */
-        final LinkCrawlerThread lct = getCurrentLinkCrawlerThread();
-        Object owner = null;
-        LinkCrawler previousCrawler = null;
-        try {
-            if (lct != null) {
-                /* mark thread to be used by decrypter plugin */
-                owner = lct.getCurrentOwner();
-                lct.setCurrentOwner(wplg);
-                previousCrawler = lct.getCurrentLinkCrawler();
-                lct.setCurrentLinkCrawler(this);
-                /* save old logger/states */
-                oldLogger = lct.getLogger();
-                oldDebug = lct.isDebug();
-                oldVerbose = lct.isVerbose();
-                /* set new logger and set verbose/debug true */
-                lct.setLogger(logger);
-                lct.setVerbose(true);
-                lct.setDebug(true);
-            }
-            final long startTime = System.currentTimeMillis();
-            try {
-                wplg.setCrawler(this);
-                wplg.setLinkCrawlerGeneration(generation);
-                final LinkCrawler pluginNextLinkCrawler = wplg.getCustomNextCrawler();
-                if (pluginNextLinkCrawler != null) {
-                    nextLinkCrawler.set(pluginNextLinkCrawler);
+        } else {
+            return invokeLazyCrawlerPlugin(generation, logger, lazyC, link, new LazyCrawlerPluginInvokation<URLConnectionAdapter>() {
+
+                @Override
+                public URLConnectionAdapter invoke(PluginForDecrypt plugin) throws Exception {
+                    plugin.setBrowser(br);
+                    return ((LinkCrawlerDeepHelperInterface) plugin).openConnection(matchingRule, br, link);
                 }
-                return ((LinkCrawlerDeepHelperInterface) wplg).openConnection(matchingRule, br, source);
-            } finally {
-                wplg.clean();
-                wplg.setLinkCrawlerGeneration(null);
-                wplg.setCurrentLink(null);
-                final long endTime = System.currentTimeMillis() - startTime;
-                lazyC.updateCrawlRuntime(endTime);
-            }
-        } finally {
-            if (lct != null) {
-                /* reset thread to last known used state */
-                lct.setCurrentOwner(owner);
-                lct.setCurrentLinkCrawler(previousCrawler);
-                lct.setLogger(oldLogger);
-                lct.setVerbose(oldVerbose);
-                lct.setDebug(oldDebug);
-            }
+            });
         }
     }
 
@@ -1429,14 +1464,7 @@ public class LinkCrawler {
                         followRedirectLinks.add(deeperSource);
                         crawl(generation, followRedirectLinks);
                     } else {
-                        final List<CrawledLink> inspectedLinks;
-                        try {
-                            inspectedLinks = lDeepInspector.deepInspect(this, generation, br, connection, deeperSource);
-                        } catch (final IOException e) {
-                            // TODO: 2024-03-08: Remove this catch(?)
-                            logger.log(e);
-                            throw e;
-                        }
+                        final List<CrawledLink> inspectedLinks = lDeepInspector.deepInspect(this, generation, br, connection, deeperSource);
                         /*
                          * Downloadable content, we use directhttp and distribute the url
                          */
@@ -1561,38 +1589,6 @@ public class LinkCrawler {
                         }
                         if (deepLink == null) {
                             return;
-                        }
-                        final boolean scanForHttpDirectory = false;
-                        if (scanForHttpDirectory && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                            // TODO: 2024-03-07: Unfinished feature, properly implement this
-                            /* Check if http directory crawler would return results for current item */
-                            ArrayList<DownloadLink> httpDirectoryResults = null;
-                            try {
-                                // final LazyCrawlerPlugin lazyC = getDeepCrawlingPlugin();
-                                // if (lazyC == null) {
-                                // throw new UpdateRequiredClassNotFoundException("could not find 'LinkCrawlerDeepHelper' crawler plugin");
-                                // }
-                                final LazyCrawlerPlugin lazyHttpDirectoryCrawler = this.getLazyGenericHttpDirectoryCrawlerPlugin();
-                                final abstractGenericHTTPDirectoryIndexCrawler httpDirectoryCrawler = (abstractGenericHTTPDirectoryIndexCrawler) lazyHttpDirectoryCrawler.newInstance(getPluginClassLoaderChild());
-                                httpDirectoryResults = httpDirectoryCrawler.parseHTTPDirectory(null, br);
-                                if (httpDirectoryResults != null && httpDirectoryResults.size() > 0) {
-                                    /*
-                                     * TODO: Add functionality, Those links are supposed to go into the GenericHTTPDirectoryIndexCrawler
-                                     * next
-                                     */
-                                    br.disconnect();
-                                    final ArrayList<CrawledLink> httpdirectoryLinks = new ArrayList<CrawledLink>();
-                                    for (final DownloadLink httpDirectoryResult : httpDirectoryResults) {
-                                        httpdirectoryLinks.add(new CrawledLink(httpDirectoryResult.getContentUrlOrPatternMatcher()));
-                                    }
-                                    httpdirectoryLinks.add(deeperSource);
-                                    crawl(generation, httpdirectoryLinks);
-                                    return;
-                                }
-                            } catch (final Throwable e) {
-                                // logger.log(e);
-                                logger.exception("HTTPDirectory handling failed", e);
-                            }
                         }
                         final String finalBaseUrl = new Regex(brURL, "(https?://.*?)(\\?|$)").getMatch(0);
                         final boolean deepPatternContent;
@@ -2941,7 +2937,7 @@ public class LinkCrawler {
                         } finally {
                             wplg.setCurrentLink(null);
                             final long endTime = Time.systemIndependentCurrentJVMTimeMillis() - startTime;
-                            wplg.getLazyP().updateParseRuntime(endTime);
+                            pHost.updateParseRuntime(endTime);
                             /* close the logger */
                             if (logger instanceof ClosableLogInterface) {
                                 ((ClosableLogInterface) logger).close();
@@ -3961,6 +3957,8 @@ public class LinkCrawler {
                     return "https://".concat(cUrl.substring("httpsviajd://".length()));
                 } else if (cUrl.startsWith("ftpviajd://")) {
                     return "ftp://".concat(cUrl.substring("ftpviajd://".length()));
+                } else if (cUrl.startsWith("jd://")) {
+                    return cUrl.replaceFirst("(?i)^jd://[^/:]+://", "");
                 }
             }
         }
@@ -4065,7 +4063,7 @@ public class LinkCrawler {
     public LinkCrawlerDeepInspector defaultDeepInspector() {
         return new LinkCrawlerDeepInspector() {
             @Override
-            public List<CrawledLink> deepInspect(LinkCrawler lc, final LinkCrawlerGeneration generation, Browser br, URLConnectionAdapter urlConnection, CrawledLink link) throws Exception {
+            public List<CrawledLink> deepInspect(LinkCrawler lc, final LinkCrawlerGeneration generation, final Browser br, final URLConnectionAdapter urlConnection, final CrawledLink link) throws Exception {
                 final int limit = Math.max(1 * 1024 * 1024, CONFIG.getDeepDecryptLoadLimit());
                 if (br != null) {
                     br.setLoadLimit(limit);
@@ -4110,11 +4108,34 @@ public class LinkCrawler {
                     return ret;
                 } else {
                     br.followConnection();
-                    if ((rule == null || RULE.DEEPDECRYPT.equals(rule)) && br.containsHTML("^#EXTM3U")) {
+                    if (br.containsHTML("^#EXTM3U")) {
                         // auto m3u8 handling of URLs without .m3u8 in URL
                         final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
                         ret.add(lc.crawledLinkFactorybyURL("m3u8://" + br.getURL()));
                         return ret;
+                    }
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        try {
+                            final LazyCrawlerPlugin lazyC = lc.getLazyGenericHttpDirectoryCrawlerPlugin();
+                            if (lazyC == null) {
+                                throw new UpdateRequiredClassNotFoundException("could not find 'GenericHttpDirectoryCrawlerPlugin' crawler plugin");
+                            }
+                            final ArrayList<DownloadLink> directoryContent = lc.invokeLazyCrawlerPlugin(generation, null, lazyC, link, new LazyCrawlerPluginInvokation<ArrayList<DownloadLink>>() {
+
+                                @Override
+                                public ArrayList<DownloadLink> invoke(PluginForDecrypt plugin) throws Exception {
+                                    plugin.setBrowser(br);
+                                    return ((abstractGenericHTTPDirectoryIndexCrawler) plugin).parseHTTPDirectory(new CryptedLink(br.getURL(), link), br);
+                                }
+                            });
+                            if (directoryContent != null && directoryContent.size() > 0) {
+                                final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
+                                ret.add(lc.crawledLinkFactorybyURL("jd://directoryindex://" + br.getURL()));
+                                return ret;
+                            }
+                        } catch (final Throwable e) {
+                            LogController.CL().log(e);
+                        }
                     }
                     return null;
                 }

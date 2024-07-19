@@ -11,6 +11,12 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.Timer;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.gui.swing.jdgui.JDGui;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
@@ -23,12 +29,6 @@ import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.gui.swing.jdgui.JDGui;
 
 public class AddLinksProgress extends AbstractDialog<Object> {
     private CircledProgressBar                 progress;
@@ -110,6 +110,7 @@ public class AddLinksProgress extends AbstractDialog<Object> {
                         @Override
                         protected void runInEDT() {
                             if (isInitialized()) {
+                                setReturnmask(true);
                                 dispose();
                             }
                         }

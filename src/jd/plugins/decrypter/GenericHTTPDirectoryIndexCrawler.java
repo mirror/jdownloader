@@ -42,7 +42,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.abstractGenericHTTPDirectoryIndexCrawler;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "HTTPDirectoryCrawler" }, urls = { "" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "HTTPDirectoryCrawler" }, urls = { "jd://directoryindex://.+" })
 public class GenericHTTPDirectoryIndexCrawler extends abstractGenericHTTPDirectoryIndexCrawler {
     @Override
     public Browser createNewBrowserInstance() {
@@ -67,13 +67,14 @@ public class GenericHTTPDirectoryIndexCrawler extends abstractGenericHTTPDirecto
 
     protected ArrayList<DownloadLink> crawlHTTPDirectory(final CryptedLink param) throws IOException, PluginException, DecrypterRetryException {
         /* First check if maybe the user has added a directURL. */
-        final GetRequest getRequest = br.createGetRequest(param.getCryptedUrl());
+        final String url = param.getCryptedUrl().replaceFirst("(?i)^jd://directoryindex://", "");
+        final GetRequest getRequest = br.createGetRequest(url);
         final URLConnectionAdapter con = this.br.openRequestConnection(getRequest);
         try {
             if (this.looksLikeDownloadableContent(con)) {
                 final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
                 final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(getRequest, con);
-                final String pathToFile = getCurrentDirectoryPath(param.getCryptedUrl());
+                final String pathToFile = getCurrentDirectoryPath(url);
                 /* Set relative path if one is available. */
                 if (pathToFile.contains("/")) {
                     final String pathToFolder = pathToFile.substring(0, pathToFile.lastIndexOf("/"));
@@ -162,7 +163,7 @@ public class GenericHTTPDirectoryIndexCrawler extends abstractGenericHTTPDirecto
         /* Is it a file or a folder? */
         if (filesizeStr.equals("-")) {
             /* Folder -> Will go back into this crawler */
-            final DownloadLink dlfolder = this.createDownloadlink(url);
+            final DownloadLink dlfolder = this.createDownloadlink("jd://directoryindex://" + url);
             return dlfolder;
         } else {
             /* File */
@@ -193,7 +194,7 @@ public class GenericHTTPDirectoryIndexCrawler extends abstractGenericHTTPDirecto
 
     /** Returns url-decoded directory path. */
     protected String getCurrentDirectoryPath(final Browser br) {
-        String path = br.getRegex("(?i)<(?:title|h1)>Index of (/[^<]+)</(?:title|h1)>").getMatch(0);
+        String path = br.getRegex("(?i)<(?:title|h1)>\\s*Index of\\s*(/[^<]*)\\s*</(?:title|h1)>").getMatch(0);
         if (path == null) {
             return null;
         } else {

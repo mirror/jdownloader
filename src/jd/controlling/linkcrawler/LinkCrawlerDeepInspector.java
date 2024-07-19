@@ -89,11 +89,11 @@ public abstract class LinkCrawlerDeepInspector {
             } else if (filePathName != null && filePathName.matches("(?i).+\\.srt") && isPlainTextContent(urlConnection) && (!hasContentLength || completeContentLength > 512 || hasEtag)) {
                 /*
                  * Accept-Ranges: bytes
-                 * 
+                 *
                  * Content-Type: text/plain
-                 * 
+                 *
                  * ETag: "11968........"
-                 * 
+                 *
                  * Content-Length: 28...
                  */
                 looksLike = true;
@@ -164,7 +164,7 @@ public abstract class LinkCrawlerDeepInspector {
 
     public boolean isPlainTextContent(final URLConnectionAdapter urlConnection) {
         final String contentType = urlConnection != null ? urlConnection.getContentType() : null;
-        return StringUtils.isNotEmpty(contentType) && StringUtils.containsIgnoreCase(contentType, "text/plain");
+        return StringUtils.isNotEmpty(contentType) && (StringUtils.containsIgnoreCase(contentType, "text/plain") || StringUtils.containsIgnoreCase(contentType, "plain/text"));
     }
 
     public boolean isHtmlContent(final URLConnectionAdapter urlConnection) {
