@@ -25,6 +25,14 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -43,14 +51,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BandCampCom;
 import jd.plugins.hoster.DirectHTTP;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { BandCampCom.class })
@@ -138,26 +138,27 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String json = br.getRegex("data-client-items=\"([^\"]+)").getMatch(0);
-        if (json == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        final String json = br.getRegex("data-client-items\\s*=\\s*\"([^\"]+)").getMatch(0);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final HashSet<String> dupes = new HashSet<String>();
-        final List<Map<String, Object>> clientitems = (List<Map<String, Object>>) JSonStorage.restoreFromString(Encoding.htmlOnlyDecode(json), TypeRef.OBJECT);
-        for (final Map<String, Object> clientitem : clientitems) {
-            final String type = clientitem.get("type").toString();
-            if (!type.equals("album")) {
-                logger.info("Skipping non-album item: " + JSonStorage.serializeToJson(clientitem));
-                continue;
+        if (json != null) {
+            // not every artist has data-client-items
+            final Object jsonObject = JSonStorage.restoreFromString(Encoding.htmlOnlyDecode(json), TypeRef.OBJECT);
+            final List<Map<String, Object>> clientitems = (List<Map<String, Object>>) jsonObject;
+            for (final Map<String, Object> clientitem : clientitems) {
+                final String type = clientitem.get("type").toString();
+                if (!type.equals("album")) {
+                    logger.info("Skipping non-album item: " + JSonStorage.serializeToJson(clientitem));
+                    continue;
+                }
+                String page_url = clientitem.get("page_url").toString();
+                page_url = Encoding.htmlOnlyDecode(page_url);
+                if (!dupes.add(page_url)) {
+                    /* Skip duplicates */
+                    continue;
+                }
+                ret.add(this.createDownloadlink(page_url));
             }
-            String page_url = clientitem.get("page_url").toString();
-            page_url = Encoding.htmlOnlyDecode(page_url);
-            if (!dupes.add(page_url)) {
-                /* Skip duplicates */
-                continue;
-            }
-            ret.add(this.createDownloadlink(page_url));
         }
         if (ret.isEmpty()) {
             /* This shouldn't be needed! */
@@ -351,8 +352,8 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             dateTimestamp = dateToTimestamp(dateStr);
         }
         /**
-         * Not all albums have playable audio tracks so for some, all we can crawl is the album cover art. </br> Example-album without any
-         * streamable tracks: https://midsummerex.bandcamp.com/album/intl
+         * Not all albums have playable audio tracks so for some, all we can crawl is the album cover art. </br>
+         * Example-album without any streamable tracks: https://midsummerex.bandcamp.com/album/intl
          */
         boolean isSingleTrack = new Regex(br.getURL(), BandCampCom.PATTERN_SINGLE_TRACK).patternFind();
         final List<Map<String, Object>> albumtracks = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(json);

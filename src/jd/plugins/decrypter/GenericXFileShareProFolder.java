@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
@@ -374,6 +375,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 dl.setContentUrl(link);
                 final String link_quoted = Pattern.quote(link);
                 String url_filename = new Regex(link, "(?i)[a-z0-9]{12}/(.+)\\.html$").getMatch(0);
+                url_filename = URLEncode.decodeURIComponent(url_filename);
                 /* E.g. up-4.net */
                 String html_filename = null;
                 String filesizeStr = null;
@@ -391,22 +393,29 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                     /* Other attempts without pre-found html-snippet */
                     html_filename = br.getRegex(link_quoted + "\">([^<]+)</a>").getMatch(0);
                 }
+                boolean isHTMLFilename = false;
                 String filename;
                 if (html_filename != null) {
+                    isHTMLFilename = true;
                     filename = html_filename;
                 } else {
                     filename = url_filename;
                 }
-                boolean incompleteFileName = false;
                 if (!StringUtils.isEmpty(filename)) {
                     if (filename.endsWith("&#133;")) {
+                        final String incompleteFilename = filename.replaceFirst("&#133;", "");
                         /*
                          * Indicates that this is not the complete filename but there is nothing we can do at this stage - full filenames
                          * should be displayed once a full linkcheck is performed or at least once a download starts.
                          */
-                        incompleteFileName = true;
+                        if (isHTMLFilename && url_filename != null && url_filename.length() > incompleteFilename.length()) {
+                            isHTMLFilename = false;
+                            filename = url_filename;
+                        }
                     }
-                    filename = Encoding.htmlDecode(filename);
+                    if (isHTMLFilename) {
+                        filename = Encoding.htmlDecode(filename);
+                    }
                     dl.setName(filename);
                 }
                 if (!StringUtils.isEmpty(filesizeStr)) {

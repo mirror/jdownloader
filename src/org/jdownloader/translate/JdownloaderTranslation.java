@@ -994,6 +994,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Already in Downloadlist" })
     String LinkFilterSettings_DefaultFilterList_dupes();
 
+    @Default(lngs = { "en" }, values = { "Enabled" })
+    String LinkFilterSettings_DefaultFilterList_enabled();
+
     @Default(lngs = { "en" }, values = { "Delete Duplicates" })
     String GenericDeleteFromLinkgrabberAction_getTranslationForDeleteDupesEnabled();
 

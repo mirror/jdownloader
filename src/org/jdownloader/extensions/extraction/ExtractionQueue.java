@@ -7,13 +7,8 @@ import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
 
 public class ExtractionQueue extends Queue {
-
     public ExtractionQueue() {
         super("ExtractionQueue");
-    }
-
-    public ExtractionController getCurrentQueueEntry() {
-        return (ExtractionController) this.getCurrentJob();
     }
 
     public List<ExtractionController> getJobs() {
@@ -26,11 +21,16 @@ public class ExtractionQueue extends Queue {
 
     @Override
     public boolean isEmpty() {
-        return this.getCurrentJob() == null && super.isEmpty();
+        synchronized (getLock()) {
+            return this.getCurrentJobs().isEmpty() && super.isEmpty();
+        }
     }
 
     public boolean isInProgress(ExtractionController p) {
-        return this.getCurrentJob() == p;
+        return this.getCurrentJobs().contains(p);
     }
 
+    public ExtractionController getCurrentQueueEntry() {
+        return (ExtractionController) this.getCurrentJobs().peekLast();
+    }
 }

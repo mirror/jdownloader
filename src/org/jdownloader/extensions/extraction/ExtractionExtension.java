@@ -26,16 +26,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.regex.Pattern;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.PackageControllerModifyVetoListener;
-import jd.plugins.AddonPanel;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -99,6 +89,16 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
+
+import jd.SecondLevelLaunch;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.packagecontroller.PackageControllerModifyVetoListener;
+import jd.plugins.AddonPanel;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class ExtractionExtension extends AbstractExtension<ExtractionConfig, ExtractionTranslation> implements FileCreationListener, MenuExtenderHandler, PackageControllerModifyVetoListener<FilePackage, DownloadLink> {
     private ExtractionQueue       extractionQueue = new ExtractionQueue();
@@ -184,10 +184,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     logger.info("removed outdated Archive(" + ec.getArchive().getArchiveID() + "|started:" + ec.gotStarted());
                 }
             }
-        }
-        final ExtractionController currentController = extractionQueue.getCurrentQueueEntry();
-        if (currentController != null && currentController.isSameArchive(archive)) {
-            return currentController;
         }
         DummyArchive dummyArchive = null;
         try {
@@ -444,11 +440,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     return;
                 }
                 if (request.isSilent()) {
-                    if (!extractionQueue.isEmpty() || extractionQueue.getCurrentQueueEntry() != null) {
+                    if (!extractionQueue.isEmpty()) {
                         throw new ShutdownVetoException("ExtractionExtension is still running", this);
                     }
                 } else {
-                    if (!extractionQueue.isEmpty() || extractionQueue.getCurrentQueueEntry() != null) {
+                    if (!extractionQueue.isEmpty()) {
                         if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT.T.Extraction_onShutdownRequest_(), _JDT.T.Extraction_onShutdownRequest_msg(), NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_EXTRACT, 32), _JDT.T.literally_yes(), null)) {
                             return;
                         }
@@ -589,13 +585,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             final Archive archive = ec.getArchive();
             if (archive.contains(archiveFactory)) {
                 ret.add(ec);
-            }
-        }
-        final ExtractionController currentController = extractionQueue.getCurrentQueueEntry();
-        if (currentController != null && !ret.contains(currentController)) {
-            final Archive archive = currentController.getArchive();
-            if (archive.contains(archiveFactory)) {
-                ret.add(currentController);
             }
         }
         if (ret.size() > 0) {

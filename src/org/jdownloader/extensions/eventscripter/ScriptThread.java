@@ -252,7 +252,7 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
         dupes.add("net.sourceforge.htmlunit.corejs.javascript.Function");
         dupes.add("void");
         StringBuilder preloadClasses = new StringBuilder("");
-        for (Class<?> c : new Class[] { Boolean.class, Integer.class, Byte.class, Long.class, String.class, Double.class, Float.class, ArrayList.class, List.class, LinkedList.class, Map.class, HashMap.class, Set.class, HashSet.class, MinimalMemoryMap.class, net.sourceforge.htmlunit.corejs.javascript.EcmaError.class, ScriptEnvironment.class, EnvironmentException.class }) {
+        for (Class<?> c : new Class[] { Boolean.class, Byte.class, Short.class, Integer.class, Long.class, String.class, Double.class, Float.class, ArrayList.class, List.class, LinkedList.class, Map.class, HashMap.class, Set.class, HashSet.class, MinimalMemoryMap.class, net.sourceforge.htmlunit.corejs.javascript.EcmaError.class, ScriptEnvironment.class, EnvironmentException.class }) {
             if (c.isArray()) {
                 c = c.getComponentType();
             }

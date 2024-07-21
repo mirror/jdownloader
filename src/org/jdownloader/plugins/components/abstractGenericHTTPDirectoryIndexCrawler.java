@@ -34,11 +34,6 @@ public abstract class abstractGenericHTTPDirectoryIndexCrawler extends PluginFor
         super(wrapper);
     }
 
-    public enum DirectoryListingMode {
-        NGINX,
-        APACHE
-    }
-
     public abstract ArrayList<DownloadLink> parseHTTPDirectory(final CryptedLink param, final Browser br) throws IOException, PluginException, DecrypterRetryException;
 
     @Override

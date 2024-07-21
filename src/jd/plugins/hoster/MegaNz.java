@@ -41,31 +41,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import jd.PluginWrapper;
-import jd.config.Property;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.HashResult;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -107,6 +82,31 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
 
+import jd.PluginWrapper;
+import jd.config.Property;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashResult;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MegaNz extends PluginForHost {
     private final String       USED_PLUGIN = "usedPlugin";
@@ -126,7 +126,7 @@ public class MegaNz extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "mega.nz", "mega.co.nz", });
+        ret.add(new String[] { MAIN_DOMAIN, "mega.co.nz" });
         return ret;
     }
 
@@ -154,9 +154,9 @@ public class MegaNz extends PluginForHost {
     public static final Pattern PATTERN_FILE_FOLDER_ID     = Pattern.compile("[a-zA-Z0-9]{8}");
     public static final Pattern PATTERN_ENCRYPTION_KEY_URL = Pattern.compile("[a-zA-Z0-9_-]{43}");
     public static final Pattern PATTERN_ENCRYPTION_KEY     = Pattern.compile("[a-zA-Z0-9+/]{43}");
-    public static final Pattern PATTERN_FILE_OLD           = Pattern.compile("#!([A-Za-z0-9]+)(!([a-zA-Z0-9_-]+))?");
-    public static final Pattern PATTERN_FILE_NEW           = Pattern.compile("(embed|file)/([a-zA-Z0-9]+)(#([a-zA-Z0-9_-]+))?", Pattern.CASE_INSENSITIVE);
-    public static final Pattern PATTERN_FILE_IN_FOLDER     = Pattern.compile("folder/([a-zA-Z0-9]+)#([a-zA-Z0-9_-]+)/file/([a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern PATTERN_FILE_OLD           = Pattern.compile("(?:#|%23)!([A-Za-z0-9]+)(!([a-zA-Z0-9_-]+))?");
+    public static final Pattern PATTERN_FILE_NEW           = Pattern.compile("(embed|file)/([a-zA-Z0-9]+)((?:#|%23)([a-zA-Z0-9_-]+))?", Pattern.CASE_INSENSITIVE);
+    public static final Pattern PATTERN_FILE_IN_FOLDER     = Pattern.compile("folder/([a-zA-Z0-9]+)(?:#|%23)([a-zA-Z0-9_-]+)/file/([a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
 
     public static boolean isValidDecryptionKey(final String str) {
         if (new Regex(str, PATTERN_ENCRYPTION_KEY).patternFind()) {
@@ -180,7 +180,7 @@ public class MegaNz extends PluginForHost {
     }
 
     private static String getDecodedPluginPatternMatcher(final String url) {
-        return url.replace("%21", "!");
+        return url.replace("%21", "!").replace("%23", "#");
     }
 
     private static String getFileID(final String url) {
@@ -484,7 +484,8 @@ public class MegaNz extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (account) {
             final String sid = apiLogin(account);
-            final Map<String, Object> uq = apiRequest(account, sid, null, "uq"/* userQuota */, new Object[] { "xfer"/* xfer */, 1 }, new Object[] { "pro"/* pro */, 1 });
+            final Map<String, Object> uq = apiRequest(account, sid, null, "uq"/* userQuota */, new Object[] { "xfer"/* xfer */, 1 },
+                    new Object[] { "pro"/* pro */, 1 });
             if (uq == null || uq.size() == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -737,7 +738,8 @@ public class MegaNz extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     try {
-                        response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail }, new Object[] { "uh"/* emailHash */, uh });
+                        response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail },
+                                new Object[] { "uh"/* emailHash */, uh });
                     } catch (PluginException e) {
                         if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM && e.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE && account.getBooleanProperty("mfa", Boolean.FALSE)) {
                             try {
@@ -745,7 +747,8 @@ public class MegaNz extends PluginForHost {
                                 mfaDialog.setTimeout(5 * 60 * 1000);
                                 final InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, mfaDialog);
                                 handler.throwCloseExceptions();
-                                response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail }, new Object[] { "uh"/* emailHash */, uh }, new Object[] { "mfa"/* ping */, handler.getText() });
+                                response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail },
+                                        new Object[] { "uh"/* emailHash */, uh }, new Object[] { "mfa"/* ping */, handler.getText() });
                             } catch (DialogNoAnswerException e2) {
                                 throw Exceptions.addSuppressed(e, e2);
                             }
@@ -1308,7 +1311,8 @@ public class MegaNz extends PluginForHost {
     /**
      * MEGA limits can be tricky: They can sit on specific files, on IP ("global limit") or also quota based (also global) e.g. 5GB per day
      * per IP or per Free-Account. For these reasons the user can define the max wait time. The wait time given by MEGA must not be true.
-     * </br> 2021-01-21 TODO: Use this for ALL limit based errors
+     * </br>
+     * 2021-01-21 TODO: Use this for ALL limit based errors
      */
     private void fileOrIPDownloadlimitReached(final Account account, final String msg, final long waitMilliseconds) throws PluginException {
         final MegaNzConfig config = getMegaNzConfig();
@@ -1836,7 +1840,7 @@ public class MegaNz extends PluginForHost {
         } else if (fileID != null) {
             return buildFileLink(fileID, fileKey);
         } else {
-            return link.getPluginPatternMatcher();
+            return pluginPatternMatcherDecoded;
         }
     }
 
@@ -1863,27 +1867,27 @@ public class MegaNz extends PluginForHost {
 
     @Override
     public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
-        final boolean isMultihoster = isMULTIHOST(plugin);
-        if (isMultihoster && !getMegaNzConfig().isAllowMultihostUsage()) {
-            /* Disabled by user */
-            return false;
-        } else if (isMultihoster && !isValidDecryptionKey(getFileKey(link))) {
-            /* no decryption key available -> Do not allow multihoster usage */
-            return false;
-        } else if (link != null) {
-            if (plugin != null) {
-                if (!StringUtils.equals(link.getStringProperty(USED_PLUGIN, plugin.getHost()), plugin.getHost())) {
-                    return false;
-                }
-            }
-            /* Only allow download if an URL can be built for use with given PluginForHost. */
-            if (buildExternalDownloadURL(link, plugin) != null) {
+        if (isMULTIHOST(plugin)) {
+            if (!getMegaNzConfig().isAllowMultihostUsage()) {
+                /* Disabled by user */
+                return false;
+            } else if (link.getDefaultPlugin() == null && getHost().equals(link.getHost())) {
+                // AccountInfo.setMultiHostSupport, signal possible support
                 return true;
-            } else {
+            } else if (!isValidDecryptionKey(getFileKey(link))) {
+                /* no decryption key available -> Do not allow multihoster usage */
                 return false;
             }
         }
-        return true;
+        if (!StringUtils.equals(link.getStringProperty(USED_PLUGIN, plugin.getHost()), plugin.getHost())) {
+            return false;
+        }
+        /* Only allow download if an URL can be built for use with given PluginForHost. */
+        if (buildExternalDownloadURL(link, plugin) != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

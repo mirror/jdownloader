@@ -104,7 +104,7 @@ public class Rule34Xxx extends PluginForDecrypt {
             br.getPage(api_base + "?" + apiquery.toString());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (!br.getRequest().getHtmlCode().startsWith("{")) {
+            } else if (!br.getRequest().getHtmlCode().startsWith("[")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final List<Map<String, Object>> results = (List<Map<String, Object>>) restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);

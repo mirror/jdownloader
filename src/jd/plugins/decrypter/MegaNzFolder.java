@@ -23,13 +23,29 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.MaxTimeSoftReference;
+import org.appwork.storage.config.MaxTimeSoftReferenceCleanupCallback;
+import org.appwork.storage.simplejson.JSonParser;
+import org.appwork.storage.simplejson.JSonValue;
+import org.appwork.storage.simplejson.MinimalMemoryMap;
+import org.appwork.utils.ByteArrayWrapper;
+import org.appwork.utils.IO;
+import org.appwork.utils.JVMVersion;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.plugins.components.config.MegaNzConfig.InvalidOrMissingDecryptionKeyAction;
+import org.jdownloader.plugins.components.config.MegaNzFolderConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Base64;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -44,22 +60,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.MegaNz;
-
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.config.MaxTimeSoftReference;
-import org.appwork.storage.config.MaxTimeSoftReferenceCleanupCallback;
-import org.appwork.storage.simplejson.JSonParser;
-import org.appwork.storage.simplejson.JSonValue;
-import org.appwork.storage.simplejson.MinimalMemoryMap;
-import org.appwork.utils.ByteArrayWrapper;
-import org.appwork.utils.IO;
-import org.appwork.utils.JVMVersion;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.MegaNzConfig.InvalidOrMissingDecryptionKeyAction;
-import org.jdownloader.plugins.components.config.MegaNzFolderConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { MegaNz.class })
@@ -90,11 +90,12 @@ public class MegaNzFolder extends PluginForDecrypt {
     public static final Pattern PATTERN_FILE_FOLDER_ID            = Pattern.compile("[a-zA-Z0-9]{8}");
     public static final Pattern PATTERN_FOLDER_ENCRYPTION_KEY_URL = Pattern.compile("[a-zA-Z0-9_-]{22}");
     public static final Pattern PATTERN_FOLDER_ENCRYPTION_KEY     = Pattern.compile("[a-zA-Z0-9+/]{22}");
-    public static final Pattern PATTERN_FOLDER_OLD                = Pattern.compile("#F!([a-zA-Z0-9]+)(!([a-zA-Z0-9_-]+))?(!([a-zA-Z0-9]+))?");
-    public static final Pattern PATTERN_FOLDER_NEW                = Pattern.compile("folder/([a-zA-Z0-9]+)(#([a-zA-Z0-9_-]+))?(/(file|folder)/([a-zA-Z0-9]+))?", Pattern.CASE_INSENSITIVE);
+    public static final Pattern PATTERN_FOLDER_OLD                = Pattern.compile("(?:#|%23)F!([a-zA-Z0-9]+)(!([a-zA-Z0-9_-]+))?(!([a-zA-Z0-9]+))?");
+    public static final Pattern PATTERN_FOLDER_NEW                = Pattern.compile("folder/([a-zA-Z0-9]+)((?:#|%23)([a-zA-Z0-9_-]+))?(/(file|folder)/([a-zA-Z0-9]+))?", Pattern.CASE_INSENSITIVE);
 
     /**
-     * Returns ID of preferred subfolder or file. </br> Returns non-validated result!
+     * Returns ID of preferred subfolder or file. </br>
+     * Returns non-validated result!
      */
     private static String getPreferredNodeID(final String url) {
         String id = new Regex(url, PATTERN_FOLDER_NEW).getMatch(5);
@@ -229,7 +230,7 @@ public class MegaNzFolder extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         cipher = Cipher.getInstance("AES/CBC/nopadding");
-        final String contenturl = Encoding.htmlDecode(param.getCryptedUrl());
+        final String contenturl = URLEncode.decodeURIComponent(param.getCryptedUrl());
         final String folderID = getFolderID(contenturl);
         String folderMasterKey = getFolderMasterKey(contenturl);
         final String preferredNodeIDFromURL = getPreferredNodeID(contenturl);
@@ -320,9 +321,9 @@ public class MegaNzFolder extends PluginForDecrypt {
                         }
                     } else {
                         con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID
-                                /*
-                                 * + "&domain=meganz
-                                 */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
+                        /*
+                         * + "&domain=meganz
+                         */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
                         // ->
                         // !nocache,
                         // commands.cpp
