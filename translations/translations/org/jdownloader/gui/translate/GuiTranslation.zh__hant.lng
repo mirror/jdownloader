@@ -442,6 +442,7 @@ ExtensionQuickToggleAction_name_deselected2=%s1
 ExtensionQuickToggleAction_name_deselected_tt=啟用「%s1」附加元件
 ExtensionQuickToggleAction_name_selected2=%s1
 ExtensionQuickToggleAction_name_selected_tt=停用「%s1」附加元件
+ExtensionQuickToggleAction_name_toggle=切換「%s1」附加元件
 ExtractionListenerList_layoutDialogContent_archivename=壓縮檔名稱：
 ExtractionListenerList_layoutDialogContent_filename=第一個檔案：
 ExtractionListenerList_layoutDialogContent_password=密碼：
