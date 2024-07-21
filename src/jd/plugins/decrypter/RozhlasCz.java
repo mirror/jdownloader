@@ -6,11 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -26,6 +26,12 @@ import jd.plugins.hoster.GenericM3u8;
 public class RozhlasCz extends PluginForDecrypt {
     public RozhlasCz(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        Browser.setRequestIntervalLimitGlobal(getHost(), 1000);
     }
 
     @Override
