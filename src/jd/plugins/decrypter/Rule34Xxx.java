@@ -188,7 +188,10 @@ public class Rule34Xxx extends PluginForDecrypt {
         } else {
             image.setFinalFileName("rule34xxx-" + id + extension);
         }
-        image.setMD5Hash(result.get("hash").toString());
+        if (!originalFilename.matches("(?i).+\\.(mp4)$")) {
+            // for videos the md5 doesn't match
+            image.setMD5Hash(result.get("hash").toString());
+        }
         return image;
     }
 
