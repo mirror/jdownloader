@@ -306,7 +306,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
 
     private ArrayList<DownloadLink> parsePage(final ArrayList<String> dupes, final FilePackage fp, final CryptedLink param) throws PluginException {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        int numberofNewItems = 0;
+        int numberofNewItemsThisPage = 0;
         final String pathPattern = "/[a-z0-9]{12}(?:\\.html|/.*?)?";
         String[] links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(br.getHost(true)) + pathPattern + ")\\1").getColumn(1);
         if (links == null || links.length == 0) {
@@ -320,8 +320,21 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
             String html = br.getRequest().getHtmlCode();
             html = html.replaceAll("</?font[^>]*>", "");
             html = html.replaceAll("</?b[^>]*>", "");
-            // file.al, ex-load.com
-            final ArrayList<String> tr_snippets = new ArrayList<String>(Arrays.asList(new Regex(html, "((<tr>)?<td.*?</tr>)").getColumn(0)));
+            /* The order of the regular expressions here is important! */
+            final ArrayList<String> table_snippets = new ArrayList<String>();
+            final String[] tdSnippets = new Regex(html, "(?i)(<TR>\\s*<TD[^>]*>.*?</TD>\\s*</TR>)").getColumn(0);
+            if (tdSnippets != null && tdSnippets.length > 0) {
+                table_snippets.addAll(Arrays.asList(tdSnippets));
+            }
+            final String[] tdSnippets2 = new Regex(html, "(?i)(<TD[^>]*>.*?</TD>\\s*</TR>)").getColumn(0);
+            if (tdSnippets2 != null && tdSnippets2.length > 0) {
+                /* E.g. file.al */
+                table_snippets.addAll(Arrays.asList(tdSnippets2));
+            }
+            final String[] tdSnippets3 = new Regex(html, "(?i)(<TD[^>]*>.*?</TD>)").getColumn(0);
+            if (tdSnippets3 != null && tdSnippets3.length > 0) {
+                table_snippets.addAll(Arrays.asList(tdSnippets3));
+            }
             for (final String link : links) {
                 final String linkid = new Regex(link, Pattern.compile("https?://[^/]+/([a-z0-9]{12})", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 if (!dupes.add(linkid)) {
@@ -334,28 +347,28 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                  */
                 final DownloadLink dl = createDownloadlink(link);
                 String html_snippet = null;
-                final Iterator<String> it = tr_snippets.iterator();
+                final Iterator<String> it = table_snippets.iterator();
                 while (it.hasNext()) {
                     final String tr_snippet = it.next();
-                    if (StringUtils.containsIgnoreCase(tr_snippet, linkid)) {
+                    if (tr_snippet.contains(linkid)) {
                         html_snippet = tr_snippet;
                         it.remove();
                         break;
                     }
                 }
                 if (StringUtils.isNotEmpty(html_snippet)) {
-                    // split tr_snippet in case it contains multiple links, eg 3 in a row, eg brupload
-                    final String link_tr_snippet = new Regex(html_snippet, "<TD>.*" + linkid + ".*?</TD>").getMatch(-1);
-                    if (link_tr_snippet != null) {
-                        final String rest_tr_snippet = html_snippet.replace(link_tr_snippet, "");
-                        if (StringUtils.isNotEmpty(rest_tr_snippet)) {
-                            tr_snippets.add(0, rest_tr_snippet);
-                        }
-                        html_snippet = link_tr_snippet;
-                    }
-                }
-                if (StringUtils.isEmpty(html_snippet)) {
-                    /* Works for e.g. world-files.com, brupload.net */
+                    // split tr_snippet in case it contains multiple links, eg 3 in a row, eg brupload.net
+                    // TODO: 2024-07-22: Remove the commented-out code down below.
+                    // final String link_tr_snippet = new Regex(html_snippet, "(?i)<TD>.*" + linkid + ".*?</TD>").getMatch(-1);
+                    // if (link_tr_snippet != null) {
+                    // final String rest_tr_snippet = html_snippet.replace(link_tr_snippet, "");
+                    // if (StringUtils.isNotEmpty(rest_tr_snippet)) {
+                    // table_snippets.add(0, rest_tr_snippet);
+                    // }
+                    // html_snippet = link_tr_snippet;
+                    // }
+                } else {
+                    /* Lazier attempt: Works for e.g. world-files.com, brupload.net */
                     /* TODO: Improve this RegEx e.g. for katfile.com, brupload.net */
                     html_snippet = new Regex(html, "<tr>\\s*<td>\\s*<a[^<]*" + linkid + ".*</td>\\s*</tr>").getMatch(-1);
                     if (StringUtils.isEmpty(html_snippet)) {
@@ -394,43 +407,32 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                     html_filename = br.getRegex(link_quoted + "\">([^<]+)</a>").getMatch(0);
                 }
                 boolean isHTMLFilename = false;
+                boolean isIncompleteHTMLFilename = false;
                 String filename;
                 if (html_filename != null) {
                     isHTMLFilename = true;
-                    filename = html_filename;
+                    isIncompleteHTMLFilename = html_filename.endsWith("&#133;");
+                    filename = Encoding.htmlDecode(html_filename).trim();
                 } else {
                     filename = url_filename;
                 }
                 if (!StringUtils.isEmpty(filename)) {
-                    if (filename.endsWith("&#133;")) {
-                        final String incompleteFilename = filename.replaceFirst("&#133;", "");
-                        /*
-                         * Indicates that this is not the complete filename but there is nothing we can do at this stage - full filenames
-                         * should be displayed once a full linkcheck is performed or at least once a download starts.
-                         */
-                        if (isHTMLFilename && url_filename != null && url_filename.length() > incompleteFilename.length()) {
-                            isHTMLFilename = false;
-                            filename = url_filename;
-                        }
-                    }
-                    if (isHTMLFilename) {
-                        filename = Encoding.htmlDecode(filename);
+                    if (isHTMLFilename && isIncompleteHTMLFilename && url_filename != null && url_filename.length() > filename.length()) {
+                        /* Filename from html is incomplete but filename from inside URL looks to be better/longer. */
+                        filename = url_filename;
                     }
                     dl.setName(filename);
                 }
                 if (!StringUtils.isEmpty(filesizeStr)) {
                     dl.setDownloadSize(SizeFormatter.getSize(filesizeStr));
                 }
-                // if (!incompleteFileName) {
-                // dl.setAvailable(true);
-                // }
                 dl.setAvailable(true);
                 if (fp != null) {
                     dl._setFilePackage(fp);
                 }
                 ret.add(dl);
                 distribute(dl);
-                numberofNewItems++;
+                numberofNewItemsThisPage++;
             }
         }
         /* These should only be shown when its a /user/ decrypt task */
@@ -454,7 +456,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 /* Make sure that we're not grabbing the parent folder but only the folder that the user has added + eventual subfolders! */
                 final boolean folderIsChildFolder = path.length() > currentFolderPath.length();
                 if (this.canHandle(folderlink) && !dupes.contains(folderlink) && folderIsChildFolder) {
-                    numberofNewItems++;
+                    numberofNewItemsThisPage++;
                     final DownloadLink dlfolder = createDownloadlink(folderlink);
                     ret.add(dlfolder);
                     distribute(dlfolder);
@@ -464,6 +466,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 }
             }
         }
+        logger.info("Number of new items found on current page: " + numberofNewItemsThisPage);
         return ret;
     }
 
