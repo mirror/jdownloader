@@ -2827,7 +2827,7 @@ public class LinkCrawler {
 
     protected String[] getMatchingLinks(Pattern pattern, CrawledLink source, CrawledLinkModifier modifier) {
         final String[] ret = new Regex(source.getURL(), pattern).getColumn(-1);
-        if (ret == null || ret.length > 0) {
+        if (ret == null || ret.length == 0) {
             return null;
         }
         for (int index = 0; index < ret.length; index++) {
