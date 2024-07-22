@@ -257,16 +257,17 @@ public class LinkCrawler {
     }
 
     protected void addSequentialLockObject(final LinkCrawler linkCrawler, final LinkCrawlerLock lock) {
-        if (lock != null) {
-            synchronized (LOCKS) {
-                final LinkCrawler root = linkCrawler != null ? linkCrawler : getRoot();
-                Set<LinkCrawlerLock> locks = LOCKS.get(root);
-                if (locks == null) {
-                    locks = new HashSet<LinkCrawlerLock>();
-                    LOCKS.put(root, locks);
-                }
-                locks.add(lock);
+        if (lock == null) {
+            return;
+        }
+        synchronized (LOCKS) {
+            final LinkCrawler root = linkCrawler != null ? linkCrawler : getRoot();
+            Set<LinkCrawlerLock> locks = LOCKS.get(root);
+            if (locks == null) {
+                locks = new HashSet<LinkCrawlerLock>();
+                LOCKS.put(root, locks);
             }
+            locks.add(lock);
         }
     }
 
@@ -413,34 +414,34 @@ public class LinkCrawler {
         return classLoader;
     }
 
-    public boolean addLinkCrawlerRule(LinkCrawlerRule rule) {
-        if (rule != null) {
-            boolean refresh = false;
-            try {
-                synchronized (LINKCRAWLERRULESLOCK) {
-                    List<LinkCrawlerRuleStorable> rules = CONFIG.getLinkCrawlerRules();
-                    if (rules == null) {
-                        rules = new ArrayList<LinkCrawlerRuleStorable>();
-                    }
-                    for (final LinkCrawlerRuleStorable existingRule : rules) {
-                        if (existingRule.getId() == rule.getId() || (existingRule.getRule() == rule.getRule() && StringUtils.equals(existingRule.getPattern(), rule.getPattern()))) {
-                            return false;
-                        }
-                    }
-                    rules.add(new LinkCrawlerRuleStorable(rule));
-                    CONFIG.setLinkCrawlerRules(rules);
-                    refresh = true;
-                    return true;
+    public boolean addLinkCrawlerRule(final LinkCrawlerRule rule) {
+        if (rule == null) {
+            return false;
+        }
+        boolean refresh = false;
+        try {
+            synchronized (LINKCRAWLERRULESLOCK) {
+                List<LinkCrawlerRuleStorable> rules = CONFIG.getLinkCrawlerRules();
+                if (rules == null) {
+                    rules = new ArrayList<LinkCrawlerRuleStorable>();
                 }
-            } finally {
-                if (refresh) {
-                    synchronized (linkCrawlerRules) {
-                        linkCrawlerRules.set(null);
+                for (final LinkCrawlerRuleStorable existingRule : rules) {
+                    if (existingRule.getId() == rule.getId() || (existingRule.getRule() == rule.getRule() && StringUtils.equals(existingRule.getPattern(), rule.getPattern()))) {
+                        return false;
                     }
+                }
+                rules.add(new LinkCrawlerRuleStorable(rule));
+                CONFIG.setLinkCrawlerRules(rules);
+                refresh = true;
+                return true;
+            }
+        } finally {
+            if (refresh) {
+                synchronized (linkCrawlerRules) {
+                    linkCrawlerRules.set(null);
                 }
             }
         }
-        return false;
     }
 
     private static final Object LINKCRAWLERRULESLOCK = new Object();
@@ -537,14 +538,15 @@ public class LinkCrawler {
     }
 
     protected void attachLinkCrawler(final LinkCrawler linkCrawler) {
-        if (linkCrawler != null && linkCrawler != this) {
-            final LinkCrawler parent = getParent();
-            if (parent != null) {
-                parent.attachLinkCrawler(linkCrawler);
-            }
-            synchronized (children) {
-                children.put(linkCrawler, Boolean.TRUE);
-            }
+        if (linkCrawler == null || linkCrawler == this) {
+            return;
+        }
+        final LinkCrawler parent = getParent();
+        if (parent != null) {
+            parent.attachLinkCrawler(linkCrawler);
+        }
+        synchronized (children) {
+            children.put(linkCrawler, Boolean.TRUE);
         }
     }
 
@@ -766,41 +768,42 @@ public class LinkCrawler {
     }
 
     public void crawl(final String text, final String url, final boolean allowDeep) {
+        final LinkCrawlerTask task;
         if (StringUtils.isEmpty(text)) {
             return;
         }
         final LinkCrawlerGeneration generation = getValidLinkCrawlerGeneration();
-        final LinkCrawlerTask task;
-        if ((task = checkStartNotify(generation, "crawlText")) != null) {
-            try {
-                if (insideCrawlerPlugin()) {
-                    final List<CrawledLink> links = find(generation, null, text, url, allowDeep, true);
-                    crawl(generation, links);
-                } else {
-                    final LinkCrawlerTask innerTask;
-                    if ((innerTask = checkStartNotify(generation, task.getTaskID() + "|crawlTextPool")) != null) {
-                        threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation, innerTask) {
-                            @Override
-                            public long getAverageRuntime() {
-                                final Long ret = getDefaultAverageRuntime();
-                                if (ret != null) {
-                                    return ret;
-                                } else {
-                                    return super.getAverageRuntime();
-                                }
+        if ((task = checkStartNotify(generation, "crawlText")) == null) {
+            return;
+        }
+        try {
+            if (insideCrawlerPlugin()) {
+                final List<CrawledLink> links = find(generation, null, text, url, allowDeep, true);
+                crawl(generation, links);
+            } else {
+                final LinkCrawlerTask innerTask;
+                if ((innerTask = checkStartNotify(generation, task.getTaskID() + "|crawlTextPool")) != null) {
+                    threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation, innerTask) {
+                        @Override
+                        public long getAverageRuntime() {
+                            final Long ret = getDefaultAverageRuntime();
+                            if (ret != null) {
+                                return ret;
+                            } else {
+                                return super.getAverageRuntime();
                             }
+                        }
 
-                            @Override
-                            void crawling() {
-                                final java.util.List<CrawledLink> links = find(generation, null, text, url, allowDeep, true);
-                                crawl(generation, links);
-                            }
-                        });
-                    }
+                        @Override
+                        void crawling() {
+                            final java.util.List<CrawledLink> links = find(generation, null, text, url, allowDeep, true);
+                            crawl(generation, links);
+                        }
+                    });
                 }
-            } finally {
-                checkFinishNotify(task);
             }
+        } finally {
+            checkFinishNotify(task);
         }
     }
 
@@ -894,29 +897,30 @@ public class LinkCrawler {
                 }
             };
         }
-        final LinkCrawlerTask task;
-        if ((task = checkStartNotify(generation, "find")) != null) {
-            try {
-                final String[] possibleLinks = HTMLParser.getHttpLinks(preprocessFind(text, baseURL, allowDeep), baseURL, resultSet);
-                if (possibleLinks != null && possibleLinks.length > 0) {
-                    final List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(possibleLinks.length);
-                    for (final String possibleLink : possibleLinks) {
-                        final CrawledLink crawledLink = crawledLinkFactorybyURL(possibleLink);
-                        crawledLink.setCrawlDeep(allowDeep);
-                        if (crawledLink.getSourceLink() == null) {
-                            crawledLink.setSourceLink(baseLink);
-                        }
-                        possibleCryptedLinks.add(crawledLink);
+        final LinkCrawlerTask task = checkStartNotify(generation, "find");
+        if (task == null) {
+            return null;
+        }
+        try {
+            final String[] possibleLinks = HTMLParser.getHttpLinks(preprocessFind(text, baseURL, allowDeep), baseURL, resultSet);
+            if (possibleLinks != null && possibleLinks.length > 0) {
+                final List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(possibleLinks.length);
+                for (final String possibleLink : possibleLinks) {
+                    final CrawledLink crawledLink = crawledLinkFactorybyURL(possibleLink);
+                    crawledLink.setCrawlDeep(allowDeep);
+                    if (crawledLink.getSourceLink() == null) {
+                        crawledLink.setSourceLink(baseLink);
                     }
-                    return possibleCryptedLinks;
+                    possibleCryptedLinks.add(crawledLink);
                 }
-            } catch (RuntimeException e) {
-                if (generation.isValid()) {
-                    resultSet.getLogger().log(e);
-                }
-            } finally {
-                checkFinishNotify(task);
+                return possibleCryptedLinks;
             }
+        } catch (RuntimeException e) {
+            if (generation.isValid()) {
+                resultSet.getLogger().log(e);
+            }
+        } finally {
+            checkFinishNotify(task);
         }
         return null;
     }
@@ -1258,28 +1262,26 @@ public class LinkCrawler {
                 link.setVerifiedFileSize(contentLength);
             }
         }
-        {
-            String fileName = null;
-            final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
-            if (dispositionHeader != null && StringUtils.isNotEmpty(dispositionHeader.getFilename())) {
-                // trust given filename extension via Content-Disposition header
-                fileName = dispositionHeader.getFilename();
-                if (dispositionHeader.getEncoding() == null) {
-                    try {
-                        fileName = SimpleFTP.BestEncodingGuessingURLDecode(fileName);
-                    } catch (final IllegalArgumentException ignore) {
-                    } catch (final UnsupportedEncodingException ignore) {
-                    } catch (final IOException ignore) {
-                    }
+        String fileName = null;
+        final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
+        if (dispositionHeader != null && StringUtils.isNotEmpty(dispositionHeader.getFilename())) {
+            // trust given filename extension via Content-Disposition header
+            fileName = dispositionHeader.getFilename();
+            if (dispositionHeader.getEncoding() == null) {
+                try {
+                    fileName = SimpleFTP.BestEncodingGuessingURLDecode(fileName);
+                } catch (final IllegalArgumentException ignore) {
+                } catch (final UnsupportedEncodingException ignore) {
+                } catch (final IOException ignore) {
                 }
             }
-            if (StringUtils.isEmpty(fileName)) {
-                fileName = Plugin.extractFileNameFromURL(con.getRequest().getUrl());
-            }
-            link.setFinalFileName(fileName);
-            /* save filename in property so we can restore in reset case */
-            link.setProperty("fixName", fileName);
         }
+        if (StringUtils.isEmpty(fileName)) {
+            fileName = Plugin.extractFileNameFromURL(con.getRequest().getUrl());
+        }
+        link.setFinalFileName(fileName);
+        /* save filename in property so we can restore in reset case */
+        link.setProperty("fixName", fileName);
         link.setAvailable(true);
         final String requestRef = request.getHeaders().getValue(HTTPConstants.HEADER_REQUEST_REFERER);
         if (requestRef != null && !StringUtils.equals(requestRef, request.getURL().toExternalForm())) {
@@ -1315,6 +1317,7 @@ public class LinkCrawler {
         }
         source.setCustomCrawledLinkModifier(null);
         source.setBrokenCrawlerHandler(null);
+        final LinkCrawlerTask task;
         if (source == null || source.getURL() == null) {
             return;
         } else if (isCrawledLinkDuplicated(duplicateFinderDeep, source)) {
@@ -1322,9 +1325,7 @@ public class LinkCrawler {
             return;
         } else if (this.isCrawledLinkFiltered(source)) {
             return;
-        }
-        final LinkCrawlerTask task;
-        if ((task = checkStartNotify(generation, "crawlDeeperOrMatchingRule:" + source.getURL())) == null) {
+        } else if ((task = checkStartNotify(generation, "crawlDeeperOrMatchingRule:" + source.getURL())) == null) {
             /* Do nothing */
             return;
         }
@@ -2069,9 +2070,10 @@ public class LinkCrawler {
     }
 
     protected void distribute(final LinkCrawlerGeneration generation, CrawledLink... possibleCryptedLinks) {
-        if (possibleCryptedLinks != null && possibleCryptedLinks.length > 0) {
-            distribute(generation, Arrays.asList(possibleCryptedLinks));
+        if (possibleCryptedLinks == null || possibleCryptedLinks.length == 0) {
+            return;
         }
+        distribute(generation, Arrays.asList(possibleCryptedLinks));
     }
 
     protected CrawledLink createCopyOf(CrawledLink source) {
@@ -3174,7 +3176,7 @@ public class LinkCrawler {
         permanentOffline(destCrawledLink);
     }
 
-    private PackageInfo convertFilePackageInfos(CrawledLink link) {
+    private PackageInfo convertFilePackageInfos(final CrawledLink link) {
         if (link.getDownloadLink() == null) {
             return null;
         }
@@ -3252,8 +3254,11 @@ public class LinkCrawler {
 
     private void permanentOffline(CrawledLink link) {
         final DownloadLink dl = link.getDownloadLink();
+        if (dl == null) {
+            return;
+        }
         try {
-            if (dl != null && dl.getDefaultPlugin().getLazyP().isOfflinePlugin()) {
+            if (dl.getDefaultPlugin().getLazyP().isOfflinePlugin()) {
                 final PackageInfo dpi;
                 if (link.getDesiredPackageInfo() == null) {
                     dpi = new PackageInfo();
@@ -3415,6 +3420,7 @@ public class LinkCrawler {
         final CrawledLinkModifier parentLinkModifier = cryptedLink.getCustomCrawledLinkModifier();
         cryptedLink.setCustomCrawledLinkModifier(null);
         cryptedLink.setBrokenCrawlerHandler(null);
+        final LinkCrawlerTask task;
         if (oplg == null || cryptedLink.getURL() == null) {
             return;
         } else if (isCrawledLinkDuplicated(duplicateFinderContainer, cryptedLink)) {
@@ -3422,110 +3428,109 @@ public class LinkCrawler {
             return;
         } else if (this.isCrawledLinkFiltered(cryptedLink)) {
             return;
+        } else if ((task = checkStartNotify(generation, "containerPlugin:" + oplg.getName() + "|" + cryptedLink.getURL())) == null) {
+            return;
         }
-        final LinkCrawlerTask task;
-        if ((task = checkStartNotify(generation, "containerPlugin:" + oplg.getName() + "|" + cryptedLink.getURL())) != null) {
+        try {
+            final String[] sourceURLs = getAndClearSourceURLs(cryptedLink);
+            processedLinksCounter.incrementAndGet();
+            /* set new PluginClassLoaderChild because ContainerPlugin maybe uses Hoster/Crawler */
+            final PluginsC plg;
             try {
-                final String[] sourceURLs = getAndClearSourceURLs(cryptedLink);
-                processedLinksCounter.incrementAndGet();
-                /* set new PluginClassLoaderChild because ContainerPlugin maybe uses Hoster/Crawler */
-                final PluginsC plg;
-                try {
-                    plg = oplg.newPluginInstance();
-                } catch (final Throwable e) {
-                    LogController.CL().log(e);
-                    return;
+                plg = oplg.newPluginInstance();
+            } catch (final Throwable e) {
+                LogController.CL().log(e);
+                return;
+            }
+            /* now we run the plugin and let it find some links */
+            final LinkCrawlerThread lct = getCurrentLinkCrawlerThread();
+            Object owner = null;
+            LinkCrawler previousCrawler = null;
+            boolean oldDebug = false;
+            boolean oldVerbose = false;
+            LogInterface oldLogger = null;
+            try {
+                final LogInterface logger = LogController.getFastPluginLogger(plg.getName());
+                if (lct != null) {
+                    /* mark thread to be used by crawler plugin */
+                    owner = lct.getCurrentOwner();
+                    lct.setCurrentOwner(plg);
+                    previousCrawler = lct.getCurrentLinkCrawler();
+                    lct.setCurrentLinkCrawler(this);
+                    /* save old logger/states */
+                    oldLogger = lct.getLogger();
+                    oldDebug = lct.isDebug();
+                    oldVerbose = lct.isVerbose();
+                    /* set new logger and set verbose/debug true */
+                    lct.setLogger(logger);
+                    lct.setVerbose(true);
+                    lct.setDebug(true);
                 }
-                /* now we run the plugin and let it find some links */
-                final LinkCrawlerThread lct = getCurrentLinkCrawlerThread();
-                Object owner = null;
-                LinkCrawler previousCrawler = null;
-                boolean oldDebug = false;
-                boolean oldVerbose = false;
-                LogInterface oldLogger = null;
+                plg.setLogger(logger);
                 try {
-                    final LogInterface logger = LogController.getFastPluginLogger(plg.getName());
-                    if (lct != null) {
-                        /* mark thread to be used by crawler plugin */
-                        owner = lct.getCurrentOwner();
-                        lct.setCurrentOwner(plg);
-                        previousCrawler = lct.getCurrentLinkCrawler();
-                        lct.setCurrentLinkCrawler(this);
-                        /* save old logger/states */
-                        oldLogger = lct.getLogger();
-                        oldDebug = lct.isDebug();
-                        oldVerbose = lct.isVerbose();
-                        /* set new logger and set verbose/debug true */
-                        lct.setLogger(logger);
-                        lct.setVerbose(true);
-                        lct.setDebug(true);
+                    final List<CrawledLink> decryptedPossibleLinks = plg.decryptContainer(cryptedLink);
+                    /* in case the function returned without exceptions, we can clear log */
+                    if (logger instanceof ClearableLogInterface) {
+                        ((ClearableLogInterface) logger).clear();
                     }
-                    plg.setLogger(logger);
-                    try {
-                        final List<CrawledLink> decryptedPossibleLinks = plg.decryptContainer(cryptedLink);
-                        /* in case the function returned without exceptions, we can clear log */
-                        if (logger instanceof ClearableLogInterface) {
-                            ((ClearableLogInterface) logger).clear();
+                    if (decryptedPossibleLinks != null && decryptedPossibleLinks.size() > 0) {
+                        /* we found some links, distribute them */
+                        final boolean singleDest = decryptedPossibleLinks.size() == 1;
+                        for (CrawledLink decryptedPossibleLink : decryptedPossibleLinks) {
+                            forwardCrawledLinkInfos(cryptedLink, decryptedPossibleLink, parentLinkModifier, sourceURLs, singleDest);
                         }
-                        if (decryptedPossibleLinks != null && decryptedPossibleLinks.size() > 0) {
-                            /* we found some links, distribute them */
-                            final boolean singleDest = decryptedPossibleLinks.size() == 1;
-                            for (CrawledLink decryptedPossibleLink : decryptedPossibleLinks) {
-                                forwardCrawledLinkInfos(cryptedLink, decryptedPossibleLink, parentLinkModifier, sourceURLs, singleDest);
+                        if (insideCrawlerPlugin()) {
+                            /*
+                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on
+                             * plugin waiting for linkcrawler results
+                             */
+                            if (!generation.isValid()) {
+                                /* LinkCrawler got aborted! */
+                                return;
                             }
-                            if (insideCrawlerPlugin()) {
-                                /*
-                                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on
-                                 * plugin waiting for linkcrawler results
-                                 */
-                                if (!generation.isValid()) {
-                                    /* LinkCrawler got aborted! */
-                                    return;
-                                }
-                                distribute(generation, decryptedPossibleLinks);
-                            } else {
-                                final LinkCrawlerTask innerTask;
-                                if ((innerTask = checkStartNotify(generation, task.getTaskID() + "|containerPool")) != null) {
-                                    /* enqueue distributing of the links */
-                                    threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation, innerTask) {
-                                        @Override
-                                        public long getAverageRuntime() {
-                                            final Long ret = getDefaultAverageRuntime();
-                                            if (ret != null) {
-                                                return ret;
-                                            } else {
-                                                return super.getAverageRuntime();
-                                            }
+                            distribute(generation, decryptedPossibleLinks);
+                        } else {
+                            final LinkCrawlerTask innerTask;
+                            if ((innerTask = checkStartNotify(generation, task.getTaskID() + "|containerPool")) != null) {
+                                /* enqueue distributing of the links */
+                                threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation, innerTask) {
+                                    @Override
+                                    public long getAverageRuntime() {
+                                        final Long ret = getDefaultAverageRuntime();
+                                        if (ret != null) {
+                                            return ret;
+                                        } else {
+                                            return super.getAverageRuntime();
                                         }
+                                    }
 
-                                        @Override
-                                        void crawling() {
-                                            LinkCrawler.this.distribute(generation, decryptedPossibleLinks);
-                                        }
-                                    });
-                                }
+                                    @Override
+                                    void crawling() {
+                                        LinkCrawler.this.distribute(generation, decryptedPossibleLinks);
+                                    }
+                                });
                             }
-                        }
-                    } finally {
-                        /* close the logger */
-                        if (logger instanceof ClosableLogInterface) {
-                            ((ClosableLogInterface) logger).close();
                         }
                     }
                 } finally {
-                    if (lct != null) {
-                        /* reset thread to last known used state */
-                        lct.setCurrentOwner(owner);
-                        lct.setCurrentLinkCrawler(previousCrawler);
-                        lct.setLogger(oldLogger);
-                        lct.setVerbose(oldVerbose);
-                        lct.setDebug(oldDebug);
+                    /* close the logger */
+                    if (logger instanceof ClosableLogInterface) {
+                        ((ClosableLogInterface) logger).close();
                     }
                 }
             } finally {
-                /* restore old ClassLoader for current Thread */
-                checkFinishNotify(task);
+                if (lct != null) {
+                    /* reset thread to last known used state */
+                    lct.setCurrentOwner(owner);
+                    lct.setCurrentLinkCrawler(previousCrawler);
+                    lct.setLogger(oldLogger);
+                    lct.setVerbose(oldVerbose);
+                    lct.setDebug(oldDebug);
+                }
             }
+        } finally {
+            /* restore old ClassLoader for current Thread */
+            checkFinishNotify(task);
         }
     }
 
