@@ -20,16 +20,24 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -41,6 +49,19 @@ import jd.plugins.PluginForHost;
 public class UploadhavenCom extends PluginForHost {
     public UploadhavenCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://" + getHost() + "/account/register");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -73,7 +94,7 @@ public class UploadhavenCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://uploadhaven.com/contact";
+        return "https://" + getHost() + "/account/register";
     }
 
     @Override
@@ -90,42 +111,48 @@ public class UploadhavenCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 1;
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    //
-    // /* don't touch the following! */
-    // private static AtomicInteger maxPrem = new AtomicInteger(1);
-    private Browser prepBR(final Browser br) {
-        return br;
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        if (account != null && AccountType.PREMIUM.equals(account.getType())) {
+            return 0;
+        } else {
+            return 1;
+        }
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         this.setBrowserExclusive();
-        prepBR(this.br);
         if (!link.isNameSet()) {
             link.setName(this.getFID(link));
         }
-        br.setFollowRedirects(true);
+        if (account != null) {
+            this.login(account, false);
+        }
         /**
          * 2021-01-19: Some URLs are restricted to one particular referer-website (mainpage does the job)
          */
+        final String referer;
         if (!StringUtils.isEmpty(link.getDownloadPassword())) {
             /* Prefer "Download password" --> User defined Referer value */
-            br.getHeaders().put("Referer", link.getDownloadPassword());
+            referer = link.getDownloadPassword();
         } else if (link.getReferrerUrl() != null) {
-            br.getHeaders().put("Referer", link.getReferrerUrl());
+            referer = link.getReferrerUrl();
         } else if (link.getContainerUrl() != null && !this.canHandle(link.getContainerUrl())) {
-            br.getHeaders().put("Referer", link.getContainerUrl());
+            referer = link.getContainerUrl();
+        } else {
+            referer = null;
+        }
+        if (!StringUtils.isEmpty(referer)) {
+            br.getHeaders().put("Referer", referer);
         }
         br.getPage(link.getPluginPatternMatcher());
         if (this.isRefererProtected(br)) {
@@ -154,13 +181,19 @@ public class UploadhavenCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, null);
     }
 
-    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        final String directlinkproperty;
+        if (account != null) {
+            directlinkproperty = "directlink_account_" + account.getType();
+        } else {
+            directlinkproperty = "directlink_free";
+        }
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            requestFileInformation(link);
+            requestFileInformation(link, account);
             if (this.isRefererProtected(br)) {
                 /**
                  * 2021-01-19: WTF seems like using different referers multiple times in a row, they will always allow the 3rd string as
@@ -169,8 +202,6 @@ public class UploadhavenCom extends PluginForHost {
                 boolean success = false;
                 String userReferer = null;
                 for (int i = 0; i <= 2; i++) {
-                    br.clearAll();
-                    prepBR(this.br);
                     try {
                         userReferer = getUserInput("Enter referer?", link);
                     } catch (final PluginException abortException) {
@@ -183,10 +214,13 @@ public class UploadhavenCom extends PluginForHost {
                         continue;
                     }
                     link.setDownloadPassword(userReferer);
-                    requestFileInformation(link);
+                    requestFileInformation(link, account);
                     if (!this.isRefererProtected(br)) {
                         success = true;
                         break;
+                    } else {
+                        /* Try again */
+                        br.clearCookies(null);
                     }
                 }
                 if (!success) {
@@ -202,20 +236,25 @@ public class UploadhavenCom extends PluginForHost {
             }
             Form dlform = br.getFormbyProperty("id", "form-join");
             if (dlform == null) {
+                /* 2024-07-22: Same for free- and premium users */
                 dlform = br.getFormbyProperty("id", "form-download");
             }
             if (dlform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            int wait = 5;
-            String waitStr = br.getRegex("var\\s*?seconds\\s*?=\\s*?(\\d+)\\s*;").getMatch(0);
-            if (waitStr == null) {
-                waitStr = br.getRegex("class\\s*=\\s*\"download-timer-seconds.*?\"\\s*>\\s*(\\d+)").getMatch(0);
+            final boolean isPremium = account != null && AccountType.PREMIUM.equals(account.getType());
+            if (!isPremium) {
+                /* Non-premium -> Wait before download. */
+                int wait = 5;
+                String waitStr = br.getRegex("var\\s*?seconds\\s*?=\\s*?(\\d+)\\s*;").getMatch(0);
+                if (waitStr == null) {
+                    waitStr = br.getRegex("class\\s*=\\s*\"download-timer-seconds.*?\"\\s*>\\s*(\\d+)").getMatch(0);
+                }
+                if (waitStr != null) {
+                    wait = Integer.parseInt(waitStr);
+                }
+                this.sleep((wait + 3) * 1001l, link);
             }
-            if (waitStr != null) {
-                wait = Integer.parseInt(waitStr);
-            }
-            this.sleep((wait + 3) * 1001l, link);
             br.submitForm(dlform);
             dllink = br.getRegex("downloadFile\"\\)\\.attr\\(\"src\",\\s*?\"(https?[^\">]+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
@@ -225,7 +264,7 @@ public class UploadhavenCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
@@ -236,12 +275,13 @@ public class UploadhavenCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
         dl.startDownload();
     }
 
     /**
-     * @return: true: Special Referer is required to access this URL
+     * @return: true: Special Referer is required to download the file behind this URL </br>
+     *          2024-07-22: Premium users will not run into this error.
      */
     private boolean isRefererProtected(final Browser br) {
         if (br.containsHTML(">\\s*Hotlink protection active")) {
@@ -257,7 +297,6 @@ public class UploadhavenCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     return dllink;
@@ -277,9 +316,88 @@ public class UploadhavenCom extends PluginForHost {
         return null;
     }
 
+    private boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                logger.info("Attempting cookie login");
+                this.br.setCookies(this.getHost(), cookies);
+                if (!force) {
+                    /* Don't validate cookies */
+                    return false;
+                }
+                br.getPage("https://" + this.getHost() + "/");
+                if (this.isLoggedin(br)) {
+                    logger.info("Cookie login successful");
+                    /* Refresh cookie timestamp */
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return true;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
+                }
+            }
+            logger.info("Performing full login");
+            br.getPage("https://" + this.getHost() + "/account/login");
+            final Form loginform = br.getFormbyActionRegex(".*/account/login");
+            if (loginform == null) {
+                logger.warning("Failed to find loginform");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("email", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            br.submitForm(loginform);
+            if (!isLoggedin(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            return true;
+        }
+    }
+
+    private boolean isLoggedin(final Browser br) {
+        return br.containsHTML("/logout");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        final String registerDate = br.getRegex("Registered\\s*:\\s*(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+        if (registerDate != null) {
+            ai.setCreateTime(TimeFormatter.getMilliSeconds(registerDate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+        } else {
+            logger.warning("Failed to find register date");
+        }
+        /* Find premium status */
+        br.getPage("/account/subscription");
+        final String premiumValidUntil = br.getRegex("Ends on (\\d{2}/\\d{2}/\\d{4})").getMatch(0);
+        if (premiumValidUntil != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(premiumValidUntil, "MM/dd/yyyy", Locale.ENGLISH), br);
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
+        } else {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(this.getMaxSimultanFreeDownloadNum());
+        }
+        ai.setUnlimitedTraffic();
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        this.handleDownload(link, account);
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return Integer.MAX_VALUE;
     }
 
     @Override

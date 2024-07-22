@@ -135,4 +135,10 @@ public class FappicCom extends XFileSharingProBasic {
             return super.getFUID(url, type);
         }
     }
+
+    @Override
+    public String getLoginURL() {
+        // 2024-07-22
+        return getMainPage() + "/?op=login";
+    }
 }
