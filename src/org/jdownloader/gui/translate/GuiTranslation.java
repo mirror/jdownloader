@@ -3478,7 +3478,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Hoster" })
     String HosterRuleTableModel_initColumns_hoster_();
 
-    @Default(lngs = { "en" }, values = { "Use Hoster Rules if you have more than one Premium Account and want to specify in which order these accounts should be used." })
+    @Default(lngs = { "en" }, values = { "Use usage rules to determine the order in which accounts should be used and which download modes should be allowed for the selected hosts." })
     String HosterOrderPanel_HosterOrderPanel_description_();
 
     @Default(lngs = { "en" }, values = { "Enabled Captchabrotherhood Service" })
