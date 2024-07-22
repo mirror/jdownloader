@@ -903,19 +903,20 @@ public class LinkCrawler {
         }
         try {
             final String[] possibleLinks = HTMLParser.getHttpLinks(preprocessFind(text, baseURL, allowDeep), baseURL, resultSet);
-            if (possibleLinks != null && possibleLinks.length > 0) {
-                final List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(possibleLinks.length);
-                for (final String possibleLink : possibleLinks) {
-                    final CrawledLink crawledLink = crawledLinkFactorybyURL(possibleLink);
-                    crawledLink.setCrawlDeep(allowDeep);
-                    if (crawledLink.getSourceLink() == null) {
-                        crawledLink.setSourceLink(baseLink);
-                    }
-                    possibleCryptedLinks.add(crawledLink);
-                }
-                return possibleCryptedLinks;
+            if (possibleLinks == null || possibleLinks.length == 0) {
+                return null;
             }
-        } catch (RuntimeException e) {
+            final List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(possibleLinks.length);
+            for (final String possibleLink : possibleLinks) {
+                final CrawledLink crawledLink = crawledLinkFactorybyURL(possibleLink);
+                crawledLink.setCrawlDeep(allowDeep);
+                if (crawledLink.getSourceLink() == null) {
+                    crawledLink.setSourceLink(baseLink);
+                }
+                possibleCryptedLinks.add(crawledLink);
+            }
+            return possibleCryptedLinks;
+        } catch (final RuntimeException e) {
             if (generation.isValid()) {
                 resultSet.getLogger().log(e);
             }
