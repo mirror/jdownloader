@@ -118,7 +118,7 @@ public class FuckingfastCo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = HTMLSearch.searchMetaTag(br, "title");
-        String filesize = br.getRegex(">\\s*Size: ([^<]+) \\|\\s*Downloads:\\s*\\d+\\s*<").getMatch(0);
+        final String filesize = br.getRegex(">\\s*Size: ([^<]+) \\|\\s*Downloads:\\s*\\d+\\s*<").getMatch(0);
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
