@@ -137,11 +137,16 @@ public class FuckingfastCo extends PluginForHost {
     private void handleDownload(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         final String fid = this.getFID(link);
-        final String continuelink = "/f/" + fid + "/dl";
-        br.postPageRaw(continuelink, "");
         final String dllink = br.getRegex("window\\.open\\(\"(https?://[^\"]+)").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        try {
+            final String serversideDlStartedLink = "/f/" + fid + "/dl";
+            final Browser brc = br.cloneBrowser();
+            brc.postPageRaw(serversideDlStartedLink, "");
+        } catch (final Exception ignore) {
+            logger.log(ignore);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(link, null));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
