@@ -19,16 +19,6 @@ import javax.swing.JScrollPane;
 import javax.swing.Scrollable;
 import javax.swing.SwingUtilities;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
-import jd.plugins.Account;
-import jd.plugins.Plugin;
-import jd.plugins.PluginConfigPanelNG;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
@@ -58,6 +48,16 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import jd.plugins.Account;
+import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
+import net.miginfocom.swing.MigLayout;
 
 public class PluginSettingsPanel extends JPanel implements SettingsComponent, ActionListener {
     /**
@@ -287,7 +287,6 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
             }
         }
         Collections.sort(lst, new Comparator<LazyPlugin<?>>() {
-
             @Override
             public int compare(LazyPlugin<?> o1, LazyPlugin<?> o2) {
                 return o1.getDisplayName().compareToIgnoreCase(o2.getDisplayName());
@@ -344,7 +343,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                         newCP.initLayout(protoType);
                         configPanel = scrollerWrapper(newCP);
                     } else {
-                        configPanel = PluginConfigPanel.create(selectedItem);
+                        configPanel = scrollerWrapper(PluginConfigPanel.create(selectedItem));
                     }
                     if (configPanel != null) {
                         configPanel.setShown();
@@ -425,7 +424,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         }
     }
 
-    protected SwitchPanel scrollerWrapper(final PluginConfigPanelNG createConfigPanel) {
+    protected SwitchPanel scrollerWrapper(final SwitchPanel createConfigPanel) {
         Scroll ret = new Scroll();
         ret.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
         ret.add(createConfigPanel);
