@@ -19,6 +19,8 @@ public class HashResult {
     public FinalLinkState getFinalLinkState() {
         if (match()) {
             switch (getHashInfo().getType()) {
+            case WHIRLPOOL:
+                return FinalLinkState.FINISHED_WHIRLPOOL;
             case SHA512:
                 return FinalLinkState.FINISHED_SHA512;
             case SHA384:
@@ -38,6 +40,8 @@ public class HashResult {
             }
         } else {
             switch (getHashInfo().getType()) {
+            case WHIRLPOOL:
+                return FinalLinkState.FAILED_WHIRLPOOL;
             case SHA512:
                 return FinalLinkState.FAILED_SHA512;
             case SHA384:

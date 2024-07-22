@@ -2,6 +2,7 @@ package jd.plugins.download;
 
 import java.util.Locale;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.HexFormatter;
@@ -10,6 +11,7 @@ public class HashInfo {
     public static enum TYPE {
         // order is important! see isStrongerThan/isWeakerThan
         SHA512("SHA-512", 128),
+        WHIRLPOOL("WHIRLPOOL", 128, false), // via bouncy castle
         SHA384("SHA-384", 96),
         SHA256("SHA-256", 64),
         SHA224("SHA-224", 56),
@@ -86,16 +88,43 @@ public class HashInfo {
     }
 
     public static HashInfo parse(final String hash) {
-        return parse(hash, true, false);
+        return parse(hash, null, true, false);
+    }
+
+    public static HashInfo parse(final String hash, TYPE type) {
+        return parse(hash, null, true, false);
     }
 
     public static HashInfo parse(final String hash, boolean isTrustWorthy, boolean isForced) {
+        return parse(hash, null, isTrustWorthy, isForced);
+    }
+
+    public static HashInfo parse(String hash, TYPE requestedType, boolean isTrustWorthy, boolean isForced) {
+        if (requestedType == null && (hash.contains(":") || hash.contains("]"))) {
+            try {
+                final String hashInfos[] = new Regex(hash, "^\\s*(?:\\[\\s*(.*?)\\s*]|(.*?)\\s*:)\\s*([a-fA-F0-9]+)").getRow(0);
+                if (hashInfos == null || hashInfos.length != 3) {
+                    return null;
+                }
+                if (hashInfos[0] != null) {
+                    requestedType = TYPE.valueOf(hashInfos[0].replace("-", ""));
+                } else {
+                    requestedType = TYPE.valueOf(hashInfos[0].replace("-", ""));
+                }
+                hash = hashInfos[2];
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
         if (hash == null) {
             return null;
-        }
-        for (final TYPE type : TYPE.values()) {
-            if (type.isAutoMode() && type.getSize() == hash.length()) {
-                return new HashInfo(hash, type, isTrustWorthy, isForced);
+        } else if (requestedType != null && requestedType.getSize() == hash.length()) {
+            return new HashInfo(hash, requestedType, isTrustWorthy, isForced);
+        } else if (requestedType == null) {
+            for (final TYPE type : TYPE.values()) {
+                if (type.isAutoMode() && type.getSize() == hash.length()) {
+                    return new HashInfo(hash, type, isTrustWorthy, isForced);
+                }
             }
         }
         return null;

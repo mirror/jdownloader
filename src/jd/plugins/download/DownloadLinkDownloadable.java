@@ -40,6 +40,7 @@ import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.bouncycastle.crypto.digests.WhirlpoolDigest;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.HashCheckPluginProgress;
@@ -245,6 +246,25 @@ public class DownloadLinkDownloadable implements Downloadable {
                 int read = 0;
                 long currentPosition = 0;
                 switch (type) {
+                case WHIRLPOOL:
+                    try {
+                        fis = new FileInputStream(outputPartFile);
+                        crcHashingInProgress = true;
+                        final org.bouncycastle.crypto.io.DigestInputStream is = new org.bouncycastle.crypto.io.DigestInputStream(fis, new WhirlpoolDigest());
+                        while ((read = is.read(b)) >= 0) {
+                            currentPosition += read;
+                            hashProgress.setCurrent(currentPosition);
+                        }
+                        final byte[] hashBytes = new byte[is.getDigest().getDigestSize()];
+                        is.getDigest().doFinal(hashBytes, 0);
+                        hashFile = HexFormatter.byteArrayToHex(hashBytes);
+                        is.close();
+                    } catch (final Throwable e) {
+                        getLogger().log(e);
+                    } finally {
+                        crcHashingInProgress = false;
+                    }
+                    break;
                 case MD5:
                 case SHA1:
                 case SHA224:

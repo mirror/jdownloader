@@ -711,7 +711,6 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             }
             if (checksum.getParent() != null) {
                 String cs = checksum.getText();
-                cs = cs.replaceAll("\\[.*?\\]", "").trim();
                 HashInfo hashInfo = HashInfo.parse(cs, true, false);
                 if (hashInfo == null) {
                     hashInfo = new HashInfo("", HashInfo.TYPE.NONE, true, true);

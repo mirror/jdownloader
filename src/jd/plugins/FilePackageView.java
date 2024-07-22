@@ -221,11 +221,11 @@ public class FilePackageView extends ChildrenView<FilePackage, DownloadLink> {
     private final static AbstractIcon          EXTRACTICONSTART     = new AbstractIcon(IconKey.ICON_EXTRACT_RUN, 16);
     private final static AbstractIcon          FALSEICON            = new AbstractIcon(IconKey.ICON_FALSE, 16);
     public final static Comparator<DomainInfo> DOMAININFOCOMPARATOR = new Comparator<DomainInfo>() {
-        @Override
-        public int compare(DomainInfo o1, DomainInfo o2) {
-            return o1.getTld().compareTo(o2.getTld());
-        }
-    };
+                                                                        @Override
+                                                                        public int compare(DomainInfo o1, DomainInfo o2) {
+                                                                            return o1.getTld().compareTo(o2.getTld());
+                                                                        }
+                                                                    };
 
     protected void writeTempToFields(final Temp tmp) {
         long size = -1;
@@ -551,6 +551,7 @@ public class FilePackageView extends ChildrenView<FilePackage, DownloadLink> {
             case FINISHED_SHA256:
             case FINISHED_SHA384:
             case FINISHED_SHA512:
+            case FINISHED_WHIRLPOOL:
                 break;
             }
             // }
