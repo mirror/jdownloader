@@ -2849,7 +2849,7 @@ public class LinkCrawler {
 
     public List<CrawledLink> getCrawledLinks(Pattern pattern, CrawledLink source, CrawledLinkModifier modifier) {
         final String[] matches = getMatchingLinks(pattern, source, modifier);
-        if (matches == null || matches.length > 0) {
+        if (matches == null || matches.length == 0) {
             return null;
         }
         final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
