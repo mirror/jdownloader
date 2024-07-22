@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -30,9 +29,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "booru.org" }, urls = { "https?://[a-z0-9]+\\.booru\\.org/index\\.php\\?page=post\\&s=list\\&tags=[A-Za-z0-9_\\-]+" })
-public class BooruOrg extends PluginForDecrypt {
-
-    public BooruOrg(PluginWrapper wrapper) {
+public class BooruOrgCrawler extends PluginForDecrypt {
+    public BooruOrgCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -48,7 +46,6 @@ public class BooruOrg extends PluginForDecrypt {
         final String fpName = new Regex(parameter, "tags=(.+)").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
-
         final String url_part = parameter;
         int page_counter = 1;
         int offset = 0;
@@ -85,7 +82,6 @@ public class BooruOrg extends PluginForDecrypt {
             }
             page_counter++;
         } while (entries_per_page_current >= max_entries_per_page);
-
         return decryptedLinks;
     }
 
@@ -93,5 +89,4 @@ public class BooruOrg extends PluginForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Danbooru;
     }
-
 }

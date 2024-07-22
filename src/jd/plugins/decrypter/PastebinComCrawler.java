@@ -112,24 +112,32 @@ public class PastebinComCrawler extends AbstractPastebinCrawler {
         if (!br.containsHTML("/report/" + pasteID)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String plaintxt = br.getRegex("<textarea(.*?)</textarea>").getMatch(0);
-        if (plaintxt == null) {
-            plaintxt = br.getRegex("<div class\\s*=\\s*\"source.*?\"[^>]*>\\s*<ol[^>]*>\\s*(.*?)\\s*</ol>\\s*</div>").getMatch(0);
-            if (plaintxt != null) {
-                plaintxt = plaintxt.replaceAll("<li[^>]*>", "");
-                plaintxt = plaintxt.replaceAll("<div[^>]*>", "");
-                plaintxt = plaintxt.replaceAll("</li>", "");
-                plaintxt = plaintxt.replaceAll("</div>", "");
+        String plaintext = br.getRegex("<textarea(.*?)</textarea>").getMatch(0);
+        if (plaintext == null) {
+            plaintext = br.getRegex("<div class\\s*=\\s*\"source[^\"]*\"[^>]*>(.*?)</div>\\s*</div>").getMatch(0);
+            if (plaintext != null) {
+                plaintext = plaintext.replaceAll("<li[^>]*>", "");
+                plaintext = plaintext.replaceAll("<div[^>]*>", "");
+                plaintext = plaintext.replaceAll("</li>", "");
+                plaintext = plaintext.replaceAll("</div>", "");
             }
         }
-        if (plaintxt == null && (br.getURL().contains("raw.php") || br.getURL().contains("/raw/"))) {
-            plaintxt = br.getRequest().getHtmlCode();
+        if (plaintext == null && (br.getURL().contains("raw.php") || br.getURL().contains("/raw/"))) {
+            /* Current browser instance contains raw plain text -> Use that */
+            plaintext = br.getRequest().getHtmlCode();
+        } else if (plaintext == null && br.containsHTML("/raw/" + pasteID)) {
+            /*
+             * Fallback if we failed to extract the paste text from html -> Access special URL which will provide us with the plain text we
+             * are looking for.
+             */
+            br.getPage("/raw/" + pasteID);
+            plaintext = br.getRequest().getHtmlCode();
         }
-        if (plaintxt == null) {
+        if (plaintext == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final PastebinMetadata metadata = new PastebinMetadata(param, this.getFID(param.getCryptedUrl()));
-        metadata.setPastebinText(plaintxt);
+        metadata.setPastebinText(plaintext);
         final String title = br.getRegex("<h1>([^<]+)</h1>").getMatch(0);
         if (title != null && !title.trim().equalsIgnoreCase("untitled")) {
             metadata.setTitle(Encoding.htmlDecode(title).trim());

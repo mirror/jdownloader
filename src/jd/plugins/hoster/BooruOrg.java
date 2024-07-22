@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,9 +31,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "booru.org" }, urls = { "https?://[a-z0-9]+\\.booru\\.org/index\\.php\\?page=post\\&s=view\\&id=(\\d+)" })
 public class BooruOrg extends PluginForHost {
     public BooruOrg(PluginWrapper wrapper) {
@@ -41,17 +41,15 @@ public class BooruOrg extends PluginForHost {
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other:
 
     /* Connection stuff */
-    private static final boolean free_resume       = false;
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
+    private static final boolean free_resume    = false;
+    private static final int     free_maxchunks = 1;
+    private String               dllink         = null;
 
     @Override
     public String getAGBLink() {
@@ -97,7 +95,7 @@ public class BooruOrg extends PluginForHost {
         } else {
             filename = fid;
         }
-        dllink = br.getRegex("\"(http[^<>\"]+)\" id=\"image\"").getMatch(0);
+        dllink = br.getRegex("\"([^\"]+)\" id=\"image\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://img\\.booru\\.org//images/\\d+/[^<>\"]+)\"").getMatch(0);
             if (dllink == null) {
@@ -105,16 +103,16 @@ public class BooruOrg extends PluginForHost {
                 dllink = br.getRegex("<\\s*source\\s+[^>]*src\\s*=\\s*(\"|'|)(.*?)\\1").getMatch(1);
             }
         }
-        if (filename == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String ext = null;
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            ext = getFileNameExtensionFromString(dllink, extDefault);
+            filename = applyFilenameExtension(filename, ext);
+            link.setFinalFileName(filename);
         }
-        dllink = Encoding.htmlDecode(dllink);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        final String ext = getFileNameExtensionFromString(dllink, extDefault);
-        filename = applyFilenameExtension(filename, ext);
-        link.setFinalFileName(filename);
         if (!StringUtils.isEmpty(dllink)) {
+            dllink = Encoding.htmlOnlyDecode(dllink);
             basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, filename, ext);
         }
         return AvailableStatus.TRUE;
@@ -138,7 +136,7 @@ public class BooruOrg extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

@@ -17,6 +17,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -26,10 +30,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biguz.net" }, urls = { "https?://(?:www\\.)?biguz\\.net/(?:watch\\.php\\?id=\\d+|video/\\?id=\\d+\\&name=[a-z0-9\\-]+)" })
 public class BiguzNet extends PluginForHost {
@@ -92,7 +92,7 @@ public class BiguzNet extends PluginForHost {
         if (!link.isNameSet()) {
             /* Set fallback filename */
             if (title != null) {
-                link.setName(title + extDefault);
+                link.setName(this.applyFilenameExtension(title, extDefault));
             } else {
                 link.setName(this.getFID(link) + extDefault);
             }
@@ -100,6 +100,17 @@ public class BiguzNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
+        final String jsAntiBotHash = br.getRegex("escape\\(\"([a-f0-9]+)").getMatch(0);
+        if (jsAntiBotHash != null) {
+            /* 2024-07-22 */
+            logger.info("Entered anti-anti bot handling");
+            final String ct_headless = jsAntiBotHash + ":false";
+            final String ct_headless_b64 = Encoding.Base64Encode(ct_headless);
+            br.setCookie(br.getHost(), "ct_headless", Encoding.urlEncode(ct_headless_b64));
+            br.setCookie(br.getHost(), "verify", jsAntiBotHash);
+            /* Reload page */
+            br.getPage(br.getURL());
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML("(?i)This video was suspended")) {
@@ -115,7 +126,7 @@ public class BiguzNet extends PluginForHost {
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            link.setFinalFileName(title + extDefault);
+            link.setFinalFileName(this.applyFilenameExtension(title, extDefault));
         }
         if (!StringUtils.isEmpty(dllink)) {
             basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, title, extDefault);
