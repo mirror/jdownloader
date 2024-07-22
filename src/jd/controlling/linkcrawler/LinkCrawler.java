@@ -33,28 +33,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
-import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
-import jd.nutils.SimpleFTP;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
-import jd.parser.html.HTMLParser.HtmlParserCharSequence;
-import jd.parser.html.HTMLParser.HtmlParserResultSet;
-import jd.plugins.CryptedLink;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginsC;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
@@ -88,6 +66,28 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
+
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
+import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
+import jd.nutils.SimpleFTP;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
+import jd.parser.html.HTMLParser.HtmlParserCharSequence;
+import jd.parser.html.HTMLParser.HtmlParserResultSet;
+import jd.plugins.CryptedLink;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginsC;
 
 public class LinkCrawler {
     private static enum DISTRIBUTE {
@@ -1173,7 +1173,6 @@ public class LinkCrawler {
                         ((ClosableLogInterface) logger).close();
                     }
                 }
-
             } finally {
                 /* restore old ClassLoader for current Thread */
                 checkFinishNotify(task);
@@ -1188,7 +1187,6 @@ public class LinkCrawler {
             throw new UpdateRequiredClassNotFoundException("could not find 'LinkCrawlerDeepHelper' crawler plugin");
         } else {
             return invokeLazyCrawlerPlugin(generation, logger, lazyC, link, new LazyCrawlerPluginInvokation<URLConnectionAdapter>() {
-
                 @Override
                 public URLConnectionAdapter invoke(PluginForDecrypt plugin) throws Exception {
                     plugin.setBrowser(br);
@@ -1271,7 +1269,6 @@ public class LinkCrawler {
             if (StringUtils.isEmpty(fileName)) {
                 fileName = Plugin.extractFileNameFromURL(con.getRequest().getUrl());
             }
-
             link.setFinalFileName(fileName);
             /* save filename in property so we can restore in reset case */
             link.setProperty("fixName", fileName);
@@ -1368,24 +1365,27 @@ public class LinkCrawler {
                     // file:/// -> empty authority -> all fine
                     final String currentURI = source.getURL().replaceFirst("file:///?", "file:///");
                     final File file = new File(new URI(currentURI));
-                    if (file.exists() && file.isFile()) {
-                        final int limit = CONFIG.getDeepDecryptFileSizeLimit();
-                        final int readLimit = limit == -1 ? -1 : Math.max(1 * 1024 * 1024, limit);
-                        final String fileContent = new String(IO.readFile(file, readLimit), "UTF-8");
-                        final List<CrawledLink> fileContentLinks = find(generation, source, fileContent, null, false, false);
-                        if (fileContentLinks != null) {
-                            final String[] sourceURLs = getAndClearSourceURLs(source);
-                            final boolean singleDest = fileContentLinks.size() == 1;
-                            for (final CrawledLink fileContentLink : fileContentLinks) {
-                                forwardCrawledLinkInfos(source, fileContentLink, lm, sourceURLs, singleDest);
-                            }
-                            crawl(generation, fileContentLinks);
-                        } else {
-                            logger.info("Failed to find any results in file: " + file.getAbsolutePath());
-                        }
-                    } else {
-                        logger.info("Invalid file path: " + file.getAbsolutePath());
+                    if (!file.exists()) {
+                        logger.info("FILE: Invalid file path: File does not exist");
+                        return;
+                    } else if (!file.isFile()) {
+                        logger.info("FILE: Invalid file path: File is not a file");
+                        return;
                     }
+                    final int limit = CONFIG.getDeepDecryptFileSizeLimit();
+                    final int readLimit = limit == -1 ? -1 : Math.max(1 * 1024 * 1024, limit);
+                    final String fileContent = new String(IO.readFile(file, readLimit), "UTF-8");
+                    final List<CrawledLink> fileContentLinks = find(generation, source, fileContent, null, false, false);
+                    if (fileContentLinks == null || fileContentLinks.isEmpty()) {
+                        logger.info("FILE: Failed to find any results in file: " + file.getAbsolutePath());
+                        return;
+                    }
+                    final String[] sourceURLs = getAndClearSourceURLs(source);
+                    final boolean singleDest = fileContentLinks.size() == 1;
+                    for (final CrawledLink fileContentLink : fileContentLinks) {
+                        forwardCrawledLinkInfos(source, fileContentLink, lm, sourceURLs, singleDest);
+                    }
+                    crawl(generation, fileContentLinks);
                 } else {
                     /* Crawl URL */
                     br = new Browser();
@@ -1490,61 +1490,68 @@ public class LinkCrawler {
                         } else {
                             finalPackageName = null;
                         }
-                        /* try to load the webpage and find links on it */
+                        /* Load the webpage and find links on it */
                         if (matchingRule != null && LinkCrawlerRule.RULE.SUBMITFORM.equals(matchingRule.getRule())) {
-                            final Form[] allforms;
                             final Pattern formPattern = matchingRule._getFormPattern();
+                            if (formPattern == null) {
+                                logger.info("SUBMITFORM: Cannot process Form handling because: Form Pattern is null");
+                                return;
+                            }
+                            final Form[] allForms = br.getForms();
+                            if (allForms == null || allForms.length == 0) {
+                                logger.info("SUBMITFORM: Cannot process Form handling because: There are no forms available");
+                                return;
+                            }
+                            Form targetform = null;
+                            int index = 0;
+                            for (final Form form : allForms) {
+                                if ((StringUtils.isNotEmpty(form.getAction()) && formPattern.matcher(form.getAction()).matches()) || form.containsHTML(formPattern.pattern())) {
+                                    targetform = form;
+                                    break;
+                                }
+                                index++;
+                            }
+                            if (targetform == null) {
+                                logger.info("Failed to find any form matching given Pattern");
+                                return;
+                            }
                             final ArrayList<CrawledLink> formLinks = new ArrayList<CrawledLink>();
-                            if (formPattern != null && (allforms = br.getForms()) != null && allforms.length > 0) {
-                                Form targetform = null;
-                                int index = 0;
-                                for (final Form form : allforms) {
-                                    if ((StringUtils.isNotEmpty(form.getAction()) && formPattern.matcher(form.getAction()).matches()) || form.containsHTML(formPattern.pattern())) {
-                                        targetform = form;
-                                        break;
-                                    }
-                                    index++;
+                            logger.info("SUBMITFORM: Submitting form from index [" + index + "]");
+                            // TODO: Remove the duplicated code down below, just go through crawler again(?)
+                            final Browser clone = br.cloneBrowser();
+                            clone.setFollowRedirects(false);
+                            final Request request = clone.createFormRequest(targetform);
+                            final URLConnectionAdapter con = clone.openRequestConnection(request);
+                            final String redirect = con.getRequest().getLocation();
+                            if (redirect != null) {
+                                clone.followConnection();
+                                formLinks.add(crawledLinkFactorybyURL(redirect));
+                            } else if (lDeepInspector.looksLikeDownloadableContent(con)) {
+                                /* Looks like downloadable file */
+                                con.disconnect();
+                                final CrawledLink formLink = createDirectHTTPCrawledLink(deeperSource, request, con);
+                                if (formLink != null) {
+                                    formLinks.add(formLink);
                                 }
-                                if (targetform != null) {
-                                    logger.info("Submitting form from index [" + index + "]");
-                                    final Browser clone = br.cloneBrowser();
-                                    clone.setFollowRedirects(false);
-                                    final Request request = clone.createFormRequest(targetform);
-                                    final URLConnectionAdapter con = clone.openRequestConnection(request);
-                                    final String redirect = con.getRequest().getLocation();
-                                    if (redirect != null) {
-                                        clone.followConnection();
-                                        formLinks.add(crawledLinkFactorybyURL(redirect));
-                                    } else if (lDeepInspector.looksLikeDownloadableContent(con)) {
-                                        /* Looks like downloadable file */
-                                        con.disconnect();
-                                        final CrawledLink formLink = createDirectHTTPCrawledLink(deeperSource, request, con);
-                                        if (formLink != null) {
-                                            formLinks.add(formLink);
-                                        }
-                                    } else {
-                                        clone.followConnection();
-                                        logger.info("Submitted Form did not lead to downloadable content");
-                                    }
-                                } else {
-                                    logger.info("Failed to find any form matching given Pattern");
-                                }
-                            }
-                            if (formLinks.size() > 0) {
-                                final boolean singleDest = formLinks.size() == 1;
-                                for (final CrawledLink formLink : formLinks) {
-                                    forwardCrawledLinkInfos(deeperSource, formLink, lm, sourceURLs, singleDest);
-                                    PackageInfo dpi = formLink.getDesiredPackageInfo();
-                                    if (dpi == null) {
-                                        dpi = new PackageInfo();
-                                    }
-                                    dpi.setName(finalPackageName);
-                                    formLink.setDesiredPackageInfo(dpi);
-                                }
-                                crawl(generation, formLinks);
                             } else {
-                                logger.info("SUBMITFORM rule did not lead to downloadable content");
+                                clone.followConnection();
+                                logger.info("SUBMITFORM: Submitted Form did not lead to downloadable content");
                             }
+                            if (formLinks.isEmpty()) {
+                                logger.info("SUBMITFORM: Failed to find any results");
+                                return;
+                            }
+                            final boolean singleDest = formLinks.size() == 1;
+                            for (final CrawledLink formLink : formLinks) {
+                                forwardCrawledLinkInfos(deeperSource, formLink, lm, sourceURLs, singleDest);
+                                PackageInfo dpi = formLink.getDesiredPackageInfo();
+                                if (dpi == null) {
+                                    dpi = new PackageInfo();
+                                }
+                                dpi.setName(finalPackageName);
+                                formLink.setDesiredPackageInfo(dpi);
+                            }
+                            crawl(generation, formLinks);
                             /* Dead end */
                             return;
                         }
@@ -4109,33 +4116,31 @@ public class LinkCrawler {
                 } else {
                     br.followConnection();
                     if (br.containsHTML("^#EXTM3U")) {
-                        // auto m3u8 handling of URLs without .m3u8 in URL
+                        /* auto m3u8 handling of URLs without .m3u8 in URL */
                         final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
                         ret.add(lc.crawledLinkFactorybyURL("m3u8://" + br.getURL()));
                         return ret;
                     }
-                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                        try {
-                            final LazyCrawlerPlugin lazyC = lc.getLazyGenericHttpDirectoryCrawlerPlugin();
-                            if (lazyC == null) {
-                                throw new UpdateRequiredClassNotFoundException("could not find 'GenericHttpDirectoryCrawlerPlugin' crawler plugin");
-                            }
-                            final ArrayList<DownloadLink> directoryContent = lc.invokeLazyCrawlerPlugin(generation, null, lazyC, link, new LazyCrawlerPluginInvokation<ArrayList<DownloadLink>>() {
-
-                                @Override
-                                public ArrayList<DownloadLink> invoke(PluginForDecrypt plugin) throws Exception {
-                                    plugin.setBrowser(br);
-                                    return ((abstractGenericHTTPDirectoryIndexCrawler) plugin).parseHTTPDirectory(new CryptedLink(br.getURL(), link), br);
-                                }
-                            });
-                            if (directoryContent != null && directoryContent.size() > 0) {
-                                final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
-                                ret.add(lc.crawledLinkFactorybyURL("jd://directoryindex://" + br.getURL()));
-                                return ret;
-                            }
-                        } catch (final Throwable e) {
-                            LogController.CL().log(e);
+                    try {
+                        final LazyCrawlerPlugin lazyC = lc.getLazyGenericHttpDirectoryCrawlerPlugin();
+                        if (lazyC == null) {
+                            throw new UpdateRequiredClassNotFoundException("could not find 'GenericHttpDirectoryCrawlerPlugin' crawler plugin");
                         }
+                        final ArrayList<DownloadLink> directoryContent = lc.invokeLazyCrawlerPlugin(generation, null, lazyC, link, new LazyCrawlerPluginInvokation<ArrayList<DownloadLink>>() {
+                            @Override
+                            public ArrayList<DownloadLink> invoke(PluginForDecrypt plugin) throws Exception {
+                                plugin.setBrowser(br);
+                                return ((abstractGenericHTTPDirectoryIndexCrawler) plugin).parseHTTPDirectory(new CryptedLink(br.getURL(), link), br);
+                            }
+                        });
+                        if (directoryContent != null && directoryContent.size() > 0) {
+                            /* Let http directory crawler process this link. */
+                            final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
+                            ret.add(lc.crawledLinkFactorybyURL("jd://directoryindex://" + br.getURL()));
+                            return ret;
+                        }
+                    } catch (final Throwable e) {
+                        LogController.CL().log(e);
                     }
                     return null;
                 }
