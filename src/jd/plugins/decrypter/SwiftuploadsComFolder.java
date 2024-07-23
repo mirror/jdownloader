@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -86,6 +88,12 @@ public class SwiftuploadsComFolder extends PluginForDecrypt {
         if (folderTitle != null) {
             fp.setName(Encoding.htmlDecode(folderTitle).trim());
         }
+        long folderFilesize = -1;
+        final String folderFilesizeStr = br.getRegex(" <div class=\"col\">\\s*<span>\\((\\d+[^\\)]+)\\)</span>").getMatch(0);
+        if (folderFilesizeStr != null) {
+            folderFilesize = SizeFormatter.getSize(folderFilesizeStr);
+        }
+        final String[] filenames = br.getRegex("class=\"d-file-name\"[^>]*>([^<]+)</a>").getColumn(0);
         final PluginForHost hosterPlugin = this.getNewPluginForHostInstance(this.getHost());
         final String[] links = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
         for (final String singleLink : links) {
@@ -97,6 +105,24 @@ public class SwiftuploadsComFolder extends PluginForDecrypt {
         }
         if (ret.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Set filenames and AvailableStatus. */
+        if (filenames != null && filenames.length == ret.size()) {
+            long averageSizePerItem = -1;
+            if (folderFilesize != -1) {
+                averageSizePerItem = folderFilesize / ret.size();
+            }
+            final boolean setAverageFilesize = true;
+            for (int index = 0; index < ret.size(); index++) {
+                final DownloadLink result = ret.get(index);
+                String filename = filenames[index];
+                filename = Encoding.htmlDecode(filename).trim();
+                result.setName(filename);
+                if (setAverageFilesize && averageSizePerItem != -1) {
+                    result.setDownloadSize(averageSizePerItem);
+                }
+                result.setAvailable(true);
+            }
         }
         return ret;
     }
