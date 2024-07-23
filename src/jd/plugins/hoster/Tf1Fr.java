@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hds.HDSDownloader;
@@ -129,8 +128,6 @@ public class Tf1Fr extends PluginForHost {
              * New endpoint: https://mediainfo.tf1.fr/mediainfocombo/<video_id>
              */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type MPD with split video audio");
-        } else if (finallink.startsWith("rtmp")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming protocol");
         } else if (finallink.contains(".f4m?")) {
             // HDS
             br.getPage(finallink);

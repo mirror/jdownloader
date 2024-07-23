@@ -3782,7 +3782,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             /* User needed more time to solve the captcha so there is no waittime left :) */
             logger.info("Congratulations: Time to solve captcha was higher than waittime --> No waittime left");
         } else {
-            /* No waittime at all */
+            /* No wait time at all */
             logger.info("Found no waittime");
         }
     }
@@ -4656,7 +4656,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 final String value = URLDecoder.decode(redirect.getValue(), "UTF-8");
                 if (value != null && canHandle(value)) {
                     /*
-                     * Prevent redirect value redirecting to file-download straight away which would lead to an exception/download failure.
+                     * Prevent redirect value redirecting to file-download straight away which would lead to an Exception.
                      */
                     logger.info("clear login redirect to download:" + value);
                     redirect.setValue("");
@@ -5065,9 +5065,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     /** Sets given cookies and checks if we can login with them. */
     protected boolean verifyCookies(final Account account, final Cookies cookies) throws Exception {
         br.setCookies(getMainPage(), cookies);
+        br.setCookies(cookies);
         getPage(getMainPage() + getRelativeAccountInfoURL());
         if (isLoggedin(this.br)) {
-            logger.info("Successfully logged in via cookies");
+            logger.info("Cookie login successful");
             return true;
         } else {
             logger.info("Cookie login failed");
@@ -5099,11 +5100,12 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     /**
-     * 2019-05-29: This is only EXPERIMENTAL! App-login: https://play.google.com/store/apps/details?id=net.sibsoft.xfsuploader <br/>
+     * 2019-05-29: This is only EXPERIMENTAL! </br>
+     * App-login: https://play.google.com/store/apps/details?id=net.sibsoft.xfsuploader </br>
      * Around 2016 this has been implemented for some XFS websites but was never really used.It will return an XML response. Fragments of it
-     * may still work for some XFS websites e.g. official DEMO website 'xfilesharing.com' and also 'europeup.com'. The login-cookie we get
-     * is valid for the normal website as well! Biggest downside: Whenever a login-captcha is required (e.g. on too many wrong logins), this
-     * method will NOT work!!
+     * may still work for some XFS websites e.g. official DEMO website 'xfilesharing.com'.</br>
+     * The login-cookie we get is valid for the normal website as well! </br>
+     * Biggest disadvantage: Whenever a login-captcha is required (e.g. on too many wrong logins), this method will NOT work!!
      */
     @Deprecated
     protected final boolean loginAPP(final Account account, boolean validateCookies) throws Exception {

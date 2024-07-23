@@ -18,13 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XfilesharingCom extends XFileSharingProBasic {
@@ -90,8 +91,12 @@ public class XfilesharingCom extends XFileSharingProBasic {
 
     @Override
     public boolean loginWebsite(final DownloadLink downloadLink, final Account account, final boolean force) throws Exception {
-        /* 2019-05-29: Special and experimental */
-        return loginAPP(account, false);
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* 2019-05-29: Special and experimental */
+            return loginAPP(account, false);
+        } else {
+            return super.loginWebsite(downloadLink, account, force);
+        }
     }
 
     @Override

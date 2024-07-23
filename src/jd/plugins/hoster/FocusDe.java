@@ -159,11 +159,9 @@ public class FocusDe extends PluginForHost {
             }
         }
         if (dllink == null) {
-            logger.info("Looks like no video content -> Display as offline");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Looks like no video content");
         } else if (dllink.startsWith("rtmp")) {
-            logger.info("Livestreams are not supported");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Livestreams are not supported");
         }
         if (title != null) {
             title = Encoding.htmlDecode(title);

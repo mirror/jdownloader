@@ -62,9 +62,8 @@ public class NtvDe extends PluginForHost {
     private static final String host_hls = "http://video.n-tv.de";
 
     // private static final String host_http = "http://video.n-tv.de";
-    // private static final String host_rtmp = "rtmp://fms.n-tv.de/ntv/";
     /* Possible http url (low quality for old mobile phones): http://video.n-tv.de/mobile/ContentPoolSchiesspolizist_1506251137.mp4 */
-    /* Available streaming types (best to worst): hls, rtmpe, http */
+    /* Available streaming types (best to worst): hls, http */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
