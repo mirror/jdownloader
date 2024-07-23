@@ -20,6 +20,7 @@ import java.net.URLDecoder;
 import java.util.Random;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -46,6 +47,11 @@ public class WorldClipsRu extends PluginForHost {
     }
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://worldclips.ru/info";
     }
@@ -54,7 +60,7 @@ public class WorldClipsRu extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("dev.worldclips.ru/", "worldclips.ru/"));
     }
 
-    private static final String TYPE_INVALID = "https?://[^/]+/clips/(top|new)/\\d+";
+    private static final String TYPE_INVALID = "(?i)https?://[^/]+/clips/(top|new)/\\d+";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -103,36 +109,32 @@ public class WorldClipsRu extends PluginForHost {
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                br.setFollowRedirects(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (!force) {
-                        /* Do not validate cookies */
-                        return;
-                    }
-                    br.getPage("http://" + this.getHost());
-                    if (this.isLoggedIN(br)) {
-                        logger.info("Cookie login successful");
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
-                        return;
-                    } else {
-                        logger.info("Cookie login failed");
-                        br.clearCookies(br.getHost());
-                    }
+            br.setCookiesExclusive(true);
+            br.setFollowRedirects(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                this.br.setCookies(this.getHost(), cookies);
+                if (!force) {
+                    /* Do not validate cookies */
+                    return;
                 }
-                logger.info("Performing full login");
-                br.postPage("http://" + this.getHost() + "/personal", "expire=on&auth=1&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (!isLoggedIN(br)) {
-                    throw new AccountInvalidException();
+                br.getPage("http://" + this.getHost());
+                if (this.isLoggedIN(br)) {
+                    logger.info("Cookie login successful");
+                    account.saveCookies(this.br.getCookies(this.getHost()), "");
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(br.getHost());
+                    account.clearCookies("");
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-            } catch (final PluginException e) {
-                account.clearCookies("");
-                throw e;
             }
+            logger.info("Performing full login");
+            br.postPage("http://" + this.getHost() + "/personal", "expire=on&auth=1&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+            if (!isLoggedIN(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(this.br.getCookies(this.getHost()), "");
         }
     }
 
@@ -198,7 +200,7 @@ public class WorldClipsRu extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -207,7 +209,7 @@ public class WorldClipsRu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override
