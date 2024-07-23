@@ -538,7 +538,9 @@ public class LinkCrawler {
     }
 
     protected void attachLinkCrawler(final LinkCrawler linkCrawler) {
-        if (linkCrawler == null || linkCrawler == this) {
+        if (linkCrawler == null) {
+            return;
+        } else if (linkCrawler == this) {
             return;
         }
         final LinkCrawler parent = getParent();
@@ -1208,7 +1210,7 @@ public class LinkCrawler {
         }
     }
 
-    protected boolean isCrawledLinkDuplicated(Map<String, Object> map, CrawledLink link) {
+    protected boolean isCrawledLinkDuplicated(final Map<String, Object> map, CrawledLink link) {
         final String url = link.getURL();
         final String urlDecodedURL = Encoding.urlDecode(url, false);
         final String value;
@@ -1450,14 +1452,15 @@ public class LinkCrawler {
                                 }
                             }
                         }
+                        if (hosterPluginWhichCanHandleThisURL != null || crawlerPluginWhichCanHandleThisURL != null) {
+                            /* URL can be handled by a Plugin -> Return it */
+                            br.disconnect();
+                            final ArrayList<CrawledLink> pluginSupportedLinks = new ArrayList<CrawledLink>();
+                            pluginSupportedLinks.add(deeperSource);
+                            crawl(generation, pluginSupportedLinks);
+                        }
                     }
-                    if (hosterPluginWhichCanHandleThisURL != null || crawlerPluginWhichCanHandleThisURL != null) {
-                        /* URL can be handled by Hoster-Plugin -> Return it */
-                        br.disconnect();
-                        final ArrayList<CrawledLink> pluginSupportedLinks = new ArrayList<CrawledLink>();
-                        pluginSupportedLinks.add(deeperSource);
-                        crawl(generation, pluginSupportedLinks);
-                    } else if ((lDeepInspector = getDeepInspector()).looksLikeDownloadableContent(connection)) {
+                    if ((lDeepInspector = getDeepInspector()).looksLikeDownloadableContent(connection)) {
                         /*
                          * Connection leads to Direct downloadable content -> Return item which will be handled by DirectHTTP hoster plugin.
                          */
@@ -1487,17 +1490,13 @@ public class LinkCrawler {
                             }
                             return;
                         }
-                        final String finalPackageName;
+                        String finalPackageName = null;
                         if (matchingRule != null && matchingRule._getPackageNamePattern() != null) {
                             /* Obtain package name by regex given in rule. */
                             final String packageName = br.getRegex(matchingRule._getPackageNamePattern()).getMatch(0);
                             if (StringUtils.isNotEmpty(packageName)) {
                                 finalPackageName = Encoding.htmlDecode(packageName).trim();
-                            } else {
-                                finalPackageName = null;
                             }
-                        } else {
-                            finalPackageName = null;
                         }
                         /* Load the webpage and find links on it */
                         if (matchingRule != null && LinkCrawlerRule.RULE.SUBMITFORM.equals(matchingRule.getRule())) {
@@ -1565,6 +1564,7 @@ public class LinkCrawler {
                             return;
                         }
                         /* Deep-decrypt (generic and via DEEPDECRYPT LinkCrawler rule). */
+                        // TODO: Ahh at this stage, this will always be true? Remove it?
                         final boolean isDeepDecrypt = source.isCrawlDeep() || (matchingRule != null && LinkCrawlerRule.RULE.DEEPDECRYPT.equals(matchingRule.getRule()));
                         final Request request = br.getRequest();
                         final String brURL;
@@ -1845,32 +1845,31 @@ public class LinkCrawler {
                              * enqueue these cryptedLinks for decrypting
                              */
                             for (final CrawledLink decryptThis : cryptedLinks) {
-                                final LinkCrawlerTask innerTask;
-                                if ((innerTask = checkStartNotify(generation, "distributePluginForDecrypt:" + pDecrypt + "|" + link.getURL() + "|" + decryptThis.getURL())) != null) {
-                                    threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation, innerTask) {
-                                        public long getAverageRuntime() {
-                                            final Long ret = getDefaultAverageRuntime();
-                                            if (ret != null) {
-                                                return ret;
-                                            } else {
-                                                return pDecrypt.getAverageCrawlRuntime();
-                                            }
-                                        }
-
-                                        @Override
-                                        protected LinkCrawlerLock getLinkCrawlerLock() {
-                                            return LinkCrawler.this.getLinkCrawlerLock(pDecrypt, decryptThis);
-                                        }
-
-                                        @Override
-                                        void crawling() {
-                                            crawl(generation, pDecrypt, decryptThis);
-                                        }
-                                    });
-                                } else {
+                                final LinkCrawlerTask innerTask = checkStartNotify(generation, "distributePluginForDecrypt:" + pDecrypt + "|" + link.getURL() + "|" + decryptThis.getURL());
+                                if (innerTask == null) {
                                     /* LinkCrawler got aborted! */
                                     return DISTRIBUTE.STOP;
                                 }
+                                threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation, innerTask) {
+                                    public long getAverageRuntime() {
+                                        final Long ret = getDefaultAverageRuntime();
+                                        if (ret != null) {
+                                            return ret;
+                                        } else {
+                                            return pDecrypt.getAverageCrawlRuntime();
+                                        }
+                                    }
+
+                                    @Override
+                                    protected LinkCrawlerLock getLinkCrawlerLock() {
+                                        return LinkCrawler.this.getLinkCrawlerLock(pDecrypt, decryptThis);
+                                    }
+
+                                    @Override
+                                    void crawling() {
+                                        crawl(generation, pDecrypt, decryptThis);
+                                    }
+                                });
                             }
                         }
                     }
@@ -1925,47 +1924,47 @@ public class LinkCrawler {
                 lm = originalModifier;
             }
             final java.util.List<CrawledLink> allPossibleCryptedLinks = getCrawledLinks(pluginC.getSupportedLinks(), link, lm);
-            if (allPossibleCryptedLinks != null) {
-                if (insideCrawlerPlugin()) {
-                    /*
-                     * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
-                     * waiting for linkcrawler results
-                     */
-                    for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
-                        if (!generation.isValid()) {
-                            /* LinkCrawler got aborted! */
-                            return false;
-                        }
-                        container(generation, pluginC, decryptThis);
+            if (allPossibleCryptedLinks == null) {
+                return true;
+            }
+            if (insideCrawlerPlugin()) {
+                /*
+                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting
+                 * for linkcrawler results
+                 */
+                for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
+                    if (!generation.isValid()) {
+                        /* LinkCrawler got aborted! */
+                        return false;
                     }
-                } else {
-                    /*
-                     * enqueue these cryptedLinks for decrypting
-                     */
-                    for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
-                        final LinkCrawlerTask innerTask;
-                        if ((innerTask = checkStartNotify(generation, "distributePluginC:" + pluginC.getName() + "|" + link.getURL() + "|" + decryptThis.getURL())) != null) {
-                            threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation, innerTask) {
-                                @Override
-                                public long getAverageRuntime() {
-                                    final Long ret = getDefaultAverageRuntime();
-                                    if (ret != null) {
-                                        return ret;
-                                    } else {
-                                        return super.getAverageRuntime();
-                                    }
-                                }
+                    container(generation, pluginC, decryptThis);
+                }
+            } else {
+                /*
+                 * enqueue these cryptedLinks for decrypting
+                 */
+                for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
+                    final LinkCrawlerTask innerTask = checkStartNotify(generation, "distributePluginC:" + pluginC.getName() + "|" + link.getURL() + "|" + decryptThis.getURL());
+                    if (innerTask == null) {
+                        /* LinkCrawler got aborted! */
+                        return false;
+                    }
+                    threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation, innerTask) {
+                        @Override
+                        public long getAverageRuntime() {
+                            final Long ret = getDefaultAverageRuntime();
+                            if (ret != null) {
+                                return ret;
+                            } else {
+                                return super.getAverageRuntime();
+                            }
+                        }
 
-                                @Override
-                                void crawling() {
-                                    container(generation, pluginC, decryptThis);
-                                }
-                            });
-                        } else {
-                            /* LinkCrawler got aborted! */
-                            return false;
+                        @Override
+                        void crawling() {
+                            container(generation, pluginC, decryptThis);
                         }
-                    }
+                    });
                 }
             }
             return true;
@@ -2040,27 +2039,26 @@ public class LinkCrawler {
                     }
                     crawlDeeperOrMatchingRule(generation, link);
                 } else {
-                    final LinkCrawlerTask innerTask;
-                    if ((innerTask = checkStartNotify(generation, "distributeDeeperOrMatchingRulePool:" + link.getURL())) != null) {
-                        threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation, innerTask) {
-                            @Override
-                            public long getAverageRuntime() {
-                                final Long ret = getDefaultAverageRuntime();
-                                if (ret != null) {
-                                    return ret;
-                                } else {
-                                    return super.getAverageRuntime();
-                                }
-                            }
-
-                            @Override
-                            void crawling() {
-                                crawlDeeperOrMatchingRule(generation, link);
-                            }
-                        });
-                    } else {
+                    final LinkCrawlerTask innerTask = checkStartNotify(generation, "distributeDeeperOrMatchingRulePool:" + link.getURL());
+                    if (innerTask == null) {
                         return false;
                     }
+                    threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation, innerTask) {
+                        @Override
+                        public long getAverageRuntime() {
+                            final Long ret = getDefaultAverageRuntime();
+                            if (ret != null) {
+                                return ret;
+                            } else {
+                                return super.getAverageRuntime();
+                            }
+                        }
+
+                        @Override
+                        void crawling() {
+                            crawlDeeperOrMatchingRule(generation, link);
+                        }
+                    });
                 }
                 return true;
             }
