@@ -1485,15 +1485,15 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                     throw new IllegalArgumentException("Unsupported type:" + type + "|" + url);
                 }
             case EMBED_VIDEO:
-                return new Regex(new URL(url).getPath(), "/embed-([a-z0-9]{12})").getMatch(0);
+                return new Regex(new URL(url).getPath(), "(?i)/embed-([a-z0-9]{12})").getMatch(0);
             case EMBED_VIDEO_2:
-                return new Regex(new URL(url).getPath(), "/e/([a-z0-9]{12})").getMatch(0);
+                return new Regex(new URL(url).getPath(), "(?i)/e/([a-z0-9]{12})").getMatch(0);
             case FILE:
-                return new Regex(new URL(url).getPath(), "/file/([a-z0-9]{12})").getMatch(0);
+                return new Regex(new URL(url).getPath(), "(?i)/file/([a-z0-9]{12})").getMatch(0);
             case SHORT:
-                return new Regex(new URL(url).getPath(), "/d/([a-z0-9]+)").getMatch(0);
+                return new Regex(new URL(url).getPath(), "(?i)/d/([a-z0-9]+)").getMatch(0);
             case OFFICIAL_VIDEO_DOWNLOAD:
-                return new Regex(new URL(url).getPath(), "/d/([a-z0-9]{12})").getMatch(0);
+                return new Regex(new URL(url).getPath(), "(?i)/d/([a-z0-9]{12})").getMatch(0);
             case NORMAL:
                 return new Regex(new URL(url).getPath(), "/([a-z0-9]{12})").getMatch(0);
             default:
@@ -1520,6 +1520,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             if (!supportsShortURLs()) {
                 return;
             } else if (!isShortURL(link)) {
+                /* Do nothing */
                 return;
             }
             final String contentURL = this.getContentURL(link);
@@ -1731,7 +1732,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         }
         if (StringUtils.isEmpty(filename) || StringUtils.isAllEmpty(filesizeWithUnit, filesizeBytesStr)) {
             // eg dailyuploads.net
-            final String downloadFileTable2 = new Regex(html, "<table[^>]*>.*?<h\\d+[^>]*>\\s*Download\\s*File\\s*</h\\d+>\\s*(.*?)</table>").getMatch(0);
+            final String downloadFileTable2 = new Regex(html, "(?i)<table[^>]*>.*?<h\\d+[^>]*>\\s*Download\\s*File\\s*</h\\d+>\\s*(.*?)</table>").getMatch(0);
             if (downloadFileTable2 != null) {
                 if (StringUtils.isEmpty(filename)) {
                     filename = new Regex(downloadFileTable2, "<td\\s*style\\s*=\\s*\"font[^>]*>\\s*(.*?)\\s*(</|<br)").getMatch(0);
@@ -1746,7 +1747,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
              * 2019-05-21: E.g. uqload.com, vidoba.net - this method will return a 'cleaner' filename than in other places - their titles
              * will often end with " mp4" which we have to correct later!
              */
-            final String sharebox3_videohost = "\\[URL=https?://[^/]+/" + urlFUID + "[^/<>\\]]*?\\]\\[IMG\\][^<>\"\\[\\]]+\\[/IMG\\]([^<>\"]+)\\[/URL\\]";
+            final String sharebox3_videohost = "(?i)\\[URL=https?://[^/]+/" + urlFUID + "[^/<>\\]]*?\\]\\[IMG\\][^<>\"\\[\\]]+\\[/IMG\\]([^<>\"]+)\\[/URL\\]";
             if (StringUtils.isEmpty(filename)) {
                 /* 2023-07-28: For new style XFS videohosts when on official video download page "/d/<fuid>" */
                 filename = new Regex(html, "(?i)<h4 [^>]*>\\s*Download\\s*([^<]*?)\\s*</h\\d+>").getMatch(0);
@@ -1812,8 +1813,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         } else {
             fileInfo[1] = filesizeWithUnit;
         }
-        /* MD5 is only available in very very rare cases! */
-        fileInfo[2] = new Regex(html, "<b>\\s*MD5.*?</b>.*?nowrap>\\s*(.*?)\\s*<").getMatch(0);
+        /* MD5 is only available in very very rare cases! 2024-07-23: Removed this */
+        // fileInfo[2] = new Regex(html, "(?i)<b>\\s*MD5.*?</b>.*?nowrap>\\s*(.*?)\\s*<").getMatch(0);
         return fileInfo;
     }
 
@@ -2373,7 +2374,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         String dllink = null;
         /* Info in table. E.g. xvideosharing.com, watchvideo.us */
         String[] videoQualityHTMLs = br.getRegex("<tr><td>[^\r\t\n]+download_video\\(.*?</td></tr>").getColumn(-1);
-        if (videoQualityHTMLs.length == 0) {
+        if (videoQualityHTMLs == null || videoQualityHTMLs.length == 0) {
             /* Match on line - safe attempt but this may not include filesize! */
             videoQualityHTMLs = br.getRegex("download_video\\([^\r\t\n]+").getColumn(-1);
         }
@@ -2544,12 +2545,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             }
             videoInfo[i] = thisVideoInfos;
         }
-        // final String[][] videoInfo = br.getRegex("href=\"(/d/[a-z0-9]{12}_[a-z]{1})\".*?<small class=\"text-muted\">\\s*\\d+x\\d+
-        // ([^<]+)</small>").getMatches();
-        // if (videoInfo == null || videoInfo.length == 0) {
-        // logger.info("Failed to find any official video downloads");
-        // return null;
-        // }
         /*
          * Internal quality identifiers highest to lowest (inside 'download_video' String): o = original, h = high, n = normal, l=low
          */
@@ -2640,7 +2635,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             submitForm(br, download1);
             checkErrors(br, br.getRequest().getHtmlCode(), link, account, false);
         }
-        String dllink = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
+        final String dllink = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find dllink via official video download");
             return null;
@@ -2667,21 +2662,20 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      */
     protected String getPreferredDownloadQualityStr() {
         final Class<? extends XFSConfigVideo> cfgO = getVideoConfigInterface();
-        if (cfgO != null) {
-            final XFSConfigVideo cfg = PluginJsonConfig.get(cfgO);
-            final PreferredDownloadQuality quality = cfg.getPreferredDownloadQuality();
-            switch (quality) {
-            case HIGH:
-                return "h";
-            case NORMAL:
-                return "n";
-            case LOW:
-                return "l";
-            case BEST:
-            default:
-                return null;
-            }
-        } else {
+        if (cfgO == null) {
+            return null;
+        }
+        final XFSConfigVideo cfg = PluginJsonConfig.get(cfgO);
+        final PreferredDownloadQuality quality = cfg.getPreferredDownloadQuality();
+        switch (quality) {
+        case HIGH:
+            return "h";
+        case NORMAL:
+            return "n";
+        case LOW:
+            return "l";
+        case BEST:
+        default:
             return null;
         }
     }
@@ -2711,17 +2705,20 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      * has solved the captcha by waiting some of this time in beforehand.
      */
     protected void waitBeforeInteractiveCaptcha(final DownloadLink link, final int captchaTimeoutMillis) throws PluginException {
-        if (!this.preDownloadWaittimeSkippable()) {
-            final String waitStr = regexWaittime(br);
-            if (waitStr != null && waitStr.matches("\\d+")) {
-                final int preDownloadWaittimeMillis = Integer.parseInt(waitStr) * 1000;
-                if (preDownloadWaittimeMillis > captchaTimeoutMillis) {
-                    final int prePrePreDownloadWait = preDownloadWaittimeMillis - captchaTimeoutMillis;
-                    logger.info("Waittime is higher than interactive captcha timeout --> Waiting a part of it before solving captcha to avoid captcha-token-timeout");
-                    logger.info("Pre-pre download waittime seconds: " + (prePrePreDownloadWait / 1000));
-                    this.sleep(prePrePreDownloadWait, link);
-                }
-            }
+        final String waitStr;
+        if (this.preDownloadWaittimeSkippable()) {
+            return;
+        } else if ((waitStr = regexWaittime(br)) == null) {
+            return;
+        } else if (!waitStr.matches("\\d+")) {
+            return;
+        }
+        final int preDownloadWaittimeMillis = Integer.parseInt(waitStr) * 1000;
+        if (preDownloadWaittimeMillis > captchaTimeoutMillis) {
+            final int prePrePreDownloadWait = preDownloadWaittimeMillis - captchaTimeoutMillis;
+            logger.info("Waittime is higher than interactive captcha timeout --> Waiting a part of it before solving captcha to avoid captcha-token-timeout");
+            logger.info("Pre-pre download waittime seconds: " + (prePrePreDownloadWait / 1000));
+            this.sleep(prePrePreDownloadWait, link);
         }
     }
 
@@ -2759,7 +2756,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         return new CaptchaHelperHostPluginRecaptchaV2(this, br);
     }
 
-    /** Handles all kinds of captchas, also login-captcha - fills the given captchaForm. */
+    /** Handles all kinds of captchas, also login-captcha - fills captcha answer into given captchaForm. */
     public void handleCaptcha(final DownloadLink link, Browser br, final Form captchaForm) throws Exception {
         /* Captcha START */
         if (new Regex(getCorrectBR(br), Pattern.compile("(geetest_challenge|geetest_validate|geetest_seccode)", Pattern.CASE_INSENSITIVE)).patternFind()) {
@@ -2868,7 +2865,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 }
                 if (StringUtils.isEmpty(captchaurl)) {
                     /* Fallback e.g. for relative URLs (e.g. subyshare.com [bad example, needs special handling anways!]) */
-                    captchaurl = new Regex(getCorrectBR(br), "(?i)(/captchas/[a-z0-9]+\\.jpg)").getMatch(0);
+                    captchaurl = new Regex(getCorrectBR(br), "(?i)(/captchas/[a-z0-9]+\\.jpe?g)").getMatch(0);
                 }
                 if (captchaurl == null) {
                     logger.warning("Standard captcha captchahandling broken2!");
@@ -2926,17 +2923,22 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
 
     /** Tries to find 1st download Form for free(and Free-Account) download. */
     public Form findFormDownload1Free(final Browser br) throws Exception {
-        final Form ret = br == null ? null : br.getFormByInputFieldKeyValue("op", "download1");
-        if (ret != null) {
-            ret.remove("method_premium");
-            /* Fix/Add "method_free" value if necessary. */
-            if (!ret.hasInputFieldByName("method_free") || ret.getInputFieldByName("method_free").getValue() == null) {
-                String method_free_value = ret.getRegex("\"method_free\" value=\"([^<>\"]+)\"").getMatch(0);
-                if (method_free_value == null || method_free_value.equals("")) {
-                    method_free_value = "Free Download";
-                }
-                ret.put("method_free", Encoding.urlEncode(method_free_value));
+        if (br == null) {
+            return null;
+        }
+        final Form ret = br.getFormByInputFieldKeyValue("op", "download1");
+        if (ret == null) {
+            return null;
+        }
+        ret.remove("method_premium");
+        /* Fix/Add "method_free" value if necessary. */
+        final String method_free_key = "method_free";
+        if (!ret.hasInputFieldByName(method_free_key) || ret.getInputFieldByName(method_free_key).getValue() == null) {
+            String method_free_value = ret.getRegex("\"" + method_free_key + "\" value=\"([^<>\"]+)\"").getMatch(0);
+            if (method_free_value == null || method_free_value.equals("")) {
+                method_free_value = "Free Download";
             }
+            ret.put(method_free_key, Encoding.urlEncode(method_free_value));
         }
         return ret;
     }
@@ -2961,7 +2963,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 ret = br.getFormByInputFieldKeyValue("op", "download2");
             }
         }
-        final InputField adblock_detected = ret != null ? ret.getInputField("adblock_detected") : null;
+        if (ret == null) {
+            return null;
+        }
+        final InputField adblock_detected = ret.getInputField("adblock_detected");
         if (adblock_detected != null && StringUtils.isEmpty(adblock_detected.getValue())) {
             adblock_detected.setValue("0");
         }
@@ -2986,16 +2991,16 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     protected final String checkDirectLink(final DownloadLink link, final Account account) throws Exception {
         final String directurlproperty = getDownloadModeDirectlinkProperty(account);
         final String dllink = link.getStringProperty(getDownloadModeDirectlinkProperty(account));
-        if (dllink != null) {
-            final String validDirecturl = checkDirectLinkAndSetFilesize(link, dllink, false);
-            if (validDirecturl != null) {
-                return validDirecturl;
-            } else {
-                link.removeProperty(directurlproperty);
-                return null;
-            }
+        if (dllink == null) {
+            return null;
         }
-        return null;
+        final String validDirecturl = checkDirectLinkAndSetFilesize(link, dllink, false);
+        if (validDirecturl != null) {
+            return validDirecturl;
+        } else {
+            link.removeProperty(directurlproperty);
+            return null;
+        }
     }
 
     /**
@@ -3320,7 +3325,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             dllink = getDllinkVideohost(link, account, br, src);
         }
         if (dllink == null && this.isImagehoster()) {
-            /* Used for imagehosts */
+            /* Used for image hosts */
             dllink = getDllinkImagehost(link, account, br, src);
         }
         if (dllink != null) {
@@ -3557,40 +3562,26 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     /** Returns user selected stream quality. -1 = BEST/no selection */
     protected final int getPreferredStreamQuality() {
         final Class<? extends XFSConfigVideo> cfgO = getVideoConfigInterface();
-        if (cfgO != null) {
-            final XFSConfigVideo cfg = PluginJsonConfig.get(cfgO);
-            final PreferredStreamQuality quality = cfg.getPreferredStreamQuality();
-            switch (quality) {
-            case Q2160P:
-                return 2160;
-            case Q1080P:
-                return 1080;
-            case Q720P:
-                return 720;
-            case Q480P:
-                return 480;
-            case Q360P:
-                return 360;
-            case BEST:
-            default:
-                return -1;
-            }
-        } else {
+        if (cfgO == null) {
             return -1;
         }
-    }
-
-    /**
-     * Returns URL to the video thumbnail.
-     */
-    @Deprecated
-    private String getVideoThumbnailURL(final String src) {
-        String url_thumbnail = new Regex(src, "image\\s*:\\s*\"(https?://[^<>\"]+)\"").getMatch(0);
-        if (StringUtils.isEmpty(url_thumbnail)) {
-            /* 2019-05-16: e.g. uqload.com */
-            url_thumbnail = new Regex(src, "poster\\s*:\\s*\"(https?://[^<>\"]+)\"").getMatch(0);
+        final XFSConfigVideo cfg = PluginJsonConfig.get(cfgO);
+        final PreferredStreamQuality quality = cfg.getPreferredStreamQuality();
+        switch (quality) {
+        case Q2160P:
+            return 2160;
+        case Q1080P:
+            return 1080;
+        case Q720P:
+            return 720;
+        case Q480P:
+            return 480;
+        case Q360P:
+            return 360;
+        case BEST:
+        default:
+            return -1;
         }
-        return url_thumbnail;
     }
 
     public String decodeDownloadLink(final DownloadLink link, final Account account, final Browser br, final String s) {
@@ -3628,12 +3619,13 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     protected boolean isDllinkFile(final String url) {
-        if (!StringUtils.isEmpty(url)) {
-            for (final Pattern pattern : this.getDownloadurlRegexes()) {
-                final String urlMatch = new Regex(url, pattern).getMatch(0);
-                if (urlMatch != null) {
-                    return true;
-                }
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        for (final Pattern pattern : this.getDownloadurlRegexes()) {
+            final String urlMatch = new Regex(url, pattern).getMatch(0);
+            if (urlMatch != null) {
+                return true;
             }
         }
         return false;
@@ -3653,10 +3645,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         String waitStr = new Regex(html, "id=(?:\"|\\')countdown_str(?:\"|\\')[^>]*>[^<>]*<span id=[^>]*>\\s*(\\d+)\\s*</span>").getMatch(0);
         if (waitStr == null) {
             waitStr = new Regex(html, "class=\"seconds\"[^>]*>\\s*(\\d+)\\s*</span>").getMatch(0);
-        }
-        if (waitStr == null) {
-            /* More open RegEx */
-            waitStr = new Regex(html, "class=\"seconds\"[^>]*>\\s*(\\d+)\\s*<").getMatch(0);
+            if (waitStr == null) {
+                /* More open RegEx */
+                waitStr = new Regex(html, "class=\"seconds\"[^>]*>\\s*(\\d+)\\s*<").getMatch(0);
+            }
         }
         return waitStr;
     }
@@ -3758,39 +3750,40 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         if (this.preDownloadWaittimeSkippable()) {
             /* Very rare case! */
             logger.info("Skipping pre-download waittime: " + waitStr);
+            return;
+        } else if (waitStr == null) {
+            logger.info("Found no waittime");
+            return;
+        } else if (!waitStr.matches("\\d+")) {
+            logger.info("Got invalid wait time string: " + waitStr);
+            return;
+        }
+        logger.info("Found waittime, parsing waittime: " + waitStr);
+        int wait = Integer.parseInt(waitStr);
+        if (wait == 0) {
+            logger.info("Strange: Found waittime of zero seconds in HTML");
+            return;
+        }
+        /*
+         * Check how much time has passed during eventual captcha event before this function has been called and see how much time is left
+         * to wait.
+         */
+        final int extraWaitSeconds = 1;
+        int passedTime = (int) ((Time.systemIndependentCurrentJVMTimeMillis() - timeBefore) / 1000) - extraWaitSeconds;
+        wait -= passedTime;
+        if (passedTime > 0) {
+            /* This usually means that the user had to solve a captcha which cuts down the remaining time we have to wait. */
+            logger.info("Total passed time during captcha: " + passedTime);
+        }
+        if (wait > 0) {
+            logger.info("Waiting final waittime: " + wait);
+            sleep(wait * 1000l, link);
+        } else if (wait < wait - extraWaitSeconds) {
+            /* User needed more time to solve the captcha so there is no waittime left :) */
+            logger.info("Congratulations: Time to solve captcha was higher than waittime --> No waittime left");
         } else {
-            if (waitStr != null && waitStr.matches("\\d+")) {
-                logger.info("Found waittime, parsing waittime: " + waitStr);
-                int wait = Integer.parseInt(waitStr);
-                if (wait == 0) {
-                    logger.info("Strange: Found waittime of zero seconds in HTML");
-                    return;
-                }
-                /*
-                 * Check how much time has passed during eventual captcha event before this function has been called and see how much time
-                 * is left to wait.
-                 */
-                final int extraWaitSeconds = 1;
-                int passedTime = (int) ((Time.systemIndependentCurrentJVMTimeMillis() - timeBefore) / 1000) - extraWaitSeconds;
-                wait -= passedTime;
-                if (passedTime > 0) {
-                    /* This usually means that the user had to solve a captcha which cuts down the remaining time we have to wait. */
-                    logger.info("Total passed time during captcha: " + passedTime);
-                }
-                if (wait > 0) {
-                    logger.info("Waiting final waittime: " + wait);
-                    sleep(wait * 1000l, link);
-                } else if (wait < wait - extraWaitSeconds) {
-                    /* User needed more time to solve the captcha so there is no waittime left :) */
-                    logger.info("Congratulations: Time to solve captcha was higher than waittime --> No waittime left");
-                } else {
-                    /* No waittime at all */
-                    logger.info("Found no waittime");
-                }
-            } else {
-                /* No waittime at all */
-                logger.info("Found no waittime");
-            }
+            /* No waittime at all */
+            logger.info("Found no waittime");
         }
     }
 
@@ -4154,19 +4147,20 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
 
     /** Handles all kinds of error-responsecodes! Same for API and website! */
     public void checkResponseCodeErrors(final URLConnectionAdapter con) throws PluginException {
-        if (con != null) {
-            final long responsecode = con.getResponseCode();
-            if (responsecode == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
-            } else if (responsecode == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
-            } else if (responsecode == 416) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
-            } else if (responsecode == 500) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 5 * 60 * 1000l);
-            } else if (responsecode == 503) {
-                exception503ConnectionLimitReached();
-            }
+        if (con == null) {
+            return;
+        }
+        final long responsecode = con.getResponseCode();
+        if (responsecode == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+        } else if (responsecode == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+        } else if (responsecode == 416) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
+        } else if (responsecode == 500) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 5 * 60 * 1000l);
+        } else if (responsecode == 503) {
+            exception503ConnectionLimitReached();
         }
     }
 
@@ -4198,7 +4192,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     @Deprecated
-    /** TODO: Find out where this is used. Lifetime accounts are not part of usual XFS hosts! */
+    /** TODO: Find out where this is used. Lifetime accounts are usually not used for XFS filehosts. */
     protected boolean is_lifetime_account(final Browser br) {
         return br.getRegex("(?i)>\\s*Premium account expire\\s*</TD><TD><b>Lifetime</b>").matches();
     }
@@ -4213,7 +4207,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     protected void fetchAccountInfoWebsiteStorage(final Browser br, final Account account, final AccountInfo ai) throws Exception {
-        final String space[] = new Regex(getCorrectBR(br), ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
+        final String space[] = new Regex(getCorrectBR(br), ">\\s*Used space:\\s*</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             /* free users it's provided by default */
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -4580,7 +4574,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         String url_with_apikey = brc.getRegex("(https?://[^/]+/api/account/info[^<>\"\\']*key=" + apikey + "[^<>\"\\']*)").getMatch(0);
         boolean api_uses_special_domain = false;
         if (url_with_apikey == null) {
-            logger.info("Unable to find API domain - assuming it is the same es the plugins'");
+            logger.info("Unable to find API domain - assuming it is the same as this plugins' domain");
         } else {
             try {
                 url_with_apikey = Encoding.htmlOnlyDecode(url_with_apikey);
@@ -4653,22 +4647,22 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 }
             }
         }
-        if (loginform != null) {
-            final InputField redirect = loginform.getInputFieldByName("redirect");
-            if (redirect != null && StringUtils.isNotEmpty(redirect.getValue())) {
-                try {
-                    final String value = URLDecoder.decode(redirect.getValue(), "UTF-8");
-                    if (value != null && canHandle(value)) {
-                        /*
-                         * Prevent redirect value redirecting to file-download straight away which would lead to an exception/download
-                         * failure.
-                         */
-                        logger.info("clear login redirect to download:" + value);
-                        redirect.setValue("");
-                    }
-                } catch (Exception e) {
-                    logger.log(e);
+        if (loginform == null) {
+            return null;
+        }
+        final InputField redirect = loginform.getInputFieldByName("redirect");
+        if (redirect != null && StringUtils.isNotEmpty(redirect.getValue())) {
+            try {
+                final String value = URLDecoder.decode(redirect.getValue(), "UTF-8");
+                if (value != null && canHandle(value)) {
+                    /*
+                     * Prevent redirect value redirecting to file-download straight away which would lead to an exception/download failure.
+                     */
+                    logger.info("clear login redirect to download:" + value);
+                    redirect.setValue("");
                 }
+            } catch (Exception e) {
+                logger.log(e);
             }
         }
         return loginform;
@@ -4927,41 +4921,40 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                         /* Trust cookies without check */
                         return false;
                     }
-                    if (this.verifyCookies(account, userCookies)) {
-                        /**
-                         * If user enters cookies to login he can enter whatever he wants into the "username" field but we want unique
-                         * usernames --> Try to find real username of added account and set it.
-                         */
-                        String cookiesUsername = br.getCookie(br.getHost(), "login", Cookies.NOTDELETEDPATTERN);
-                        if (StringUtils.isEmpty(cookiesUsername)) {
-                            cookiesUsername = br.getCookie(br.getHost(), "email", Cookies.NOTDELETEDPATTERN);
-                        }
-                        if (!StringUtils.isEmpty(cookiesUsername)) {
-                            cookiesUsername = Encoding.htmlDecode(cookiesUsername).trim();
-                        }
-                        /**
-                         * During cookie login, user can enter whatever he wants into username field.</br>
-                         * Most users will enter their real username but to be sure to have unique usernames we don't trust them and try to
-                         * get the real username out of our cookies.
-                         */
-                        if (StringUtils.isEmpty(cookiesUsername)) {
-                            /* Not a major problem but worth logging. */
-                            logger.warning("Failed to find username via cookie");
-                        } else {
-                            logger.info("Found username by cookie: " + cookiesUsername);
-                            if (!account.getUser().equals(cookiesUsername)) {
-                                logger.info("Setting new username by cookie | New: " + cookiesUsername + " | Old: " + account.getUser());
-                                account.setUser(cookiesUsername);
-                            }
-                        }
-                        return true;
-                    } else {
+                    if (!this.verifyCookies(account, userCookies)) {
                         if (account.hasEverBeenValid()) {
                             throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                         } else {
                             throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                         }
                     }
+                    /**
+                     * If user enters cookies to login he can enter whatever he wants into the "username" field but we want unique usernames
+                     * --> Try to find real username of added account and set it.
+                     */
+                    String cookiesUsername = br.getCookie(br.getHost(), "login", Cookies.NOTDELETEDPATTERN);
+                    if (StringUtils.isEmpty(cookiesUsername)) {
+                        cookiesUsername = br.getCookie(br.getHost(), "email", Cookies.NOTDELETEDPATTERN);
+                    }
+                    if (!StringUtils.isEmpty(cookiesUsername)) {
+                        cookiesUsername = Encoding.htmlDecode(cookiesUsername).trim();
+                    }
+                    /**
+                     * During cookie login, user can enter whatever he wants into username field.</br>
+                     * Most users will enter their real username but to be sure to have unique usernames we don't trust them and try to get
+                     * the real username out of our cookies.
+                     */
+                    if (StringUtils.isEmpty(cookiesUsername)) {
+                        /* Not a major problem but worth logging. */
+                        logger.warning("Failed to find username via cookie");
+                    } else {
+                        logger.info("Found username by cookie: " + cookiesUsername);
+                        if (!account.getUser().equals(cookiesUsername)) {
+                            logger.info("Setting new username by cookie | New: " + cookiesUsername + " | Old: " + account.getUser());
+                            account.setUser(cookiesUsername);
+                        }
+                    }
+                    return true;
                 } else if (cookies != null) {
                     br.setCookies(getMainPage(), cookies);
                     if (!validateCookies) {
@@ -5084,7 +5077,11 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     protected boolean containsCaptcha(final Form form) {
-        return form != null && containsCaptcha(form.getHtmlCode());
+        if (form == null) {
+            return false;
+        } else {
+            return containsCaptcha(form.getHtmlCode());
+        }
     }
 
     protected boolean containsCaptcha(final Browser br) {
@@ -5106,85 +5103,76 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      * Around 2016 this has been implemented for some XFS websites but was never really used.It will return an XML response. Fragments of it
      * may still work for some XFS websites e.g. official DEMO website 'xfilesharing.com' and also 'europeup.com'. The login-cookie we get
      * is valid for the normal website as well! Biggest downside: Whenever a login-captcha is required (e.g. on too many wrong logins), this
-     * method will NOT work!! <br/>
-     * It seems like all or most of all XFS websites support this way of logging-in - even websites which were never officially supported
-     * via XFS app (e.g. fileup.cc).
+     * method will NOT work!!
      */
     @Deprecated
     protected final boolean loginAPP(final Account account, boolean validateCookies) throws Exception {
         synchronized (account) {
-            try {
-                br.setHeader("User-Agent", "XFS-Mobile");
-                br.setHeader("Content-Type", "application/x-www-form-urlencoded");
-                /* Load cookies */
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                boolean validatedLoginCookies = false;
-                /* 2019-08-29: Cookies will become invalid very soon so let's always verify them! */
-                validateCookies = true;
-                if (cookies != null) {
-                    br.setCookies(getMainPage(), cookies);
-                    if (!validateCookies) {
-                        /* We trust these cookies as they're not that old --> Do not check them */
-                        return false;
-                    }
-                    logger.info("Verifying login-cookies");
-                    getPage(getMainPage() + "/");
-                    /* Missing login cookies? --> Login failed */
-                    validatedLoginCookies = StringUtils.isEmpty(br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN));
+            br.setHeader("User-Agent", "XFS-Mobile");
+            br.setHeader("Content-Type", "application/x-www-form-urlencoded");
+            /* Load cookies */
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            boolean isLoggedIN = false;
+            /* 2019-08-29: Cookies will become invalid very soon so let's always verify them! */
+            validateCookies = true;
+            if (cookies != null) {
+                br.setCookies(getMainPage(), cookies);
+                if (!validateCookies) {
+                    /* We trust these cookies as they're not that old --> Do not check them */
+                    return false;
                 }
-                if (validatedLoginCookies) {
-                    /* No additional check required --> We know cookies are valid and we're logged in --> Done! */
-                    logger.info("Successfully logged in via cookies");
-                } else {
-                    logger.info("Performing full login");
-                    br.clearCookies(getMainPage());
-                    final Form loginform = new Form();
-                    loginform.setMethod(MethodType.POST);
-                    loginform.setAction(getMainPage());
-                    loginform.put("op", "api_get_limits");
-                    loginform.put("login", Encoding.urlEncode(account.getUser()));
-                    loginform.put("password", Encoding.urlEncode(account.getPass()));
-                    submitForm(loginform);
-                    /*
-                     * Returns XML: ExtAllowed, ExtNotAllowed, MaxUploadFilesize, ServerURL[for uploads], SessionID[our login cookie],
-                     * Error, SiteName, LoginLogic
-                     */
-                    /* Missing login cookies? --> Login failed */
-                    if (StringUtils.isEmpty(br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN))) {
-                        if (getCorrectBR(br).contains("op=resend_activation")) {
-                            /* User entered correct logindata but has not activated his account ... */
-                            throw new AccountInvalidException("\r\nYour account has not yet been activated!\r\nActivate it via the URL you should have received via E-Mail and try again!");
-                        } else {
-                            throw new AccountInvalidException();
-                        }
-                    }
-                }
-                // /* Returns ballance, space, days(?premium days remaining?) - this call is not supported by all XFS sites - in this case
-                // it'll return 404. */
-                // final Form statsform = new Form();
-                // statsform.setMethod(MethodType.POST);
-                // statsform.setAction(getMainPage() + "/cgi-bin/uapi.cgi");
-                // statsform.put("op", "api_get_stat");
-                // submitForm(statsform);
-                // final String spaceUsed = br.getRegex("<space>(\\d+\\.\\d+GB)</space>").getMatch(0);
-                // final String balance = br.getRegex("<ballance>\\$(\\d+)</ballance>").getMatch(0);
-                // // final String days = br.getRegex("<days>(\\d+)</days>").getMatch(0);
-                // if (spaceUsed != null) {
-                // account.getAccountInfo().setUsedSpace(SizeFormatter.getSize(spaceUsed));
-                // }
-                // if (balance != null) {
-                // account.getAccountInfo().setAccountBalance(balance);
-                // }
-                account.saveCookies(br.getCookies(getMainPage()), "");
-                validatedLoginCookies = true;
-                return validatedLoginCookies;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
+                logger.info("Verifying login-cookies");
+                getPage(getMainPage() + "/");
+                /* Missing login cookies? --> Login failed */
+                isLoggedIN = StringUtils.isEmpty(br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN));
             }
+            if (isLoggedIN) {
+                /* No additional check required --> We know cookies are valid and we're logged in --> Done! */
+                logger.info("Successfully logged in via cookies");
+            } else {
+                account.clearCookies("");
+                logger.info("Performing full login");
+                br.clearCookies(getMainPage());
+                final Form loginform = new Form();
+                loginform.setMethod(MethodType.POST);
+                loginform.setAction(getMainPage());
+                loginform.put("op", "api_get_limits");
+                loginform.put("login", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                submitForm(loginform);
+                /*
+                 * Returns XML: ExtAllowed, ExtNotAllowed, MaxUploadFilesize, ServerURL[for uploads], SessionID[our login cookie], Error,
+                 * SiteName, LoginLogic
+                 */
+                /* Missing login cookies? --> Login failed */
+                if (StringUtils.isEmpty(br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN))) {
+                    if (getCorrectBR(br).contains("op=resend_activation")) {
+                        /* User entered correct logindata but has not activated his account ... */
+                        throw new AccountInvalidException("\r\nYour account has not yet been activated!\r\nActivate it via the URL you should have received via E-Mail and try again!");
+                    } else {
+                        throw new AccountInvalidException();
+                    }
+                }
+            }
+            // /* Returns balance, space, days(?premium days remaining?) - this call is not supported by all XFS sites - in this case
+            // it'll return 404. */
+            // final Form statsform = new Form();
+            // statsform.setMethod(MethodType.POST);
+            // statsform.setAction(getMainPage() + "/cgi-bin/uapi.cgi");
+            // statsform.put("op", "api_get_stat");
+            // submitForm(statsform);
+            // final String spaceUsed = br.getRegex("<space>(\\d+\\.\\d+GB)</space>").getMatch(0);
+            // final String balance = br.getRegex("<ballance>\\$(\\d+)</ballance>").getMatch(0);
+            // // final String days = br.getRegex("<days>(\\d+)</days>").getMatch(0);
+            // if (spaceUsed != null) {
+            // account.getAccountInfo().setUsedSpace(SizeFormatter.getSize(spaceUsed));
+            // }
+            // if (balance != null) {
+            // account.getAccountInfo().setAccountBalance(balance);
+            // }
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            return true;
         }
     }
 
@@ -5322,21 +5310,24 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      * @throws Exception
      */
     protected String fixProtocol(final DownloadLink link, final Account account, final Browser br, final String dllink) throws Exception {
-        if (dllink != null && !StringUtils.startsWithCaseInsensitive(dllink, "rtmp")) {
-            final URL url = br.getURL(dllink);
-            if (url.getPort() != -1 && StringUtils.equalsIgnoreCase(url.getProtocol(), "http")) {
-                try {
-                    final Browser brc = br.cloneBrowser();
-                    brc.setAllowedResponseCodes(400);
-                    brc.getPage(url.getProtocol() + "://" + url.getHost() + ":" + url.getPort() + "/");
-                    if (brc.getHttpConnection().getResponseCode() == 400 && brc.containsHTML("The plain HTTP request was sent to HTTPS port")) {
-                        final String ret = url.toExternalForm().replaceFirst("(?i)^(http://)", "https://");
-                        logger.info("fixProtocol downloadlink = " + dllink + "->" + ret);
-                        return ret;
-                    }
-                } catch (final IOException e) {
-                    logger.log(e);
+        if (dllink == null) {
+            return null;
+        } else if (StringUtils.startsWithCaseInsensitive(dllink, "rtmp")) {
+            return dllink;
+        }
+        final URL url = br.getURL(dllink);
+        if (url.getPort() != -1 && StringUtils.equalsIgnoreCase(url.getProtocol(), "http")) {
+            try {
+                final Browser brc = br.cloneBrowser();
+                brc.setAllowedResponseCodes(400);
+                brc.getPage(url.getProtocol() + "://" + url.getHost() + ":" + url.getPort() + "/");
+                if (brc.getHttpConnection().getResponseCode() == 400 && brc.containsHTML("The plain HTTP request was sent to HTTPS port")) {
+                    final String ret = url.toExternalForm().replaceFirst("(?i)^(http://)", "https://");
+                    logger.info("fixProtocol downloadlink = " + dllink + "->" + ret);
+                    return ret;
                 }
+            } catch (final IOException e) {
+                logger.log(e);
             }
         }
         return dllink;
@@ -5908,7 +5899,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                              * At least for videohosts, filenames from json would often not contain a file extension!
                              */
                             if (Encoding.isHtmlEntityCoded(filename)) {
-                                filename = Encoding.htmlDecode(filename);
+                                filename = Encoding.htmlDecode(filename).trim();
                             }
                             if (isVideohost) {
                                 filename = this.applyFilenameExtension(filename, ".mp4");
@@ -5916,6 +5907,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                             /* Trust API filenames -> Set as final filename. */
                             link.setFinalFileName(filename);
                         } else {
+                            /* Use cached name */
                             final String name = link.getName();
                             if (name != null && isVideohost) {
                                 link.setName(this.applyFilenameExtension(filename, ".mp4"));
@@ -6218,12 +6210,18 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     private boolean test_looks_like_supports_api() throws IOException {
         br.getPage(this.getAPIBase() + "/account/info");
         /* 2020-05-29: Answer we'd expect if API is available: {"msg":"Invalid key","server_time":"2020-05-29 17:16:36","status":400} */
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        final String msg = (String) entries.get("msg");
-        final String server_time = (String) entries.get("server_time");
-        if (!StringUtils.isEmpty(msg) && !StringUtils.isEmpty(server_time)) {
+        try {
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            /* No Exception -> json parsing was successful -> We got an API response. */
             return true;
-        } else {
+            // final String msg = (String) entries.get("msg");
+            // final String server_time = (String) entries.get("server_time");
+            // if (!StringUtils.isEmpty(msg) && !StringUtils.isEmpty(server_time)) {
+            // return true;
+            // } else {
+            // return false;
+            // }
+        } catch (final Throwable e) {
             return false;
         }
     }
@@ -6272,7 +6270,11 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
+        if (link == null) {
+            /* No nothing */
+            return;
+        }
         link.removeProperty(PROPERTY_REFERER_REQUIRED);
     }
 
