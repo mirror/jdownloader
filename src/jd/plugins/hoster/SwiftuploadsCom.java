@@ -24,6 +24,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -59,10 +60,11 @@ public class SwiftuploadsCom extends PluginForHost {
         return "https://" + getHost() + "/terms-conditions";
     }
 
-    private static List<String[]> getPluginDomains() {
+    public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "swiftuploads.com" });
+        ret.add(new String[] { "uptoearn.xyz" });
         return ret;
     }
 
@@ -143,6 +145,7 @@ public class SwiftuploadsCom extends PluginForHost {
         final String storedDirecturl = link.getStringProperty(directlinkproperty);
         final String dllink;
         if (storedDirecturl != null) {
+            logger.info("Re-using stored directurl: " + storedDirecturl);
             dllink = storedDirecturl;
         } else {
             requestFileInformation(link);
@@ -150,12 +153,8 @@ public class SwiftuploadsCom extends PluginForHost {
             if (continueform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // br.getHeaders().put("Origin", "https://www." + br.getHost());
-            // br.getHeaders().put("Priority", "u=0, i");
-            // br.getHeaders().put("Upgrade-Insecure-Requests", "1");
-            // br.getHeaders().put("", "");
-            // br.getHeaders().put("", "");
-            // br.getHeaders().put("", "");
+            br.setCookie(br.getHost(), "adb", "1");
+            br.getHeaders().put("Origin", "https://www." + br.getHost());
             br.submitForm(continueform);
             Form dlform2 = br.getFormbyProperty("id", "down_2Form");
             if (dlform2 == null) {
@@ -168,18 +167,40 @@ public class SwiftuploadsCom extends PluginForHost {
             if (dlform2 == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (true) {
-                // TODO: 2023-11-21: This plugin is unfinished
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String downloadConfigJson = br.getRegex("const downloadConfig = (\\{.*?\\})\\s+").getMatch(0);
+            final Map<String, Object> dlconfig = JSonStorage.restoreFromString(downloadConfigJson, TypeRef.MAP);
+            final Number dlconfig_captcha = (Number) dlconfig.get("captcha");
+            if (dlconfig_captcha != null && dlconfig_captcha.intValue() == 1) {
+                // e.g. uptoearn.xyz
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                dlform2.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
             br.submitForm(dlform2);
+            final String csrftoken = br.getRegex("name=\"csrf-token\" content=\"([^\"]+)\"").getMatch(0);
+            if (csrftoken == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final String fid = this.getFID(link);
-            br.postPageRaw("/" + fid + "/file/generate", "");
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            dllink = entries.get("download_link").toString();
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            brc.getHeaders().put("x-requested-with", "XMLHttpRequest");
+            brc.getHeaders().put("Origin", "https://www." + br.getHost());
+            brc.getHeaders().put("x-csrf-token", csrftoken);
+            brc.setCookie(br.getHost(), "rqf", fid);
+            brc.postPageRaw("/" + fid + "/file/generate", "");
+            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            dllink = (String) entries.get("download_link");
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                String msg = (String) entries.get("message");
+                if (msg == null) {
+                    msg = (String) entries.get("error");
+                }
+                if (msg != null) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         try {
