@@ -75,7 +75,7 @@ public class DatoidCz extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "datoid.cz", "datoid.sk" });
+        ret.add(new String[] { "datoid.cz", "datoid.sk", "datoid.com" });
         ret.add(new String[] { "pornoid.cz", "pornoid.sk" });
         return ret;
     }

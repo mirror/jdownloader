@@ -1063,6 +1063,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         }
         /* Now check normalized link */
         final String fuid = this.getFUIDFromURL(link);
+        if (fuid == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String url;
         if (urltype == URL_TYPE.NORMAL || urltype == URL_TYPE.SHORT) {
             url = this.getContentURL(link);
