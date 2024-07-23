@@ -3489,26 +3489,27 @@ public class LinkCrawler {
                             }
                             distribute(generation, decryptedPossibleLinks);
                         } else {
-                            final LinkCrawlerTask innerTask;
-                            if ((innerTask = checkStartNotify(generation, task.getTaskID() + "|containerPool")) != null) {
-                                /* enqueue distributing of the links */
-                                threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation, innerTask) {
-                                    @Override
-                                    public long getAverageRuntime() {
-                                        final Long ret = getDefaultAverageRuntime();
-                                        if (ret != null) {
-                                            return ret;
-                                        } else {
-                                            return super.getAverageRuntime();
-                                        }
-                                    }
-
-                                    @Override
-                                    void crawling() {
-                                        LinkCrawler.this.distribute(generation, decryptedPossibleLinks);
-                                    }
-                                });
+                            final LinkCrawlerTask innerTask = checkStartNotify(generation, task.getTaskID() + "|containerPool");
+                            if (innerTask == null) {
+                                return;
                             }
+                            /* enqueue distributing of the links */
+                            threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation, innerTask) {
+                                @Override
+                                public long getAverageRuntime() {
+                                    final Long ret = getDefaultAverageRuntime();
+                                    if (ret != null) {
+                                        return ret;
+                                    } else {
+                                        return super.getAverageRuntime();
+                                    }
+                                }
+
+                                @Override
+                                void crawling() {
+                                    LinkCrawler.this.distribute(generation, decryptedPossibleLinks);
+                                }
+                            });
                         }
                     }
                 } finally {
