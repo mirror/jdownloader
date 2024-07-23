@@ -16,8 +16,6 @@
 package jd.plugins.hoster;
 
 import java.awt.Color;
-import java.io.File;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -37,7 +35,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -251,34 +248,6 @@ public class EmuParadiseMe extends PluginForHost {
                     } else {
                         if (!isUrlSemicolonDownload(br.getURL())) {
                             br.getPage(br.getURL() + "-download");
-                        }
-                        /* As long as the static cookie set captcha workaround works fine, */
-                        if (br.containsHTML("solvemedia\\.com/papi/")) {
-                            /* Premium users should of course not have to enter captchas here! */
-                            logger.info("Detected captcha method \"solvemedia\" for this host");
-                            final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                            File cf = null;
-                            try {
-                                cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                            } catch (final Exception e) {
-                                if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                                    throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
-                                }
-                                throw e;
-                            }
-                            final String code = getCaptchaCode(cf, link);
-                            final String chid = sm.getChallenge(code);
-                            br.postPage(br.getURL(), "submit=+Verify+%26+Download&adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + chid);
-                            if (br.containsHTML("solvemedia\\.com/papi/")) {
-                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                            }
-                            /* Save cookies to avoid captchas in the future */
-                            final HashMap<String, String> cookies = new HashMap<String, String>();
-                            final Cookies add = br.getCookies(getHost());
-                            for (final Cookie c : add.getCookies()) {
-                                cookies.put(c.getKey(), c.getValue());
-                            }
-                            this.getPluginConfig().setProperty("cookies", cookies);
                         }
                         dllink = br.getRegex("\"[^<>\"]*?(/roms/get\\-download\\.php[^<>\"]*?)\"").getMatch(0);
                         // if (dllink == null && br.containsHTML("(?i)>\\s*This game is unavailable")) {

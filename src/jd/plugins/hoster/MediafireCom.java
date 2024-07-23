@@ -15,7 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
@@ -287,18 +286,7 @@ public class MediafireCom extends PluginForHost {
                             trycounter++;
                             logger.info("CaptchaForm loop number: " + trycounter);
                             handleNonAPIErrors(link, br);
-                            if (captchaForm.containsHTML("solvemedia.com/papi/")) {
-                                logger.info("Detected captcha method \"solvemedia\" for this host");
-                                handleReconnectBehaviorOnCaptcha(account);
-                                final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                                final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                                final String code = getCaptchaCode(cf, link);
-                                final String chid = sm.getChallenge(code);
-                                captchaForm.put("adcopy_challenge", chid);
-                                captchaForm.put("adcopy_response", code.replace(" ", "+"));
-                                br.submitForm(captchaForm);
-                                failableCaptchaRequired = true;
-                            } else if (captchaForm.containsHTML("g-recaptcha-response")) {
+                            if (captchaForm.containsHTML("g-recaptcha-response")) {
                                 handleReconnectBehaviorOnCaptcha(account);
                                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                                 captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));

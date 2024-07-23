@@ -168,6 +168,9 @@ public class SwiftuploadsCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String downloadConfigJson = br.getRegex("const downloadConfig = (\\{.*?\\})\\s+").getMatch(0);
+            if (downloadConfigJson == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final Map<String, Object> dlconfig = JSonStorage.restoreFromString(downloadConfigJson, TypeRef.MAP);
             final Number dlconfig_captcha = (Number) dlconfig.get("captcha");
             if (dlconfig_captcha != null && dlconfig_captcha.intValue() == 1) {

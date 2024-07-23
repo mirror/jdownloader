@@ -37,7 +37,7 @@ public class CloudghostNet extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
+     * captchatype-info: null 4dignum reCaptchaV2<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {

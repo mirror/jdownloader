@@ -38,7 +38,7 @@ public class DasanCo extends YetiShareCore {
      ****************************
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null solvemedia reCaptchaV2, hcaptcha<br />
+     * captchatype-info: null reCaptchaV2, hcaptcha<br />
      * other: Special YetiShare Multihoster see: https://board.jdownloader.org/showthread.php?t=88877 <br />
      */
     public static List<String[]> getPluginDomains() {

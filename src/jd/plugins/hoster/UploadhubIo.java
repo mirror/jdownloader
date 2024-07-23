@@ -41,7 +41,7 @@ public class UploadhubIo extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
+     * captchatype-info: null 4dignum reCaptchaV2<br />
      * other: 2020-11-25: Users have to install a proprietary download manager to download files from this websites. In my tests (psp), this
      * software did not work at all. <br />
      */

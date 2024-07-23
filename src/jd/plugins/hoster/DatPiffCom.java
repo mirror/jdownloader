@@ -15,9 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Random;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -36,8 +37,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datpiff.com" }, urls = { "https?://(?:www\\.)?datpiff\\.com/([^<>\"% ]*?\\-download(\\-track)?\\.php\\?id=[a-z0-9]+|mixtapes\\-detail\\.php\\?id=\\d+|.*?\\-mixtape\\.\\d+\\.html)" })
 public class DatPiffCom extends PluginForHost {
@@ -222,22 +221,6 @@ public class DatPiffCom extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         String postData = "id=" + id + "&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100);
-                        if (br.containsHTML("solvemedia\\.com/papi/")) {
-                            final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                            File cf = null;
-                            try {
-                                cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                            } catch (final Exception e) {
-                                if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                                    throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support", e);
-                                } else {
-                                    throw e;
-                                }
-                            }
-                            final String code = getCaptchaCode("solvemedia", cf, link);
-                            final String chid = sm.getChallenge(code);
-                            postData += "&cmd=downloadsolve&adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + Encoding.urlEncode(chid);
-                        }
                         br.postPage(action, postData);
                         dllink = br.getRedirectLocation();
                         if (dllink == null) {

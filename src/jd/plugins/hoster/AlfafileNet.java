@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +23,6 @@ import java.util.Map;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -248,23 +246,7 @@ public class AlfafileNet extends PluginForHost {
                         success = true;
                         break;
                     } else {
-                        final SolveMedia sm = new SolveMedia(br);
-                        sm.setSecure(true);
-                        File cf = null;
-                        try {
-                            cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                        } catch (final Exception e) {
-                            if (SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                                throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
-                            }
-                            throw e;
-                        }
-                        final String code = getCaptchaCode("solvemedia", cf, link);
-                        final String chid = sm.getChallenge(code);
-                        this.br.postPage(this.br.getURL(), "send=Send&adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + Encoding.urlEncode(chid));
-                        if (br.containsHTML("solvemedia\\.com/papi/")) {
-                            continue;
-                        }
+                        /* No captcha? */
                         success = true;
                         break;
                     }

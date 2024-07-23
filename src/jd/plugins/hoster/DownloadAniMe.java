@@ -37,7 +37,7 @@ public class DownloadAniMe extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: 2020-06-11: solvemedia<br />
+     * captchatype-info: 2024-07-23: hCaptcha<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {

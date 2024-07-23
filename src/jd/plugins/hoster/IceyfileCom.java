@@ -38,7 +38,7 @@ public class IceyfileCom extends YetiShareCore {
      ****************************
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null solvemedia reCaptchaV2, hcaptcha<br />
+     * captchatype-info: null reCaptchaV2, hcaptcha<br />
      * other: <br />
      */
     public static List<String[]> getPluginDomains() {

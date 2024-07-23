@@ -38,7 +38,7 @@ public class UploadifyNet extends YetiShareCore {
      ****************************
      * mods: See overridden functions<br />
      * limit-info: 2019-10-28: premium untested, set FREE account limits <br />
-     * captchatype-info: null solvemedia reCaptchaV2<br />
+     * captchatype-info: null reCaptchaV2<br />
      * other: <br />
      */
     public static List<String[]> getPluginDomains() {

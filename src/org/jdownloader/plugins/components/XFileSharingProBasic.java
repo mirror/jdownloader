@@ -191,7 +191,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         if (isImagehoster()) {
             ret.add(LazyPlugin.FEATURE.IMAGE_HOST);
         }
-        if (isVideohoster()) {
+        if (isVideohoster(null)) {
             ret.add(LazyPlugin.FEATURE.VIDEO_STREAMING);
         }
         return ret.toArray(new LazyPlugin.FEATURE[0]);
@@ -404,7 +404,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     /** Indicates that this website is hosting video content only. */
-    private boolean isVideohoster() {
+    private boolean isVideohoster(final Browser br) {
         return isVideohosterEmbed() || (br != null && isVideohosterEmbedHTML(br));
     }
 

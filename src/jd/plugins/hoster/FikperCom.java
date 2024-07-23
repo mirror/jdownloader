@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -329,34 +328,12 @@ public class FikperCom extends PluginForHost {
                 /* 2024-06-04: They're using reCaptchaV2 now */
                 final boolean skipPreDownloadWaittime = true; // 2022-11-14: Wait time is skippable
                 final boolean useHcaptcha = false;
-                /* 2024-05-03: Solvemedia captcha is broken serverside so fikper.com switched back to hCaptcha. */
-                final boolean useSolvemediaCaptcha = false;
                 final Map<String, Object> postdata = new HashMap<String, Object>();
                 if (useHcaptcha) {
                     /* 2023-01-16 */
                     final CaptchaHelperHostPluginHCaptcha hCaptcha = getHcaptchaHelper(br);
                     final String hCaptchaResponse = hCaptcha.getToken();
                     postdata.put("captchaValue", hCaptchaResponse);
-                } else if (useSolvemediaCaptcha) {
-                    /* 2023-07-27 */
-                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                    sm.setChallengeKey("U0PGYjYQo61wWfWxQ43vpsJrUQSpCiuY");
-                    File cf = null;
-                    try {
-                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    } catch (final InterruptedException e) {
-                        throw e;
-                    } catch (final Exception e) {
-                        if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support", -1, e);
-                        } else {
-                            throw e;
-                        }
-                    }
-                    final String code = getCaptchaCode("solvemedia", cf, link);
-                    final String chid = sm.getChallenge(code);
-                    postdata.put("captchaValue", code);
-                    postdata.put("challenge", chid);
                 } else {
                     /* Old handling */
                     final String recaptchaV2Response = getRecaptchaHelper(br).getToken();

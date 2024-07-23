@@ -37,7 +37,6 @@ import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPlugi
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 import org.jdownloader.plugins.components.config.FileCryptConfig;
 import org.jdownloader.plugins.components.config.FileCryptConfig.CrawlMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -274,7 +273,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 final Form[] forms = br.getForms();
                 if (forms != null && forms.length != 0) {
                     for (final Form form : forms) {
-                        if (form.containsHTML("captcha") || SolveMedia.containsSolvemediaCaptcha(form) || AbstractRecaptchaV2.containsRecaptchaV2Class(form)) {
+                        if (form.containsHTML("captcha") || AbstractRecaptchaV2.containsRecaptchaV2Class(form)) {
                             captchaForm = form;
                             break;
                         }
@@ -303,28 +302,6 @@ public class FileCryptCc extends PluginForDecrypt {
                 } else if (captchaForm != null && captchaForm.containsHTML("=\"g-recaptcha\"")) {
                     final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                     captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                } else if (captchaForm != null && SolveMedia.containsSolvemediaCaptcha(captchaForm)) {
-                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                    File cf = null;
-                    try {
-                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    } catch (final Exception e) {
-                        if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
-                        }
-                        throw e;
-                    }
-                    final String code = getCaptchaCode("solvemedia", cf, param);
-                    if (StringUtils.isEmpty(code)) {
-                        if (captchaCounter + 1 < maxCaptchaRetries) {
-                            continue;
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
-                    }
-                    final String chid = sm.getChallenge(code);
-                    captchaForm.put("adcopy_response", Encoding.urlEncode(code));
-                    captchaForm.put("adcopy_challenge", chid);
                 } else if (captchaForm != null && captchaForm.containsHTML("capcode")) {
                     Challenge<String> challenge = new KeyCaptcha(this, br, createDownloadlink(contenturl)).createChallenge(this);
                     try {
