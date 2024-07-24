@@ -38,7 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitchute.com" }, urls = { "https?://(?:www\\.)?bitchute\\.com/channel/([A-Za-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitchute.com" }, urls = { "https?://(?:www\\.|old\\.)?bitchute\\.com/channel/([A-Za-z0-9]+)" })
 public class BitchuteComChannel extends PluginForDecrypt {
     public BitchuteComChannel(PluginWrapper wrapper) {
         super(wrapper);

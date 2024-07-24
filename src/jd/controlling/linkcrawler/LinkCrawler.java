@@ -4600,6 +4600,8 @@ public class LinkCrawler {
                         final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
                         ret.add(lc.crawledLinkFactorybyURL("m3u8://" + br.getURL()));
                         return ret;
+                    } else if (rule != null && RULE.DEEPDECRYPT.equals(rule.getRule())) {
+                        return null;
                     }
                     try {
                         final LazyCrawlerPlugin lazyC = lc.getLazyGenericHttpDirectoryCrawlerPlugin();

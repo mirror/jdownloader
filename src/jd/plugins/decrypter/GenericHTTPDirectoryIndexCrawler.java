@@ -21,6 +21,12 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.abstractGenericHTTPDirectoryIndexCrawler;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,11 +41,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.hoster.DirectHTTP;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.abstractGenericHTTPDirectoryIndexCrawler;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "HTTPDirectoryCrawler" }, urls = { "jd://directoryindex://.+" })
 public class GenericHTTPDirectoryIndexCrawler extends abstractGenericHTTPDirectoryIndexCrawler {
@@ -105,20 +106,29 @@ public class GenericHTTPDirectoryIndexCrawler extends abstractGenericHTTPDirecto
     }
 
     protected ArrayList<DownloadLink> parseLighttpd(final CryptedLink param, final Browser br) throws IOException, PluginException, DecrypterRetryException {
+        final String path = this.getCurrentDirectoryPath(br);
+        if (path == null) {
+            // fast return
+            return null;
+        }
         final String[] fileEntries = br.getRegex("<tr(.*?)</tr>").getColumn(0);
         if (fileEntries != null && fileEntries.length > 0) {
-            final String path = this.getCurrentDirectoryPath(br);
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             for (String fileEntry : fileEntries) {
                 String name = new Regex(fileEntry, "<a[^>]*href\\s*=\\s*\"(.*?)\"").getMatch(0);
-                String size = new Regex(fileEntry, "class\\s*=\\s*\"s\"[^>]*>\\s*([0-9\\.KMGTB]*?)\\s*<").getMatch(0);
+                String size = new Regex(fileEntry, "class\\s*=\\s*\"s\"[^>]*>\\s*([0-9\\.KMGTB]*?|-\\s*&nbsp;)\\s*<").getMatch(0);
+                final String lastModified = new Regex(fileEntry, "class\\s*=\\s*\"m\"[^>]*>\\s*([a-zA-Z0-9 :-]+)\\s*<").getMatch(0);
                 final String type = new Regex(fileEntry, "class\\s*=\\s*\"t\"[^>]*>\\s*(.*?)\\s*<").getMatch(0);
-                if (name == null) {
+                if (!StringUtils.isAllNotEmpty(name, size, lastModified, type)) {
+                    // no valid index entry
                     continue;
                 } else if (name.startsWith("../")) {
                     continue;
                 }
-                if ((size == null || "Directory".equalsIgnoreCase(type))) {
+                if ("- &nbsp;".equals(size)) {
+                    size = "-";
+                }
+                if ("Directory".equalsIgnoreCase(type)) {
                     size = "-";
                     if (name.endsWith("/")) {
                         name = name.substring(0, name.length() - 1);
@@ -128,20 +138,28 @@ public class GenericHTTPDirectoryIndexCrawler extends abstractGenericHTTPDirecto
                 link.setRelativeDownloadFolderPath(path);
                 ret.add(link);
             }
-            if (path != null && !path.equals("/")) {
+            if (!path.equals("/")) {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.addLinks(ret);
                 fp.setName(path);
             }
-            return ret;
+            if (ret.size() == 0) {
+                return null;
+            } else {
+                return ret;
+            }
         }
         return null;
     }
 
     protected ArrayList<DownloadLink> parseNginx(final CryptedLink param, final Browser br) throws IOException, PluginException, DecrypterRetryException {
-        final String[][] filesAndFolders = br.getRegex("<a href=\"([^\"]+)\">([^>]+)</a>(?: *\\d{1,2}-[A-Za-z]{3}-\\d{4} \\d{1,2}:\\d{1,2})?[ ]+(\\d+|-)").getMatches();
+        final String path = this.getCurrentDirectoryPath(br);
+        if (path == null) {
+            // fast return
+            return null;
+        }
+        final String[][] filesAndFolders = br.getRegex("<a href=\"([^\"]+)\">([^>]+)</a>(?:\\s*[a-zA-Z0-9 :-]+)\\s*(\\d+|-)").getMatches();
         if (filesAndFolders != null && filesAndFolders.length > 0) {
-            final String path = this.getCurrentDirectoryPath(br);
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             for (final String[] finfo : filesAndFolders) {
                 if (finfo[0].endsWith("/")) {
@@ -151,25 +169,43 @@ public class GenericHTTPDirectoryIndexCrawler extends abstractGenericHTTPDirecto
                 link.setRelativeDownloadFolderPath(path);
                 ret.add(link);
             }
-            if (path != null && !path.equals("/")) {
+            if (!path.equals("/")) {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.addLinks(ret);
                 fp.setName(path);
             }
-            return ret;
+            if (ret.size() == 0) {
+                return null;
+            } else {
+                return ret;
+            }
         }
         return null;
     }
 
     protected ArrayList<DownloadLink> parseCaddy(final CryptedLink param, final Browser br) throws IOException, PluginException, DecrypterRetryException {
-        final String[] fileEntries = br.getRegex("<tr\\s*class\\s*=\\s*\"file\"[^>]*>(.*?)</tr>").getColumn(0);
+        final String path = br.getRegex(">\\s*Folder Path\\s*</div>\\s*<h\\d>\\s*<a[^>]*href\\s*=\\s*\"(.*?)\"[^>]*>\\s*(/.*?)\\s*<").getMatch(1);
+        if (path == null) {
+            // fast return
+            return null;
+        }
+        final String[] fileEntries = br.getRegex("<tr\\s*class\\s*=\\s*\"file\"[^>]*>\\s*(.*?)\\s*</tr>").getColumn(0);
         if (fileEntries != null && fileEntries.length > 0) {
-            final String path = br.getRegex("<link\\s*rel\\s*=\\s*\"canonical\"[^>]*href\\s*=\\s*\"(/.*?)\"[^>]*/>").getMatch(0);
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             for (String fileEntry : fileEntries) {
                 String name = new Regex(fileEntry, "<span\\s*class\\s*=\\s*\"name\"[^>]*>\\s*(.*?)\\s*</span>").getMatch(0);
                 String size = new Regex(fileEntry, "<td\\s*class\\s*=\\s*\"size\"[^>]*data-size\\s*=\\s*\"(\\d+)\"").getMatch(0);
-                if (size == null && name.endsWith("/")) {
+                if (size == null) {
+                    size = new Regex(fileEntry, "<td>\\s*(&mdash;)\\s*</td>").getMatch(0);
+                }
+                final String timestamp = new Regex(fileEntry, "<td\\s*class\\s*=\\s*\"timestamp[^\"]*\"[^>]*>\\s*<time\\s*(.*?)\\s*</time>\\s*</td").getMatch(0);
+                if (!StringUtils.isAllNotEmpty(name, size, timestamp)) {
+                    continue;
+                }
+                if ("&mdash;".equals(size)) {
+                    size = "-";
+                }
+                if (name.endsWith("/")) {
                     size = "-";
                     name = name.substring(0, name.length() - 1);
                 }
@@ -177,33 +213,51 @@ public class GenericHTTPDirectoryIndexCrawler extends abstractGenericHTTPDirecto
                 link.setRelativeDownloadFolderPath(path);
                 ret.add(link);
             }
-            if (path != null && !path.equals("/")) {
+            if (!path.equals("/")) {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.addLinks(ret);
                 fp.setName(path);
             }
-            return ret;
+            if (ret.size() == 0) {
+                return null;
+            } else {
+                return ret;
+            }
         }
         return null;
     }
 
     protected ArrayList<DownloadLink> parseApache(final CryptedLink param, final Browser br) throws IOException, PluginException, DecrypterRetryException {
+        final String path = this.getCurrentDirectoryPath(br);
+        if (path == null) {
+            // fast return
+            return null;
+        }
         /* nginx (default?): Entries sometimes contain the create-date, sometimes only the filesize (for folders, only "-"). */
-        final String[][] filesAndFolders = br.getRegex("<a href=\"([^\"]+)\">[^<]*</a>\\s*</td><td align=\"right\">\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}\\s*</td><td align=\"right\">[ ]*(\\d+(\\.\\d)?[A-Z]?|-)[ ]*</td>").getMatches();
+        final String[][] filesAndFolders = br.getRegex("<a href=\"([^\"]+)\">[^<]*</a>\\s*</td><td align=\"right\">\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}\\s*</td><td align=\"right\">[ ]*([0-9\\.]*?[BMGKT]?|-)\\s*</td>").getMatches();
         if (filesAndFolders != null && filesAndFolders.length > 0) {
-            final String path = this.getCurrentDirectoryPath(br);
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             for (final String[] finfo : filesAndFolders) {
+                if (!StringUtils.isAllNotEmpty(finfo)) {
+                    // no valid entry
+                    continue;
+                } else if (finfo[0].startsWith("../")) {
+                    continue;
+                }
                 final DownloadLink link = parseEntry(DirectoryListingMode.APACHE, br, finfo);
                 link.setRelativeDownloadFolderPath(path);
                 ret.add(link);
             }
-            if (path != null && !path.equals("/")) {
+            if (!path.equals("/")) {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.addLinks(ret);
                 fp.setName(path);
             }
-            return ret;
+            if (ret.size() == 0) {
+                return null;
+            } else {
+                return ret;
+            }
         }
         return null;
     }
