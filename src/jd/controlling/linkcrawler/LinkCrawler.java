@@ -1307,7 +1307,455 @@ public class LinkCrawler {
         public CrawledLinkModifier getSourceCrawledLinkModifier();
     }
 
+    protected void crawlDeeperOrMatchingRuleV2(final LinkCrawlerGeneration generation, final CrawledLink source) {
+        final CrawledLinkModifier sourceLinkModifier;
+        if (source.getCustomCrawledLinkModifier() instanceof DeeperOrMatchingRuleModifier) {
+            CrawledLinkModifier modifier = source.getCustomCrawledLinkModifier();
+            while (modifier instanceof DeeperOrMatchingRuleModifier) {
+                modifier = ((DeeperOrMatchingRuleModifier) modifier).getSourceCrawledLinkModifier();
+            }
+            sourceLinkModifier = modifier;
+        } else {
+            sourceLinkModifier = source.getCustomCrawledLinkModifier();
+        }
+        source.setCustomCrawledLinkModifier(null);
+        source.setBrokenCrawlerHandler(null);
+        final LinkCrawlerTask task;
+        if (source == null || source.getURL() == null) {
+            return;
+        } else if (isCrawledLinkDuplicated(duplicateFinderDeep, source)) {
+            onCrawledLinkDuplicate(source, DUPLICATE.DEEP);
+            return;
+        } else if (this.isCrawledLinkFiltered(source)) {
+            return;
+        } else if ((task = checkStartNotify(generation, "crawlDeeperOrMatchingRule:" + source.getURL())) == null) {
+            /* Do nothing */
+            return;
+        }
+        final LinkCrawlerRule matchingRule = source.getMatchingRule();
+        final List<CrawledLinkModifier> additionalModifier = new ArrayList<CrawledLinkModifier>();
+        final CrawledLinkModifier lm = new DeeperOrMatchingRuleModifier() {
+            public CrawledLinkModifier getSourceCrawledLinkModifier() {
+                return sourceLinkModifier;
+            }
+
+            public boolean modifyCrawledLink(CrawledLink link) {
+                final boolean setContainerURL = link.getDownloadLink() != null && link.getDownloadLink().getContainerUrl() == null;
+                boolean ret = false;
+                if (sourceLinkModifier != null) {
+                    if (sourceLinkModifier.modifyCrawledLink(link)) {
+                        ret = true;
+                    }
+                }
+                if (setContainerURL) {
+                    link.getDownloadLink().setContainerUrl(source.getURL());
+                    ret = true;
+                }
+                for (final CrawledLinkModifier modifier : additionalModifier) {
+                    if (modifier.modifyCrawledLink(link)) {
+                        ret = true;
+                    }
+                }
+                return ret;
+            }
+        };
+        try {
+            Browser br = null;
+            final LogInterface logger;
+            if (matchingRule != null && matchingRule.isLogging()) {
+                logger = LogController.getFastPluginLogger("LinkCrawlerRule." + matchingRule.getId());
+            } else {
+                logger = LogController.getFastPluginLogger("LinkCrawlerDeep." + CrossSystem.alleviatePathParts(source.getHost()));
+            }
+            processedLinksCounter.incrementAndGet();
+            try {
+                if (StringUtils.startsWithCaseInsensitive(source.getURL(), "file:/")) {
+                    /* Crawl file contents */
+                    // file:/ -> not authority -> all fine
+                    // file://xy/ -> xy authority -> java.lang.IllegalArgumentException: URI has an authority component
+                    // file:/// -> empty authority -> all fine
+                    final String currentURI = source.getURL().replaceFirst("file:///?", "file:///");
+                    final File file = new File(new URI(currentURI));
+                    if (!file.exists()) {
+                        logger.info("FILE: Invalid file path: File does not exist");
+                        return;
+                    } else if (!file.isFile()) {
+                        logger.info("FILE: Invalid file path: File is not a file");
+                        return;
+                    }
+                    final int limit = CONFIG.getDeepDecryptFileSizeLimit();
+                    final int readLimit = limit == -1 ? -1 : Math.max(1 * 1024 * 1024, limit);
+                    final String fileContent = new String(IO.readFile(file, readLimit), "UTF-8");
+                    final List<CrawledLink> fileContentLinks = find(generation, source, fileContent, null, false, false);
+                    if (fileContentLinks == null || fileContentLinks.isEmpty()) {
+                        logger.info("FILE: Failed to find any results in file: " + file.getAbsolutePath());
+                        return;
+                    }
+                    final String[] sourceURLs = getAndClearSourceURLs(source);
+                    final boolean singleDest = fileContentLinks.size() == 1;
+                    for (final CrawledLink fileContentLink : fileContentLinks) {
+                        forwardCrawledLinkInfos(source, fileContentLink, lm, sourceURLs, singleDest);
+                    }
+                    crawl(generation, fileContentLinks);
+                } else {
+                    /* Crawl URL */
+                    br = new Browser();
+                    br.setLogger(logger);
+                    if (matchingRule != null && matchingRule.isLogging()) {
+                        /* Enable logging if allowed by MatchingRule. */
+                        br.setVerbose(true);
+                        br.setDebug(true);
+                    }
+                    br.setFollowRedirects(false);
+                    final List<CrawledLink> connectionResults = this.openCrawlDeeperConnectionV2(generation, logger, matchingRule, br, source, br.createGetRequest(source.getURL()));
+                    if (connectionResults == null) {
+                        // Duplicate or filtered
+                        // TODO: Improve this
+                        return;
+                    } else if (connectionResults.size() > 0) {
+                        final boolean isSingleResult = connectionResults.size() == 1;
+                        for (final CrawledLink crawledlink : connectionResults) {
+                            forwardCrawledLinkInfos(source, crawledlink, lm, getAndClearSourceURLs(source), isSingleResult);
+                        }
+                        crawl(generation, connectionResults);
+                        return;
+                    }
+                    final CrawledLink deeperSource;
+                    final String[] sourceURLs;
+                    final String current_url = br.getURL();
+                    if (StringUtils.equals(current_url, source.getURL())) {
+                        /* Same URL or first request */
+                        deeperSource = source;
+                        sourceURLs = getAndClearSourceURLs(source);
+                    } else {
+                        /* Different URL */
+                        deeperSource = crawledLinkFactorybyURL(current_url);
+                        forwardCrawledLinkInfos(source, deeperSource, lm, getAndClearSourceURLs(source), true);
+                        sourceURLs = getAndClearSourceURLs(deeperSource);
+                    }
+                    final LinkCrawlerDeepInspector lDeepInspector = this.getDeepInspector();
+                    final List<CrawledLink> inspectedLinks = lDeepInspector.deepInspect(this, generation, br, br.getHttpConnection(), deeperSource);
+                    /*
+                     * Downloadable content, we use directhttp and distribute the url
+                     */
+                    if (inspectedLinks != null) {
+                        if (inspectedLinks.size() >= 0) {
+                            final boolean singleDest = inspectedLinks.size() == 1;
+                            for (final CrawledLink possibleCryptedLink : inspectedLinks) {
+                                forwardCrawledLinkInfos(deeperSource, possibleCryptedLink, lm, sourceURLs, singleDest);
+                            }
+                            crawl(generation, inspectedLinks);
+                        }
+                        return;
+                    }
+                    String finalPackageName = null;
+                    if (matchingRule != null && matchingRule._getPackageNamePattern() != null) {
+                        /* Obtain package name by regex given in rule. */
+                        final String packageName = br.getRegex(matchingRule._getPackageNamePattern()).getMatch(0);
+                        if (StringUtils.isNotEmpty(packageName)) {
+                            finalPackageName = Encoding.htmlDecode(packageName).trim();
+                        }
+                    }
+                    /* Load the webpage and find links on it */
+                    if (matchingRule != null && LinkCrawlerRule.RULE.SUBMITFORM.equals(matchingRule.getRule())) {
+                        final Pattern formPattern = matchingRule._getFormPattern();
+                        if (formPattern == null) {
+                            logger.info("SUBMITFORM: Cannot process Form handling because: Form Pattern is null");
+                            return;
+                        }
+                        final Form[] allForms = br.getForms();
+                        if (allForms == null || allForms.length == 0) {
+                            logger.info("SUBMITFORM: Cannot process Form handling because: There are no forms available");
+                            return;
+                        }
+                        Form targetform = null;
+                        int index = 0;
+                        for (final Form form : allForms) {
+                            if ((StringUtils.isNotEmpty(form.getAction()) && formPattern.matcher(form.getAction()).matches()) || form.containsHTML(formPattern.pattern())) {
+                                targetform = form;
+                                break;
+                            }
+                            index++;
+                        }
+                        if (targetform == null) {
+                            logger.info("Failed to find any form matching given Pattern");
+                            return;
+                        }
+                        logger.info("SUBMITFORM: Submitting form from index [" + index + "]");
+                        // TODO: Remove the duplicated code down below, just go through crawler again(?)
+                        final Browser clone = br.cloneBrowser();
+                        final List<CrawledLink> formLinks = this.openCrawlDeeperConnectionV2(generation, logger, matchingRule, br, source, clone.createFormRequest(targetform));
+                        if (formLinks == null) {
+                            // TODO:
+                            return;
+                        } else if (formLinks.isEmpty()) {
+                            logger.info("SUBMITFORM: Failed to find any results");
+                            return;
+                        }
+                        final boolean singleDest = formLinks.size() == 1;
+                        for (final CrawledLink formLink : formLinks) {
+                            forwardCrawledLinkInfos(deeperSource, formLink, lm, sourceURLs, singleDest);
+                            PackageInfo dpi = formLink.getDesiredPackageInfo();
+                            if (dpi == null) {
+                                dpi = new PackageInfo();
+                            }
+                            dpi.setName(finalPackageName);
+                            formLink.setDesiredPackageInfo(dpi);
+                        }
+                        crawl(generation, formLinks);
+                        /* Dead end */
+                        // TODO: Do not necessarily return here, allow for SUBMITFORM rule to also use DEEP-PATTERN
+                        return;
+                    }
+                    /* Deep-decrypt (generic and via DEEPDECRYPT LinkCrawler rule). */
+                    final Request request = br.getRequest();
+                    final String brURL;
+                    if (request.getAuthentication() == null) {
+                        brURL = request.getUrl();
+                    } else {
+                        brURL = request.getAuthentication().getURLWithUserInfo(request.getURL());
+                    }
+                    final List<CrawledLink> possibleCryptedLinks = find(generation, source, brURL, null, false, false);
+                    if (possibleCryptedLinks == null) {
+                        return;
+                    }
+                    final boolean singleDest = possibleCryptedLinks.size() == 1;
+                    for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
+                        forwardCrawledLinkInfos(deeperSource, possibleCryptedLink, lm, sourceURLs, singleDest);
+                        PackageInfo dpi = possibleCryptedLink.getDesiredPackageInfo();
+                        if (dpi == null) {
+                            dpi = new PackageInfo();
+                        }
+                        dpi.setName(finalPackageName);
+                        possibleCryptedLink.setDesiredPackageInfo(dpi);
+                    }
+                    final CrawledLink deepLink;
+                    if (singleDest) {
+                        deepLink = possibleCryptedLinks.get(0);
+                    } else {
+                        CrawledLink deep = null;
+                        for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
+                            if (StringUtils.equalsIgnoreCase(possibleCryptedLink.getURL(), source.getURL())) {
+                                deep = possibleCryptedLink;
+                                break;
+                            }
+                        }
+                        deepLink = deep;
+                    }
+                    if (deepLink == null) {
+                        // TODO: This should never happen
+                        return;
+                    }
+                    final String finalBaseUrl = new Regex(brURL, "(https?://.*?)(\\?|$)").getMatch(0);
+                    final boolean deepPatternContent;
+                    final List<CrawledLink> possibleDeepCryptedLinks;
+                    if (matchingRule != null && matchingRule._getDeepPattern() != null) {
+                        /* Crawl links according to pattern of rule. */
+                        final String[][] matches = new Regex(request.getHtmlCode(), matchingRule._getDeepPattern()).getMatches();
+                        if (matches == null || matches.length == 0) {
+                            /*
+                             * Users' deep pattern is bad and/or currently processed link is broken/offline and thus we get no results.
+                             */
+                            if (matchingRule.isLogging()) {
+                                final LogInterface ruleLogger = LogController.getFastPluginLogger("LinkCrawlerRule." + matchingRule.getId());
+                                ruleLogger.info("Got no matches based on user defined DeepPattern");
+                            }
+                            return;
+                        }
+                        final HashSet<String> dups = new HashSet<String>();
+                        final StringBuilder sb = new StringBuilder();
+                        for (final String matcharray[] : matches) {
+                            for (final String match : matcharray) {
+                                if (StringUtils.isNotEmpty(match) && !brURL.equals(match) && dups.add(match)) {
+                                    if (sb.length() > 0) {
+                                        sb.append("\r\n");
+                                    }
+                                    sb.append(match);
+                                    if (match.matches("^[^<>\"]+$")) {
+                                        try {
+                                            final String url = br.getURL(match).toExternalForm();
+                                            if (dups.add(url)) {
+                                                sb.append("\r\n").append(url);
+                                            }
+                                        } catch (final Throwable e) {
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        deepPatternContent = true;
+                        possibleDeepCryptedLinks = find(generation, source, sb.toString(), finalBaseUrl, false, false);
+                    } else {
+                        deepPatternContent = false;
+                        possibleDeepCryptedLinks = find(generation, source, request.getHtmlCode(), finalBaseUrl, false, false);
+                    }
+                    if (possibleDeepCryptedLinks == null || possibleDeepCryptedLinks.size() == 0) {
+                        return;
+                    }
+                    if (matchingRule != null && matchingRule._getPasswordPattern() != null) {
+                        /* Find extract passwords by password pattern of rule */
+                        final String[][] matches = new Regex(request.getHtmlCode(), matchingRule._getPasswordPattern()).getMatches();
+                        if (matches != null && matches.length > 0) {
+                            final HashSet<String> passwords = new HashSet<String>();
+                            for (final String matcharray[] : matches) {
+                                for (final String match : matcharray) {
+                                    if (StringUtils.isNotEmpty(match)) {
+                                        passwords.add(match);
+                                    }
+                                }
+                            }
+                            if (passwords.size() > 0) {
+                                additionalModifier.add(new CrawledLinkModifier() {
+                                    @Override
+                                    public boolean modifyCrawledLink(CrawledLink link) {
+                                        for (final String password : passwords) {
+                                            link.getArchiveInfo().addExtractionPassword(password);
+                                        }
+                                        return true;
+                                    }
+                                });
+                            }
+                        }
+                    }
+                    final boolean singleDeepCryptedDest = possibleDeepCryptedLinks.size() == 1;
+                    for (final CrawledLink possibleDeepCryptedLink : possibleDeepCryptedLinks) {
+                        forwardCrawledLinkInfos(deeperSource, possibleDeepCryptedLink, lm, sourceURLs, singleDeepCryptedDest);
+                        PackageInfo dpi = possibleDeepCryptedLink.getDesiredPackageInfo();
+                        if (dpi == null) {
+                            dpi = new PackageInfo();
+                        }
+                        dpi.setName(finalPackageName);
+                        possibleDeepCryptedLink.setDesiredPackageInfo(dpi);
+                    }
+                    if (deepPatternContent && StringUtils.startsWithCaseInsensitive(source.getURL(), deepLink.getURL())) {
+                        /*
+                         * deepLink is our source and a matching deepPattern, crawl the links directly and don't wait for
+                         * UnknownCrawledLinkHandler
+                         */
+                        crawl(generation, possibleDeepCryptedLinks);
+                    } else {
+                        /* first check if the url itself can be handled */
+                        deepLink.setUnknownHandler(new UnknownCrawledLinkHandler() {
+                            @Override
+                            public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
+                                /* unhandled url, lets parse the content on it */
+                                lc.crawl(generation, possibleDeepCryptedLinks);
+                            }
+                        });
+                        crawl(generation, possibleCryptedLinks);
+                    }
+                }
+            } catch (Throwable e) {
+                LogController.CL().log(e);
+                logger.log(e);
+            } finally {
+                if (br != null) {
+                    br.disconnect();
+                }
+                if (logger != null && logger instanceof ClosableLogInterface) {
+                    ((ClosableLogInterface) logger).close();
+                }
+            }
+        } finally {
+            checkFinishNotify(task);
+        }
+    }
+
+    /** Opens connection */
+    protected final List<CrawledLink> openCrawlDeeperConnectionV2(final LinkCrawlerGeneration generation, final LogInterface logger, final LinkCrawlerRule matchingRule, final Browser br, final CrawledLink source, final Request req) throws Exception {
+        final CrawledLink sourceLink = source != null ? source.getSourceLink() : null;
+        // TODO: Remove check for 'http' prefix?
+        if (sourceLink != null && StringUtils.startsWithCaseInsensitive(sourceLink.getURL(), "http")) {
+            /* Set referer */
+            br.setCurrentURL(sourceLink.getURL());
+        }
+        br.setFollowRedirects(false);
+        final LinkCrawlerDeepInspector lDeepInspector = this.getDeepInspector();
+        URLConnectionAdapter con = null;
+        Request thisReq = req;
+        final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
+        try {
+            final HashSet<String> duplicates = new HashSet<String>();
+            int redirects = 0;
+            String redirect = null;
+            do {
+                con = br.openRequestConnection(thisReq);
+                final CrawledLink thisSource = crawledLinkFactorybyURL(con.getURL().toExternalForm());
+                if (lDeepInspector.looksLikeDownloadableContent(con)) {
+                    /* Direct downloadable file */
+                    // TODO: Add check for text content when we have a DEEPDECRYPT rule
+                    final CrawledLink directLink = createDirectHTTPCrawledLink(thisSource, br.getRequest(), con);
+                    ret.add(directLink);
+                    break;
+                } else if (!duplicates.add(con.getURL().toExternalForm())) {
+                    /* Redirect to the same link -> Stop */
+                    break;
+                }
+                redirect = br.getHttpConnection().getRequest().getLocation();
+                if (redirect == null) {
+                    /* No redirect -> End loop */
+                    break;
+                } else if (!generation.isValid()) {
+                    /* Link crawling was stopped */
+                    return ret;
+                }
+                /* Redirect -> Check for stop condition based on URL, otherwise continue */
+                if (isCrawledLinkDuplicated(duplicateFinderDeep, thisSource)) {
+                    onCrawledLinkDuplicate(thisSource, DUPLICATE.DEEP);
+                    // TODO: Do not return null here
+                    return null;
+                } else if (this.isCrawledLinkFiltered(thisSource)) {
+                    // TODO: Do not return null here
+                    return null;
+                }
+                /* TODO: Move this somewhere else and make a 1-liner out of it */
+                LazyHostPlugin hosterPluginWhichCanHandleThisURL = null;
+                LazyCrawlerPlugin crawlerPluginWhichCanHandleThisURL = null;
+                final List<LazyCrawlerPlugin> lazyCrawlerPlugins = getSortedLazyCrawlerPlugins();
+                for (final LazyCrawlerPlugin plg : lazyCrawlerPlugins) {
+                    if (plg.canHandle(redirect)) {
+                        crawlerPluginWhichCanHandleThisURL = plg;
+                        break;
+                    }
+                }
+                if (crawlerPluginWhichCanHandleThisURL == null) {
+                    final List<LazyHostPlugin> lazyHostPlugins = getSortedLazyHostPlugins();
+                    for (final LazyHostPlugin plg : lazyHostPlugins) {
+                        if (plg.canHandle(redirect)) {
+                            hosterPluginWhichCanHandleThisURL = plg;
+                            break;
+                        }
+                    }
+                }
+                if (hosterPluginWhichCanHandleThisURL != null || crawlerPluginWhichCanHandleThisURL != null) {
+                    /* URL can be handled by a Plugin -> Return it */
+                    ret.add(thisSource);
+                    return ret;
+                }
+                // TODO: Add check for LinkCrawler rule which can handle redirect-url
+                /* Continue to next URL */
+                thisReq = br.createGetRequest(redirect);
+                redirects++;
+                continue;
+            } while (redirects <= 10);
+            if (redirect != null) {
+                throw new Exception("RedirectLoop");
+            }
+        } finally {
+            try {
+                br.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        return ret;
+    }
+
     protected void crawlDeeperOrMatchingRule(final LinkCrawlerGeneration generation, final CrawledLink source) {
+        final boolean tryExperimental = false;
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && tryExperimental) {
+            crawlDeeperOrMatchingRuleV2(generation, source);
+            return;
+        }
         final CrawledLinkModifier sourceLinkModifier;
         if (source.getCustomCrawledLinkModifier() instanceof DeeperOrMatchingRuleModifier) {
             CrawledLinkModifier modifier = source.getCustomCrawledLinkModifier();
@@ -1458,6 +1906,7 @@ public class LinkCrawler {
                             final ArrayList<CrawledLink> pluginSupportedLinks = new ArrayList<CrawledLink>();
                             pluginSupportedLinks.add(deeperSource);
                             crawl(generation, pluginSupportedLinks);
+                            return;
                         }
                     }
                     if ((lDeepInspector = getDeepInspector()).looksLikeDownloadableContent(connection)) {
@@ -2282,58 +2731,56 @@ public class LinkCrawler {
                                     continue mainloop;
                                 }
                             } else if ((rule = getFirstMatchingRule(possibleCryptedLink, url, LinkCrawlerRule.RULE.DIRECTHTTP)) != null) {
-                                if (!DirectHTTPPermission.FORBIDDEN.equals(directHTTPPermission)) {
-                                    // no need to check directHTTPPermission as it is ALWAYS or RULES_ONLY
-                                    final CrawledLink copy = createCopyOf(possibleCryptedLink);
-                                    final CrawledLinkModifier linkModifier = copy.getCustomCrawledLinkModifier();
-                                    copy.setCustomCrawledLinkModifier(null);
-                                    final DownloadLink link = new DownloadLink(null, null, null, "directhttp://" + url, true);
-                                    if (rule != null && rule.getCookies() != null) {
-                                        final StringBuilder sb = new StringBuilder();
-                                        for (String[] cookie : rule.getCookies()) {
-                                            switch (cookie.length) {
-                                            case 1:
-                                                sb.append(cookie[0]).append("=;");
-                                                break;
-                                            case 2:
-                                                sb.append(cookie[0]).append("=").append(cookie[1]).append(";");
-                                                break;
-                                            case 3:
-                                                try {
-                                                    if (cookie[2] != null && url.matches(cookie[2])) {
-                                                        sb.append(cookie[0]).append("=").append(cookie[1]).append(";");
-                                                    }
-                                                } catch (Exception e) {
-                                                    LogController.CL().log(e);
-                                                }
-                                                break;
-                                            default:
-                                                break;
-                                            }
-                                        }
-                                        link.setProperty("COOKIES", sb.toString());
-                                    }
-                                    final CrawledLink directHTTP = crawledLinkFactorybyDownloadLink(link);
-                                    directHTTP.setMatchingRule(rule);
-                                    forwardCrawledLinkInfos(copy, directHTTP, linkModifier, getAndClearSourceURLs(copy), true);
-                                    // modify sourceLink because directHTTP arise from possibleCryptedLink(convert to directhttp)
-                                    directHTTP.setSourceLink(possibleCryptedLink.getSourceLink());
-                                    final DISTRIBUTE ret = distributePluginForHost(directPlugin, generation, directHTTP.getURL(), directHTTP);
-                                    switch (ret) {
-                                    case STOP:
-                                        return;
-                                    case CONTINUE:
-                                        break;
-                                    case BLACKLISTED:
-                                    case NEXT:
-                                        continue mainloop;
-                                    default:
-                                        LogController.CL().log(new IllegalStateException(ret.name()));
-                                        break;
-                                    }
-                                } else {
-                                    // DirectHTTPPermission.FORBIDDEN
+                                if (DirectHTTPPermission.FORBIDDEN.equals(directHTTPPermission)) {
                                     continue mainloop;
+                                }
+                                final CrawledLink copy = createCopyOf(possibleCryptedLink);
+                                final CrawledLinkModifier linkModifier = copy.getCustomCrawledLinkModifier();
+                                copy.setCustomCrawledLinkModifier(null);
+                                final DownloadLink link = new DownloadLink(null, null, null, "directhttp://" + url, true);
+                                if (rule != null && rule.getCookies() != null) {
+                                    /* Set cookies of rule on result */
+                                    final StringBuilder sb = new StringBuilder();
+                                    for (String[] cookie : rule.getCookies()) {
+                                        switch (cookie.length) {
+                                        case 1:
+                                            sb.append(cookie[0]).append("=;");
+                                            break;
+                                        case 2:
+                                            sb.append(cookie[0]).append("=").append(cookie[1]).append(";");
+                                            break;
+                                        case 3:
+                                            try {
+                                                if (cookie[2] != null && url.matches(cookie[2])) {
+                                                    sb.append(cookie[0]).append("=").append(cookie[1]).append(";");
+                                                }
+                                            } catch (Exception e) {
+                                                LogController.CL().log(e);
+                                            }
+                                            break;
+                                        default:
+                                            break;
+                                        }
+                                    }
+                                    link.setProperty("COOKIES", sb.toString());
+                                }
+                                final CrawledLink directHTTP = crawledLinkFactorybyDownloadLink(link);
+                                directHTTP.setMatchingRule(rule);
+                                forwardCrawledLinkInfos(copy, directHTTP, linkModifier, getAndClearSourceURLs(copy), true);
+                                // modify sourceLink because directHTTP arise from possibleCryptedLink(convert to directhttp)
+                                directHTTP.setSourceLink(possibleCryptedLink.getSourceLink());
+                                final DISTRIBUTE ret = distributePluginForHost(directPlugin, generation, directHTTP.getURL(), directHTTP);
+                                switch (ret) {
+                                case STOP:
+                                    return;
+                                case CONTINUE:
+                                    break;
+                                case BLACKLISTED:
+                                case NEXT:
+                                    continue mainloop;
+                                default:
+                                    LogController.CL().log(new IllegalStateException(ret.name()));
+                                    break;
                                 }
                             }
                         }
@@ -3568,6 +4015,7 @@ public class LinkCrawler {
     }
 
     protected void crawl(final LinkCrawlerGeneration generation, final LazyCrawlerPlugin lazyC, final CrawledLink cryptedLink) {
+        final CrawledLinkModifier parentLinkModifier = cryptedLink.getCustomCrawledLinkModifier();
         cryptedLink.setCustomCrawledLinkModifier(null);
         final BrokenCrawlerHandler brokenCrawler = cryptedLink.getBrokenCrawlerHandler();
         cryptedLink.setBrokenCrawlerHandler(null);
@@ -3584,7 +4032,6 @@ public class LinkCrawler {
         } else if ((task = checkStartNotify(generation, "crawlPlugin:" + lazyC + "|" + cryptedLink.getURL())) == null) {
             return;
         }
-        final CrawledLinkModifier parentLinkModifier = cryptedLink.getCustomCrawledLinkModifier();
         try {
             final String[] sourceURLs = getAndClearSourceURLs(cryptedLink);
             processedLinksCounter.incrementAndGet();
