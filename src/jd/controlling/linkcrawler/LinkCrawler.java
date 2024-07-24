@@ -1754,28 +1754,27 @@ public class LinkCrawler {
                     }
                     processHostPlugin(generation, pluginForHost, link);
                 } else {
-                    final LinkCrawlerTask innerTask;
-                    if ((innerTask = checkStartNotify(generation, "distributePluginForHost:" + pluginForHost + "|" + link.getURL())) != null) {
-                        threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation, innerTask) {
-                            @Override
-                            public long getAverageRuntime() {
-                                final Long ret = getDefaultAverageRuntime();
-                                if (ret != null) {
-                                    return ret;
-                                } else {
-                                    return pluginForHost.getAverageParseRuntime();
-                                }
-                            }
-
-                            @Override
-                            void crawling() {
-                                processHostPlugin(generation, pluginForHost, link);
-                            }
-                        });
-                    } else {
+                    final LinkCrawlerTask innerTask = checkStartNotify(generation, "distributePluginForHost:" + pluginForHost + "|" + link.getURL());
+                    if (innerTask == null) {
                         /* LinkCrawler got aborted! */
                         return DISTRIBUTE.STOP;
                     }
+                    threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation, innerTask) {
+                        @Override
+                        public long getAverageRuntime() {
+                            final Long ret = getDefaultAverageRuntime();
+                            if (ret != null) {
+                                return ret;
+                            } else {
+                                return pluginForHost.getAverageParseRuntime();
+                            }
+                        }
+
+                        @Override
+                        void crawling() {
+                            processHostPlugin(generation, pluginForHost, link);
+                        }
+                    });
                 }
                 return DISTRIBUTE.NEXT;
             }
@@ -3568,13 +3567,14 @@ public class LinkCrawler {
         }
     }
 
-    protected void crawl(final LinkCrawlerGeneration generation, LazyCrawlerPlugin lazyC, final CrawledLink cryptedLink) {
-        final CrawledLinkModifier parentLinkModifier = cryptedLink.getCustomCrawledLinkModifier();
+    protected void crawl(final LinkCrawlerGeneration generation, final LazyCrawlerPlugin lazyC, final CrawledLink cryptedLink) {
         cryptedLink.setCustomCrawledLinkModifier(null);
         final BrokenCrawlerHandler brokenCrawler = cryptedLink.getBrokenCrawlerHandler();
         cryptedLink.setBrokenCrawlerHandler(null);
         final LinkCrawlerTask task;
-        if (lazyC == null || cryptedLink.getCryptedLink() == null) {
+        if (lazyC == null) {
+            return;
+        } else if (cryptedLink.getCryptedLink() == null) {
             return;
         } else if (isDuplicatedCrawling(lazyC, cryptedLink)) {
             onCrawledLinkDuplicate(cryptedLink, DUPLICATE.CRAWLER);
@@ -3584,6 +3584,7 @@ public class LinkCrawler {
         } else if ((task = checkStartNotify(generation, "crawlPlugin:" + lazyC + "|" + cryptedLink.getURL())) == null) {
             return;
         }
+        final CrawledLinkModifier parentLinkModifier = cryptedLink.getCustomCrawledLinkModifier();
         try {
             final String[] sourceURLs = getAndClearSourceURLs(cryptedLink);
             processedLinksCounter.incrementAndGet();
@@ -3593,7 +3594,7 @@ public class LinkCrawler {
              */
             try {
                 wplg = lazyC.newInstance(getPluginClassLoaderChild());
-            } catch (UpdateRequiredClassNotFoundException e1) {
+            } catch (final UpdateRequiredClassNotFoundException e1) {
                 LogController.CL().log(e1);
                 return;
             }
