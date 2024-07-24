@@ -1435,9 +1435,6 @@ public class LinkCrawler {
                     }
                     final LinkCrawlerDeepInspector lDeepInspector = this.getDeepInspector();
                     final List<CrawledLink> inspectedLinks = lDeepInspector.deepInspect(this, generation, br, br.getHttpConnection(), deeperSource);
-                    /*
-                     * Downloadable content, we use directhttp and distribute the url
-                     */
                     if (inspectedLinks != null) {
                         if (inspectedLinks.size() >= 0) {
                             final boolean singleDest = inspectedLinks.size() == 1;
@@ -1484,7 +1481,7 @@ public class LinkCrawler {
                         logger.info("SUBMITFORM: Submitting form from index [" + index + "]");
                         // TODO: Remove the duplicated code down below, just go through crawler again(?)
                         final Browser clone = br.cloneBrowser();
-                        final List<CrawledLink> formLinks = this.openCrawlDeeperConnectionV2(generation, logger, matchingRule, br, source, clone.createFormRequest(targetform));
+                        final List<CrawledLink> formLinks = this.openCrawlDeeperConnectionV2(generation, logger, matchingRule, clone, source, clone.createFormRequest(targetform));
                         if (formLinks == null) {
                             // TODO:
                             return;
@@ -1679,6 +1676,7 @@ public class LinkCrawler {
             int redirects = 0;
             String redirect = null;
             do {
+                // TODO: Add authentication handling see jd.plugins.decrypter.LinkCrawlerDeepHelper
                 con = br.openRequestConnection(thisReq);
                 final CrawledLink thisSource = crawledLinkFactorybyURL(con.getURL().toExternalForm());
                 if (lDeepInspector.looksLikeDownloadableContent(con)) {
@@ -1694,17 +1692,19 @@ public class LinkCrawler {
                 redirect = br.getHttpConnection().getRequest().getLocation();
                 if (redirect == null) {
                     /* No redirect -> End loop */
+                    br.followConnection();
                     break;
                 } else if (!generation.isValid()) {
                     /* Link crawling was stopped */
                     return ret;
                 }
                 /* Redirect -> Check for stop condition based on URL, otherwise continue */
-                if (isCrawledLinkDuplicated(duplicateFinderDeep, thisSource)) {
-                    onCrawledLinkDuplicate(thisSource, DUPLICATE.DEEP);
+                final CrawledLink thisSourceRedirect = crawledLinkFactorybyURL(redirect);
+                if (isCrawledLinkDuplicated(duplicateFinderDeep, thisSourceRedirect)) {
+                    onCrawledLinkDuplicate(thisSourceRedirect, DUPLICATE.DEEP);
                     // TODO: Do not return null here
                     return null;
-                } else if (this.isCrawledLinkFiltered(thisSource)) {
+                } else if (this.isCrawledLinkFiltered(thisSourceRedirect)) {
                     // TODO: Do not return null here
                     return null;
                 }
@@ -1729,7 +1729,7 @@ public class LinkCrawler {
                 }
                 if (hosterPluginWhichCanHandleThisURL != null || crawlerPluginWhichCanHandleThisURL != null) {
                     /* URL can be handled by a Plugin -> Return it */
-                    ret.add(thisSource);
+                    ret.add(thisSourceRedirect);
                     return ret;
                 }
                 // TODO: Add check for LinkCrawler rule which can handle redirect-url
