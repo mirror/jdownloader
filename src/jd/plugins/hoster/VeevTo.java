@@ -15,9 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -66,7 +69,17 @@ public class VeevTo extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        return VeevTo.buildAnnotationUrlsVeevToSpecial(getPluginDomains());
+    }
+
+    private static final Pattern PATTERN_SPECIAL = Pattern.compile("/(d|e)/([A-Za-z0-9]+)", Pattern.CASE_INSENSITIVE);
+
+    public static String[] buildAnnotationUrlsVeevToSpecial(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(?::\\d+)?" + PATTERN_SPECIAL.pattern());
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -177,5 +190,39 @@ public class VeevTo extends XFileSharingProBasic {
         } else {
             return super.isOffline(link, br);
         }
+    }
+
+    @Override
+    protected URL_TYPE getURLType(final String url) {
+        if (url == null) {
+            return null;
+        }
+        final Regex regex_pattern_special = new Regex(url, PATTERN_SPECIAL);
+        if (regex_pattern_special.patternFind()) {
+            return super.getURLType(url);
+        }
+        final String typeString = regex_pattern_special.getMatch(0);
+        if (typeString.equalsIgnoreCase("e")) {
+            return URL_TYPE.EMBED_VIDEO_2;
+        } else {
+            return URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD;
+        }
+    }
+
+    @Override
+    protected String getFUID(final String url, URL_TYPE type) {
+        if (url == null || type == null) {
+            return null;
+        }
+        try {
+            if (type == URL_TYPE.EMBED_VIDEO_2) {
+                return new Regex(new URL(url).getPath(), "(?i)/e/([A-Za-z0-9]+)").getMatch(0);
+            } else if (type == URL_TYPE.EMBED_VIDEO_2) {
+                return new Regex(new URL(url).getPath(), "(?i)/d/([A-Za-z0-9]+)").getMatch(0);
+            }
+        } catch (MalformedURLException e) {
+            logger.log(e);
+        }
+        return super.getFUID(url, type);
     }
 }

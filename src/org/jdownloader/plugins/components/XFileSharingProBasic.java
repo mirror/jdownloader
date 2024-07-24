@@ -2259,6 +2259,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                     break download1;
                 }
                 logger.info("Found download1 Form");
+                /* Wait before sending download1 form is not so common. Example where it is needed: fastream.to */
+                waitTime(link, Time.systemIndependentCurrentJVMTimeMillis());
                 submitForm(download1);
                 checkErrors(br, getCorrectBR(br), link, account, false);
                 download1counter++;
