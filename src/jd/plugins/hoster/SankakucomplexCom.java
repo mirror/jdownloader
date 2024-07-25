@@ -357,12 +357,12 @@ public class SankakucomplexCom extends PluginForHost {
     protected boolean looksLikeDownloadableContent(final URLConnectionAdapter con) {
         final String etag = con.getHeaderField("etag");
         if (StringUtils.equalsIgnoreCase(etag, "\"657c7197-327a\"")) {
-            /* 2023-04-11: Dummy video -> Do not download this -> Throw exception instead! */
-            return false;
-        } else if (StringUtils.containsIgnoreCase(con.getURL().toExternalForm(), "expired.png")) {
+            /* 2024-07-25: etag of: https://chan.sankakucomplex.com/redirect.png */
             return false;
         } else if (StringUtils.containsIgnoreCase(con.getURL().toExternalForm(), "/redirect.png")) {
             /* 2024-07-25: Dummy image: https://chan.sankakucomplex.com/redirect.png */
+            return false;
+        } else if (StringUtils.containsIgnoreCase(con.getURL().toExternalForm(), "expired.png")) {
             return false;
         } else {
             return super.looksLikeDownloadableContent(con);
