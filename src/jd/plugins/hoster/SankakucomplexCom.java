@@ -21,6 +21,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.SankakucomplexComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -42,13 +49,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.SankakucomplexComCrawler;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.SankakucomplexComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(?:beta|chan|idol|www)\\.sankakucomplex\\.com/(?:[a-z]{2}/)?(?:post/show|posts)/([A-Za-z0-9]+)" })
 public class SankakucomplexCom extends PluginForHost {
@@ -141,7 +141,14 @@ public class SankakucomplexCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
-        if (useAPI) {
+        final String fileID = this.getFID(link);
+        final boolean fileIDIsAPICompatible;
+        if (fileID.matches("[A-Fa-f0-9]{32}")) {
+            fileIDIsAPICompatible = false;
+        } else {
+            fileIDIsAPICompatible = true;
+        }
+        if (useAPI && fileIDIsAPICompatible) {
             return requestFileInformationAPI(link, account, false);
         } else {
             return requestFileInformationWebsite(link, account, false);
@@ -346,6 +353,22 @@ public class SankakucomplexCom extends PluginForHost {
         }
     }
 
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter con) {
+        final String etag = con.getHeaderField("etag");
+        if (StringUtils.equalsIgnoreCase(etag, "\"657c7197-327a\"")) {
+            /* 2023-04-11: Dummy video -> Do not download this -> Throw exception instead! */
+            return false;
+        } else if (StringUtils.containsIgnoreCase(con.getURL().toExternalForm(), "expired.png")) {
+            return false;
+        } else if (StringUtils.containsIgnoreCase(con.getURL().toExternalForm(), "/redirect.png")) {
+            /* 2024-07-25: Dummy image: https://chan.sankakucomplex.com/redirect.png */
+            return false;
+        } else {
+            return super.looksLikeDownloadableContent(con);
+        }
+    }
+
     private String checkDirectLink(final DownloadLink link, final String directlinkproperty) {
         String dllink = link.getStringProperty(directlinkproperty);
         if (dllink != null) {
@@ -354,7 +377,7 @@ public class SankakucomplexCom extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openHeadConnection(dllink);
                 try {
-                    if (this.looksLikeDownloadableContent(con) && !con.getURL().getPath().contains("expired.png")) {
+                    if (this.looksLikeDownloadableContent(con)) {
                         valid = true;
                         return dllink;
                     } else {
