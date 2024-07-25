@@ -738,7 +738,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         return null;
     }
 
-    private int[] parseAudioTrackPosition(Object audioTrackPositionO) throws PluginException {
+    private int[] parseAudioTrackPosition(final Object audioTrackPositionO) throws PluginException {
         if (audioTrackPositionO == null) {
             return null;
         } else if (audioTrackPositionO instanceof int[]) {
@@ -800,8 +800,14 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             return this.crawlCollection(sourceurl, identifier);
         }
         final ArchiveOrgConfig cfg = PluginJsonConfig.get(ArchiveOrgConfig.class);
-        final boolean isDownloadPage = sourceurlForThisHandling.matches("(?i)https?://[^/]+/download/.+");
-        final String desiredSubpath = new Regex(sourceurlForThisHandling, ".*/(" + Pattern.quote(identifier) + "/.+)").getMatch(0);
+        final boolean isDownloadPage = sourceurl.matches("(?i)https?://[^/]+/download/.+");
+        final String desiredSubpath;
+        if (isDownloadPage) {
+            desiredSubpath = new Regex(sourceurlForThisHandling, ".*/(" + Pattern.quote(identifier) + "/.+)").getMatch(0);
+        } else {
+            /* No download page/link -> No desired subpath */
+            desiredSubpath = null;
+        }
         boolean allowCrawlArchiveContents = false;
         String desiredSubpathDecoded = null;
         String desiredSubpathDecoded2 = null;
@@ -863,6 +869,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final boolean isAccessRestricted = StringUtils.equalsIgnoreCase((String) root_metadata.get("access-restricted-item"), "true");
         /* If this gets set to true, we expect 60 second video streams to be available. */
         boolean identifierDotMp4Exists = false;
+        int audioTrackPositionCounterInternal = 1;
         for (final Map<String, Object> filemap : root_files) {
             final String source = filemap.get("source").toString(); // "original", "derivative" or "metadata"
             final String format = (String) filemap.get("format");
@@ -955,7 +962,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             if (audioTrackPositionO != null) {
                 /* Track position given -> Item must be part of a playlist. */
                 final DownloadLink audioPlaylistItem = this.createDownloadlink(url);
-                int[] audioTrackPosition = parseAudioTrackPosition(audioTrackPositionO);
+                final int[] audioTrackPosition = parseAudioTrackPosition(audioTrackPositionO);
                 findHighest: if (audioTrackPosition != null) {
                     file.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION_NEW, audioTrackPosition);
                     /**
@@ -987,6 +994,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 audioPlaylistItem.setProperties(file.getProperties());
                 /* Add item to list of playlist results. */
                 audioPlaylistItems.add(audioPlaylistItem);
+                // file.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION_OLD, audioTrackPositionCounterInternal);
+                audioTrackPositionCounterInternal++;
             }
             file.setAvailable(true);
             /* Set filename */

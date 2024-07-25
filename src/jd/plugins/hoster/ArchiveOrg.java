@@ -206,9 +206,10 @@ public class ArchiveOrg extends PluginForHost {
             return;
         }
         int playlistPosition[] = null;
-        if (link.hasProperty(PROPERTY_PLAYLIST_POSITION_OLD)) {
-            playlistPosition = new int[] { link.getIntegerProperty(PROPERTY_PLAYLIST_POSITION_OLD, -1) };
-        } else if (link.hasProperty(PROPERTY_PLAYLIST_POSITION_NEW)) {
+        final int positionOld = link.getIntegerProperty(PROPERTY_PLAYLIST_POSITION_OLD, -1);
+        if (positionOld != -1) {
+            playlistPosition = new int[] { positionOld };
+        } else {
             playlistPosition = link.getObjectProperty(PROPERTY_PLAYLIST_POSITION_NEW, TypeRef.INT_ARRAY);
         }
         String fileExtension = Plugin.getFileNameExtensionFromString(originalFilename);
