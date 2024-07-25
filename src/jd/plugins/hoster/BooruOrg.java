@@ -16,6 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -23,15 +25,19 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+import jd.plugins.decrypter.BooruOrgCrawler;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "booru.org" }, urls = { "https?://[a-z0-9]+\\.booru\\.org/index\\.php\\?page=post\\&s=view\\&id=(\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { BooruOrgCrawler.class })
 public class BooruOrg extends PluginForHost {
     public BooruOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,15 +47,44 @@ public class BooruOrg extends PluginForHost {
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
-    /* DEV NOTES */
-    // Tags:
-    // protocol: no https
-    // other:
 
-    /* Connection stuff */
-    private static final boolean free_resume    = false;
-    private static final int     free_maxchunks = 1;
-    private String               dllink         = null;
+    private static List<String[]> getPluginDomains() {
+        return jd.plugins.decrypter.BooruOrgCrawler.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/index\\.php\\?page=post\\&s=view\\&id=(\\d+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2024-07-25: Main domain has changed from booru.org to tbib.org. */
+        return this.rewriteHost(getPluginDomains(), host);
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return false;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        return 1;
+    }
+
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -124,7 +159,7 @@ public class BooruOrg extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(link, null));
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }

@@ -125,8 +125,7 @@ public class CocoleechCom extends PluginForHost {
         } else {
             /* Request creation of downloadlink */
             this.br.getPage(API_ENDPOINT + "?key=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
-            handleAPIErrors(this.br, account, link);
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> entries = handleAPIErrors(this.br, account, link);
             final Object chunksO = entries.get("chunks");
             if (chunksO != null) {
                 final String maxchunksStr = chunksO.toString();
@@ -180,8 +179,13 @@ public class CocoleechCom extends PluginForHost {
         if (validuntil != null) {
             timestampValiduntil = TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
+        final long currentTimeTimestamp = br.getCurrentServerTime(System.currentTimeMillis());
         final AccountInfo ai = new AccountInfo();
-        if ("premium".equalsIgnoreCase(accounttype)) {
+        if ("premium".equalsIgnoreCase(accounttype) || timestampValiduntil > currentTimeTimestamp) {
+            if ("free".equalsIgnoreCase(accounttype)) {
+                /* 2024-07-25: https://board.jdownloader.org/showthread.php?t=96183 */
+                logger.info("API is returning wrong information account type field");
+            }
             ai.setValidUntil(timestampValiduntil, br);
             account.setType(AccountType.PREMIUM);
             account.setConcurrentUsePossible(true);
@@ -209,7 +213,7 @@ public class CocoleechCom extends PluginForHost {
             ai.setStatus(accountPackage);
         }
         br.getPage(API_ENDPOINT + "/hosts-status");
-        final Map<String, Object> hoststatusmap = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> hoststatusmap = handleAPIErrors(br, account, null);
         final ArrayList<String> supportedhostslist = new ArrayList();
         final List<Map<String, Object>> hosters = (List<Map<String, Object>>) hoststatusmap.get("result");
         for (final Map<String, Object> hostinfo : hosters) {

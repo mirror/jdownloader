@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -25,28 +26,53 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "booru.org" }, urls = { "https?://[a-z0-9]+\\.booru\\.org/index\\.php\\?page=post\\&s=list\\&tags=[A-Za-z0-9_\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BooruOrgCrawler extends PluginForDecrypt {
     public BooruOrgCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "tbib.org", "booru.org" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/index\\.php\\?page=post\\&s=list\\&tags=[A-Za-z0-9_\\-]+");
         }
-        final String full_host = new Regex(parameter, "https?://([^/]+)/").getMatch(0);
-        final String fpName = new Regex(parameter, "tags=(.+)").getMatch(0);
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contenturl = param.getCryptedUrl();
+        br.getPage(contenturl);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String full_host = new Regex(contenturl, "https?://([^/]+)/").getMatch(0);
+        final String fpName = new Regex(contenturl, "tags=(.+)").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        final String url_part = parameter;
+        fp.setName(Encoding.htmlDecode(fpName).trim());
+        final String url_part = contenturl;
         int page_counter = 1;
         int offset = 0;
         final int max_entries_per_page = 20;
@@ -54,7 +80,7 @@ public class BooruOrgCrawler extends PluginForDecrypt {
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
-                return decryptedLinks;
+                return ret;
             }
             if (page_counter > 1) {
                 this.br.getPage(url_part + "&pid=" + offset);
@@ -65,7 +91,7 @@ public class BooruOrgCrawler extends PluginForDecrypt {
             logger.info("Decrypting: " + this.br.getURL());
             final String[] linkids = br.getRegex("id=\"p(\\d+)\"").getColumn(0);
             if (linkids == null || linkids.length == 0) {
-                logger.warning("Decrypter might be broken for link: " + parameter);
+                logger.warning("Decrypter might be broken for link: " + contenturl);
                 break;
             }
             entries_per_page_current = linkids.length;
@@ -76,13 +102,13 @@ public class BooruOrgCrawler extends PluginForDecrypt {
                 dl.setAvailable(true);
                 dl.setName(linkid + ".jpeg");
                 dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
+                ret.add(dl);
                 distribute(dl);
                 offset++;
             }
             page_counter++;
         } while (entries_per_page_current >= max_entries_per_page);
-        return decryptedLinks;
+        return ret;
     }
 
     @Override
