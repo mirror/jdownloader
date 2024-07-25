@@ -279,7 +279,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             entry.put("id", availableStatus.name());
             advancedStatus.put("AvailableStatus", entry);
         }
-        if ("LinkCrawlerRetry".equals(link.getHost())) {
+        if ("linkcrawlerretry".equals(link.getHost())) {
             final DownloadLink dl = link.getDownloadLink();
             final String reason = dl != null ? dl.getStringProperty("reason", null) : null;
             final Map<String, Object> entry = new HashMap<String, Object>();

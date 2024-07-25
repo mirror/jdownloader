@@ -241,8 +241,8 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         }
     }
 
-    private volatile Object link = null;
-    private volatile String name = null;
+    protected volatile Object link = null;
+    private volatile String   name = null;
 
     public LinkCrawlerRule getMatchingRule() {
         final CrawlingCrawledLink crawling = CrawlingCrawledLink.get(this, false);
@@ -264,6 +264,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     private volatile UniqueAlltimeID previousParent = null;
     private volatile String[]        sourceUrls;
     private volatile LinkInfo        linkInfo       = null;
+
+    protected CrawledLink() {
+    }
 
     public CrawledLink(DownloadLink dlLink) {
         setDownloadLink(dlLink);
@@ -397,11 +400,37 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
                 return ((DownloadLink) llink).getPluginPatternMatcher();
             } else if (llink instanceof CryptedLink) {
                 return ((CryptedLink) llink).getCryptedUrl();
-            } else {
+            } else if (llink instanceof CharSequence) {
                 return llink.toString();
+            } else {
+                return null;
             }
         } else {
             return null;
+        }
+    }
+
+    protected void linkToString(final StringBuilder sb, final Object link) {
+        if (link != null) {
+            if (link instanceof DownloadLink) {
+                final DownloadLink downloadLink = (DownloadLink) link;
+                final PluginForHost plugin = downloadLink.getDefaultPlugin();
+                if (plugin != null) {
+                    sb.append("DLink(" + plugin.getLazyP().getDisplayName() + "):" + downloadLink.getPluginPatternMatcher());
+                } else {
+                    sb.append("DLink:" + downloadLink.getPluginPatternMatcher());
+                }
+            } else if (link instanceof CryptedLink) {
+                final CryptedLink cryptedLink = (CryptedLink) link;
+                final LazyCrawlerPlugin plugin = cryptedLink.getLazyC();
+                if (plugin != null) {
+                    sb.append("CLink(" + plugin.getDisplayName() + "):" + cryptedLink.getCryptedUrl());
+                } else {
+                    sb.append("CLink:" + cryptedLink.getCryptedUrl());
+                }
+            } else if (link instanceof CharSequence) {
+                sb.append("URL:" + link.toString());
+            }
         }
     }
 
@@ -413,28 +442,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
             sb.append("NAME:");
             sb.append(getName());
         }
-        final Object llink = link;
-        if (llink != null) {
-            if (llink instanceof DownloadLink) {
-                final DownloadLink downloadLink = (DownloadLink) llink;
-                final PluginForHost plugin = downloadLink.getDefaultPlugin();
-                if (plugin != null) {
-                    sb.append("DLink(" + plugin.getLazyP().getDisplayName() + "):" + downloadLink.getPluginPatternMatcher());
-                } else {
-                    sb.append("DLink:" + downloadLink.getPluginPatternMatcher());
-                }
-            } else if (llink instanceof CryptedLink) {
-                final CryptedLink cryptedLink = (CryptedLink) llink;
-                final LazyCrawlerPlugin plugin = cryptedLink.getLazyC();
-                if (plugin != null) {
-                    sb.append("CLink(" + plugin.getDisplayName() + "):" + cryptedLink.getCryptedUrl());
-                } else {
-                    sb.append("CLink:" + cryptedLink.getCryptedUrl());
-                }
-            } else {
-                sb.append("URL:" + llink.toString());
-            }
-        }
+        linkToString(sb, link);
         if (parentL != null) {
             sb.append("<--");
             sb.append(parentL.toString());

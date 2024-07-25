@@ -417,7 +417,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                         dls.setStatus(label);
                     }
                 }
-                break;
+                    break;
                 case SUCCESSFUL: {
                     entry.put("iconKey", IconKey.ICON_EXTRACT_OK);
                     final String label = extractionStatus.getExplanation();
@@ -427,7 +427,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                         dls.setStatus(label);
                     }
                 }
-                break;
+                    break;
                 case RUNNING: {
                     entry.put("iconKey", IconKey.ICON_EXTRACT);
                     final String label = extractionStatus.getExplanation();
@@ -437,7 +437,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                         dls.setStatus(label);
                     }
                 }
-                break;
+                    break;
                 default:
                     break;
                 }
@@ -484,7 +484,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             entry.put("id", availableStatus.name());
             advancedStatus.put("AvailableStatus", entry);
         }
-        if ("LinkCrawlerRetry".equals(link.getHost())) {
+        if ("linkcrawlerretry".equals(link.getHost())) {
             final String reason = link.getStringProperty("reason", null);
             final Map<String, Object> entry = new HashMap<String, Object>();
             try {

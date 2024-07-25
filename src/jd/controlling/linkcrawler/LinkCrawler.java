@@ -33,40 +33,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Files;
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.logging2.ClearableLogInterface;
-import org.appwork.utils.logging2.ClosableLogInterface;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.controlling.UrlProtection;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
-import org.jdownloader.plugins.components.abstractGenericHTTPDirectoryIndexCrawler;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
-import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
-import org.jdownloader.plugins.controller.container.ContainerPluginController;
-import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.settings.GeneralSettings;
-
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
@@ -88,6 +54,41 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Files;
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.logging2.ClearableLogInterface;
+import org.appwork.utils.logging2.ClosableLogInterface;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.controlling.UrlProtection;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
+import org.jdownloader.plugins.components.abstractGenericHTTPDirectoryIndexCrawler;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.plugins.controller.container.ContainerPluginController;
+import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.settings.GeneralSettings;
 
 public class LinkCrawler {
     private static enum DISTRIBUTE {
@@ -1211,6 +1212,9 @@ public class LinkCrawler {
     }
 
     protected boolean isCrawledLinkDuplicated(final Map<String, Object> map, CrawledLink link) {
+        if (link instanceof BrowserCrawledLink) {
+            return false;
+        }
         final String url = link.getURL();
         final String urlDecodedURL = Encoding.urlDecode(url, false);
         final String value;
@@ -1307,6 +1311,70 @@ public class LinkCrawler {
         public CrawledLinkModifier getSourceCrawledLinkModifier();
     }
 
+    protected class BrowserCrawledLink extends CrawledLink {
+
+        private final Browser       br;
+        private final Request       next;
+        private final Request       last;
+        private final List<Request> previousRequests = new ArrayList<Request>();
+
+        protected List<Request> getPreviousRequests() {
+            return previousRequests;
+        }
+
+        protected BrowserCrawledLink(Browser br, final List<Request> previousRequests) {
+            this(br, previousRequests, null);
+        }
+
+        protected BrowserCrawledLink(Browser br, final List<Request> previousRequests, final Request nextRequest) {
+            this.br = br;
+            last = br.getRequest();
+            next = nextRequest;
+            if (previousRequests != null) {
+                this.previousRequests.addAll(previousRequests);
+            }
+        }
+
+        @Override
+        public boolean isCrawlDeep() {
+            return true;
+        }
+
+        protected Browser getBrowser() {
+            return br;
+        }
+
+        @Override
+        protected void linkToString(final StringBuilder sb, final Object link) {
+            if (link == null) {
+                if (next != null) {
+                    sb.append("NextRequest:" + next.getUrl());
+                } else if (last != null) {
+                    sb.append("|Request:" + last.getUrl());
+                }
+
+            }
+        }
+
+        protected Request getLastRequest() {
+            return last;
+        }
+
+        protected Request getNextRequest() {
+            return next;
+        }
+
+        @Override
+        public String getURL() {
+            if (next != null) {
+                return next.getUrl();
+            } else {
+                return last.getUrl();
+            }
+        }
+
+    }
+
     protected void crawlDeeperOrMatchingRuleV2(final LinkCrawlerGeneration generation, final CrawledLink source) {
         final CrawledLinkModifier sourceLinkModifier;
         if (source.getCustomCrawledLinkModifier() instanceof DeeperOrMatchingRuleModifier) {
@@ -1399,25 +1467,28 @@ public class LinkCrawler {
                     crawl(generation, fileContentLinks);
                 } else {
                     /* Crawl URL */
-                    br = new Browser();
+                    final Request nextRequest;
+                    if (source instanceof BrowserCrawledLink) {
+                        final BrowserCrawledLink brc = (BrowserCrawledLink) source;
+                        br = brc.getBrowser().cloneBrowser();
+                        nextRequest = brc.getNextRequest();
+                    } else {
+                        br = new Browser();
+                        nextRequest = br.createGetRequest(source.getURL());
+                    }
                     br.setLogger(logger);
                     if (matchingRule != null && matchingRule.isLogging()) {
                         /* Enable logging if allowed by MatchingRule. */
                         br.setVerbose(true);
                         br.setDebug(true);
                     }
-                    br.setFollowRedirects(false);
-                    final List<CrawledLink> connectionResults = this.openCrawlDeeperConnectionV2(generation, logger, matchingRule, br, source, br.createGetRequest(source.getURL()));
-                    if (connectionResults == null) {
-                        // Duplicate or filtered
-                        // TODO: Improve this
-                        return;
-                    } else if (connectionResults.size() > 0) {
-                        final boolean isSingleResult = connectionResults.size() == 1;
-                        for (final CrawledLink crawledlink : connectionResults) {
+                    final List<CrawledLink> openConnectionResults = this.openCrawlDeeperConnectionV2(source, br, nextRequest);
+                    if (openConnectionResults != null && openConnectionResults.size() > 0) {
+                        final boolean isSingleResult = openConnectionResults.size() == 1;
+                        for (final CrawledLink crawledlink : openConnectionResults) {
                             forwardCrawledLinkInfos(source, crawledlink, lm, getAndClearSourceURLs(source), isSingleResult);
                         }
-                        crawl(generation, connectionResults);
+                        crawl(generation, openConnectionResults);
                         return;
                     }
                     final CrawledLink deeperSource;
@@ -1481,7 +1552,8 @@ public class LinkCrawler {
                         logger.info("SUBMITFORM: Submitting form from index [" + index + "]");
                         // TODO: Remove the duplicated code down below, just go through crawler again(?)
                         final Browser clone = br.cloneBrowser();
-                        final List<CrawledLink> formLinks = this.openCrawlDeeperConnectionV2(generation, logger, matchingRule, clone, source, clone.createFormRequest(targetform));
+                        final List<CrawledLink> formLinks = null;// this.openCrawlDeeperConnectionV2(generation, logger, matchingRule,
+                        // clone, source, clone.createFormRequest(targetform));
                         if (formLinks == null) {
                             // TODO:
                             return;
@@ -1659,99 +1731,51 @@ public class LinkCrawler {
     }
 
     /** Opens connection */
-    protected final List<CrawledLink> openCrawlDeeperConnectionV2(final LinkCrawlerGeneration generation, final LogInterface logger, final LinkCrawlerRule matchingRule, final Browser br, final CrawledLink source, final Request req) throws Exception {
-        final CrawledLink sourceLink = source != null ? source.getSourceLink() : null;
-        // TODO: Remove check for 'http' prefix?
-        if (sourceLink != null && StringUtils.startsWithCaseInsensitive(sourceLink.getURL(), "http")) {
-            /* Set referer */
-            br.setCurrentURL(sourceLink.getURL());
+    protected final List<CrawledLink> openCrawlDeeperConnectionV2(final CrawledLink source, final Browser br, final Request req) throws Exception {
+        if (req == null) {
+            return null;
+        } else if (req.isRequested()) {
+            return null;
         }
         br.setFollowRedirects(false);
-        final LinkCrawlerDeepInspector lDeepInspector = this.getDeepInspector();
-        URLConnectionAdapter con = null;
-        Request thisReq = req;
-        final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
-        try {
-            final HashSet<String> duplicates = new HashSet<String>();
-            int redirects = 0;
-            String redirect = null;
-            do {
-                // TODO: Add authentication handling see jd.plugins.decrypter.LinkCrawlerDeepHelper
-                con = br.openRequestConnection(thisReq);
-                final CrawledLink thisSource = crawledLinkFactorybyURL(con.getURL().toExternalForm());
-                if (lDeepInspector.looksLikeDownloadableContent(con)) {
-                    /* Direct downloadable file */
-                    // TODO: Add check for text content when we have a DEEPDECRYPT rule
-                    final CrawledLink directLink = createDirectHTTPCrawledLink(thisSource, br.getRequest(), con);
-                    ret.add(directLink);
-                    break;
-                } else if (!duplicates.add(con.getURL().toExternalForm())) {
-                    /* Redirect to the same link -> Stop */
-                    break;
-                }
-                redirect = br.getHttpConnection().getRequest().getLocation();
-                if (redirect == null) {
-                    /* No redirect -> End loop */
-                    br.followConnection();
-                    break;
-                } else if (!generation.isValid()) {
-                    /* Link crawling was stopped */
-                    return ret;
-                }
-                /* Redirect -> Check for stop condition based on URL, otherwise continue */
-                final CrawledLink thisSourceRedirect = crawledLinkFactorybyURL(redirect);
-                if (isCrawledLinkDuplicated(duplicateFinderDeep, thisSourceRedirect)) {
-                    onCrawledLinkDuplicate(thisSourceRedirect, DUPLICATE.DEEP);
-                    // TODO: Do not return null here
-                    return null;
-                } else if (this.isCrawledLinkFiltered(thisSourceRedirect)) {
-                    // TODO: Do not return null here
-                    return null;
-                }
-                /* TODO: Move this somewhere else and make a 1-liner out of it */
-                LazyHostPlugin hosterPluginWhichCanHandleThisURL = null;
-                LazyCrawlerPlugin crawlerPluginWhichCanHandleThisURL = null;
-                final List<LazyCrawlerPlugin> lazyCrawlerPlugins = getSortedLazyCrawlerPlugins();
-                for (final LazyCrawlerPlugin plg : lazyCrawlerPlugins) {
-                    if (plg.canHandle(redirect)) {
-                        crawlerPluginWhichCanHandleThisURL = plg;
-                        break;
-                    }
-                }
-                if (crawlerPluginWhichCanHandleThisURL == null) {
-                    final List<LazyHostPlugin> lazyHostPlugins = getSortedLazyHostPlugins();
-                    for (final LazyHostPlugin plg : lazyHostPlugins) {
-                        if (plg.canHandle(redirect)) {
-                            hosterPluginWhichCanHandleThisURL = plg;
-                            break;
-                        }
-                    }
-                }
-                if (hosterPluginWhichCanHandleThisURL != null || crawlerPluginWhichCanHandleThisURL != null) {
-                    /* URL can be handled by a Plugin -> Return it */
-                    ret.add(thisSourceRedirect);
-                    return ret;
-                }
-                // TODO: Add check for LinkCrawler rule which can handle redirect-url
-                /* Continue to next URL */
-                thisReq = br.createGetRequest(redirect);
-                redirects++;
-                continue;
-            } while (redirects <= 10);
-            if (redirect != null) {
-                throw new Exception("RedirectLoop");
+        final List<Request> previousRequests = new ArrayList<Request>();
+        if (!(source instanceof BrowserCrawledLink)) {
+            final CrawledLink sourceLink = source != null ? source.getSourceLink() : null;
+            // TODO: Remove check for 'http' prefix?
+            if (sourceLink != null && StringUtils.startsWithCaseInsensitive(sourceLink.getURL(), "http")) {
+                /* Set referer */
+                br.setCurrentURL(sourceLink.getURL());
             }
-        } finally {
-            try {
-                br.disconnect();
-            } catch (final Throwable e) {
-            }
+        } else if (source instanceof BrowserCrawledLink) {
+            previousRequests.addAll(((BrowserCrawledLink) source).getPreviousRequests());
         }
-        return ret;
+        previousRequests.add(req);
+        // TODO: Add authentication handling see jd.plugins.decrypter.LinkCrawlerDeepHelper
+        final URLConnectionAdapter con = br.openRequestConnection(req);
+        try {
+            final BrowserCrawledLink next;
+            if (req.getLocation() != null) {
+                br.followConnection(true);
+                final Request nextRequest = br.createRedirectFollowingRequest(br.getRequest());
+                next = new BrowserCrawledLink(br, previousRequests, nextRequest);
+            } else {
+                if (RequestMethod.HEAD.equals(con.getRequestMethod()) || !getDeepInspector().looksLikeDownloadableContent(con)) {
+                    br.followConnection(true);
+                } else {
+                    con.disconnect();
+                }
+                next = new BrowserCrawledLink(br, previousRequests);
+            }
+            final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
+            ret.add(next);
+            return ret;
+        } finally {
+            con.disconnect();
+        }
     }
 
     protected void crawlDeeperOrMatchingRule(final LinkCrawlerGeneration generation, final CrawledLink source) {
-        final boolean tryExperimental = false;
+        final boolean tryExperimental = true;
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && tryExperimental) {
             crawlDeeperOrMatchingRuleV2(generation, source);
             return;
