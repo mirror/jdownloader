@@ -130,7 +130,7 @@ public class Rule34Xxx extends PluginForDecrypt {
             apiquery.add("page", "dapi");
             apiquery.add("s", "post");
             apiquery.add("q", "index");
-            apiquery.add("tags", Encoding.urlEncode(tags));
+            apiquery.add("tags", tags);
             apiquery.add("json", "1");
             apiquery.add("limit", Integer.toString(maxItemsPerPage));
             do {
@@ -140,7 +140,11 @@ public class Rule34Xxx extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (br.getRequest().getHtmlCode().length() <= 10) {
                     /* No json response */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    if (ret.size() > 0) {
+                        logger.info("Stopping because: Got blank page -> Reached end?");
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                 }
                 final List<Map<String, Object>> results = (List<Map<String, Object>>) restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
                 if (results == null || results.size() == 0) {
