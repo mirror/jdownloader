@@ -959,7 +959,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             if (isAccountRequiredForDownload) {
                 file.setProperty(ArchiveOrg.PROPERTY_IS_ACCOUNT_REQUIRED, true);
             }
-            if (audioTrackPositionO != null) {
+            // final Object duration = filemap.get("duration");
+            if (audioTrackPositionO != null || StringUtils.equalsIgnoreCase(format, "vbr mp3")) {
                 /* Track position given -> Item must be part of a playlist. */
                 final DownloadLink audioPlaylistItem = this.createDownloadlink(url);
                 final int[] audioTrackPosition = parseAudioTrackPosition(audioTrackPositionO);
@@ -994,13 +995,15 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 audioPlaylistItem.setProperties(file.getProperties());
                 /* Add item to list of playlist results. */
                 audioPlaylistItems.add(audioPlaylistItem);
-                // file.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION_OLD, audioTrackPositionCounterInternal);
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    audioPlaylistItem.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION_OLD, audioTrackPositionCounterInternal);
+                }
                 audioTrackPositionCounterInternal++;
             }
             file.setAvailable(true);
             /* Set filename */
-            ArchiveOrg.setFinalFilename(file, filename);
             file.setRelativeDownloadFolderPath(pathToCurrentFolder);
+            ArchiveOrg.setFinalFilename(file, filename);
             FilePackage fp = packagemap.get(pathToCurrentFolder);
             if (fp == null) {
                 fp = FilePackage.getInstance();
@@ -1236,7 +1239,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             final int playlistSize = audioPlaylistItems.size();
             /* Add some additional properties for special playlist items. */
             for (final DownloadLink audioPlaylistItem : audioPlaylistItems) {
-                if (!audioPlaylistItem.hasProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE)) {
+                if (!audioPlaylistItem.hasProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE) || DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                     /* Playlist size can only be determined after first loop -> Set that property here. */
                     audioPlaylistItem.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE, playlistSize);
                 }
