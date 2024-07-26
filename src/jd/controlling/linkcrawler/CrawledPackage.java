@@ -210,7 +210,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     public void setName(String name) {
         if (!StringUtils.equals(name, this.name)) {
             if (name != null) {
-                name = LinknameCleaner.cleanPackagename(name, false);
+                name = LinknameCleaner.cleanPackagename(name, true);
                 if (StringUtils.equals(name, this.name)) {
                     return;
                 }

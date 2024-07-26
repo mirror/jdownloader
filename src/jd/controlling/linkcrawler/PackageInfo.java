@@ -64,7 +64,7 @@ public class PackageInfo {
     }
 
     public void setName(String name) {
-        name = LinknameCleaner.cleanPackagename(name, false);
+        name = LinknameCleaner.cleanPackagename(name, true);
         if (StringUtils.isEmpty(name)) {
             this.name = null;
         } else {
