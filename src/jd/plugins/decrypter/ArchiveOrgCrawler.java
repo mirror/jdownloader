@@ -960,7 +960,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 file.setProperty(ArchiveOrg.PROPERTY_IS_ACCOUNT_REQUIRED, true);
             }
             // final Object duration = filemap.get("duration");
-            if (audioTrackPositionO != null || StringUtils.equalsIgnoreCase(format, "vbr mp3")) {
+            if (audioTrackPositionO != null) {
                 /* Track position given -> Item must be part of a playlist. */
                 final DownloadLink audioPlaylistItem = this.createDownloadlink(url);
                 final int[] audioTrackPosition = parseAudioTrackPosition(audioTrackPositionO);
