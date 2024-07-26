@@ -122,7 +122,9 @@ public class Rule34Xxx extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(tags);
+            fp.setName(Encoding.htmlDecode(tags).trim());
+            /* Do not e.g. remove underscores */
+            fp.setCleanupPackageName(false);
             final HashSet<String> dupes = new HashSet<String>();
             int page = 0;
             final int maxItemsPerPage = 100;
@@ -133,7 +135,7 @@ public class Rule34Xxx extends PluginForDecrypt {
             apiquery.add("tags", tags);
             apiquery.add("json", "1");
             apiquery.add("limit", Integer.toString(maxItemsPerPage));
-            do {
+            pagination: do {
                 apiquery.addAndReplace("pid", Integer.toString(page));
                 br.getPage(api_base + "?" + apiquery.toString());
                 if (br.getHttpConnection().getResponseCode() == 404) {
@@ -142,6 +144,7 @@ public class Rule34Xxx extends PluginForDecrypt {
                     /* No json response */
                     if (ret.size() > 0) {
                         logger.info("Stopping because: Got blank page -> Reached end?");
+                        break pagination;
                     } else {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
@@ -165,14 +168,18 @@ public class Rule34Xxx extends PluginForDecrypt {
                 logger.info("Crawled page " + page + " | Found items so far: " + ret.size());
                 if (this.isAbort()) {
                     logger.info("Stopping because: Aborted by user");
-                    break;
+                    break pagination;
                 } else if (numberofNewItems == 0) {
                     logger.info("Stopping because: Failed to find any new items on current page");
-                    break;
+                    break pagination;
+                } else if (numberofNewItems < maxItemsPerPage) {
+                    logger.info("Stopping because: Current page contains less than " + maxItemsPerPage + " items -> Reached end?");
+                    break pagination;
                 } else {
+                    /* Continue to next page */
                     sleep(1000, param);
                     page++;
-                    continue;
+                    continue pagination;
                 }
             } while (true);
         }
