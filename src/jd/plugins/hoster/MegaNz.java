@@ -1033,8 +1033,9 @@ public class MegaNz extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        if (link.getPluginPatternMatcher() != null) {
-            final String pluginPatternMatcherDecoded = getDecodedPluginPatternMatcher(link.getPluginPatternMatcher());
+        final String pluginPatternMatcher = link.getPluginPatternMatcher();
+        if (pluginPatternMatcher != null) {
+            final String pluginPatternMatcherDecoded = getDecodedPluginPatternMatcher(pluginPatternMatcher);
             final String fileID = getFileID(pluginPatternMatcherDecoded);
             if (fileID != null) {
                 return getHost() + "://N/" + fileID;
