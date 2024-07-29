@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -73,7 +74,7 @@ import jd.plugins.hoster.ARDMediathek;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "eurovision.de", "sputnik.de", "mdr.de", "ndr.de", "tagesschau.de" }, urls = { "https?://(?:\\w+\\.)?ardmediathek\\.de/.+", "https?://(?:\\w+\\.)?daserste\\.de/.*?\\.html", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:\\w+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:\\w+\\.)?sportschau\\.de/.*?\\.html", "https?://(?:\\w+\\.)?wdrmaus\\.de/.+", "https?://(?:\\w+\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:\\w+\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:\\w+\\.)?ndr\\.de/[^<>\"]+\\.html", "https?://(?:\\w+\\.)?tagesschau\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
     /* Constants */
-    private static final String  type_embedded                          = "https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js";
+    private static final String  type_embedded                          = "(?i)https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js";
     /* Variables */
     private final List<String>   all_known_qualities                    = new ArrayList<String>();
     private final List<String>   selectedQualities                      = new ArrayList<String>();
@@ -443,18 +444,54 @@ public class Ardmediathek extends PluginForDecrypt {
         int maxHeightProgressive = -1;
         final Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.walkJson(mediaCollection, "widgets/{0}/mediaCollection/embedded");
         final List<Map<String, Object>> mediaArray = (List<Map<String, Object>>) map.get("streams");
+        final HashSet<String> availableAudioLanguageCodes = new HashSet<String>();
         for (Map<String, Object> media : mediaArray) {
             final List<Map<String, Object>> mediaStreams = (List<Map<String, Object>>) media.get("media");
             /* Look-ahead */
             boolean hasAudiodescription = false;
             boolean hasNormalVersion = false;
             for (final Map<String, Object> mediaStream : mediaStreams) {
-                final String audioKind = (String) JavaScriptEngineFactory.walkJson(mediaStream, "audios/{0}/kind");
-                if (StringUtils.equalsIgnoreCase("audio-description", audioKind)) {
-                    hasAudiodescription = true;
+                final List<Map<String, Object>> audios = (List<Map<String, Object>>) mediaStream.get("audios");
+                for (final Map<String, Object> audio : audios) {
+                    final String audioKind = audio.get("kind").toString();
+                    if (StringUtils.equalsIgnoreCase("audio-description", audioKind)) {
+                        hasAudiodescription = true;
+                        break;
+                    } else {
+                        hasNormalVersion = true;
+                    }
+                    availableAudioLanguageCodes.add(audio.get("languageCode").toString());
+                }
+            }
+            String targetAudioLanguageCode = null;
+            // TODO: Add setting
+            String languagePrioString = "de,ov";
+            if (languagePrioString == null) {
+                languagePrioString = "de";
+            }
+            final String[] audioPrioList = languagePrioString.toLowerCase(Locale.ENGLISH).split(",");
+            for (String audioPrioString : audioPrioList) {
+                if (audioPrioString.equals("de")) {
+                    audioPrioString = "deu";
+                } else if (audioPrioString.equals("original")) {
+                    audioPrioString = "ov";
+                }
+                if (availableAudioLanguageCodes.contains(audioPrioString)) {
+                    targetAudioLanguageCode = audioPrioString;
                     break;
+                }
+            }
+            if (targetAudioLanguageCode == null) {
+                /* Fallback to german */
+                if (availableAudioLanguageCodes.contains("deu")) {
+                    /* Fallback to german */
+                    targetAudioLanguageCode = "deu";
+                } else if (availableAudioLanguageCodes.contains("ov")) {
+                    /* Fallback to original language version */
+                    targetAudioLanguageCode = "ov";
                 } else {
-                    hasNormalVersion = true;
+                    /* Fallback to first/random languageCode */
+                    targetAudioLanguageCode = availableAudioLanguageCodes.iterator().next();
                 }
             }
             if (hasAudiodescription && !hasNormalVersion) {
@@ -464,16 +501,26 @@ public class Ardmediathek extends PluginForDecrypt {
                 // list is sorted from best to lowest quality, first one is m3u8
                 final String url = mediaStream.get("url").toString();
                 final String mimeType = mediaStream.get("mimeType").toString();
-                final String audioKind = (String) JavaScriptEngineFactory.walkJson(mediaStream, "audios/{0}/kind");
                 final Number widthO = (Number) mediaStream.get("maxHResolutionPx");
                 final Number heightO = (Number) mediaStream.get("maxVResolutionPx");
+                final List<Map<String, Object>> audios = (List<Map<String, Object>>) mediaStream.get("audios");
+                if (audios.size() != 1) {
+                    logger.info("Skipping item with 'audios' lenth != 1: " + url);
+                    continue;
+                }
+                final Map<String, Object> audio = audios.get(0);
+                final String audioKind = audio.get("kind").toString();
+                final String audioLanguageCode = audio.get("languageCode").toString();
                 final boolean isAudiodescription;
                 if (StringUtils.equalsIgnoreCase("audio-description", audioKind)) {
                     isAudiodescription = true;
                 } else {
                     isAudiodescription = false;
                 }
-                if (isAudiodescription && hasNormalVersion && !this.cfg.isPreferAudioDescription()) {
+                if (!StringUtils.equalsIgnoreCase(audioLanguageCode, targetAudioLanguageCode)) {
+                    logger.info("Skipping unwanted audio version: " + audioLanguageCode + " | " + url);
+                    continue;
+                } else if (isAudiodescription && hasNormalVersion && !this.cfg.isPreferAudioDescription()) {
                     logger.info("Skipping audio-description stream: " + url);
                     continue;
                 } else if (hasAudiodescription && hasNormalVersion && this.cfg.isPreferAudioDescription() && !isAudiodescription) {

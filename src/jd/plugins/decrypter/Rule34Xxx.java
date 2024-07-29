@@ -275,6 +275,7 @@ public class Rule34Xxx extends PluginForDecrypt {
             FilePackage fp = null;
             if (fpName != null) {
                 fp = FilePackage.getInstance();
+                fp.setCleanupPackageName(Boolean.FALSE);
                 fpName = URLEncode.decodeURIComponent(fpName).trim();
                 fp.setName(fpName);
             }
