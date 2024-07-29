@@ -340,7 +340,7 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isAutoOpenContainerAfterDownload();
 
     @AboutConfig
-    @DescriptionForConfigEntry("If enabled, packagenames will be cleaned up of superfluous . and _ characters, and replaced with spaces. Plugins can override this setting.")
+    @DescriptionForConfigEntry("If enabled, packagenames will be cleaned up of superfluous . and _ characters, and replaced with spaces. Plugins can override this setting. The setting 'FilenameReplaceMap' will still be active if you disable this setting!")
     @RequiresRestart("A JDownloader Restart is Required")
     @DefaultBooleanValue(true)
     boolean isCleanUpPackagenames();
