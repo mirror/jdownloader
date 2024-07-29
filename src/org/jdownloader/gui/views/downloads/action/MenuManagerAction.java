@@ -8,7 +8,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
 
 public class MenuManagerAction extends CustomizableTableContextAppAction {
-
     public MenuManagerAction() {
         super(true, true);
         setName(_GUI.T.MenuManagerAction_MenuManagerAction());
@@ -18,7 +17,5 @@ public class MenuManagerAction extends CustomizableTableContextAppAction {
     @Override
     public void actionPerformed(ActionEvent e) {
         MenuManagerDownloadTableContext.getInstance().openGui();
-
     }
-
 }

@@ -31,7 +31,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class AddSpecialAction extends AppAction {
-
     private ContextMenuManager manager;
     private MenuManagerDialog  managerFrame;
 
@@ -50,60 +49,42 @@ public class AddSpecialAction extends AppAction {
             }
             if (value instanceof ActionData) {
                 AppAction mi;
-
                 mi = new MenuItemData(((ActionData) value)).createValidatedItem().createAction();
-
                 String name = mi.getName();
-
                 if (StringUtils.isEmpty(name)) {
                     name = mi.getClass().getSimpleName() + "(" + mi.getTooltipText() + ")";
                 }
-
                 return name;
-
             } else if (value instanceof MenuLink) {
                 return _GUI.T.AddSubMenuAction_component(((MenuLink) value).getName());
-
             } else if (value instanceof SeparatorData) {
                 return _GUI.T.AddSpecialAction_actionPerformed_separator();
             } else if (value instanceof MenuContainer) {
-
                 return _GUI.T.AddSubMenuAction_getListCellRendererComponent_container(((MenuContainer) value).getName());
-
             }
-
         } catch (Exception e) {
             e.printStackTrace();
-
         }
         return value + "";
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-
         List<Object> actions = new ArrayList<Object>();
-
         List<Object> normalActions = managerFrame.getManager().list();
         actions.addAll(normalActions);
         TreePath addAt = managerFrame.getSelectionPath();
-
         Collections.sort(actions, new Comparator<Object>() {
-
             @Override
             public int compare(Object o1, Object o2) {
-
                 return getName(o1).compareTo(getName(o2));
             }
         });
-
         ComboBoxDialog d = new ComboBoxDialog(0, _GUI.T.AddSpecialAction_actionPerformed_title(), _GUI.T.AddSpecialAction_actionPerformed_msg(), actions.toArray(new Object[] {}), 0, null, _GUI.T.lit_add(), null, null) {
             @Override
             protected JComboBox getComboBox(Object[] options2) {
                 // return super.getComboBox(options2);
-
                 SearchComboBox<Object> ret = new SearchComboBox<Object>(options2) {
-
                     @Override
                     protected Icon getIconForValue(Object value) {
                         try {
@@ -112,19 +93,12 @@ public class AddSpecialAction extends AppAction {
                             }
                             if (value instanceof ActionData) {
                                 AppAction mi;
-
                                 mi = new MenuItemData(((ActionData) value)).createValidatedItem().createAction();
-
                                 return mi.getSmallIcon();
-
                             } else if (value instanceof MenuLink) {
-
                                 return (NewTheme.I().getIcon(((MenuLink) value).getIconKey(), 22));
-
                             } else if (value instanceof MenuContainer) {
-
                                 return (NewTheme.I().getIcon(((MenuContainer) value).getIconKey(), 22));
-
                             }
                         } catch (Exception e) {
                             LoggerFactory.getDefaultLogger().log(e);
@@ -136,16 +110,12 @@ public class AddSpecialAction extends AppAction {
                     protected String getTextForValue(Object value) {
                         try {
                             return AddSpecialAction.this.getName(value);
-
                         } catch (Exception e) {
                             LoggerFactory.getDefaultLogger().log(e);
                         }
                         return value + "";
-
                     }
-
                 };
-
                 return ret;
             }
 
@@ -170,7 +140,6 @@ public class AddSpecialAction extends AppAction {
                     managerFrame.addMenuItem((MenuItemData) actions.get(ret));
                 }
             }
-
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {

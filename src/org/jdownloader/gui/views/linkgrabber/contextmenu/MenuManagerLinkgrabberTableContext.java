@@ -2,9 +2,7 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
 import javax.swing.KeyStroke;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
@@ -39,7 +37,11 @@ import org.jdownloader.gui.views.downloads.context.submenu.PriorityMenuContainer
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
+import org.jdownloader.gui.views.linkgrabber.actions.MergeSameNamedPackagesAction;
 import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
+
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 
 public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<CrawledPackage, CrawledLink> {
     private static final MenuManagerLinkgrabberTableContext INSTANCE = new MenuManagerLinkgrabberTableContext();
@@ -80,7 +82,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
     }
 
     public MenuContainerRoot createDefaultStructure() {
-        MenuContainerRoot mr = new MenuContainerRoot();
+        final MenuContainerRoot mr = new MenuContainerRoot();
         mr.add(AddLinksContextMenuAction.class);
         mr.add(PasteContextLinksAction.class);
         mr.add(AddContainerContextMenuAction.class);
@@ -107,11 +109,14 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         mr.add(new ActionData(PropertiesAction.class));
         mr.add(new SeparatorData());
         mr.add(new MenuItemData(new ActionData(LGMenuManagerAction.class)));
-        OptionalContainer opt;
+        final OptionalContainer opt;
         mr.add(opt = new OptionalContainer(false));
         opt.add(CollapseExpandContextAction.class);
         opt.add(CopyGenericContextAction.class);
         opt.add(ConfirmHashValuesLinkgrabberAction.class);
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            opt.add(MergeSameNamedPackagesAction.class);
+        }
         return mr;
     }
 
