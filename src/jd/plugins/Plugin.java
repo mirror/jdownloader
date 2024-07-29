@@ -344,7 +344,7 @@ public abstract class Plugin implements ActionListener {
                 return (x < y) ? -1 : ((x == y) ? 0 : 1);
             }
 
-            private final int countReplacementCharacter(String string) {
+            private final int getWrongEncodingLevel(String string) {
                 int ret = 0;
                 final String value = string;
                 for (int index = 0; index < value.length(); index++) {
@@ -377,7 +377,7 @@ public abstract class Plugin implements ActionListener {
 
             @Override
             public final int compare(String o1[], String o2[]) {
-                return compare(countReplacementCharacter(o1[1]), countReplacementCharacter(o2[1]));
+                return compare(getWrongEncodingLevel(o1[1]), getWrongEncodingLevel(o2[1]));
             }
         });
         if (results.size() > 0) {
@@ -561,9 +561,12 @@ public abstract class Plugin implements ActionListener {
         }
         final CompiledFiletypeExtension filetypeOld = CompiledFiletypeFilter.getExtensionsFilterInterface(currentFileExtension);
         if (filetypeOld == null) {
-            logger.info("Unknown old filetype:" + currentFileExtension);
-            /* Unknown current/old filetype -> Do not touch given filename */
-            return filenameOrg;
+            if (allowFileNameExtension(filenameOrg, filetypeOld, filetypeNew)) {
+                return filenameOrg + newExtension;
+            } else {
+                logger.info("blocked new extension:" + newExtension + "|" + filetypeNew);
+                return filenameOrg;
+            }
         } else if (filetypeNew.isValidExtension(currentFileExtension)) {
             /* Filename already contains valid/alternative target-extension e.g. webm/mp4 or jpg/jpeg */
             return filenameOrg;
@@ -576,8 +579,14 @@ public abstract class Plugin implements ActionListener {
     }
 
     protected boolean allowFileNameExtension(String filenameOrg, CompiledFiletypeExtension filetypeOld, CompiledFiletypeExtension filetypeNew) {
-        if (filetypeOld == null) {
-            return filetypeNew != null && !CompiledFiletypeFilter.ExecutableExtensions.EXE.isSameExtensionGroup(filetypeNew);
+        if (filetypeOld == null && filetypeNew != null) {
+            if (!filenameOrg.contains(".")) {
+                // no extension at all
+                return !CompiledFiletypeFilter.ExecutableExtensions.EXE.isSameExtensionGroup(filetypeNew);
+            } else {
+                // unknown extension, only allow Audio/Video/Images
+                return allowFileNameExtension(filenameOrg, filetypeNew, filetypeNew);
+            }
         } else if (filetypeNew != null) {
             return (CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(filetypeOld) || CompiledFiletypeFilter.ImageExtensions.JPG.isSameExtensionGroup(filetypeOld) || CompiledFiletypeFilter.AudioExtensions.MP3.isSameExtensionGroup(filetypeOld)) && filetypeNew.isSameExtensionGroup(filetypeOld);
         } else {
