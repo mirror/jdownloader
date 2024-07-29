@@ -2,10 +2,12 @@ package org.jdownloader.settings.advanced;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -17,6 +19,7 @@ import org.appwork.utils.logging2.LogConfig;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ExtFileSystemViewSettings;
 import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
+import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 import org.jdownloader.gui.shortcuts.ShortcutSettings;
 import org.jdownloader.logging.LogController;
@@ -59,17 +62,14 @@ public class AdvancedConfigManager {
         return AdvancedConfigManager.INSTANCE;
     }
 
-    private final Set<AdvancedConfigEntry>             configInterfaces;
-    private final AdvancedConfigEventSender            eventSender;
-    private final LogSource                            logger;
-    private final WeakHashMap<ConfigInterface, Object> knownInterfaces = new WeakHashMap<ConfigInterface, Object>();
+    private final Set<AdvancedConfigEntry>             configInterfaces = new CopyOnWriteArraySet<AdvancedConfigEntry>();
+    private final AdvancedConfigEventSender            eventSender      = new AdvancedConfigEventSender();
+    private final LogSource                            logger           = LogController.getInstance().getLogger(AdvancedConfigManager.class.getName());
+    private final WeakHashMap<ConfigInterface, Object> knownInterfaces  = new WeakHashMap<ConfigInterface, Object>();
 
     private AdvancedConfigManager() {
-        logger = LogController.getInstance().getLogger(AdvancedConfigManager.class.getName());
-        configInterfaces = new CopyOnWriteArraySet<AdvancedConfigEntry>();
-        eventSender = new AdvancedConfigEventSender();
         // REFERENCE via static CFG_* classes if possible. this way, we get error messages if there are error in the static refs
-        this.register(CFG_GENERAL.CFG);
+        register(CFG_GENERAL.CFG);
         register(CFG_LINKFILTER.CFG);
         register(JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class));
         register(CFG_MYJD.CFG);
@@ -103,6 +103,7 @@ public class AdvancedConfigManager {
                 logger.log(e);
             }
         }
+        HosterRuleController.getInstance();// ensure HosterRuleController has been registered in AdvancedConfigManager
     }
 
     public AdvancedConfigEventSender getEventSender() {
@@ -116,7 +117,7 @@ public class AdvancedConfigManager {
             }
         }
         logger.info("Register " + cf._getStorageHandler().getConfigInterface());
-        for (KeyHandler m : cf._getStorageHandler().getKeyHandler()) {
+        for (final KeyHandler<?> m : cf._getStorageHandler().getKeyHandler()) {
             final AdvancedConfigEntry configEntry = toConfigEntry(m, cf);
             if (configEntry != null) {
                 configInterfaces.add(configEntry);
@@ -125,12 +126,13 @@ public class AdvancedConfigManager {
         eventSender.fireEvent(new AdvancedConfigEvent(this, AdvancedConfigEvent.Types.UPDATED, cf));
     }
 
-    private AdvancedConfigEntry toConfigEntry(KeyHandler m, ConfigInterface cf) {
+    private AdvancedConfigEntry toConfigEntry(final KeyHandler<?> m, ConfigInterface cf) {
         if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || !Application.isJared(null))) {
-            if (m.getSetMethod() == null) {
-                throw new RuntimeException("Setter for " + m.getKey() + " in " + cf + " missing");
-            } else if (m.getGetMethod() == null) {
-                throw new RuntimeException("Getter for " + m.getKey() + " in " + cf + " missing");
+            if (m.getGetMethod() == null) {
+                throw new RuntimeException("Getter for " + m.getKey() + " missing");
+            } else if (m.getSetMethod() == null && m.getAnnotation(StorableValidatorIgnoresMissingSetter.class) == null) {
+                // StorableValidatorIgnoresMissingSetter annotation -> allow get only entry
+                throw new RuntimeException("Setter for " + m.getKey() + " missing");
             } else {
                 return new AdvancedConfigEntry(cf, m);
             }
@@ -139,7 +141,7 @@ public class AdvancedConfigManager {
     }
 
     @SuppressWarnings("unchecked")
-    public java.util.List<AdvancedConfigEntry> listPluginsInterfaces() {
+    public List<AdvancedConfigEntry> listPluginsInterfaces() {
         final Set<String> configInterfaces = new HashSet<String>();
         final ArrayList<AdvancedConfigEntry> ret = new ArrayList<AdvancedConfigEntry>();
         final PluginClassLoaderChild pluginClassLoader = PluginClassLoader.getInstance().getChild();
@@ -148,7 +150,7 @@ public class AdvancedConfigManager {
             if (StringUtils.isNotEmpty(ifName) && configInterfaces.add(ifName)) {
                 try {
                     final PluginConfigInterface cf = PluginJsonConfig.get(hplg, (Class<PluginConfigInterface>) pluginClassLoader.loadClass(ifName));
-                    for (KeyHandler m : cf._getStorageHandler().getKeyHandler()) {
+                    for (KeyHandler<?> m : cf._getStorageHandler().getKeyHandler()) {
                         final AdvancedConfigEntry configEntry = toConfigEntry(m, cf);
                         if (configEntry != null) {
                             ret.add(configEntry);
@@ -164,7 +166,7 @@ public class AdvancedConfigManager {
             if (StringUtils.isNotEmpty(ifName) && configInterfaces.add(ifName)) {
                 try {
                     final PluginConfigInterface cf = PluginJsonConfig.get(cplg, (Class<PluginConfigInterface>) pluginClassLoader.loadClass(ifName));
-                    for (KeyHandler m : cf._getStorageHandler().getKeyHandler()) {
+                    for (final KeyHandler<?> m : cf._getStorageHandler().getKeyHandler()) {
                         final AdvancedConfigEntry configEntry = toConfigEntry(m, cf);
                         if (configEntry != null) {
                             ret.add(configEntry);
@@ -179,8 +181,8 @@ public class AdvancedConfigManager {
         return ret;
     }
 
-    public java.util.List<AdvancedConfigEntry> list() {
-        ArrayList<AdvancedConfigEntry> ret = new ArrayList<AdvancedConfigEntry>(configInterfaces);
+    public List<AdvancedConfigEntry> list() {
+        final List<AdvancedConfigEntry> ret = new ArrayList<AdvancedConfigEntry>(configInterfaces);
         ret.addAll(listPluginsInterfaces());
         return ret;
     }
