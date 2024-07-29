@@ -9,22 +9,31 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import jd.http.Authentication;
-import jd.http.AuthenticationFactory;
-import jd.http.Browser;
-import jd.http.DefaultAuthenticanFactory;
-import jd.http.Request;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.swing.dialog.LoginDialog;
+import org.appwork.utils.swing.dialog.LoginDialogInterface;
 import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.translate._JDT;
+
+import jd.http.Authentication;
+import jd.http.AuthenticationFactory;
+import jd.http.Browser;
+import jd.http.CallbackAuthenticationFactory;
+import jd.http.DefaultAuthenticanFactory;
+import jd.http.Request;
+import jd.http.URLUserInfoAuthentication;
 
 public class AuthenticationController {
     private static final AuthenticationController INSTANCE = new AuthenticationController();
@@ -142,6 +151,49 @@ public class AuthenticationController {
         } else {
             return null;
         }
+    }
+
+    public List<AuthenticationFactory> buildAuthenticationFactories(final URL url, final String realm) {
+        final List<AuthenticationFactory> authenticationFactories = new ArrayList<AuthenticationFactory>();
+        if (url.getUserInfo() != null) {
+            authenticationFactories.add(new URLUserInfoAuthentication());
+        }
+        authenticationFactories.addAll(getSortedAuthenticationFactories(url, realm));
+        authenticationFactories.add(new CallbackAuthenticationFactory() {
+            protected Authentication remember = null;
+
+            @Override
+            protected Authentication askAuthentication(Browser browser, Request request, final String realm) {
+                final LoginDialog loginDialog = new LoginDialog(UIOManager.LOGIC_COUNTDOWN, _JDT.T.Plugin_requestLogins_message(), _JDT.T.AuthExceptionGenericBan_toString(url.toExternalForm()), new AbstractIcon(IconKey.ICON_PASSWORD, 32));
+                loginDialog.setTimeout(60 * 1000);
+                final LoginDialogInterface handle = UIOManager.I().show(LoginDialogInterface.class, loginDialog);
+                if (handle.getCloseReason() == CloseReason.OK) {
+                    final Authentication ret = new DefaultAuthenticanFactory(request.getURL().getHost(), realm, handle.getUsername(), handle.getPassword()).buildAuthentication(browser, request);
+                    addAuthentication(ret);
+                    if (handle.isRememberSelected()) {
+                        remember = ret;
+                    }
+                    return ret;
+                } else {
+                    return null;
+                }
+            }
+
+            @Override
+            public boolean retry(Authentication authentication, Browser browser, Request request) {
+                if (containsAuthentication(authentication) && remember == authentication && request.getAuthentication() == authentication && !requiresAuthentication(request)) {
+                    final AuthenticationInfo auth = new AuthenticationInfo();
+                    auth.setRealm(authentication.getRealm());
+                    auth.setUsername(authentication.getUsername());
+                    auth.setPassword(authentication.getPassword());
+                    auth.setHostmask(authentication.getHost());
+                    auth.setType(Type.HTTP);
+                    AuthenticationController.getInstance().add(auth);
+                }
+                return super.retry(authentication, browser, request);
+            }
+        });
+        return authenticationFactories;
     }
 
     public List<AuthenticationFactory> getSortedAuthenticationFactories(final URL url, final String realm) {

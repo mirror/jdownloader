@@ -342,7 +342,7 @@ public interface GeneralSettings extends ConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("If enabled, packagenames will be cleaned up of superfluous . and _ characters, and replaced with spaces. Plugins can override this setting. The setting 'FilenameReplaceMap' will still be active if you disable this setting!")
     @RequiresRestart("A JDownloader Restart is Required")
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     boolean isCleanUpPackagenames();
 
     void setCleanUpPackagenames(boolean b);
@@ -402,6 +402,13 @@ public interface GeneralSettings extends ConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     boolean isHashCheckEnabled();
+
+    @AboutConfig
+    @SpinnerValidator(min = 1, max = SOFT_MAX_DOWNLOADS)
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DefaultIntValue(1)
+    @DescriptionForConfigEntry("Allow up to x concurrent Download HashChecks")
+    int getMaxConcurrentHashChecks();
 
     @AboutConfig
     @DescriptionForConfigEntry("Retry when SFV/SRC check fails?")
@@ -473,6 +480,8 @@ public interface GeneralSettings extends ConfigInterface {
     void setForcedFreeSpaceOnDisk(int mb);
 
     void setHashCheckEnabled(boolean b);
+
+    void setMaxConcurrentHashChecks(int i);
 
     void setHashRetryEnabled(boolean b);
 

@@ -3,9 +3,6 @@ package org.jdownloader.api.jd;
 import java.io.File;
 import java.util.Map;
 
-import jd.SecondLevelLaunch;
-import jd.utils.JDUtilities;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
@@ -13,6 +10,9 @@ import org.appwork.utils.IO;
 import org.appwork.utils.Time;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
+
+import jd.SecondLevelLaunch;
+import jd.utils.JDUtilities;
 
 @Deprecated
 public class JDAPIImpl implements JDAPI {
@@ -37,7 +37,7 @@ public class JDAPIImpl implements JDAPI {
             try {
                 final File buildJson = Application.getResource("build.json");
                 if (buildJson.isFile()) {
-                    final Map<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(buildJson), TypeRef.HASHMAP);
+                    final Map<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(buildJson), TypeRef.MAP);
                     return ((Number) map.get("JDownloaderRevision")).intValue();
                 }
             } catch (Throwable t) {

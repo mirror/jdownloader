@@ -3,14 +3,7 @@ package org.jdownloader.plugins.config;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedTable;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedValueColumn;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.EditColumn;
-import jd.plugins.Plugin;
-import jd.plugins.PluginConfigPanelNG;
-
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DevConfig;
@@ -18,6 +11,14 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
+
+import jd.controlling.ClipboardMonitoring;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedTable;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedValueColumn;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.EditColumn;
+import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
 
 public class BasicAdvancedConfigPluginPanel extends PluginConfigPanelNG {
     private final class BasicAdvancedConfigTable extends AdvancedTable {
@@ -282,10 +283,11 @@ public class BasicAdvancedConfigPluginPanel extends PluginConfigPanelNG {
         final ArrayList<AdvancedConfigEntry> configInterfaces = new ArrayList<AdvancedConfigEntry>();
         for (final KeyHandler m : cfg._getStorageHandler().getKeyHandler()) {
             if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null)) {
-                if (m.getSetMethod() == null) {
-                    throw new RuntimeException("Setter for " + m.getKey() + " missing");
-                } else if (m.getGetMethod() == null) {
+                if (m.getGetMethod() == null) {
                     throw new RuntimeException("Getter for " + m.getKey() + " missing");
+                } else if (m.getSetMethod() == null && m.getAnnotation(StorableValidatorIgnoresMissingSetter.class) == null) {
+                    // StorableValidatorIgnoresMissingSetter annotation -> allow get only entry
+                    throw new RuntimeException("Setter for " + m.getKey() + " missing");
                 } else {
                     synchronized (configInterfaces) {
                         configInterfaces.add(new AdvancedConfigEntry(cfg, m));

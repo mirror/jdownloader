@@ -20,6 +20,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.plugins.HashCheckPluginProgress;
+import org.jdownloader.settings.GeneralSettings;
+
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
 import jd.http.Request;
@@ -27,10 +31,6 @@ import jd.http.URLConnectionAdapter;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.raf.FileBytesMap.FileBytesMapView;
 import jd.plugins.download.raf.HTTPDownloader;
-
-import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.plugins.HashCheckPluginProgress;
-import org.jdownloader.settings.GeneralSettings;
 
 abstract public class DownloadInterface {
     @Deprecated
@@ -86,23 +86,25 @@ abstract public class DownloadInterface {
         return null;
     };
 
-    protected static final ArrayList<AtomicBoolean> HASHCHECK_QEUEU = new ArrayList<AtomicBoolean>();
+    protected static final ArrayList<AtomicBoolean> HASHCHECK_QEUEU            = new ArrayList<AtomicBoolean>();
+    protected static final int                      MAX_CONCURRENT_HASH_CHECKS = JsonConfig.create(GeneralSettings.class).getMaxConcurrentHashChecks();
 
     protected HashResult getHashResult(Downloadable downloadable, File file) throws InterruptedException {
-        if (JsonConfig.create(GeneralSettings.class).isHashCheckEnabled() && downloadable.isHashCheckEnabled()) {
-            AtomicBoolean hashCheckLock = new AtomicBoolean(false);
+        if (downloadable.isHashCheckEnabled() && JsonConfig.create(GeneralSettings.class).isHashCheckEnabled()) {
+            final int maxConcurrent = MAX_CONCURRENT_HASH_CHECKS;
+            AtomicBoolean waitLock = new AtomicBoolean(false);
             synchronized (HASHCHECK_QEUEU) {
-                HASHCHECK_QEUEU.add(hashCheckLock);
-                hashCheckLock.set(HASHCHECK_QEUEU.indexOf(hashCheckLock) != 0);
+                HASHCHECK_QEUEU.add(waitLock);
+                waitLock.set(HASHCHECK_QEUEU.indexOf(waitLock) > (maxConcurrent - 1));
             }
             try {
-                if (hashCheckLock.get()) {
-                    synchronized (hashCheckLock) {
-                        if (hashCheckLock.get()) {
+                if (waitLock.get()) {
+                    synchronized (waitLock) {
+                        if (waitLock.get()) {
                             final PluginProgress hashProgress = new HashCheckPluginProgress(null, Color.YELLOW.darker().darker(), null);
                             try {
                                 downloadable.addPluginProgress(hashProgress);
-                                hashCheckLock.wait();
+                                waitLock.wait();
                             } finally {
                                 downloadable.removePluginProgress(hashProgress);
                             }
@@ -120,18 +122,18 @@ abstract public class DownloadInterface {
                 return hashResult;
             } finally {
                 synchronized (HASHCHECK_QEUEU) {
-                    boolean callNext = HASHCHECK_QEUEU.indexOf(hashCheckLock) == 0;
-                    HASHCHECK_QEUEU.remove(hashCheckLock);
-                    if (HASHCHECK_QEUEU.size() > 0 && callNext) {
-                        hashCheckLock = HASHCHECK_QEUEU.get(0);
+                    final boolean callNext = HASHCHECK_QEUEU.indexOf(waitLock) < maxConcurrent;
+                    HASHCHECK_QEUEU.remove(waitLock);
+                    if (HASHCHECK_QEUEU.size() > maxConcurrent && callNext) {
+                        waitLock = HASHCHECK_QEUEU.get(maxConcurrent - 1);
                     } else {
-                        hashCheckLock = null;
+                        waitLock = null;
                     }
                 }
-                if (hashCheckLock != null) {
-                    synchronized (hashCheckLock) {
-                        hashCheckLock.set(false);
-                        hashCheckLock.notifyAll();
+                if (waitLock != null) {
+                    synchronized (waitLock) {
+                        waitLock.set(false);
+                        waitLock.notifyAll();
                     }
                 }
             }

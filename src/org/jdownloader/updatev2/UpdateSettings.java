@@ -1,13 +1,25 @@
 package org.jdownloader.updatev2;
 
+import java.io.File;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
+import org.appwork.storage.config.annotations.CustomValueGetter;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.Application;
+import org.appwork.utils.IO;
+import org.jdownloader.myjdownloader.client.json.JsonMap;
 
 public interface UpdateSettings extends ConfigInterface {
     @AboutConfig
@@ -121,4 +133,32 @@ public interface UpdateSettings extends ConfigInterface {
 
     void setSelftestWriteTimeout(int timeout);
 
+    public static class GetBuildCustomValueGetter extends AbstractCustomValueGetter<JsonMap> {
+        private static JsonMap build = null;
+
+        @Override
+        public JsonMap getValue(KeyHandler<JsonMap> keyHandler, JsonMap value) {
+            JsonMap ret = build;
+            if (ret == null) {
+                try {
+                    ret = new JsonMap();
+                    final File buildJson = Application.getResource("build.json");
+                    if (buildJson.isFile()) {
+                        final Map<String, Object> build = JSonStorage.restoreFromString(IO.readFileToString(buildJson), TypeRef.MAP);
+                        if (build != null) {
+                            ret.putAll(build);
+                        }
+                    }
+                } catch (Throwable ignore) {
+                }
+                build = ret;
+            }
+            return ret;
+        }
+    }
+
+    @AboutConfig
+    @StorableValidatorIgnoresMissingSetter
+    @CustomValueGetter(GetBuildCustomValueGetter.class)
+    JsonMap getBuild();
 }

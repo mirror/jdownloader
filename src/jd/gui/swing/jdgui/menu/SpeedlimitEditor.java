@@ -8,6 +8,16 @@ import javax.swing.JSpinner.DefaultEditor;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.swing.models.ConfigIntSpinnerModel;
+import org.appwork.swing.components.ExtCheckBox;
+import org.appwork.swing.components.SizeSpinner;
+import org.appwork.utils.locale._AWU;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -15,17 +25,6 @@ import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import net.miginfocom.swing.MigLayout;
-
-import org.appwork.storage.config.ValidationException;
-import org.appwork.storage.config.swing.models.ConfigIntSpinnerModel;
-import org.appwork.swing.components.ExtCheckBox;
-import org.appwork.swing.components.SizeSpinner;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.locale._AWU;
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
 
 public class SpeedlimitEditor extends MenuEditor implements DownloadWatchdogListener {
     /**
@@ -80,7 +79,7 @@ public class SpeedlimitEditor extends MenuEditor implements DownloadWatchdogList
                 if (longValue <= 0) {
                     return _GUI.T.SpeedlimitEditor_format(_AWU.T.literally_kibibyte("0"));
                 } else {
-                    return _GUI.T.SpeedlimitEditor_format(SizeFormatter.formatBytes(longValue));
+                    return _GUI.T.SpeedlimitEditor_format(super.longToText(longValue));
                 }
             }
         };

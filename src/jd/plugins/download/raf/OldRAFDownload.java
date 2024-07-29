@@ -40,7 +40,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.DownloadPluginProgress;
-import org.jdownloader.plugins.HashCheckPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.settings.GeneralSettings;
@@ -60,7 +59,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
@@ -800,57 +798,6 @@ public class OldRAFDownload extends DownloadInterface {
 
     public static final ArrayList<AtomicBoolean> HASHCHECK_QEUEU = new ArrayList<AtomicBoolean>();
 
-    protected HashResult getHashResult(File file) throws InterruptedException {
-        if (JsonConfig.create(GeneralSettings.class).isHashCheckEnabled() && downloadable.isHashCheckEnabled()) {
-            AtomicBoolean hashCheckLock = new AtomicBoolean(false);
-            synchronized (HASHCHECK_QEUEU) {
-                HASHCHECK_QEUEU.add(hashCheckLock);
-                hashCheckLock.set(HASHCHECK_QEUEU.indexOf(hashCheckLock) != 0);
-            }
-            try {
-                if (hashCheckLock.get()) {
-                    synchronized (hashCheckLock) {
-                        if (hashCheckLock.get()) {
-                            final PluginProgress hashProgress = new HashCheckPluginProgress(null, Color.YELLOW.darker().darker(), null);
-                            try {
-                                downloadable.addPluginProgress(hashProgress);
-                                hashCheckLock.wait();
-                            } finally {
-                                downloadable.removePluginProgress(hashProgress);
-                            }
-                        }
-                    }
-                }
-                final HashInfo hashInfo = downloadable.getHashInfo();
-                final HashResult hashResult = downloadable.getHashResult(hashInfo, file);
-                if (hashResult != null) {
-                    logger.info(hashResult.toString());
-                    if (hashResult.getFinalLinkState().isFinished()) {
-                        downloadable.setHashInfo(hashResult.getHashInfo());
-                    }
-                }
-                return hashResult;
-            } finally {
-                synchronized (HASHCHECK_QEUEU) {
-                    boolean callNext = HASHCHECK_QEUEU.indexOf(hashCheckLock) == 0;
-                    HASHCHECK_QEUEU.remove(hashCheckLock);
-                    if (HASHCHECK_QEUEU.size() > 0 && callNext) {
-                        hashCheckLock = HASHCHECK_QEUEU.get(0);
-                    } else {
-                        hashCheckLock = null;
-                    }
-                }
-                if (hashCheckLock != null) {
-                    synchronized (hashCheckLock) {
-                        hashCheckLock.set(false);
-                        hashCheckLock.notifyAll();
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
     protected HashResult onChunksReady() throws Exception {
         HashResult result = null;
         try {
@@ -868,7 +815,7 @@ public class OldRAFDownload extends DownloadInterface {
         if (!handleErrors()) {
             return result;
         }
-        final HashResult hashResult = getHashResult(outputPartFile);
+        final HashResult hashResult = getHashResult(downloadable, outputPartFile);
         downloadable.setHashResult(hashResult);
         if (hashResult == null || hashResult.match()) {
             downloadable.setVerifiedFileSize(outputPartFile.length());

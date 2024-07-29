@@ -2,14 +2,12 @@ package org.jdownloader.settings.advanced;
 
 import java.awt.Dialog.ModalityType;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.ValidationException;
@@ -29,8 +27,10 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class AdvancedConfigEntry {
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
 
+public class AdvancedConfigEntry {
     private final ConfigInterface configInterface;
     private final KeyHandler<?>   keyHandler;
 
@@ -242,11 +242,16 @@ public class AdvancedConfigEntry {
 
     public void setValue(Object value) {
         try {
+            final Method setMethod = keyHandler.getSetMethod();
+            if (setMethod == null) {
+                // get only entry
+                return;
+            }
             final Object valueBefore = getValue();
             if (value instanceof Number) {
                 value = ReflectionUtils.castNumber((Number) value, getClazz());
             }
-            keyHandler.getSetMethod().invoke(configInterface, new Object[] { value });
+            setMethod.invoke(configInterface, new Object[] { value });
             final Object valueAfter = getValue();
             if (equals(valueBefore, valueAfter)) {
                 return;

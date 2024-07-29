@@ -758,7 +758,28 @@ public class ClipboardMonitoring {
     }
 
     public static HTMLFragment getHTMLFragment(final Transferable transferable, DataFlavor[] dataFlavors) throws UnsupportedFlavorException, IOException {
-        DataFlavor htmlFlavor = null;
+        final String result = getMimeTypeFragment(transferable, ".*?text/html.*", dataFlavors);
+        if (CrossSystem.isWindows()) {
+            final String sourceURL = new Regex(result, "EndFragment:\\d+[\r\n]*SourceURL:(.*?)(\r|\n)").getMatch(0);
+            final String fragment = new Regex(result, "<!--StartFragment-->(.*?)<!--EndFragment-->").getMatch(0);
+            if (fragment != null) {
+                if (!StringUtils.isEmpty(sourceURL) && HTMLParser.getProtocol(sourceURL) != null) {
+                    return new HTMLFragment(sourceURL, fragment);
+                }
+                final String browserURL = getCurrentBrowserURL(transferable, dataFlavors, result);
+                return new HTMLFragment(browserURL, fragment);
+            }
+        }
+        final String browserURL = getCurrentBrowserURL(transferable, dataFlavors, result);
+        return new HTMLFragment(browserURL, result);
+    }
+
+    public static String getTextFragment(final Transferable transferable, DataFlavor[] dataFlavors) throws UnsupportedFlavorException, IOException {
+        return getMimeTypeFragment(transferable, ".*?text/plain.*", dataFlavors);
+    }
+
+    public static String getMimeTypeFragment(final Transferable transferable, final String pattern, DataFlavor[] dataFlavors) throws UnsupportedFlavorException, IOException {
+        DataFlavor mimeTypeFlavor = null;
         final Class<?> preferClass = byte[].class;
         /*
          * for our workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=385421, it would be good if we have utf8 charset
@@ -772,38 +793,26 @@ public class ClipboardMonitoring {
             return null;
         }
         for (final DataFlavor flav : flavors) {
-            if (flav.getMimeType().contains("html") && flav.getRepresentationClass().isAssignableFrom(preferClass)) {
+            if (flav.getMimeType().matches(pattern) && flav.getRepresentationClass().isAssignableFrom(preferClass)) {
                 /*
                  * we use first hit and search UTF-8
                  */
-                if (htmlFlavor == null) {
-                    htmlFlavor = flav;
+                if (mimeTypeFlavor == null) {
+                    mimeTypeFlavor = flav;
                 }
                 final String charSet = new Regex(flav.toString(), "charset=(.*?)]").getMatch(0);
                 if ("UTF-8".equalsIgnoreCase(charSet)) {
                     /* we found utf-8 encoding, so lets use that */
-                    htmlFlavor = flav;
+                    mimeTypeFlavor = flav;
                     break;
                 }
             }
         }
-        final byte[] htmlDataBytes = getBytes(transferable, flavors, null, htmlFlavor);
+        final byte[] htmlDataBytes = getBytes(transferable, flavors, null, mimeTypeFlavor);
         if (htmlDataBytes != null && htmlDataBytes.length != 0) {
-            final String charSet = new Regex(htmlFlavor.toString(), "charset=(.*?)]").getMatch(0);
+            final String charSet = new Regex(mimeTypeFlavor.toString(), "charset=(.*?)]").getMatch(0);
             final String result = convertBytes(htmlDataBytes, Charset.forName(charSet), true);
-            if (CrossSystem.isWindows()) {
-                final String sourceURL = new Regex(result, "EndFragment:\\d+[\r\n]*SourceURL:(.*?)(\r|\n)").getMatch(0);
-                final String fragment = new Regex(result, "<!--StartFragment-->(.*?)<!--EndFragment-->").getMatch(0);
-                if (fragment != null) {
-                    if (!StringUtils.isEmpty(sourceURL) && HTMLParser.getProtocol(sourceURL) != null) {
-                        return new HTMLFragment(sourceURL, fragment);
-                    }
-                    final String browserURL = getCurrentBrowserURL(transferable, flavors, result);
-                    return new HTMLFragment(browserURL, fragment);
-                }
-            }
-            final String browserURL = getCurrentBrowserURL(transferable, flavors, result);
-            return new HTMLFragment(browserURL, result);
+            return result;
         } else {
             return null;
         }

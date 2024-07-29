@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import javax.swing.Icon;
 
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DevConfig;
@@ -19,11 +20,8 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 
 public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends AbstractConfigPanel implements ConfigEventListener {
-
     private static final long serialVersionUID = 1L;
-
     protected T               extension;
-
     private BooleanKeyHandler keyHandlerEnabled;
 
     public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
@@ -38,10 +36,11 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
         final ArrayList<AdvancedConfigEntry> configInterfaces = new ArrayList<AdvancedConfigEntry>();
         for (final KeyHandler m : getExtension().getSettings()._getStorageHandler().getKeyHandler()) {
             if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || !Application.isJared(null))) {
-                if (m.getSetMethod() == null) {
-                    throw new RuntimeException("Setter for " + m.getKey() + " missing");
-                } else if (m.getGetMethod() == null) {
+                if (m.getGetMethod() == null) {
                     throw new RuntimeException("Getter for " + m.getKey() + " missing");
+                } else if (m.getSetMethod() == null && m.getAnnotation(StorableValidatorIgnoresMissingSetter.class) == null) {
+                    // StorableValidatorIgnoresMissingSetter annotation -> allow get only entry
+                    throw new RuntimeException("Setter for " + m.getKey() + " missing");
                 } else {
                     synchronized (configInterfaces) {
                         configInterfaces.add(new AdvancedConfigEntry(getExtension().getSettings(), m));
@@ -60,19 +59,15 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
         super();
         this.extension = plg;
         keyHandlerEnabled = plg.getSettings()._getStorageHandler().getKeyHandler("enabled", BooleanKeyHandler.class);
-
         plg.getSettings()._getStorageHandler().getEventSender().addListener(this);
         if (!clean) {
             final Header header = new Header(getHeaderName(plg), NewTheme.I().getIcon(extension.getIconKey(), 32), keyHandlerEnabled, extension.getVersion());
-
             add(header, "spanx,growx,pushx");
-
             header.setEnabled(plg.isEnabled());
             if (plg.getDescription() != null) {
                 addDescription(plg.getDescription());
             }
             keyHandlerEnabled.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
                 public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                     try {
                         extension.setEnabled(header.isHeaderEnabled());
@@ -87,16 +82,13 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
                 }
             });
         }
-
     }
 
     public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
-
     }
 
     public ExtensionConfigPanel(T plg) {
         this(plg, false);
-
     }
 
     @Override
