@@ -6,19 +6,9 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.uio.CloseReason;
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.swing.dialog.LoginDialog;
-import org.appwork.utils.swing.dialog.LoginDialogInterface;
 import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,16 +17,12 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerDeepHelperInterface;
 import jd.controlling.linkcrawler.LinkCrawlerRule;
-import jd.http.Authentication;
 import jd.http.AuthenticationFactory;
 import jd.http.Browser;
-import jd.http.CallbackAuthenticationFactory;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.DefaultAuthenticanFactory;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.URLUserInfoAuthentication;
 import jd.http.requests.GetRequest;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -46,6 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkcrawlerdeephelper" }, urls = { "" })
+@Deprecated
 public class LinkCrawlerDeepHelper extends PluginForDecrypt implements LinkCrawlerDeepHelperInterface {
     public LinkCrawlerDeepHelper(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,6 +44,7 @@ public class LinkCrawlerDeepHelper extends PluginForDecrypt implements LinkCrawl
     }
 
     @Override
+    @Deprecated
     public URLConnectionAdapter openConnection(final LinkCrawlerRule matchingRule, Browser br, CrawledLink source) throws Exception {
         br.addAllowedResponseCodes(500);
         final String sourceURL = source.getURL();
@@ -102,6 +90,7 @@ public class LinkCrawlerDeepHelper extends PluginForDecrypt implements LinkCrawl
     }
 
     /** Connection handling with basic authentication handling. */
+    @Deprecated
     protected URLConnectionAdapter openCrawlDeeperConnection(final Browser br, CrawledLink source, int round) throws Exception {
         if (round == 0) {
             final CrawledLink sourceLink = source.getSourceLink();
@@ -115,45 +104,7 @@ public class LinkCrawlerDeepHelper extends PluginForDecrypt implements LinkCrawl
         loopAvoid.add(request.getUrl());
         URLConnectionAdapter connection = null;
         for (int i = 0; i < 10; i++) {
-            final List<AuthenticationFactory> authenticationFactories = new ArrayList<AuthenticationFactory>();
-            if (request.getURL().getUserInfo() != null) {
-                authenticationFactories.add(new URLUserInfoAuthentication());
-            }
-            authenticationFactories.addAll(AuthenticationController.getInstance().getSortedAuthenticationFactories(request.getURL(), null));
-            authenticationFactories.add(new CallbackAuthenticationFactory() {
-                protected Authentication remember = null;
-
-                @Override
-                protected Authentication askAuthentication(Browser browser, Request request, final String realm) {
-                    final LoginDialog loginDialog = new LoginDialog(UIOManager.LOGIC_COUNTDOWN, _GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), _JDT.T.Plugin_requestLogins_message(), new AbstractIcon(IconKey.ICON_PASSWORD, 32));
-                    loginDialog.setTimeout(60 * 1000);
-                    final LoginDialogInterface handle = UIOManager.I().show(LoginDialogInterface.class, loginDialog);
-                    if (handle.getCloseReason() == CloseReason.OK) {
-                        final Authentication ret = new DefaultAuthenticanFactory(request.getURL().getHost(), realm, handle.getUsername(), handle.getPassword()).buildAuthentication(browser, request);
-                        addAuthentication(ret);
-                        if (handle.isRememberSelected()) {
-                            remember = ret;
-                        }
-                        return ret;
-                    } else {
-                        return null;
-                    }
-                }
-
-                @Override
-                public boolean retry(Authentication authentication, Browser browser, Request request) {
-                    if (containsAuthentication(authentication) && remember == authentication && request.getAuthentication() == authentication && !requiresAuthentication(request)) {
-                        final AuthenticationInfo auth = new AuthenticationInfo();
-                        auth.setRealm(authentication.getRealm());
-                        auth.setUsername(authentication.getUsername());
-                        auth.setPassword(authentication.getPassword());
-                        auth.setHostmask(authentication.getHost());
-                        auth.setType(Type.HTTP);
-                        AuthenticationController.getInstance().add(auth);
-                    }
-                    return super.retry(authentication, browser, request);
-                }
-            });
+            final List<AuthenticationFactory> authenticationFactories = AuthenticationController.getInstance().buildAuthenticationFactories(request.getURL(), null);
             authloop: for (AuthenticationFactory authenticationFactory : authenticationFactories) {
                 if (connection != null) {
                     br.followConnection(true);
@@ -184,6 +135,7 @@ public class LinkCrawlerDeepHelper extends PluginForDecrypt implements LinkCrawl
         return openCrawlDeeperConnection(source, br, connection, round);
     }
 
+    @Deprecated
     protected URLConnectionAdapter openCrawlDeeperConnection(CrawledLink source, Browser br, URLConnectionAdapter urlConnection, int round) throws Exception {
         if (round > 2) {
             /* Prevent infinite loop */

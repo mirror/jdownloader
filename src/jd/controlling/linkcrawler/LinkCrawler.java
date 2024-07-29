@@ -51,6 +51,7 @@ import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.auth.AuthenticationController;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.logging.LogController;
@@ -72,6 +73,7 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
 import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
+import jd.http.AuthenticationFactory;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -929,14 +931,16 @@ public class LinkCrawler {
         return null;
     }
 
-    public String preprocessFind(String text, String url, final boolean allowDeep) {
-        if (text == null) {
+    public String preprocessFind(final String in, String url, final boolean allowDeep) {
+        if (in == null) {
             return null;
         }
-        text = text.replaceAll("(?i)/\\s*Sharecode\\[\\?\\]:\\s*/", "/");
-        text = text.replaceAll("(?i)\\s*Sharecode\\[\\?\\]:\\s*", "");
-        text = text.replaceAll("(?i)/?\\s*Sharecode:\\s*/?", "/");
-        return text;
+        String out = in.replaceAll("(?i)/\\s*Sharecode\\[\\?\\]:\\s*/", "/");
+        out = out.replaceAll("(?i)\\s*Sharecode\\[\\?\\]:\\s*", "");
+        out = out.replaceAll("(?i)/?\\s*Sharecode:\\s*/?", "/");
+        // fix <a href="https://mega.nz/folder/XYZ">https://mega.nz/folder/XYZ</a>#KEY
+        out = out.replaceAll("(?i)<a[^>]href\\s*=\\s*\"(.*?)\"[^>]*>\\s*\\1\\s*</a>\\s*(#[^< ]*)", "<a href=\"$1$2\"</a>");
+        return out;
     }
 
     public void crawl(final List<CrawledLink> possibleCryptedLinks) {
@@ -1365,9 +1369,9 @@ public class LinkCrawler {
         @Override
         public String getURL() {
             if (next != null) {
-                return next.getUrl();
+                return next.getURL().toExternalForm();
             } else {
-                return last.getUrl();
+                return last.getURL().toExternalForm();
             }
         }
     }
@@ -1479,7 +1483,7 @@ public class LinkCrawler {
                         br.setVerbose(true);
                         br.setDebug(true);
                     }
-                    final List<CrawledLink> openConnectionResults = this.openCrawlDeeperConnectionV2(source, br, nextRequest);
+                    final List<CrawledLink> openConnectionResults = this.openCrawlDeeperConnectionV2(source, matchingRule, br, nextRequest);
                     if (openConnectionResults != null && openConnectionResults.size() > 0) {
                         final boolean isSingleResult = openConnectionResults.size() == 1;
                         for (final CrawledLink crawledlink : openConnectionResults) {
@@ -1490,8 +1494,9 @@ public class LinkCrawler {
                     }
                     final CrawledLink deeperSource;
                     final String[] sourceURLs;
-                    final String current_url = br.getURL();
-                    if (StringUtils.equals(current_url, source.getURL())) {
+                    final String current_url = br._getURL().toExternalForm();
+                    final String source_url = source.getURL();
+                    if (StringUtils.equals(current_url, source_url) || source instanceof BrowserCrawledLink) {
                         /* Same URL or first request */
                         deeperSource = source;
                         sourceURLs = getAndClearSourceURLs(source);
@@ -1729,7 +1734,7 @@ public class LinkCrawler {
     }
 
     /** Opens connection */
-    protected final List<CrawledLink> openCrawlDeeperConnectionV2(final CrawledLink source, final Browser br, final Request req) throws Exception {
+    protected final List<CrawledLink> openCrawlDeeperConnectionV2(final CrawledLink source, final LinkCrawlerRule matchingRule, final Browser br, final Request req) throws Exception {
         if (req == null) {
             return null;
         } else if (req.isRequested()) {
@@ -1748,9 +1753,24 @@ public class LinkCrawler {
             previousRequests.addAll(((BrowserCrawledLink) source).getPreviousRequests());
         }
         previousRequests.add(req);
-        // TODO: Add authentication handling see jd.plugins.decrypter.LinkCrawlerDeepHelper
-        final URLConnectionAdapter con = br.openRequestConnection(req);
+        URLConnectionAdapter con = null;
         try {
+            final List<AuthenticationFactory> authenticationFactories = AuthenticationController.getInstance().buildAuthenticationFactories(req.getURL(), null);
+            authloop: for (AuthenticationFactory authenticationFactory : authenticationFactories) {
+                br.setCustomAuthenticationFactory(authenticationFactory);
+                con = br.openRequestConnection(req);
+                if ((con.getResponseCode() == 401 || con.getResponseCode() == 403) && con.getHeaderField(HTTPConstants.HEADER_RESPONSE_WWW_AUTHENTICATE) != null) {
+                    /* Invalid or missing auth */
+                    br.followConnection(true);
+                    con = null;
+                    continue authloop;
+                } else {
+                    break authloop;
+                }
+            }
+            if (con == null) {
+                return null;
+            }
             final BrowserCrawledLink next;
             if (req.getLocation() != null) {
                 br.followConnection(true);
@@ -1765,6 +1785,7 @@ public class LinkCrawler {
                 next = new BrowserCrawledLink(br, previousRequests);
             }
             final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
+            next.setMatchingRule(matchingRule);
             ret.add(next);
             return ret;
         } finally {
@@ -3076,6 +3097,18 @@ public class LinkCrawler {
                                 // too deep
                                 continue;
                             }
+                        }
+                    }
+                }
+            }
+            // no matching LinkCrawlerRule
+            if (link instanceof BrowserCrawledLink) {
+                final LinkCrawlerRule matchedRule = link.getMatchingRule();
+                if (matchedRule != null) {
+                    for (final LinkCrawlerRule.RULE ruleType : ruleTypes) {
+                        if (matchedRule != null && ruleType.equals(matchedRule.getRule())) {
+                            // return previous matching LinkCrawlerRule for BrowserCrawledLink
+                            return matchedRule;
                         }
                     }
                 }
@@ -4620,7 +4653,7 @@ public class LinkCrawler {
                     if (br.containsHTML("^#EXTM3U")) {
                         /* auto m3u8 handling of URLs without .m3u8 in URL */
                         final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
-                        ret.add(lc.crawledLinkFactorybyURL("m3u8://" + br.getURL()));
+                        ret.add(lc.crawledLinkFactorybyURL("m3u8://" + br._getURL().toExternalForm()));
                         return ret;
                     } else if (rule != null && RULE.DEEPDECRYPT.equals(rule.getRule())) {
                         return null;
@@ -4640,7 +4673,7 @@ public class LinkCrawler {
                         if (directoryContent != null && directoryContent.size() > 0) {
                             /* Let http directory crawler process this link. */
                             final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
-                            ret.add(lc.crawledLinkFactorybyURL("jd://directoryindex://" + br.getURL()));
+                            ret.add(lc.crawledLinkFactorybyURL("jd://directoryindex://" + br._getURL().toExternalForm()));
                             return ret;
                         }
                     } catch (final Throwable e) {

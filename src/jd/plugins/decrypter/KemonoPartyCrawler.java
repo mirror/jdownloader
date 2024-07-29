@@ -38,6 +38,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
@@ -375,10 +376,10 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         if (!StringUtils.isEmpty(postTextContent)) {
             if (cfg.isCrawlHttpLinksFromPostContent()) {
                 /* Place number 1 where we can crawl external http links from */
-                final String[] urls = HTMLParser.getHttpLinks(postTextContent, br.getURL());
-                if (urls != null && urls.length > 0) {
-                    for (final String url : urls) {
-                        ret.add(this.createDownloadlink(url));
+                final List<CrawledLink> postTextContentLinks = getCrawler().find(getLinkCrawlerGeneration(), getCurrentLink(), postTextContent, br.getURL(), false, false);
+                if (postTextContentLinks != null) {
+                    for (CrawledLink postTextContentLink : postTextContentLinks) {
+                        ret.add(this.createDownloadlink(postTextContentLink.getURL()));
                     }
                 }
             }

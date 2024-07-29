@@ -249,9 +249,6 @@ public class MegaNzFolder extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (!isValidFileFolderNodeID(folderID)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid folderID");
-        } else if (!isValidFolderDecryptionKey(folderMasterKey) && config.getInvalidOrMissingDecryptionKeyAction().getAction() != InvalidOrMissingDecryptionKeyAction.ASK) {
-            /* No valid password given and user does not want to be asked. */
-            throw new DecrypterRetryException(RetryReason.PASSWORD);
         }
         int retryCounter = 0;
         final Map<String, FilePackage> fpMap = new HashMap<String, FilePackage>();
@@ -528,7 +525,19 @@ public class MegaNzFolder extends PluginForDecrypt {
                 }
                 logger.info("Fill Cache:Nodes=" + parsedNodes.size() + "|FolderID=" + folderID);
                 folderNodes.addAll(parsedNodes);
+                final Map<String, Object> folderMetaInfos = new MinimalMemoryMap<String, Object>();
+                folderMetaInfos.put("folderMetaInfos", null);
+                folderMetaInfos.put("pn", folderID);
+                folderMetaInfos.put("mk", folderMasterKey);
+                folderNodes.add(folderMetaInfos);
             }
+        }
+        final Map<String, Object> folderMetaInfos = folderNodes.get(folderNodes.size() - 1);
+        if (folderMetaInfos == null || !folderID.equals(folderMetaInfos.get("pn"))) {
+            /* Something must have gone seriously wrong */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            folderMasterKey = (String) folderMetaInfos.get("mk");
         }
         if (StringUtils.isEmpty(folderMasterKey)) {
             /* Something must have gone seriously wrong */
@@ -555,7 +564,9 @@ public class MegaNzFolder extends PluginForDecrypt {
         final LinkedHashMap<String, MegaFolder> folders = new LinkedHashMap<String, MegaFolder>();
         final ArrayList<DownloadLink> desiredItems = new ArrayList<DownloadLink>();
         for (final Map<String, Object> folderNode : folderNodes) {
-            if (isAbort()) {
+            if (folderNode.containsKey("folderMetaInfos")) {
+                continue;
+            } else if (isAbort()) {
                 break;
             }
             final String nodeID = toString(folderNode.get("h"));

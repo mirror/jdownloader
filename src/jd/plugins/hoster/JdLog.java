@@ -25,9 +25,6 @@ import java.util.List;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.URLHelper;
 import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.auth.Login;
 import org.jdownloader.jdserv.JDServUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
@@ -35,12 +32,7 @@ import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.DownloadSession;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.http.Authentication;
 import jd.http.AuthenticationFactory;
-import jd.http.Browser;
-import jd.http.CallbackAuthenticationFactory;
-import jd.http.DefaultAuthenticanFactory;
-import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -91,42 +83,7 @@ public class JdLog extends PluginForHost {
         requestFileInformation(link);
         final String uid = new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
         final String url = JDServUtils.BASE + "logunsorted?" + uid;
-        final List<AuthenticationFactory> authenticationFactories = AuthenticationController.getInstance().getSortedAuthenticationFactories(URLHelper.createURL(url), null);
-        authenticationFactories.add(new CallbackAuthenticationFactory() {
-            protected Authentication remember = null;
-
-            @Override
-            protected Authentication askAuthentication(Browser browser, Request request, String realm) {
-                try {
-                    final Login login = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), realm, link);
-                    if (login != null) {
-                        final Authentication ret = new DefaultAuthenticanFactory(request.getURL().getHost(), realm, login.getUsername(), login.getPassword()).buildAuthentication(browser, request);
-                        addAuthentication(ret);
-                        if (login.isRememberSelected()) {
-                            remember = ret;
-                        }
-                        return ret;
-                    }
-                } catch (PluginException e) {
-                    getLogger().log(e);
-                }
-                return null;
-            }
-
-            @Override
-            public boolean retry(Authentication authentication, Browser browser, Request request) {
-                if (authentication != null && containsAuthentication(authentication) && remember == authentication && request.getAuthentication() == authentication && !requiresAuthentication(request)) {
-                    final AuthenticationInfo auth = new AuthenticationInfo();
-                    auth.setRealm(authentication.getRealm());
-                    auth.setUsername(authentication.getUsername());
-                    auth.setPassword(authentication.getPassword());
-                    auth.setHostmask(authentication.getHost());
-                    auth.setType(Type.HTTP);
-                    AuthenticationController.getInstance().add(auth);
-                }
-                return super.retry(authentication, browser, request);
-            }
-        });
+        final List<AuthenticationFactory> authenticationFactories = AuthenticationController.getInstance().buildAuthenticationFactories(URLHelper.createURL(url), null);
         for (final AuthenticationFactory authenticationFactory : authenticationFactories) {
             br.setCustomAuthenticationFactory(authenticationFactory);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);

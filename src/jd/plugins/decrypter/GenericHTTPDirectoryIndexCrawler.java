@@ -74,6 +74,7 @@ public class GenericHTTPDirectoryIndexCrawler extends abstractGenericHTTPDirecto
 
     protected ArrayList<DownloadLink> crawlHTTPDirectory(final CryptedLink param) throws IOException, PluginException, DecrypterRetryException {
         /* First check if maybe the user has added a directURL. */
+        // TODO: Add authentication handling see jd.plugins.decrypter.LinkCrawlerDeepHelper
         final String url = param.getCryptedUrl().replaceFirst("(?i)^jd://directoryindex://", "");
         final GetRequest getRequest = br.createGetRequest(url);
         final URLConnectionAdapter con = this.br.openRequestConnection(getRequest);
