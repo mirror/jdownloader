@@ -3,6 +3,8 @@ package org.jdownloader.plugins.components.config;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -41,6 +43,10 @@ public interface ArdConfigInterface extends PluginConfigInterface {
         // public String getAddUnknownQualitiesEnabled_label() {
         // return _JDT.T.lit_add_unknown_formats();
         // }
+
+        public String getAudioLanguagePriorityString_label() {
+            return "Audio language priority string";
+        }
     }
 
     public static final ArdConfigInterface.TRANSLATION TRANSLATION = new TRANSLATION();
@@ -229,4 +235,12 @@ public interface ArdConfigInterface extends PluginConfigInterface {
     boolean isGrabHTTP1080pVideoEnabled();
 
     void setGrabHTTP1080pVideoEnabled(boolean b);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Define priority of audio languages e.g. 'deu,ov' or 'de, en, original'. Only the first available source will be added. If none of the preferred languages are found, only the first found language will be added.")
+    @DefaultStringValue("deu,ov")
+    @Order(180)
+    String getAudioLanguagePriorityString();
+
+    void setAudioLanguagePriorityString(String str);
 }
