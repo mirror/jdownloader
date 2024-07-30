@@ -3,7 +3,6 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -14,10 +13,10 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.MergePosition;
-import org.jdownloader.images.BadgeIcon;
 
 import jd.controlling.TaskQueue;
 import jd.controlling.linkcollector.LinkCollector;
@@ -48,9 +47,10 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
     public MergeSameNamedPackagesAction() {
         // TODO: Find a suitable symbol
         super(true, true);
-        setSmallIcon(new BadgeIcon("logo/dlc", "autoMerge", 32, 24, 2, 6));
+        // setSmallIcon(new BadgeIcon("logo/dlc", "autoMerge", 32, 24, 2, 6));
         setName("Merge packages with the same name");
         // setAccelerator(KeyEvent.VK_M);
+        setIconKey(IconKey.ICON_PACKAGE_NEW);
     }
 
     private static final long serialVersionUID = -1758454550263991987L;
@@ -72,15 +72,23 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
             boolean foundDupes = false;
             final SelectionInfo<CrawledPackage, CrawledLink> sel = getSelection();
             /* If user has selected a package, only collect duplicates of name of selected package. */
-            HashSet<String> selectedPackagesNames = null;
-            if (sel != null) {
-                selectedPackagesNames = new HashSet<String>();
-                for (final PackageView<CrawledPackage, CrawledLink> pv : sel.getPackageViews()) {
+            Map<String, CrawledPackage> selectedPackagesMap = null;
+            final List<PackageView<CrawledPackage, CrawledLink>> selPackageViews = sel.getPackageViews();
+            if (sel != null && selPackageViews.size() > 0) {
+                selectedPackagesMap = new HashMap<String, CrawledPackage>();
+                for (final PackageView<CrawledPackage, CrawledLink> pv : selPackageViews) {
+                    final CrawledPackage crawledpackage = pv.getPackage();
+                    final String compareName;
                     if (caseInsensitive) {
-                        selectedPackagesNames.add(pv.getPackage().getName().toLowerCase(Locale.ENGLISH));
+                        compareName = crawledpackage.getName().toLowerCase(Locale.ENGLISH);
                     } else {
-                        selectedPackagesNames.add(pv.getPackage().getName());
+                        compareName = crawledpackage.getName();
                     }
+                    if (selectedPackagesMap.containsKey(compareName)) {
+                        /* Item is already contained in map. */
+                        continue;
+                    }
+                    selectedPackagesMap.put(compareName, crawledpackage);
                 }
             }
             for (final CrawledPackage pckage : pckages) {
@@ -90,7 +98,7 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
                 } else {
                     packagename = pckage.getName();
                 }
-                if (selectedPackagesNames != null && !selectedPackagesNames.contains(packagename)) {
+                if (selectedPackagesMap != null && !selectedPackagesMap.containsKey(packagename)) {
                     /* Only search dupes for selected package(s) */
                     continue;
                 }
@@ -109,6 +117,7 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
                 System.out.println("Failed to find any duplicates packages to merge");
                 return;
             }
+            final Map<String, CrawledPackage> selectedPackagesMap_final = selectedPackagesMap;
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
                 @Override
                 protected Void run() throws RuntimeException {
@@ -116,18 +125,24 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
                     final Iterator<Entry<String, List<CrawledPackage>>> dupes_iterator = dupes.entrySet().iterator();
                     while (dupes_iterator.hasNext()) {
                         final Entry<String, List<CrawledPackage>> entry = dupes_iterator.next();
+                        final String packagename = entry.getKey();
                         final List<CrawledPackage> thisdupes = entry.getValue();
                         if (thisdupes.size() == 1) {
                             /* We need at least two packages to be able to merge them. */
                             continue;
                         }
                         /* Decide which pckage to merge the others into */
-                        final CrawledPackage target = thisdupes.get(0);
+                        final CrawledPackage target;
+                        if (selectedPackagesMap_final != null) {
+                            target = selectedPackagesMap_final.get(packagename);
+                        } else {
+                            target = thisdupes.get(0);
+                        }
                         final List<CrawledPackage> packagesToMerge = new ArrayList<CrawledPackage>();
                         for (int i = 1; i < thisdupes.size(); i++) {
                             packagesToMerge.add(thisdupes.get(i));
                         }
-                        LinkCollector.getInstance().merge(target, packagesToMerge, MergePosition.TOP);
+                        LinkCollector.getInstance().merge(target, packagesToMerge, MergePosition.BOTTOM);
                     }
                     return null;
                 }
