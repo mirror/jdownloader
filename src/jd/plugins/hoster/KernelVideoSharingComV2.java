@@ -850,7 +850,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             return AvailableStatus.TRUE;
         } else {
             this.dllink = this.getDllinkViaAPI(br, link, videoID);
-            if (!isDownload) {
+            if (!isDownload && !link.isSizeSet()) {
                 /* Only check directurl during availablecheck, not if user has started downloading. */
                 URLConnectionAdapter con = null;
                 try {
@@ -870,7 +870,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
             return AvailableStatus.TRUE;
         }
-        // Enf of function
+        // End of function
     }
 
     protected String getAPIParam1(final String videoID) {
@@ -1325,6 +1325,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 } else if (videoQualityStr.equalsIgnoreCase("4K")) {
                     videoQuality = 2160;
                 } else if (videoQualityStr.equalsIgnoreCase("HD")) {
+                    // Can also be 720p (e.g. love4porn.com)
                     videoQuality = 1080;
                 } else {
                     /* This should never happen */
@@ -1402,38 +1403,6 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 } else if (!dups.add(dllinkTmp)) {
                     /* Skip duplicates */
                     continue;
-                }
-                checkurl: if (!this.isHLS(dllinkTmp)) {
-                    URLConnectionAdapter con = null;
-                    try {
-                        final Browser brc = this.br.cloneBrowser();
-                        brc.setFollowRedirects(true);
-                        brc.setAllowedResponseCodes(new int[] { 405 });
-                        con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllinkTmp));
-                        if (this.looksLikeHLS(con)) {
-                            logger.info("Found HLS stream instead of expected progressive video stream download");
-                            break checkurl;
-                        }
-                        final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
-                        if (workaroundURL != null && !this.looksLikeDownloadableContent(con)) {
-                            con.disconnect();
-                            con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(workaroundURL));
-                        }
-                        if (!this.looksLikeDownloadableContent(con)) {
-                            brc.followConnection(true);
-                            logger.info("Skipping invalid directurl: " + dllinkTmp);
-                            continue;
-                        } else {
-                            break checkurl;
-                        }
-                    } catch (Exception e) {
-                        logger.log(e);
-                        continue;
-                    } finally {
-                        if (con != null) {
-                            con.disconnect();
-                        }
-                    }
                 }
                 if (!addQualityURL(this.getDownloadLink(), qualityMap, dllinkTmp)) {
                     if (uncryptedUrlWithoutQualityIndicator == null) {
@@ -1765,50 +1734,58 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             link.setComment("ChosenQuality: " + chosenQuality + "p");
         }
-        if (downloadurl != null) {
-            if (chosenQuality == link.getIntegerProperty(PROPERTY_CHOSEN_QUALITY, -1)) {
-                // no need to reevaluate again, chosenQuality is unchanged
-                return downloadurl;
-            } else if (this.isHLS(downloadurl)) {
+        if (downloadurl == null) {
+            return null;
+        }
+        if (chosenQuality == link.getIntegerProperty(PROPERTY_CHOSEN_QUALITY, -1)) {
+            // no need to reevaluate again, chosenQuality is unchanged
+            return downloadurl;
+        } else if (this.isHLS(downloadurl)) {
+            link.setProperty(PROPERTY_CHOSEN_QUALITY, chosenQuality);
+            return downloadurl;
+        } else if (qualityMap.size() == 1) {
+            /* Only one quality available -> No point in checking if that one is valid. */
+            return downloadurl;
+        } else if (this.isHLS(downloadurl)) {
+            /* Do not check HLS URLs */
+            return downloadurl;
+        }
+        /* Check if chosen quality is valid / if link works. */
+        URLConnectionAdapter con = null;
+        try {
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            brc.setAllowedResponseCodes(new int[] { 405 });
+            con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(downloadurl));
+            if (this.looksLikeHLS(con)) {
+                brc.followConnection();
+                logger.info("Found HLS stream instead of expected progressive video stream download");
                 link.setProperty(PROPERTY_CHOSEN_QUALITY, chosenQuality);
                 return downloadurl;
             }
-            URLConnectionAdapter con = null;
-            try {
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                brc.setAllowedResponseCodes(new int[] { 405 });
-                con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(downloadurl));
-                if (this.looksLikeHLS(con)) {
-                    brc.followConnection();
-                    logger.info("Found HLS stream instead of expected progressive video stream download");
-                    link.setProperty(PROPERTY_CHOSEN_QUALITY, chosenQuality);
-                    return downloadurl;
-                }
-                final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
-                if (workaroundURL != null && !this.looksLikeDownloadableContent(con)) {
-                    brc.followConnection(true);
-                    con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(workaroundURL));
-                }
-                if (!this.looksLikeDownloadableContent(con)) {
-                    brc.followConnection(true);
-                    logger.info("Skipping invalid directurl: " + downloadurl);
-                } else {
-                    link.setProperty(PROPERTY_CHOSEN_QUALITY, chosenQuality);
-                    return downloadurl;
-                }
-            } catch (Exception e) {
-                logger.log(e);
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
+            final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
+            if (workaroundURL != null && !this.looksLikeDownloadableContent(con)) {
+                brc.followConnection(true);
+                con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(workaroundURL));
             }
-            final HashMap<Integer, String> nextQualityMap = new HashMap<Integer, String>(qualityMap);
-            nextQualityMap.remove(chosenQuality);
-            return handleQualitySelection(br, link, nextQualityMap);
+            if (this.looksLikeDownloadableContent(con)) {
+                link.setProperty(PROPERTY_CHOSEN_QUALITY, chosenQuality);
+                link.setDownloadSize(con.getCompleteContentLength());
+                return downloadurl;
+            }
+            /* Check next URL */
+            brc.followConnection(true);
+            logger.info("Skipping invalid quality: " + chosenQuality + " | directurl: " + downloadurl);
+        } catch (Exception e) {
+            logger.log(e);
+        } finally {
+            if (con != null) {
+                con.disconnect();
+            }
         }
-        return null;
+        final HashMap<Integer, String> nextQualityMap = new HashMap<Integer, String>(qualityMap);
+        nextQualityMap.remove(chosenQuality);
+        return handleQualitySelection(br, link, nextQualityMap);
     }
 
     /** Checks "/get_file/"-style URLs for validity by "blacklist"-style behavior. */
