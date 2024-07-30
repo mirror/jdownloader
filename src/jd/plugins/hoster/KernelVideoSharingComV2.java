@@ -691,7 +691,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 }
             }
         }
-        if (!StringUtils.isEmpty(this.dllink) && !isDownload && !enableFastLinkcheck() && !this.isHLS(this.dllink)) {
+        if (!StringUtils.isEmpty(this.dllink) && !isDownload && !enableFastLinkcheck() && !this.isHLS(this.dllink) && !link.isSizeSet()) {
             URLConnectionAdapter con = null;
             try {
                 /* if you don't do this then referrer is fked for the download! -raztoki */
@@ -1763,12 +1763,14 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 link.setProperty(PROPERTY_CHOSEN_QUALITY, chosenQuality);
                 return downloadurl;
             }
-            final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
-            if (workaroundURL != null && !this.looksLikeDownloadableContent(con)) {
+            final String workaroundURL;
+            if (!this.looksLikeDownloadableContent(con) && (workaroundURL = getHttpServerErrorWorkaroundURL(con)) != null) {
                 brc.followConnection(true);
+                /* Try again */
                 con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(workaroundURL));
             }
             if (this.looksLikeDownloadableContent(con)) {
+                /* Success */
                 link.setProperty(PROPERTY_CHOSEN_QUALITY, chosenQuality);
                 link.setDownloadSize(con.getCompleteContentLength());
                 return downloadurl;
