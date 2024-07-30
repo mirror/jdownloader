@@ -23,23 +23,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.config.MaxTimeSoftReference;
-import org.appwork.storage.config.MaxTimeSoftReferenceCleanupCallback;
-import org.appwork.storage.simplejson.JSonParser;
-import org.appwork.storage.simplejson.JSonValue;
-import org.appwork.storage.simplejson.MinimalMemoryMap;
-import org.appwork.utils.ByteArrayWrapper;
-import org.appwork.utils.IO;
-import org.appwork.utils.JVMVersion;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.plugins.components.config.MegaNzConfig.InvalidOrMissingDecryptionKeyAction;
-import org.jdownloader.plugins.components.config.MegaNzFolderConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -60,6 +43,23 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.MegaNz;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.MaxTimeSoftReference;
+import org.appwork.storage.config.MaxTimeSoftReferenceCleanupCallback;
+import org.appwork.storage.simplejson.JSonParser;
+import org.appwork.storage.simplejson.JSonValue;
+import org.appwork.storage.simplejson.MinimalMemoryMap;
+import org.appwork.utils.ByteArrayWrapper;
+import org.appwork.utils.IO;
+import org.appwork.utils.JVMVersion;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.plugins.components.config.MegaNzConfig.InvalidOrMissingDecryptionKeyAction;
+import org.jdownloader.plugins.components.config.MegaNzFolderConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { MegaNz.class })
@@ -94,8 +94,7 @@ public class MegaNzFolder extends PluginForDecrypt {
     public static final Pattern PATTERN_FOLDER_NEW                = Pattern.compile("folder/([a-zA-Z0-9]+)((?:#|%23)([a-zA-Z0-9_-]+))?(/(file|folder)/([a-zA-Z0-9]+))?", Pattern.CASE_INSENSITIVE);
 
     /**
-     * Returns ID of preferred subfolder or file. </br>
-     * Returns non-validated result!
+     * Returns ID of preferred subfolder or file. </br> Returns non-validated result!
      */
     private static String getPreferredNodeID(final String url) {
         String id = new Regex(url, PATTERN_FOLDER_NEW).getMatch(5);
@@ -300,7 +299,7 @@ public class MegaNzFolder extends PluginForDecrypt {
         String w = null;// websocket
         synchronized (folderNodes) {
             if (folderNodes.size() > 0) {
-                logger.info("Found Cache:Nodes=" + folderNodes.size() + "|FolderID=" + folderID);
+                logger.info("Found Cache:Nodes=" + (folderNodes.size() - 1) + "|FolderID=" + folderID);
             } else {
                 final List<Map<String, Object>> parsedNodes = new ArrayList<Map<String, Object>>();
                 pagination: while (!isAbort()) {
@@ -318,9 +317,9 @@ public class MegaNzFolder extends PluginForDecrypt {
                         }
                     } else {
                         con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID
-                        /*
-                         * + "&domain=meganz
-                         */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
+                                /*
+                                 * + "&domain=meganz
+                                 */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
                         // ->
                         // !nocache,
                         // commands.cpp
@@ -533,16 +532,17 @@ public class MegaNzFolder extends PluginForDecrypt {
             }
         }
         final Map<String, Object> folderMetaInfos = folderNodes.get(folderNodes.size() - 1);
-        if (folderMetaInfos == null || !folderID.equals(folderMetaInfos.get("pn"))) {
+        if (folderMetaInfos == null || !folderID.equals(folderMetaInfos.get("pn")) || !folderMetaInfos.containsKey("folderMetaInfos")) {
             /* Something must have gone seriously wrong */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             folderMasterKey = (String) folderMetaInfos.get("mk");
+            if (StringUtils.isEmpty(folderMasterKey)) {
+                /* Something must have gone seriously wrong */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-        if (StringUtils.isEmpty(folderMasterKey)) {
-            /* Something must have gone seriously wrong */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+
         /*
          * p = parent node (ID)
          *
