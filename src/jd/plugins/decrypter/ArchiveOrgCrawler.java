@@ -1008,7 +1008,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             if (isOldVersion) {
                 /* Skip old elements. */
                 skippedItemsFilepaths.add(pathWithFilename);
-            } else if (!isOriginal && crawlOriginalFilesOnly) {
+            } else if (crawlOriginalFilesOnly && !isOriginal) {
                 skippedItemsFilepaths.add(pathWithFilename);
             } else if (isMetadata && !crawlMetadataFiles) {
                 /* Only include metadata if wished by the user. */

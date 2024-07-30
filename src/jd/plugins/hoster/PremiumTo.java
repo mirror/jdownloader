@@ -42,7 +42,6 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
@@ -84,6 +83,11 @@ public class PremiumTo extends UseNet {
     private final String API_BASE_STORAGE                                                  = "https://storage.premium.to/api/2";
     private final String API_BASE_TORRENT                                                  = "https://torrent.premium.to/api/2";
     private final String PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED = "deactivated_filehosts_dialog_shown_and_confirmed";
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.USENET };
+    }
 
     private boolean requiresAccount(final DownloadLink link) {
         if (link != null && link.getPluginPatternMatcher() != null && (link.getPluginPatternMatcher().matches(type_torrent_remote) || link.getPluginPatternMatcher().matches(type_storage_remote))) {
@@ -221,11 +225,12 @@ public class PremiumTo extends UseNet {
         return 300 * 1000;
     }
 
-    private Map<String, Object> login(Account account, boolean force) throws Exception {
+    private Map<String, Object> login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             br.setCookiesExclusive(true);
             final String userid = this.getUserID(account);
             final String apikey = this.getAPIKey(account);
+            br.getHeaders().put("API", this.getUserID(account) + this.getAPIKey(account)); // 2024-07-30
             if (!force) {
                 /* Trust existing login-data without check */
                 return null;
@@ -236,9 +241,9 @@ public class PremiumTo extends UseNet {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final Map<String, Object> userinfo = login(account, true);
+        final AccountInfo ai = new AccountInfo();
         /* Normal traffic */
         final long nT = ((Number) userinfo.get("traffic")).longValue();
         /* Special traffic */
@@ -255,18 +260,19 @@ public class PremiumTo extends UseNet {
         final String apikey = this.getAPIKey(account);
         final String userid = this.getUserID(account);
         final ArrayList<String> supported_hosts_regular = new ArrayList<String>();
-        ArrayList<String> supported_hosts_storage = new ArrayList<String>();
+        final ArrayList<String> supported_hosts_storage = new ArrayList<String>();
         try {
             br.getPage(API_BASE + "/hosts.php?userid=" + userid + "&apikey=" + apikey);
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+            final Map<String, Object> entries = this.handleErrorsAPI(null, account, false);
             final List<Object> ressourcelist = (List<Object>) entries.get("hosts");
             for (final Object hostO : ressourcelist) {
                 if (hostO instanceof String) {
                     supported_hosts_regular.add((String) hostO);
                 }
             }
-        } catch (final Throwable e) {
-            logger.info("Failure to find regular supported hosts");
+        } catch (final Throwable ignore) {
+            logger.log(ignore);
+            logger.warning("Failure to find regular supported hosts");
         }
         supported_hosts_regular.add("usenet");
         supported_hosts_regular.addAll(supported_hosts_regular);
@@ -296,7 +302,7 @@ public class PremiumTo extends UseNet {
             }
         } catch (final Throwable e) {
             logger.log(e);
-            logger.info("Failed to find Storage hosts");
+            logger.warning("Failed to find Storage hosts");
         }
         /*
          * Now we've found all supported hosts - let's get the REAL list of supported hosts via a workaround (important for user-settings
@@ -375,6 +381,7 @@ public class PremiumTo extends UseNet {
                 logger.info("Adding final active storage hosts to list of supported hosts: " + real_supported_hosts_storage);
                 real_supported_hosts_regular.addAll(real_supported_hosts_storage);
             }
+            /* Update cache */
             synchronized (PremiumTo.supported_hosts_storage) {
                 PremiumTo.supported_hosts_storage.clear();
                 if (real_supported_hosts_storage != null) {
@@ -467,7 +474,7 @@ public class PremiumTo extends UseNet {
 
     @Override
     public String getAGBLink() {
-        return "https://premium.to/";
+        return "https://" + getHost() + "/";
     }
 
     @Override
@@ -478,11 +485,6 @@ public class PremiumTo extends UseNet {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         handleDirectDownload(link, null);
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.USENET };
     }
 
     @Override
@@ -568,6 +570,7 @@ public class PremiumTo extends UseNet {
             if (link.getSha256Hash() != null) {
                 query.appendEncoded("hash_sha256", link.getSha256Hash());
             }
+            login(account, false);
             String finalURL = null;
             if (requiresStorageDownload) {
                 /* Storage download */
@@ -597,11 +600,9 @@ public class PremiumTo extends UseNet {
             } else {
                 /* Normal (direct) download */
                 logger.info("Attempting DIRECT download: " + link.getHost());
-                login(account, false);
                 finalURL = API_BASE + "/getfile.php?" + query.toString() + "&link=" + urlUrlEncoded;
             }
             final Browser brc = br.cloneBrowser();
-            brc.setFollowRedirects(true);
             final URLConnectionAdapter con = brc.openGetConnection(finalURL);
             try {
                 if (con.isOK() && this.looksLikeDownloadableContent(con) && con.getCompleteContentLength() > 0) {
@@ -651,7 +652,7 @@ public class PremiumTo extends UseNet {
                     logger.info("Trying to find storageID");
                     try {
                         br.getPage("https://storage.premium.to/status.php");
-                        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+                        Map<String, Object> entries = this.handleErrorsAPI(null, account, false);
                         final List<Object> storage_objects = (List<Object>) entries.get("f");
                         for (final Object fileO : storage_objects) {
                             entries = (Map<String, Object>) fileO;
@@ -791,7 +792,6 @@ public class PremiumTo extends UseNet {
         if (isUsenetLink(link)) {
             return super.requestFileInformation(link);
         } else {
-            br.setFollowRedirects(true);
             final Account account = AccountController.getInstance().getValidAccount(this.getHost());
             return requestFileInformation(link, account);
         }
@@ -805,6 +805,9 @@ public class PremiumTo extends UseNet {
         if (requiresAccount(link) && account == null) {
             /* Account required to check given link. */
             return AvailableStatus.UNCHECKABLE;
+        }
+        if (account != null) {
+            this.login(account, false);
         }
         final String dllink = getDirectURL(link, account);
         URLConnectionAdapter con = null;
@@ -826,7 +829,10 @@ public class PremiumTo extends UseNet {
             if (fileSize <= 0) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            link.setFinalFileName(getFileNameFromConnection(con));
+            final String filenameFromConnection = getFileNameFromConnection(con);
+            if (filenameFromConnection != null) {
+                link.setFinalFileName(filenameFromConnection);
+            }
             if (con.isContentDecoded()) {
                 link.setDownloadSize(fileSize);
             } else {

@@ -276,6 +276,13 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         return this.getProtocol() + appendWWWIfRequired(host) + "/" + urlSlug + "/";
     }
 
+    protected String generateContentURLDefaultVideoNoFUID(final String host, final String urlSlug) {
+        if (host == null || urlSlug == null) {
+            return null;
+        }
+        return this.getProtocol() + appendWWWIfRequired(host) + "/video/" + urlSlug + "/";
+    }
+
     /**
      * Use this e.g. for:</br>
      * example.com/1234</br>
@@ -1467,28 +1474,34 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             /* Stage 3 - wider attempt of "stage 1" in "crypted" handling. Aso allows URLs without the typical "get_file" KVS pattern. */
             foundQualities = 0;
             /* E.g. good for websites like: gottanut.com */
-            final String[][] videoInfos = br.getRegex("(video_url[a-z0-9_]*)\\s*:\\s*(?:\"|\\')((?:https?://|/)[^<>\"\\']+\\.mp4[^<>\"\\']*)(?:\"|\\')").getMatches();
+            final String[][] videoInfos = br.getRegex("(video_(?:alt_)?url[a-z0-9_]*)\\s*:\\s*(?:\"|\\')((?:https?://|/)[^<>\"\\']+\\.mp4[^<>\"\\']*)(?:\"|\\')").getMatches();
             for (final String[] vidInfo : videoInfos) {
                 final String urlVarName = vidInfo[0];
                 final String dllinkTmp = vidInfo[1];
-                String possibleQualityIndicator = br.getRegex(urlVarName + "_text" + "\\s*:\\s*(?:\"|\\')([^<>\"\\']+)(?:\"|\\')").getMatch(0);
-                int videoQuality = -1;
-                if (possibleQualityIndicator != null && possibleQualityIndicator.matches("\\d+p")) {
-                    videoQuality = Integer.parseInt(possibleQualityIndicator.replace("p", ""));
+                String videoQualityText = br.getRegex(Pattern.quote(urlVarName) + "_text" + "\\s*:\\s*(?:\"|\\')([^<>\"\\']+)(?:\"|\\')").getMatch(0);
+                int videoQualityHeight = -1;
+                if (videoQualityText != null && videoQualityText.matches("\\d+p")) {
+                    videoQualityHeight = Integer.parseInt(videoQualityText.replace("p", ""));
+                } else if (videoQualityText != null && videoQualityText.matches("\\d+")) {
+                    videoQualityHeight = Integer.parseInt(videoQualityText);
                 } else {
                     /* Look for quality indicator inside URL. */
                     /*
                      * Just a logger. Some call their (mostly 720p) quality "High Definition" but usually there will only be one quality
                      * available then anyways (e.g. xxxymovies.com)!
                      */
-                    logger.info("Found unidentifyable (text-) quality indicator: " + possibleQualityIndicator);
-                    possibleQualityIndicator = new Regex(dllinkTmp, "(\\d+)p\\.mp4").getMatch(0);
-                    if (possibleQualityIndicator != null) {
-                        videoQuality = Integer.parseInt(possibleQualityIndicator);
+                    logger.info("Found unidentifyable (text-) quality indicator: " + videoQualityText);
+                    videoQualityText = new Regex(dllinkTmp, "(\\d+)p\\.mp4").getMatch(0);
+                    // if (videoQualityText == null) {
+                    // /* 2024-07-30: e.g. thepornbang.com */
+                    // videoQualityText = new Regex(dllinkTmp, "\\d+-(\\d+)\\.mp4").getMatch(0);
+                    // }
+                    if (videoQualityText != null) {
+                        videoQualityHeight = Integer.parseInt(videoQualityText);
                     }
                 }
-                if (videoQuality > 0) {
-                    qualityMap.put(videoQuality, dllinkTmp);
+                if (videoQualityHeight > 0) {
+                    qualityMap.put(videoQualityHeight, dllinkTmp);
                     foundQualities++;
                 } else {
                     uncryptedUrlWithoutQualityIndicator = dllinkTmp;
