@@ -890,7 +890,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             return true;
         } else if (br._getURL().getPath().matches("(?i)/4(04|10)\\.php.*")) {
             return true;
-        } else if (br.containsHTML("(?i)>\\s*(Sorry, this video was deleted per copyright owner request|Video has been removed due to a violation of the Terms and Conditions|Deleted by the owner request|This video has been removed)")) {
+        } else if (br.containsHTML("(?i)>\\s*(Sorry, this video was deleted per copyright owner request|Video has been removed due to a violation of the Terms and Conditions|Deleted by the owner request|This video has been removed|Video removed due to DMCA)")) {
             return true;
         } else {
             return false;

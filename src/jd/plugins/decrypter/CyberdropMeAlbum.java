@@ -88,23 +88,23 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/a/[A-Za-z0-9]+";
+            String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(" + PATTERN_ALBUM.pattern() + "|" + PATTERN_SINGLE_FILE.pattern() + ")";
             regex += "|https?://fs-\\d+\\." + buildHostsPatternPart(domains) + "/.*?\\." + EXTENSIONS;// TYPE_FS
             ret.add(regex);
         }
         return ret.toArray(new String[0]);
     }
 
-    public static final String TYPE_ALBUM       = "(?i)https?://[^/]+/a/([A-Za-z0-9]+)";
-    public static final String TYPE_FS          = "(?i)https?://fs-(\\d+)\\.[^/]+/(.*?\\." + EXTENSIONS + ")";
-    public static final String TYPE_SINGLE_FILE = "(?i)https?://[^/]+/f/([A-Za-z0-9]+)";
-    private PluginForHost      plugin           = null;
+    public static final Pattern PATTERN_ALBUM       = Pattern.compile("/a/([A-Za-z0-9]+)", Pattern.CASE_INSENSITIVE);
+    public static final String  TYPE_FS             = "(?i)https?://fs-(\\d+)\\.[^/]+/(.*?\\." + EXTENSIONS + ")";
+    public static final Pattern PATTERN_SINGLE_FILE = Pattern.compile("/f/([A-Za-z0-9]+)", Pattern.CASE_INSENSITIVE);
+    private PluginForHost       plugin              = null;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String contenturl = param.getCryptedUrl();
         final String singleFileURL = isSingleMediaURL(contenturl);
-        final Regex singlefle = new Regex(contenturl, CyberdropMeAlbum.TYPE_SINGLE_FILE);
+        final Regex singlefle = new Regex(contenturl, CyberdropMeAlbum.PATTERN_SINGLE_FILE);
         if (singlefle.patternFind()) {
             /* Single file -> Handle via hosterplugin */
             this.ensureInitHosterplugin();
@@ -114,7 +114,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         } else if (singleFileURL != null) {
             /* Single direct downloadable file -> Handle via hosterplugin */
             add(ret, null, param.getCryptedUrl(), null, null, null, null);
-        } else if (param.getCryptedUrl().matches(TYPE_ALBUM)) {
+        } else if (new Regex(param.getCryptedUrl(), PATTERN_ALBUM).patternFind()) {
             /* Most likely we have an album or similar: One URL which leads to more URLs. */
             String contentURL = param.getCryptedUrl();
             final String hostFromAddedURLWithoutSubdomain = new URL(contentURL).getHost();
@@ -130,7 +130,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* Double-check for offline / empty album. */
-            final String albumID = new Regex(br.getURL(), TYPE_ALBUM).getMatch(0);
+            final String albumID = new Regex(br.getURL(), PATTERN_ALBUM).getMatch(0);
             int numberofFiles = -1;
             final String numberofFilesStr = br.getRegex("id=\"totalFilesAmount\"[^>]*>\\s*(\\d+)").getMatch(0);
             if (numberofFilesStr != null) {

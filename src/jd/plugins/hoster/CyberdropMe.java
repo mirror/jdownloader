@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -20,9 +23,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.CyberdropMeAlbum;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { CyberdropMeAlbum.class })
@@ -120,30 +120,33 @@ public class CyberdropMe extends PluginForHost {
             link.setName(filenameFromURL);
         }
         String directurl;
-        final Regex singlefle = new Regex(contenturl, CyberdropMeAlbum.TYPE_SINGLE_FILE);
+        final Regex singlefle = new Regex(contenturl, CyberdropMeAlbum.PATTERN_SINGLE_FILE);
         if (singlefle.patternFind()) {
             final String fileID = singlefle.getMatch(0);
             final Browser brc = br.cloneBrowser();
             brc.getHeaders().put("Referer", contenturl);
-            brc.getPage("https://" + this.getHost() + "/api/f/" + fileID);
+            brc.getPage("https://api." + this.getHost() + "/api/file/info/" + fileID);
             if (brc.getHttpConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Invalid API response: Error 403 too many connections?", 1 * 60 * 1000l);
             } else if (brc.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!brc.getRequest().getHtmlCode().startsWith("{")) {
+            } else if (!brc.getRequest().getHtmlCode().startsWith("{")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Invalid API response: No json response", 1 * 60 * 1000l);
             }
-            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
-            link.setFinalFileName(entries.get("name").toString());
-            link.setVerifiedFileSize(((Number) entries.get("size")).longValue());
-            directurl = entries.get("url").toString();
-            if (!StringUtils.isEmpty(directurl)) {
-                link.setProperty(PROPERTY_LAST_GRABBED_DIRECTURL, directurl);
-            }
+            final Map<String, Object> resp1 = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            link.setFinalFileName(resp1.get("name").toString());
+            link.setVerifiedFileSize(((Number) resp1.get("size")).longValue());
             if (!isDownload) {
                 return AvailableStatus.TRUE;
             }
+            final String continuelink = resp1.get("auth_url").toString();
+            brc.getPage(continuelink);
+            final Map<String, Object> resp2 = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            directurl = resp2.get("url").toString();
+            if (StringUtils.isEmpty(directurl)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setProperty(PROPERTY_LAST_GRABBED_DIRECTURL, directurl);
         } else {
             final String containerURL = link.getContainerUrl();
             if (containerURL != null) {

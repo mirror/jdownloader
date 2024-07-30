@@ -997,14 +997,18 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 desiredFileArchiveFileCount = filemap.get("filecount");
                 singleDesiredFile2 = file;
             }
-            if (isOriginal && totalLengthSecondsStr == null) {
+            if (isOriginal) {
                 originalItems.add(file);
-                totalLengthSecondsStr = (String) filemap.get("length");
+                if (totalLengthSecondsStr == null) {
+                    totalLengthSecondsStr = (String) filemap.get("length");
+                }
             }
             /* Add items to list of all results. */
             /* Check some skip conditions */
             if (isOldVersion) {
                 /* Skip old elements. */
+                skippedItemsFilepaths.add(pathWithFilename);
+            } else if (!isOriginal && crawlOriginalFilesOnly) {
                 skippedItemsFilepaths.add(pathWithFilename);
             } else if (isMetadata && !crawlMetadataFiles) {
                 /* Only include metadata if wished by the user. */
