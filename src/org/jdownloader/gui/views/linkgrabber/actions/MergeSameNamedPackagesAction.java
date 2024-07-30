@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -14,6 +15,7 @@ import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.MergePosition;
 import org.jdownloader.images.BadgeIcon;
 
@@ -45,6 +47,7 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
      */
     public MergeSameNamedPackagesAction() {
         // TODO: Find a suitable symbol
+        super(true, true);
         setSmallIcon(new BadgeIcon("logo/dlc", "autoMerge", 32, 24, 2, 6));
         setName("Merge packages with the same name");
         // setAccelerator(KeyEvent.VK_M);
@@ -69,13 +72,15 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
             boolean foundDupes = false;
             final SelectionInfo<CrawledPackage, CrawledLink> sel = getSelection();
             /* If user has selected a package, only collect duplicates of name of selected package. */
-            final CrawledPackage selectedPackage = sel != null ? sel.getPackage() : null;
-            String selectedPackageCompareName = null;
-            if (selectedPackage != null) {
-                if (caseInsensitive) {
-                    selectedPackageCompareName = selectedPackage.getName().toLowerCase(Locale.ENGLISH);
-                } else {
-                    selectedPackageCompareName = selectedPackage.getName();
+            HashSet<String> selectedPackagesNames = null;
+            if (sel != null) {
+                selectedPackagesNames = new HashSet<String>();
+                for (final PackageView<CrawledPackage, CrawledLink> pv : sel.getPackageViews()) {
+                    if (caseInsensitive) {
+                        selectedPackagesNames.add(pv.getPackage().getName().toLowerCase(Locale.ENGLISH));
+                    } else {
+                        selectedPackagesNames.add(pv.getPackage().getName());
+                    }
                 }
             }
             for (final CrawledPackage pckage : pckages) {
@@ -85,12 +90,13 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
                 } else {
                     packagename = pckage.getName();
                 }
-                if (selectedPackageCompareName != null && !packagename.equals(selectedPackageCompareName)) {
-                    /* Only search dupes for selected package */
+                if (selectedPackagesNames != null && !selectedPackagesNames.contains(packagename)) {
+                    /* Only search dupes for selected package(s) */
                     continue;
                 }
                 List<CrawledPackage> thisdupeslist = dupes.get(packagename);
                 if (thisdupeslist != null) {
+                    /* We got at least two packages with the same name */
                     foundDupes = true;
                 } else {
                     thisdupeslist = new ArrayList<CrawledPackage>();
@@ -99,6 +105,8 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
                 thisdupeslist.add(pckage);
             }
             if (!foundDupes) {
+                // TODO: Add logger
+                System.out.println("Failed to find any duplicates packages to merge");
                 return;
             }
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
@@ -114,14 +122,7 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
                             continue;
                         }
                         /* Decide which pckage to merge the others into */
-                        final CrawledPackage target;
-                        if (selectedPackage != null) {
-                            /* Package selected by user */
-                            target = selectedPackage;
-                        } else {
-                            /* First hit */
-                            target = thisdupes.get(0);
-                        }
+                        final CrawledPackage target = thisdupes.get(0);
                         final List<CrawledPackage> packagesToMerge = new ArrayList<CrawledPackage>();
                         for (int i = 1; i < thisdupes.size(); i++) {
                             packagesToMerge.add(thisdupes.get(i));
