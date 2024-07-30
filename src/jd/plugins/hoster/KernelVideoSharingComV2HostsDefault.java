@@ -112,8 +112,6 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         /* 2022-07-12 */
         ret.add(new String[] { "hoes.tube" });
         /* 2022-07-12 */
-        ret.add(new String[] { "love4porn.com" });
-        /* 2022-07-12 */
         ret.add(new String[] { "crazyporn.xxx" });
         /* 2022-07-12 */
         ret.add(new String[] { "fapnado.xxx" });
