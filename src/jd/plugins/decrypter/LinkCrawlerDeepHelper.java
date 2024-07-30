@@ -14,13 +14,10 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerDeepHelperInterface;
 import jd.controlling.linkcrawler.LinkCrawlerRule;
 import jd.http.AuthenticationFactory;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
@@ -48,43 +45,12 @@ public class LinkCrawlerDeepHelper extends PluginForDecrypt implements LinkCrawl
     public URLConnectionAdapter openConnection(final LinkCrawlerRule matchingRule, Browser br, CrawledLink source) throws Exception {
         br.addAllowedResponseCodes(500);
         final String sourceURL = source.getURL();
-        final List<String[]> setCookies = matchingRule != null ? LinkCrawler.getLinkCrawlerRuleCookies(matchingRule.getId()) : null;
-        if (setCookies != null) {
-            for (final String cookie[] : setCookies) {
-                if (cookie != null) {
-                    switch (cookie.length) {
-                    case 1:
-                        br.setCookie(sourceURL, cookie[0], null);
-                        break;
-                    case 2:
-                        br.setCookie(sourceURL, cookie[0], cookie[1]);
-                        break;
-                    case 3:
-                        try {
-                            if (cookie[2] != null && sourceURL.matches(cookie[2])) {
-                                br.setCookie(sourceURL, cookie[0], cookie[1]);
-                            }
-                        } catch (Exception e) {
-                            logger.log(e);
-                        }
-                        break;
-                    default:
-                        break;
-                    }
-                }
-            }
+        if (matchingRule != null) {
+            matchingRule.applyCookies(br, sourceURL, false);
         }
         final URLConnectionAdapter ret = openCrawlDeeperConnection(br, source, 0);
-        if (matchingRule != null && matchingRule.isUpdateCookies()) {
-            final Cookies cookies = br.getCookies(sourceURL);
-            final List<String[]> currentCookies = new ArrayList<String[]>();
-            for (final Cookie cookie : cookies.getCookies()) {
-                if (!cookie.isExpired()) {
-                    currentCookies.add(new String[] { cookie.getKey(), cookie.getValue() });
-                }
-            }
-            // TODO: add support for length==3, url pattern matching support
-            getCrawler().setLinkCrawlerRuleCookies(matchingRule.getId(), currentCookies);
+        if (matchingRule != null && matchingRule.updateCookies(br, sourceURL, false, false)) {
+            getCrawler().updateLinkCrawlerRule(matchingRule);
         }
         return ret;
     }

@@ -1,11 +1,17 @@
 package jd.controlling.linkcrawler;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.net.URLHelper;
 import org.jdownloader.controlling.UniqueAlltimeID;
+
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 
 public class LinkCrawlerRule {
     public static enum RULE {
@@ -71,6 +77,10 @@ public class LinkCrawlerRule {
         return id;
     }
 
+    public void setId(long id) {
+        this.id.setID(id);
+    }
+
     public long getId() {
         return id.getID();
     }
@@ -92,9 +102,64 @@ public class LinkCrawlerRule {
         }
     }
 
+    public boolean updateCookies(final Browser br, final String url, final boolean forceUpdate, final boolean onlyOnPatternMatch) {
+        if ((!onlyOnPatternMatch || matches(url)) && (forceUpdate || isUpdateCookies())) {
+            final Cookies cookies = br.getCookies(url);
+            final List<String[]> updateCookies = new ArrayList<String[]>();
+            for (final Cookie cookie : cookies.getCookies()) {
+                if (!cookie.isExpired()) {
+                    updateCookies.add(new String[] { cookie.getKey(), cookie.getValue() });
+                }
+            }
+            setCookies(updateCookies);
+            // TODO: add support for length==3, url pattern matching support
+            return true;
+        }
+        return false;
+    }
+
+    public boolean applyCookies(final Browser br, final String url, final boolean onlyOnPatternMatch) {
+        int cookiesSet = 0;
+        if (!onlyOnPatternMatch || matches(url)) {
+            final List<String[]> cookies = getCookies();
+            if (cookies != null && cookies.size() > 0) {
+                for (final String cookie[] : cookies) {
+                    if (cookie != null) {
+                        switch (cookie.length) {
+                        case 1:
+                            br.setCookie(url, cookie[0], null);
+                            cookiesSet++;
+                            break;
+                        case 2:
+                            br.setCookie(url, cookie[0], cookie[1]);
+                            cookiesSet++;
+                            break;
+                        case 3:
+                            try {
+                                if (cookie[2] != null && url.matches(cookie[2])) {
+                                    br.setCookie(url, cookie[0], cookie[1]);
+                                    cookiesSet++;
+                                }
+                            } catch (Exception e) {
+                                final LogInterface logger = br.getLogger();
+                                if (logger != null) {
+                                    logger.log(e);
+                                }
+                            }
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return cookiesSet > 0;
+    }
+
     public boolean matches(final String input) {
         final Pattern lPattern = _getPattern();
-        if (lPattern == null) {
+        if (lPattern == null || input == null) {
             return false;
         } else if (lPattern.matcher(input).matches()) {
             return true;

@@ -1,9 +1,9 @@
 package jd.controlling.linkcrawler;
 
-import jd.controlling.linkcollector.LinknameCleaner;
-
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.UniqueAlltimeID;
+
+import jd.controlling.linkcollector.LinknameCleaner;
 
 public class PackageInfo {
     private UniqueAlltimeID uniqueId              = null;
@@ -47,6 +47,15 @@ public class PackageInfo {
 
     public String getName() {
         return name;
+    }
+
+    public static void setName(final CrawledLink link, final String name) {
+        PackageInfo dpi = link.getDesiredPackageInfo();
+        if (dpi == null) {
+            dpi = new PackageInfo();
+        }
+        dpi.setName(name);
+        link.setDesiredPackageInfo(dpi);
     }
 
     public PackageInfo getCopy() {

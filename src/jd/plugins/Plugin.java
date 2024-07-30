@@ -37,33 +37,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.Icon;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
-import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.BrowserSettingsThread;
-import jd.http.ProxySelectorInterface;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.SimpleFTP.ENCODING;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.PluginForHost.FILENAME_SOURCE;
-import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonMapperException;
@@ -113,6 +86,33 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.translate._JDT;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.BrowserSettingsThread;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.SimpleFTP.ENCODING;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.PluginForHost.FILENAME_SOURCE;
+import jd.plugins.components.SiteType.SiteTemplate;
+import jd.utils.JDUtilities;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins müssen von dieser Klasse abgeleitet werden.
@@ -371,7 +371,6 @@ public abstract class Plugin implements ActionListener {
                         ret++;
                     }
                 }
-                System.out.println(string + "\t" + ret);
                 return ret;
             }
 
@@ -595,9 +594,9 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Adds extension to given filename if given filename does not already end with new extension. </br> Do not use this to replace a file
-     * extension with another one if you clearly know what to replace with what because this will auto decide whether to replace or append
-     * the new extension!
+     * Adds extension to given filename if given filename does not already end with new extension. </br>
+     * Do not use this to replace a file extension with another one if you clearly know what to replace with what because this will auto
+     * decide whether to replace or append the new extension!
      */
     public String applyFilenameExtension(final String filenameOrg, String newExtension) {
         if (filenameOrg == null) {
@@ -1255,9 +1254,10 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Displays a BubbleNotification. </br> Plugins which are expected to use this function should return LazyPlugin.FEATURE of type
-     * BUBBLE_NOTIFICATION. </br> Any plugin can try to display a BubbleNotification but upper handling may decide not to display it
-     * depending on user settings. </br> Examples of Plugins using this functionality: RedditComCrawler, TwitterComCrawler, HighWayCore
+     * Displays a BubbleNotification. </br>
+     * Plugins which are expected to use this function should return LazyPlugin.FEATURE of type BUBBLE_NOTIFICATION. </br>
+     * Any plugin can try to display a BubbleNotification but upper handling may decide not to display it depending on user settings. </br>
+     * Examples of Plugins using this functionality: RedditComCrawler, TwitterComCrawler, HighWayCore
      */
     protected void displayBubbleNotification(final String title, final String text, final Icon icon) {
         BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {

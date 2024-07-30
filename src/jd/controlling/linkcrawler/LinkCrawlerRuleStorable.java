@@ -12,10 +12,6 @@ public class LinkCrawlerRuleStorable extends LinkCrawlerRule implements Storable
         _set(rule);
     }
 
-    public void setId(long id) {
-        this.id.setID(id);
-    }
-
     public void _set(LinkCrawlerRule rule) {
         this.setEnabled(rule.isEnabled());
         this.setName(rule.getName());
@@ -31,23 +27,5 @@ public class LinkCrawlerRuleStorable extends LinkCrawlerRule implements Storable
         this.setUpdateCookies(rule.isUpdateCookies());
         this.setLogging(rule.isLogging());
         this.setId(rule.getId());
-    }
-
-    public LinkCrawlerRule _getLinkCrawlerRule() {
-        final LinkCrawlerRule ret = new LinkCrawlerRule(this.getId());
-        ret.setMaxDecryptDepth(getMaxDecryptDepth());
-        ret.setEnabled(isEnabled());
-        ret.setName(getName());
-        ret.setPattern(getPattern());
-        ret.setRule(getRule());
-        ret.setPackageNamePattern(getPackageNamePattern());
-        ret.setFormPattern(getFormPattern());
-        ret.setDeepPattern(getDeepPattern());
-        ret.setRewriteReplaceWith(getRewriteReplaceWith());
-        ret.setCookies(getCookies());
-        ret.setUpdateCookies(isUpdateCookies());
-        ret.setLogging(isLogging());
-        ret.setPasswordPattern(getPasswordPattern());
-        return ret;
     }
 }
