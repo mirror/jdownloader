@@ -13,6 +13,7 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.MergePosition;
 import org.jdownloader.images.BadgeIcon;
 
@@ -66,12 +67,27 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
             final List<CrawledPackage> pckages = lc.getPackages();
             final boolean caseInsensitive = isMatchPackageNamesCaseInsensitive();
             boolean foundDupes = false;
+            final SelectionInfo<CrawledPackage, CrawledLink> sel = getSelection();
+            /* If user has selected a package, only collect duplicates of name of selected package. */
+            final CrawledPackage selectedPackage = sel != null ? sel.getPackage() : null;
+            String selectedPackageCompareName = null;
+            if (selectedPackage != null) {
+                if (caseInsensitive) {
+                    selectedPackageCompareName = selectedPackage.getName().toLowerCase(Locale.ENGLISH);
+                } else {
+                    selectedPackageCompareName = selectedPackage.getName();
+                }
+            }
             for (final CrawledPackage pckage : pckages) {
                 final String packagename;
                 if (caseInsensitive) {
                     packagename = pckage.getName().toLowerCase(Locale.ENGLISH);
                 } else {
                     packagename = pckage.getName();
+                }
+                if (selectedPackageCompareName != null && !packagename.equals(selectedPackageCompareName)) {
+                    /* Only search dupes for selected package */
+                    continue;
                 }
                 List<CrawledPackage> thisdupeslist = dupes.get(packagename);
                 if (thisdupeslist != null) {
@@ -97,7 +113,15 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
                             /* We need at least two packages to be able to merge them. */
                             continue;
                         }
-                        final CrawledPackage target = thisdupes.get(0);
+                        /* Decide which pckage to merge the others into */
+                        final CrawledPackage target;
+                        if (selectedPackage != null) {
+                            /* Package selected by user */
+                            target = selectedPackage;
+                        } else {
+                            /* First hit */
+                            target = thisdupes.get(0);
+                        }
                         final List<CrawledPackage> packagesToMerge = new ArrayList<CrawledPackage>();
                         for (int i = 1; i < thisdupes.size(); i++) {
                             packagesToMerge.add(thisdupes.get(i));
