@@ -566,6 +566,10 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         }
     }
 
+    public void merge(final PackageType dest, final java.util.List<PackageType> srcPkgs, final MergePosition mergeposition) {
+        merge(dest, null, srcPkgs, mergeposition);
+    }
+
     public void merge(final PackageType dest, final java.util.List<ChildType> srcLinks, final java.util.List<PackageType> srcPkgs, final MergePosition mergeposition) {
         if (dest == null) {
             return;

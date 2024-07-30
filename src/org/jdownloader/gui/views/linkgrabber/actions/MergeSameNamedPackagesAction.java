@@ -127,7 +127,7 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
                         for (int i = 1; i < thisdupes.size(); i++) {
                             packagesToMerge.add(thisdupes.get(i));
                         }
-                        LinkCollector.getInstance().merge(target, null, packagesToMerge, MergePosition.TOP);
+                        LinkCollector.getInstance().merge(target, packagesToMerge, MergePosition.TOP);
                     }
                     return null;
                 }
