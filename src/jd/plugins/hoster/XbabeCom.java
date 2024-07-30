@@ -91,7 +91,7 @@ public class XbabeCom extends KernelVideoSharingComV2 {
             }
             qualityMap.put(width, url);
         }
-        String dllink = this.handleQualitySelection(link, qualityMap);
+        String dllink = this.handleQualitySelection(br, link, qualityMap);
         if (dllink != null) {
             return dllink;
         } else {

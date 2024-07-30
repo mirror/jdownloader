@@ -72,7 +72,7 @@ public class XfreehdCom extends KernelVideoSharingComV2 {
 
     @Override
     protected String getDllink(final DownloadLink link, final Browser br) throws PluginException, IOException {
-        final int userSelectedQuality = this.getPreferredStreamQuality();
+        final int userSelectedQuality = this.getPreferredStreamQuality(link);
         final String urlsd = br.getRegex("src=\"(https?://[^\"]+)\" title=\"SD\" [^>]*/>").getMatch(0);
         final String urlhd = br.getRegex("src=\"(https?://[^\"]+)\" title=\"HD\" [^>]*/>").getMatch(0);
         if (userSelectedQuality != -1 && userSelectedQuality < 720 && urlsd != null) {

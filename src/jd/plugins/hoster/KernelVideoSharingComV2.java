@@ -1372,7 +1372,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             /* Prefer known qualities over those where we do not know the quality. */
             if (qualityMap.size() > 0) {
                 logger.info("Found " + qualityMap.size() + " total crypted downloadurls");
-                dllink = handleQualitySelection(link, qualityMap);
+                dllink = handleQualitySelection(br, link, qualityMap);
             } else if (uncryptedUrlWithoutQualityIndicator != null) {
                 logger.info("Seems like there is only a single quality available --> Using that one");
                 dllink = uncryptedUrlWithoutQualityIndicator;
@@ -1509,7 +1509,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
             logger.info("Found " + foundQualities + " qualities in stage 3");
             if (!qualityMap.isEmpty()) {
-                dllink = handleQualitySelection(link, qualityMap);
+                dllink = handleQualitySelection(br, link, qualityMap);
             } else if (uncryptedUrlWithoutQualityIndicator != null) {
                 /* Rare case */
                 logger.info("Selected URL without quality indicator: " + uncryptedUrlWithoutQualityIndicator);
@@ -1672,7 +1672,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
             qualityMap.put(height, decryptedVideoURL);
         }
-        return this.handleQualitySelection(link, qualityMap);
+        return this.handleQualitySelection(br, link, qualityMap);
     }
 
     /** Decrypts given URL if needed. */
@@ -1728,7 +1728,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /** Returns user preferred quality inside given quality map. Returns best, if user selection is not present in map. */
-    protected final String handleQualitySelection(final DownloadLink link, final HashMap<Integer, String> qualityMap) {
+    protected final String handleQualitySelection(final Browser br, final DownloadLink link, final HashMap<Integer, String> qualityMap) {
         if (qualityMap.isEmpty()) {
             logger.info("Cannot perform quality selection: qualityMap is empty");
             return null;
@@ -1737,7 +1737,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         final Iterator<Entry<Integer, String>> iterator = qualityMap.entrySet().iterator();
         int maxQuality = 0;
         String maxQualityDownloadurl = null;
-        final int userSelectedQuality = this.getPreferredStreamQuality();
+        final int userSelectedQuality = this.getPreferredStreamQuality(link);
         String selectedQualityDownloadurl = null;
         while (iterator.hasNext()) {
             final Entry<Integer, String> entry = iterator.next();
@@ -1762,11 +1762,53 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             chosenQuality = maxQuality;
             downloadurl = maxQualityDownloadurl;
         }
-        link.setProperty(PROPERTY_CHOSEN_QUALITY, chosenQuality);
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             link.setComment("ChosenQuality: " + chosenQuality + "p");
         }
-        return downloadurl;
+        if (downloadurl != null) {
+            if (chosenQuality == link.getIntegerProperty(PROPERTY_CHOSEN_QUALITY, -1)) {
+                // no need to reevaluate again, chosenQuality is unchanged
+                return downloadurl;
+            } else if (this.isHLS(downloadurl)) {
+                link.setProperty(PROPERTY_CHOSEN_QUALITY, chosenQuality);
+                return downloadurl;
+            }
+            URLConnectionAdapter con = null;
+            try {
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                brc.setAllowedResponseCodes(new int[] { 405 });
+                con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(downloadurl));
+                if (this.looksLikeHLS(con)) {
+                    brc.followConnection();
+                    logger.info("Found HLS stream instead of expected progressive video stream download");
+                    link.setProperty(PROPERTY_CHOSEN_QUALITY, chosenQuality);
+                    return downloadurl;
+                }
+                final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
+                if (workaroundURL != null && !this.looksLikeDownloadableContent(con)) {
+                    brc.followConnection(true);
+                    con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(workaroundURL));
+                }
+                if (!this.looksLikeDownloadableContent(con)) {
+                    brc.followConnection(true);
+                    logger.info("Skipping invalid directurl: " + downloadurl);
+                } else {
+                    link.setProperty(PROPERTY_CHOSEN_QUALITY, chosenQuality);
+                    return downloadurl;
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
+            }
+            final HashMap<Integer, String> nextQualityMap = new HashMap<Integer, String>(qualityMap);
+            nextQualityMap.remove(chosenQuality);
+            return handleQualitySelection(br, link, nextQualityMap);
+        }
+        return null;
     }
 
     /** Checks "/get_file/"-style URLs for validity by "blacklist"-style behavior. */
@@ -2004,8 +2046,17 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
     }
 
-    /** Returns user selected stream quality (video height). -1 = BEST/default */
-    protected final int getPreferredStreamQuality() {
+    /**
+     * Returns user selected stream quality (video height). -1 = BEST/default
+     *
+     * @param link
+     *            TODO
+     */
+    protected final int getPreferredStreamQuality(DownloadLink link) {
+        final int chosenQuality = link.getIntegerProperty(PROPERTY_CHOSEN_QUALITY, -1);
+        if (chosenQuality > 0) {
+            return chosenQuality;
+        }
         final Class<? extends KVSConfig> cfgO = this.getConfigInterface();
         if (cfgO != null) {
             final KVSConfig cfg = PluginJsonConfig.get(cfgO);
@@ -2075,5 +2126,6 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.removeProperty(PROPERTY_CHOSEN_QUALITY);
     }
 }
