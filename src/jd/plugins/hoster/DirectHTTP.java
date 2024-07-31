@@ -791,12 +791,9 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
             final LinkCrawlerRule rule = LinkCrawler.getLinkCrawlerRule(linkCrawlerRuleID);
             if (rule != null && LinkCrawlerRule.RULE.DIRECTHTTP.equals(rule.getRule())) {
                 return rule;
-            } else {
-                return null;
             }
-        } else {
-            return null;
         }
+        return null;
     }
 
     private void applyRateLimits(final DownloadLink downloadLink, Browser br) {
