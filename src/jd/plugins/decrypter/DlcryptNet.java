@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -31,9 +34,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dlcrypt.net" }, urls = { "https?://(?:www\\.)?dlcrypt\\.net/(gets|views)/([A-Za-z0-9]+)" })
 public class DlcryptNet extends PluginForDecrypt {
     public DlcryptNet(PluginWrapper wrapper) {
@@ -42,15 +42,15 @@ public class DlcryptNet extends PluginForDecrypt {
 
     private static final String TYPE_VIEWS = "https?://(?:www\\.)?dlcrypt\\.net/views/([A-Za-z0-9]+)";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String type = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         if (type.equalsIgnoreCase("gets")) {
-            crawlGets(param, decryptedLinks);
+            crawlGets(param, ret);
         } else {
-            crawlViews(param, decryptedLinks);
+            crawlViews(param, ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     /**
@@ -60,18 +60,17 @@ public class DlcryptNet extends PluginForDecrypt {
      * @throws DecrypterException
      * @throws InterruptedException
      */
-    private void crawlGets(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws IOException, PluginException, DecrypterException, InterruptedException {
+    private void crawlGets(final CryptedLink param, final ArrayList<DownloadLink> ret) throws IOException, PluginException, DecrypterException, InterruptedException {
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* First, try to skip captcha & waittime (2020-11-09: Captcha is skippable!). */
         final String viewsURL = br.getRegex("(/views/[A-Za-z0-9]+)").getMatch(0);
         if (viewsURL != null) {
             logger.info("Skipping captcha");
-            crawlViews(new CryptedLink(br.getURL(viewsURL).toString(), param.getSource()), decryptedLinks);
+            crawlViews(new CryptedLink(br.getURL(viewsURL).toString(), param.getSource()), ret);
             return;
         } else {
             /* 2020-11-09: All untested (and not needed atm.) */
@@ -101,7 +100,7 @@ public class DlcryptNet extends PluginForDecrypt {
             } else if (!redirect.matches(TYPE_VIEWS)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            crawlViews(new CryptedLink(br.getURL(redirect).toString(), param.getSource()), decryptedLinks);
+            crawlViews(new CryptedLink(br.getURL(redirect).toString(), param.getSource()), ret);
         }
     }
 
@@ -110,12 +109,11 @@ public class DlcryptNet extends PluginForDecrypt {
      *
      * @throws DecrypterException
      */
-    private void crawlViews(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws IOException, PluginException, DecrypterException {
+    private void crawlViews(final CryptedLink param, final ArrayList<DownloadLink> ret) throws IOException, PluginException, DecrypterException {
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Link Removed or Expaired")) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Form pwForm = null;
         boolean pwSuccess = false;
@@ -153,7 +151,7 @@ public class DlcryptNet extends PluginForDecrypt {
             if (!StringUtils.isEmpty(passCode)) {
                 /* TODO: 2020-11-09: Set this as extraction password */
             }
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
     }
 }

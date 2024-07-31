@@ -1070,7 +1070,9 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                     /* Access hls master */
                     getPage(brc, this.dllink);
                 }
-                handleConnectionErrors(brc, brc.getHttpConnection());
+                if (!looksLikeHLS(brc.getHttpConnection())) {
+                    handleConnectionErrors(brc, brc.getHttpConnection());
+                }
                 final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(brc));
                 if (hlsbest == null) {
                     this.checkErrorsLastResort(brc, link, account);

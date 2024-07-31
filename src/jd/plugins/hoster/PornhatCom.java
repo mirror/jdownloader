@@ -19,7 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -94,5 +96,16 @@ public class PornhatCom extends KernelVideoSharingComV2 {
     protected boolean preferTitleHTML() {
         /* 2023-04-27 */
         return true;
+    }
+
+    @Override
+    protected String regexNormalTitleWebsite(final Browser br) {
+        // 2024-07-31
+        final String betterTitle = HTMLSearch.searchMetaTag(br, "og:title");
+        if (betterTitle != null) {
+            return betterTitle;
+        } else {
+            return super.regexNormalTitleWebsite(br);
+        }
     }
 }
