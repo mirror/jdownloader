@@ -31,24 +31,6 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.raf.FileBytesMap;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -100,6 +82,24 @@ import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.Formatter;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.raf.FileBytesMap;
 
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class HLSDownloader extends DownloadInterface {
@@ -1224,55 +1224,54 @@ public class HLSDownloader extends DownloadInterface {
                         final String downloadURL;
                         final M3U8Segment segment;
                         final M3U8Playlist playList;
-                        Map<String, Object> currentRetryMap = null;
                         if (url != null) {
                             // disabled in HLSDownloader! do not allow access to other urls than hls segments
                             segment = null;
                             downloadURL = url;
                             playList = null;
                             return false;
-                        } else {
-                            final int playListIndex = getCurrentPlayListIndex();
-                            synchronized (HLSDownloader.this.retryMap) {
-                                currentRetryMap = HLSDownloader.this.retryMap.get(playListIndex);
-                                if (currentRetryMap == null) {
-                                    currentRetryMap = new HashMap<String, Object>();
-                                    HLSDownloader.this.retryMap.put(playListIndex, currentRetryMap);
+                        }
+                        final int playListIndex = getCurrentPlayListIndex();
+                        Map<String, Object> currentRetryMap = null;
+                        synchronized (HLSDownloader.this.retryMap) {
+                            currentRetryMap = HLSDownloader.this.retryMap.get(playListIndex);
+                            if (currentRetryMap == null) {
+                                currentRetryMap = new HashMap<String, Object>();
+                                HLSDownloader.this.retryMap.put(playListIndex, currentRetryMap);
+                            }
+                        }
+                        synchronized (currentRetryMap) {
+                            if (currentRetryMap.containsKey("block_" + segmentIndex)) {
+                                response.setResponseCode(ResponseCode.get(404));
+                                return true;
+                            }
+                        }
+                        playList = getCurrentPlayList();
+                        try {
+                            final int index = Integer.parseInt(segmentIndex);
+                            segment = playList.getSegment(index);
+                            if (segment == null) {
+                                throw new IndexOutOfBoundsException("Unknown segment:" + index);
+                            } else {
+                                requestLogger.info("Forward segment:" + (index + 1) + "/" + playList.size());
+                                downloadURL = segment.getUrl();
+                            }
+                            if (checkAbortDownloadCondition(playList, segment)) {
+                                requestLogger.info("Abort segment:" + (index + 1) + "/" + playList.size());
+                                response.setResponseCode(ResponseCode.get(404));
+                                return true;
+                            }
+                            synchronized (m3u8SegmentsStates) {
+                                if (!m3u8SegmentsStates.containsKey(segment)) {
+                                    m3u8SegmentsStates.put(segment, M3U8SEGMENTSTATE.UNKNOWN);
                                 }
                             }
-                            synchronized (currentRetryMap) {
-                                if (currentRetryMap.containsKey("block_" + segmentIndex)) {
-                                    response.setResponseCode(ResponseCode.get(404));
-                                    return true;
-                                }
-                            }
-                            playList = getCurrentPlayList();
-                            try {
-                                final int index = Integer.parseInt(segmentIndex);
-                                segment = playList.getSegment(index);
-                                if (segment == null) {
-                                    throw new IndexOutOfBoundsException("Unknown segment:" + index);
-                                } else {
-                                    requestLogger.info("Forward segment:" + (index + 1) + "/" + playList.size());
-                                    downloadURL = segment.getUrl();
-                                }
-                                if (checkAbortDownloadCondition(playList, segment)) {
-                                    requestLogger.info("Abort segment:" + (index + 1) + "/" + playList.size());
-                                    response.setResponseCode(ResponseCode.get(404));
-                                    return true;
-                                }
-                                synchronized (m3u8SegmentsStates) {
-                                    if (!m3u8SegmentsStates.containsKey(segment)) {
-                                        m3u8SegmentsStates.put(segment, M3U8SEGMENTSTATE.UNKNOWN);
-                                    }
-                                }
-                            } catch (final NumberFormatException e) {
-                                requestLogger.log(e);
-                                return false;
-                            } catch (final IndexOutOfBoundsException e) {
-                                requestLogger.log(e);
-                                return false;
-                            }
+                        } catch (final NumberFormatException e) {
+                            requestLogger.log(e);
+                            return false;
+                        } catch (final IndexOutOfBoundsException e) {
+                            requestLogger.log(e);
+                            return false;
                         }
                         final FileBytesMap fileBytesMap = new FileBytesMap();
                         final Browser br = getRequestBrowser();

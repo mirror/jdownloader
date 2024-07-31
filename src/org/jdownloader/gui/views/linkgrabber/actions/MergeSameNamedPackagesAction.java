@@ -53,7 +53,7 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
         // setSmallIcon(new BadgeIcon("logo/dlc", "autoMerge", 32, 24, 2, 6));
         setName(_GUI.T.MergeSameNamedPackagesAction_());
         // setAccelerator(KeyEvent.VK_M);
-        setIconKey(IconKey.ICON_PACKAGE_NEW);
+        setIconKey(IconKey.ICON_REMOVE_DUPES);
     }
 
     private static final long serialVersionUID = -1758454550263991987L;
