@@ -37,6 +37,8 @@ public class KernelVideoSharingComV2HostsDefault3 extends KernelVideoSharingComV
         ret.add(new String[] { "upskirt.tv" });
         /* 2023-07-18 */
         ret.add(new String[] { "freshporno.net" });
+        /* 2024-07-31 */
+        ret.add(new String[] { "xmegadrive.com" });
         return ret;
     }
 
