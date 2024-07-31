@@ -167,4 +167,25 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
             }
         });
     }
+
+    /** Merges comments of multiple packages into one string. */
+    public static String mergePackageComments(final List<PackageView<FilePackage, DownloadLink>> packages) {
+        final StringBuilder sb = new StringBuilder();
+        final HashSet<String> commentDups = new HashSet<String>();
+        for (PackageView<FilePackage, DownloadLink> pv : packages) {
+            final String comment = pv.getPackage().getComment();
+            if (StringUtils.isNotEmpty(comment)) {
+                final String[] commentLines = Regex.getLines(comment);
+                for (final String commentLine : commentLines) {
+                    if (StringUtils.isNotEmpty(commentLine) && commentDups.add(commentLine)) {
+                        if (sb.length() > 0) {
+                            sb.append("\r\n");
+                        }
+                        sb.append(commentLine);
+                    }
+                }
+            }
+        }
+        return sb.toString();
+    }
 }

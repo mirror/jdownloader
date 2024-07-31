@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -120,24 +121,9 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
                 newPackage.setName(name);
                 newPackage.setExpanded(isExpandNewPackage());
                 newPackage.setDownloadFolder(downloadFolder);
-                final StringBuilder sb = new StringBuilder();
-                final HashSet<String> commentDups = new HashSet<String>();
-                for (PackageView<CrawledPackage, CrawledLink> pv : sel.getPackageViews()) {
-                    final String comment = pv.getPackage().getComment();
-                    if (StringUtils.isNotEmpty(comment)) {
-                        final String[] commentLines = Regex.getLines(comment);
-                        for (String commentLine : commentLines) {
-                            if (StringUtils.isNotEmpty(commentLine) && commentDups.add(commentLine)) {
-                                if (sb.length() > 0) {
-                                    sb.append("\r\n");
-                                }
-                                sb.append(commentLine);
-                            }
-                        }
-                    }
-                }
-                if (sb.length() > 0) {
-                    newPackage.setComment(sb.toString());
+                final String packageComment = mergePackageViewListComments(sel.getPackageViews());
+                if (!StringUtils.isEmpty(packageComment)) {
+                    newPackage.setComment(packageComment);
                 }
                 switch (getLocation()) {
                 case AFTER_SELECTION:
@@ -167,5 +153,35 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
                 return null;
             }
         });
+    }
+
+    /** Merges comments of multiple packages into one string. */
+    public static String mergePackageViewListComments(final List<PackageView<CrawledPackage, CrawledLink>> packages) {
+        final List<CrawledPackage> crawledpackagelist = new ArrayList<CrawledPackage>();
+        for (PackageView<CrawledPackage, CrawledLink> pv : packages) {
+            crawledpackagelist.add(pv.getPackage());
+        }
+        return mergeCrawledPackageListComments(crawledpackagelist);
+    }
+
+    /** Merges comments of given packages into one string. */
+    public static String mergeCrawledPackageListComments(final List<CrawledPackage> packages) {
+        final StringBuilder sb = new StringBuilder();
+        final HashSet<String> commentDups = new HashSet<String>();
+        for (final CrawledPackage cp : packages) {
+            final String comment = cp.getComment();
+            if (StringUtils.isNotEmpty(comment)) {
+                final String[] commentLines = Regex.getLines(comment);
+                for (final String commentLine : commentLines) {
+                    if (StringUtils.isNotEmpty(commentLine) && commentDups.add(commentLine)) {
+                        if (sb.length() > 0) {
+                            sb.append("\r\n");
+                        }
+                        sb.append(commentLine);
+                    }
+                }
+            }
+        }
+        return sb.toString();
     }
 }

@@ -1335,6 +1335,12 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Move to new Package" })
     String MergeToPackageAction_MergeToPackageAction_();
 
+    @Default(lngs = { "en" }, values = { "Merge packages with the same name" })
+    String MergeSameNamedPackagesAction_();
+
+    @Default(lngs = { "en" }, values = { "Match names case insensitive" })
+    String MergeSameNamedPackagesAction_Case_Insensitive();
+
     @Default(lngs = { "en" }, values = { "Set Download Directory" })
     String SetDownloadFolderAction_SetDownloadFolderAction_();
 

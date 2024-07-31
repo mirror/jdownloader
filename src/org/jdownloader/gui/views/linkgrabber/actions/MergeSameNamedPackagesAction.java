@@ -9,14 +9,17 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.MergePosition;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.MergeToPackageAction;
 
 import jd.controlling.TaskQueue;
 import jd.controlling.linkcollector.LinkCollector;
@@ -27,7 +30,7 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
     private boolean caseInsensitive = true;
 
     public static String getTranslationForMatchPackageNamesCaseInsensitive() {
-        return "Match names case insensitive";
+        return _GUI.T.MergeSameNamedPackagesAction_Case_Insensitive();
     }
 
     @Customizer(link = "#getTranslationForMatchPackageNamesCaseInsensitive")
@@ -48,7 +51,7 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
         // TODO: Find a suitable symbol
         super(true, true);
         // setSmallIcon(new BadgeIcon("logo/dlc", "autoMerge", 32, 24, 2, 6));
-        setName("Merge packages with the same name");
+        setName(_GUI.T.MergeSameNamedPackagesAction_());
         // setAccelerator(KeyEvent.VK_M);
         setIconKey(IconKey.ICON_PACKAGE_NEW);
     }
@@ -130,9 +133,13 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
                             /* We need at least two packages to be able to merge them. */
                             continue;
                         }
-                        // TODO: Merge package comments
-                        /* Decide which package to merge the others into */
+                        /* Merge comments of all packages so we don't lose any information. */
+                        final String mergedComments = MergeToPackageAction.mergeCrawledPackageListComments(thisdupes);
+                        /* Pick package to merge the others into */
                         final CrawledPackage target = thisdupes.remove(0);
+                        if (!StringUtils.isEmpty(mergedComments)) {
+                            target.setComment(mergedComments);
+                        }
                         LinkCollector.getInstance().merge(target, thisdupes, MergePosition.BOTTOM);
                     }
                     return null;
