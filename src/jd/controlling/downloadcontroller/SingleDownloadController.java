@@ -490,6 +490,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                     throwable = new SkipReasonException(SkipReason.INVALID_DESTINATION_TOO_LONG_PATH);
                 } else if (e.getReason() == PathFailureReason.PATH_SEGMENT_TOO_LONG) {
                     throwable = new SkipReasonException(SkipReason.INVALID_DESTINATION_TOO_LONG_FILENAME);
+                } else if (e.getReason() == PathFailureReason.PATH_TOO_LONG) {
+                    throwable = new SkipReasonException(SkipReason.INVALID_DESTINATION_TOO_LONG_PATH);
                 } else if (e.getReason() == PathFailureReason.PERMISSION_PROBLEM) {
                     throwable = new SkipReasonException(SkipReason.INVALID_DESTINATION_PERMISSION_ISSUE, _JDT.T.DownloadLink_setSkipped_statusmessage_invalid_path_permission_issue_file(e.getProblematicPathSegment().getName()));
                 } else {

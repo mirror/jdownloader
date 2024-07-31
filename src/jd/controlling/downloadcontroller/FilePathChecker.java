@@ -6,6 +6,7 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
@@ -115,6 +116,19 @@ public class FilePathChecker {
                 }
                 break;
             case WINDOWS:
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    // TODO: Correctly implement this once we are aware of the current path limitation
+                    final boolean pathLimitActive = true;
+                    final String pathToCheck;
+                    if (isFile) {
+                        pathToCheck = file.getParentFile().getAbsolutePath();
+                    } else {
+                        pathToCheck = file.getAbsolutePath();
+                    }
+                    if (pathLimitActive && pathToCheck.length() >= 259) {
+                        throw new BadFilePathException(file, BadFilePathException.PathFailureReason.PATH_TOO_LONG);
+                    }
+                }
             default:
                 if (CrossSystem.getOS().isMaximum(OperatingSystem.WINDOWS_NT) && file.getAbsolutePath().length() > 259) {
                     // old windows API does not allow longer paths
@@ -190,7 +204,11 @@ public class FilePathChecker {
                          * result: The path is not usable for us.
                          */
                         // controller.getLogger().severe("Looks like too long downloadpath for Windows: " + thisfolder.getAbsolutePath());
-                        throw new BadFilePathException(thisfolder, BadFilePathException.PathFailureReason.PATH_SEGMENT_TOO_LONG, index);
+                        if (isFile) {
+                            throw new BadFilePathException(thisfolder, BadFilePathException.PathFailureReason.PATH_SEGMENT_TOO_LONG, index);
+                        } else {
+                            throw new BadFilePathException(thisfolder, BadFilePathException.PathFailureReason.PATH_TOO_LONG, index);
+                        }
                     } else {
                         throw new BadFilePathException(thisfolder, BadFilePathException.PathFailureReason.PERMISSION_PROBLEM, index);
                     }
