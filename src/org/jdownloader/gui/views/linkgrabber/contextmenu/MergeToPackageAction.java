@@ -4,10 +4,6 @@ import java.awt.event.ActionEvent;
 import java.util.HashSet;
 import java.util.List;
 
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -23,6 +19,10 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.LocationInList;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 
 public class MergeToPackageAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements ActionContext {
     /**
@@ -89,9 +89,10 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
         if (!isEnabled()) {
             return;
         }
+        NewPackageDialog d = null;
+        final SelectionInfo<CrawledPackage, CrawledLink> sel = getSelection();
         try {
-            final SelectionInfo<CrawledPackage, CrawledLink> sel = getSelection();
-            final NewPackageDialog d = new NewPackageDialog(sel) {
+            d = new NewPackageDialog(sel) {
                 @Override
                 public String getDontShowAgainKey() {
                     return "ABSTRACTDIALOG_DONT_SHOW_AGAIN_" + MergeToPackageAction.this.getClass().getSimpleName();
@@ -104,66 +105,67 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
                 }
             }
             Dialog.getInstance().showDialog(d);
-            final String name = d.getName();
-            if (StringUtils.isEmpty(name)) {
-                return;
-            }
-            final String downloadFolder = d.getDownloadFolder();
-            LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-                @Override
-                protected Void run() throws RuntimeException {
-                    CrawledPackage newPackage = new CrawledPackage();
-                    newPackage.setName(name);
-                    newPackage.setExpanded(isExpandNewPackage());
-                    newPackage.setDownloadFolder(downloadFolder);
-                    final StringBuilder sb = new StringBuilder();
-                    final HashSet<String> commentDups = new HashSet<String>();
-                    for (PackageView<CrawledPackage, CrawledLink> pv : sel.getPackageViews()) {
-                        final String comment = pv.getPackage().getComment();
-                        if (StringUtils.isNotEmpty(comment)) {
-                            final String[] commentLines = Regex.getLines(comment);
-                            for (String commentLine : commentLines) {
-                                if (StringUtils.isNotEmpty(commentLine) && commentDups.add(commentLine)) {
-                                    if (sb.length() > 0) {
-                                        sb.append("\r\n");
-                                    }
-                                    sb.append(commentLine);
+        } catch (DialogNoAnswerException e1) {
+            return;
+        }
+        final String name = d.getName();
+        if (StringUtils.isEmpty(name)) {
+            return;
+        }
+        final String downloadFolder = d.getDownloadFolder();
+        LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+            @Override
+            protected Void run() throws RuntimeException {
+                CrawledPackage newPackage = new CrawledPackage();
+                newPackage.setName(name);
+                newPackage.setExpanded(isExpandNewPackage());
+                newPackage.setDownloadFolder(downloadFolder);
+                final StringBuilder sb = new StringBuilder();
+                final HashSet<String> commentDups = new HashSet<String>();
+                for (PackageView<CrawledPackage, CrawledLink> pv : sel.getPackageViews()) {
+                    final String comment = pv.getPackage().getComment();
+                    if (StringUtils.isNotEmpty(comment)) {
+                        final String[] commentLines = Regex.getLines(comment);
+                        for (String commentLine : commentLines) {
+                            if (StringUtils.isNotEmpty(commentLine) && commentDups.add(commentLine)) {
+                                if (sb.length() > 0) {
+                                    sb.append("\r\n");
                                 }
+                                sb.append(commentLine);
                             }
                         }
                     }
-                    if (sb.length() > 0) {
-                        newPackage.setComment(sb.toString());
+                }
+                if (sb.length() > 0) {
+                    newPackage.setComment(sb.toString());
+                }
+                switch (getLocation()) {
+                case AFTER_SELECTION:
+                    int index = -1;
+                    for (PackageView<CrawledPackage, CrawledLink> pv : sel.getPackageViews()) {
+                        index = Math.max(index, LinkCollector.getInstance().indexOf(pv.getPackage()) + 1);
                     }
-                    switch (getLocation()) {
-                    case AFTER_SELECTION:
-                        int index = -1;
-                        for (PackageView<CrawledPackage, CrawledLink> pv : sel.getPackageViews()) {
-                            index = Math.max(index, LinkCollector.getInstance().indexOf(pv.getPackage()) + 1);
-                        }
-                        LinkCollector.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, index);
-                        return null;
-                    case BEFORE_SELECTION:
-                        index = Integer.MAX_VALUE;
-                        for (PackageView<CrawledPackage, CrawledLink> pv : sel.getPackageViews()) {
-                            index = Math.min(index, LinkCollector.getInstance().indexOf(pv.getPackage()));
-                        }
-                        if (index == Integer.MAX_VALUE) {
-                            index = 0;
-                        }
-                        LinkCollector.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, index);
-                        return null;
-                    case END_OF_LIST:
-                        LinkCollector.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, -1);
-                        return null;
-                    case TOP_OF_LIST:
-                        LinkCollector.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, 0);
-                        return null;
+                    LinkCollector.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, index);
+                    return null;
+                case BEFORE_SELECTION:
+                    index = Integer.MAX_VALUE;
+                    for (PackageView<CrawledPackage, CrawledLink> pv : sel.getPackageViews()) {
+                        index = Math.min(index, LinkCollector.getInstance().indexOf(pv.getPackage()));
                     }
+                    if (index == Integer.MAX_VALUE) {
+                        index = 0;
+                    }
+                    LinkCollector.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, index);
+                    return null;
+                case END_OF_LIST:
+                    LinkCollector.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, -1);
+                    return null;
+                case TOP_OF_LIST:
+                    LinkCollector.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, 0);
                     return null;
                 }
-            });
-        } catch (DialogNoAnswerException e1) {
-        }
+                return null;
+            }
+        });
     }
 }

@@ -85,7 +85,7 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
                         compareName = crawledpackage.getName();
                     }
                     if (selectedPackagesMap.containsKey(compareName)) {
-                        /* Item is already contained in map. */
+                        /* Item is already contained in map - we want to merge all dupes into first package we find. */
                         continue;
                     }
                     selectedPackagesMap.put(compareName, crawledpackage);
@@ -114,10 +114,9 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
             }
             if (!foundDupes) {
                 // TODO: Add logger
-                System.out.println("Failed to find any duplicates packages to merge");
+                System.out.println("Failed to find any duplicated packages to merge");
                 return;
             }
-            final Map<String, CrawledPackage> selectedPackagesMap_final = selectedPackagesMap;
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
                 @Override
                 protected Void run() throws RuntimeException {
@@ -125,24 +124,16 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
                     final Iterator<Entry<String, List<CrawledPackage>>> dupes_iterator = dupes.entrySet().iterator();
                     while (dupes_iterator.hasNext()) {
                         final Entry<String, List<CrawledPackage>> entry = dupes_iterator.next();
-                        final String packagename = entry.getKey();
+                        // final String packagename = entry.getKey();
                         final List<CrawledPackage> thisdupes = entry.getValue();
                         if (thisdupes.size() == 1) {
                             /* We need at least two packages to be able to merge them. */
                             continue;
                         }
-                        /* Decide which pckage to merge the others into */
-                        final CrawledPackage target;
-                        if (selectedPackagesMap_final != null) {
-                            target = selectedPackagesMap_final.get(packagename);
-                        } else {
-                            target = thisdupes.get(0);
-                        }
-                        final List<CrawledPackage> packagesToMerge = new ArrayList<CrawledPackage>();
-                        for (int i = 1; i < thisdupes.size(); i++) {
-                            packagesToMerge.add(thisdupes.get(i));
-                        }
-                        LinkCollector.getInstance().merge(target, packagesToMerge, MergePosition.BOTTOM);
+                        // TODO: Merge package comments
+                        /* Decide which package to merge the others into */
+                        final CrawledPackage target = thisdupes.remove(0);
+                        LinkCollector.getInstance().merge(target, thisdupes, MergePosition.BOTTOM);
                     }
                     return null;
                 }
