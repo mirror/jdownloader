@@ -22,9 +22,13 @@ import org.jdownloader.gui.views.components.packagetable.dragdrop.MergePosition;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MergeToPackageAction;
 
 import jd.controlling.TaskQueue;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.plugins.FilePackage;
 
 public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements ActionContext {
     private boolean caseInsensitive = true;
@@ -67,20 +71,32 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
         if (!isEnabled()) {
             return;
         }
+        // TODO: Remove uglyness
         try {
-            final Map<String, List<CrawledPackage>> dupes = new HashMap<String, List<CrawledPackage>>();
-            final LinkCollector lc = LinkCollector.getInstance();
-            final List<CrawledPackage> pckages = lc.getPackages();
+            final Map<String, List<Object>> dupes = new HashMap<String, List<Object>>();
+            final List<?> pckages;
+            final boolean isLinkgrabber;
+            if (MainTabbedPane.getInstance().isDownloadView()) {
+                pckages = DownloadController.getInstance().getPackages();
+                isLinkgrabber = false;
+            } else if (MainTabbedPane.getInstance().isLinkgrabberView()) {
+                final LinkCollector lc = LinkCollector.getInstance();
+                pckages = lc.getPackages();
+                isLinkgrabber = true;
+            } else {
+                return;
+            }
             final boolean caseInsensitive = isMatchPackageNamesCaseInsensitive();
             boolean foundDupes = false;
-            final SelectionInfo<CrawledPackage, CrawledLink> sel = getSelection();
+            final SelectionInfo<?, ?> sel = getSelection();
             /* If user has selected a package, only collect duplicates of name of selected package. */
-            Map<String, CrawledPackage> selectedPackagesMap = null;
-            final List<PackageView<CrawledPackage, CrawledLink>> selPackageViews = sel.getPackageViews();
+            Map<String, Object> selectedPackagesMap = null;
+            final List<?> selPackageViews = sel.getPackageViews();
             if (sel != null && selPackageViews.size() > 0) {
-                selectedPackagesMap = new HashMap<String, CrawledPackage>();
-                for (final PackageView<CrawledPackage, CrawledLink> pv : selPackageViews) {
-                    final CrawledPackage crawledpackage = pv.getPackage();
+                selectedPackagesMap = new HashMap<>();
+                for (final PackageView<?, ?> pv : sel.getPackageViews()) {
+                    final AbstractPackageNode<?, ?> crawledpackage = pv.getPackage();
+                    // final CrawledPackage crawledpackage = pv.getPackage();
                     final String compareName;
                     if (caseInsensitive) {
                         compareName = crawledpackage.getName().toLowerCase(Locale.ENGLISH);
@@ -94,23 +110,26 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
                     selectedPackagesMap.put(compareName, crawledpackage);
                 }
             }
-            for (final CrawledPackage pckage : pckages) {
-                final String packagename;
-                if (caseInsensitive) {
-                    packagename = pckage.getName().toLowerCase(Locale.ENGLISH);
+            for (Object pckage : pckages) {
+                String packagename;
+                if (isLinkgrabber) {
+                    packagename = ((CrawledPackage) pckage).getName();
                 } else {
-                    packagename = pckage.getName();
+                    packagename = ((FilePackage) pckage).getName();
+                }
+                if (caseInsensitive) {
+                    packagename = packagename.toLowerCase(Locale.ENGLISH);
                 }
                 if (selectedPackagesMap != null && !selectedPackagesMap.containsKey(packagename)) {
                     /* Only search dupes for selected package(s) */
                     continue;
                 }
-                List<CrawledPackage> thisdupeslist = dupes.get(packagename);
+                List<Object> thisdupeslist = dupes.get(packagename);
                 if (thisdupeslist != null) {
                     /* We got at least two packages with the same name */
                     foundDupes = true;
                 } else {
-                    thisdupeslist = new ArrayList<CrawledPackage>();
+                    thisdupeslist = new ArrayList<Object>();
                     dupes.put(packagename, thisdupeslist);
                 }
                 thisdupeslist.add(pckage);
@@ -124,28 +143,37 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
                 @Override
                 protected Void run() throws RuntimeException {
                     /* Merge dupes */
-                    final Iterator<Entry<String, List<CrawledPackage>>> dupes_iterator = dupes.entrySet().iterator();
+                    final Iterator<Entry<String, List<Object>>> dupes_iterator = dupes.entrySet().iterator();
                     while (dupes_iterator.hasNext()) {
-                        final Entry<String, List<CrawledPackage>> entry = dupes_iterator.next();
+                        final Entry<String, List<Object>> entry = dupes_iterator.next();
                         // final String packagename = entry.getKey();
-                        final List<CrawledPackage> thisdupes = entry.getValue();
+                        final List<Object> thisdupes = entry.getValue();
                         if (thisdupes.size() == 1) {
                             /* We need at least two packages to be able to merge them. */
                             continue;
                         }
                         /* Merge comments of all packages so we don't lose any information. */
-                        final String mergedComments = MergeToPackageAction.mergeCrawledPackageListComments(thisdupes);
-                        /* Pick package to merge the others into */
-                        final CrawledPackage target = thisdupes.remove(0);
-                        if (!StringUtils.isEmpty(mergedComments)) {
-                            target.setComment(mergedComments);
+                        if (isLinkgrabber) {
+                            final List<CrawledPackage> linkgrabberdupes = new ArrayList<CrawledPackage>();
+                            for (final Object thisdupe : thisdupes) {
+                                linkgrabberdupes.add((CrawledPackage) thisdupe);
+                            }
+                            final String mergedComments = MergeToPackageAction.mergeCrawledPackageListComments(linkgrabberdupes);
+                            /* Pick package to merge the others into */
+                            final CrawledPackage target = (CrawledPackage) thisdupes.remove(0);
+                            if (!StringUtils.isEmpty(mergedComments)) {
+                                target.setComment(mergedComments);
+                            }
+                            LinkCollector.getInstance().merge(target, linkgrabberdupes, MergePosition.BOTTOM);
+                        } else {
+                            // TODO
                         }
-                        LinkCollector.getInstance().merge(target, thisdupes, MergePosition.BOTTOM);
                     }
                     return null;
                 }
             });
         } catch (final Throwable ignore) {
+            System.out.println("wtf");
         }
     }
 }
