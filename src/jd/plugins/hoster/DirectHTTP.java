@@ -786,8 +786,8 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
     }
 
     private LinkCrawlerRule getDirectHTTPRule(final DownloadLink downloadLink) {
-        final long linkCrawlerRuleID;
-        if ((linkCrawlerRuleID = downloadLink.getLongProperty("lcrID", -1)) != -1) {
+        final long linkCrawlerRuleID = downloadLink.getLongProperty("lcrID", -1);
+        if (linkCrawlerRuleID != -1) {
             final LinkCrawlerRule rule = LinkCrawler.getLinkCrawlerRule(linkCrawlerRuleID);
             if (rule != null && LinkCrawlerRule.RULE.DIRECTHTTP.equals(rule.getRule())) {
                 return rule;
