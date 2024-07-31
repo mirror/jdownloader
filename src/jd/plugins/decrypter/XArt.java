@@ -89,26 +89,28 @@ public class XArt extends PluginForDecrypt {
         if (!url.contains("/members/") && !url.contains("/download/")) {
             url = url.replaceAll("x-art\\.com\\/", "x-art.com/members/");
         }
-        if (url.matches(".*/members(/?|/messages/?|/community/?|/contact/?|/streaming/?|/index/?|/updates/?|/videos/?|/models/?|/favorite/?)$")) {
+        if (url.matches("(?i).*/members(/?|/messages/?|/community/?|/contact/?|/streaming/?|/index/?|/updates/?|/videos/?|/models/?|/favorite/?)$")) {
+            logger.info("Invalid url: " + url);
             return ret;
         }
         if (url.matches("(https?://([^\r\n\t\"']+\\.)?x-art\\.com/[^\r\n\t\"']+\\.(mp4|wmv|mov|zip)[^\r\n\t\"']*)")) {
+            /* Single direct-URL */
             ret.add(createDownloadlink(this, url, url));
             return ret;
         }
-        boolean prem = false;
+        boolean loggedin = false;
         final ArrayList<Account> accounts = AccountController.getInstance().getValidAccounts(getHost());
         if (accounts != null && accounts.size() != 0) {
             final Iterator<Account> it = accounts.iterator();
             while (it.hasNext()) {
                 final Account n = it.next();
                 if (n.isEnabled() && n.isValid()) {
-                    prem = this.login(n);
+                    loggedin = this.login(n);
                     break;
                 }
             }
         }
-        if (!prem) {
+        if (!loggedin) {
             throw new AccountRequiredException();
         }
         if (url.matches("^https?://[^/]+/(members/)?(videos|galleries)/[a-zA0-9\\-\\_]+/?$")) {
@@ -186,7 +188,7 @@ public class XArt extends PluginForDecrypt {
                 ret.addAll(results);
             }
         } else {
-            /* Decrypt video */
+            /* Crawl video */
             final String fid = new Regex(url, "/videos/([^/]+)").getMatch(0);
             if (fid == null) {
                 return;
@@ -202,7 +204,7 @@ public class XArt extends PluginForDecrypt {
             final HashMap<String, List<DownloadLink>> qualities = new HashMap<String, List<DownloadLink>>();
             final ArrayList<DownloadLink> results = new ArrayList<DownloadLink>();
             for (final String video : dlinfo) {
-                final String dlurl = new Regex(video, "(/download/[^<>\"]+)\"").getMatch(0);
+                final String dlurl = new Regex(video, "((https?://(www\\.)?x-art\\.com)?/download/[^<>\"]+)\"").getMatch(0);
                 final String filesize = new Regex(video, "\\((\\d+(?:\\.\\d+)? [A-Za-z]{2,5})\\)").getMatch(0);
                 final String quality_url = dlurl != null ? new Regex(dlurl, "([A-Za-z0-9]+)\\.(mp4|mov|wmv)").getMatch(0) : null;
                 if (dlurl == null || quality_url == null) {

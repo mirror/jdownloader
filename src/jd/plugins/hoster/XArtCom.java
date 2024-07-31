@@ -24,6 +24,7 @@ import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -124,13 +125,18 @@ public class XArtCom extends PluginForHost {
     }
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
+    @Override
     public Class<? extends PluginConfigInterface> getConfigInterface() {
         return XArtConfigInterface.class;
     }
 
     @Override
     public String getAGBLink() {
-        return "https://www.x-art.com/legal/";
+        return "https://www." + getHost() + "/legal/";
     }
 
     @Override
@@ -168,9 +174,13 @@ public class XArtCom extends PluginForHost {
             urlcon = br.openHeadConnection(link.getPluginPatternMatcher());
             final int responseCode = urlcon.getResponseCode();
             if (this.looksLikeDownloadableContent(urlcon)) {
-                downloadURL = urlcon.getURL().toString();
+                downloadURL = urlcon.getURL().toExternalForm();
                 if (urlcon.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(urlcon.getCompleteContentLength());
+                    if (urlcon.isContentDecoded()) {
+                        link.setDownloadSize(urlcon.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(urlcon.getCompleteContentLength());
+                    }
                 }
                 return AvailableStatus.TRUE;
             }
@@ -248,7 +258,8 @@ public class XArtCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         // check if it's time for the next full login.
-        if (account.getStringProperty("nextFullLogin") != null && (System.currentTimeMillis() <= Long.parseLong(account.getStringProperty("nextFullLogin")))) {
+        final long nextFullLogin = account.getLongProperty("nextFullLogin", 0);
+        if (System.currentTimeMillis() <= nextFullLogin) {
             /* Do not validate login */
             login(account, br, false);
         } else {
@@ -276,24 +287,35 @@ public class XArtCom extends PluginForHost {
                         return;
                     } else {
                         logger.info("Cookie/basic auth login failed");
+                        lbr.clearCookies(null);
                     }
                 }
                 prepBrowser(lbr);
                 lbr.setFollowRedirects(true);
                 lbr.getPage("https://www." + this.getHost() + "/members/");
-                /* 2022-11-03: They're using basic auth now but we'll still leave this in as fallback */
-                final Form loginForm = br.getFormbyActionRegex(".*auth.form");
-                if (loginForm != null) {
-                    logger.info("Found loginForm");
-                    loginForm.put("uid", Encoding.urlEncode(account.getUser()));
-                    loginForm.put("pwd", Encoding.urlEncode(account.getPass()));
-                    lbr.submitForm(loginForm);
+                if (!isLoggedIN(lbr)) {
+                    /* 2022-11-03: They're using basic auth now but we'll still leave this in as fallback */
+                    Form loginform = br.getFormbyActionRegex(".*auth.form");
+                    if (loginform == null) {
+                        // 2024-07-31
+                        loginform = br.getFormbyProperty("id", "login_frm");
+                    }
+                    if (loginform != null) {
+                        logger.info("Found loginForm");
+                        loginform.put("username", Encoding.urlEncode(account.getUser()));
+                        loginform.put("rpassword", Encoding.urlEncode(account.getPass()));
+                        /* Make cookies last long */
+                        loginform.put("remember", "y");
+                        lbr.submitForm(loginform);
+                    } else {
+                        logger.warning("Failed to find loginform");
+                    }
                 }
                 if (!isLoggedIN(lbr)) {
                     throw new AccountInvalidException();
                 }
                 account.saveCookies(lbr.getCookies(lbr.getHost()), "");
-                // logic to randomise the next login attempt, to prevent issues with static login detection
+                // logic to randomize the next login attempt, to prevent issues with static login detection
                 long ran2 = 0;
                 // between 2 hours && 6 hours
                 while (ran2 == 0 || (ran2 <= 7200000 && ran2 >= 21600000)) {
@@ -320,7 +342,7 @@ public class XArtCom extends PluginForHost {
     }
 
     private boolean isLoggedIN(final Browser br) {
-        return br.containsHTML("(?i)>Logout</a>");
+        return br.containsHTML("(?i)>\\s*Logout\\s*</a>");
     }
 
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
