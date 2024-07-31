@@ -36,23 +36,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Request;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -117,6 +100,23 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Request;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 public class YoutubeHelper {
     static {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -180,7 +180,7 @@ public class YoutubeHelper {
     // public Map<String, YoutubeBasicVariant> getVariantsMap() {
     // return variantsMap;
     // }
-    public static final List<YoutubeReplacer> REPLACER                         = new ArrayList<YoutubeReplacer>();
+    public static final List<YoutubeReplacer> REPLACER = new ArrayList<YoutubeReplacer>();
     static {
         REPLACER.add(new YoutubeReplacer("GROUP") {
             @Override
@@ -1183,32 +1183,32 @@ public class YoutubeHelper {
             }
         });
     }
-    public static final String                YT_TITLE                         = "YT_TITLE";
-    public static final String                YT_TITLE_ALTERNATIVE             = "YT_TITLE_ALTERNATIVE";
-    public static final String                YT_CATEGORY                      = "YT_CATEGORY";
-    public static final String                YT_ID                            = "YT_ID";
-    public static final String                YT_CHANNEL_TITLE                 = "YT_CHANNEL";
-    public static final String                YT_CHANNEL_TITLE_ALTERNATIVE     = "YT_CHANNEL_ALTERNATIVE";
-    public static final String                YT_DATE                          = "YT_DATE";
-    public static final String                YT_VARIANTS                      = "YT_VARIANTS";
-    public static final String                YT_VARIANT                       = "YT_VARIANT";
+    public static final String  YT_TITLE                         = "YT_TITLE";
+    public static final String  YT_TITLE_ALTERNATIVE             = "YT_TITLE_ALTERNATIVE";
+    public static final String  YT_CATEGORY                      = "YT_CATEGORY";
+    public static final String  YT_ID                            = "YT_ID";
+    public static final String  YT_CHANNEL_TITLE                 = "YT_CHANNEL";
+    public static final String  YT_CHANNEL_TITLE_ALTERNATIVE     = "YT_CHANNEL_ALTERNATIVE";
+    public static final String  YT_DATE                          = "YT_DATE";
+    public static final String  YT_VARIANTS                      = "YT_VARIANTS";
+    public static final String  YT_VARIANT                       = "YT_VARIANT";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
+    public static final String  YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
+    public static final String  YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
+    public static final String  YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
-    private static final String               REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
+    public static final String  YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
+    private static final String REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
 
     private static String handleRule(String s, final String line) throws PluginException {
         final String method = new Regex(line, "\\.([\\w\\d]+?)\\(\\s*\\)").getMatch(0);
@@ -1397,11 +1397,15 @@ public class YoutubeHelper {
                 final String html5PlayerSource = ensurePlayerSource();
                 // String[][] func = new Regex(html5PlayerSource,
                 // "(?x)(?:\\.get\\(\"n\"\\)\\)&&\\(b=|b=String\\.fromCharCode\\(110\\),c=a\\.get\\(b\\)\\)&&\\(c=)([a-zA-Z0-9$]+)(?:\\[(\\d+)\\])?\\([a-zA-Z0-9]\\)").getMatches();
-                // since 2024-07
-                function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=String\\.prototype\\.split\\.call\\(a,\"\"\\),c=\\[.*?\\};)\n").getMatch(0);
+                // since 2024-07-31
+                function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=String\\.prototype\\.split\\.call\\(a,\\(\"\"\\,\"\"\\)\\),c=\\[.*?\\};)\n").getMatch(0);
                 if (function == null) {
-                    // before 2024-07
-                    function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=a\\.split\\(\"\"\\),c=\\[.*?\\};)\n").getMatch(0);
+                    // since 2024-07
+                    function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=String\\.prototype\\.split\\.call\\(a,\"\"\\),c=\\[.*?\\};)\n").getMatch(0);
+                    if (function == null) {
+                        // before 2024-07
+                        function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=a\\.split\\(\"\"\\),c=\\[.*?\\};)\n").getMatch(0);
+                    }
                 }
                 cache.put("n_function", function);
             }
