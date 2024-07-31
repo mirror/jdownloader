@@ -1481,9 +1481,9 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
         if (downloadLink.getStringProperty(DirectHTTP.PROPERTY_COOKIES, null) != null) {
             br.getCookies(getDownloadURL(downloadLink)).add(Cookies.parseCookies(downloadLink.getStringProperty(DirectHTTP.PROPERTY_COOKIES, null), Browser.getHost(getDownloadURL(downloadLink)), null));
         }
-        /* Check for cookies by LinkCrawler rule */
         final LinkCrawlerRule rule = getDirectHTTPRule(downloadLink);
         if (rule != null && rule.isEnabled()) {
+            /* Check for cookies by LinkCrawler rule */
             final String url = getDownloadURL(downloadLink);
             rule.applyCookies(br, url, false);
         }
