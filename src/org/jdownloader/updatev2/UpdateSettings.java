@@ -19,7 +19,6 @@ import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
-import org.jdownloader.myjdownloader.client.json.JsonMap;
 
 public interface UpdateSettings extends ConfigInterface {
     @AboutConfig
@@ -133,25 +132,24 @@ public interface UpdateSettings extends ConfigInterface {
 
     void setSelftestWriteTimeout(int timeout);
 
-    public static class GetBuildCustomValueGetter extends AbstractCustomValueGetter<JsonMap> {
-        private static JsonMap build = null;
+    public static class GetBuildCustomValueGetter extends AbstractCustomValueGetter<String> {
+        private static String build = null;
 
         @Override
-        public JsonMap getValue(KeyHandler<JsonMap> keyHandler, JsonMap value) {
-            JsonMap ret = build;
+        public String getValue(KeyHandler<String> keyHandler, String value) {
+            String ret = build;
             if (ret == null) {
                 try {
-                    ret = new JsonMap();
+                    ret = "";
                     final File buildJson = Application.getResource("build.json");
                     if (buildJson.isFile()) {
                         final Map<String, Object> build = JSonStorage.restoreFromString(IO.readFileToString(buildJson), TypeRef.MAP);
                         if (build != null) {
-                            ret.putAll(build);
+                            ret = build.toString();
                         }
                     }
                 } catch (Throwable ignore) {
                 }
-                build = ret;
             }
             return ret;
         }
@@ -160,5 +158,5 @@ public interface UpdateSettings extends ConfigInterface {
     @AboutConfig
     @StorableValidatorIgnoresMissingSetter
     @CustomValueGetter(GetBuildCustomValueGetter.class)
-    JsonMap getBuild();
+    String getBuild();
 }
