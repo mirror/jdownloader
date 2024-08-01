@@ -4,6 +4,10 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -20,11 +24,6 @@ import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.LocationInList;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.NewPackageDialog;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 public class MergeToPackageAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> implements ActionContext {
     private static final long serialVersionUID = -4468197802870765463L;
@@ -155,7 +154,7 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
 
     /** Merges comments of multiple packages into one string. */
     public static String mergePackageComments(final List<PackageView<FilePackage, DownloadLink>> packages) {
-        final List<AbstractNode> filepackages = new ArrayList<AbstractNode>();
+        final List<FilePackage> filepackages = new ArrayList<FilePackage>();
         for (PackageView<FilePackage, DownloadLink> pv : packages) {
             filepackages.add(pv.getPackage());
         }

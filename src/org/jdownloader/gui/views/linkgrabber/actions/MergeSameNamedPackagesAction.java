@@ -9,6 +9,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.PackageController;
+import jd.plugins.FilePackage;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.contextmenu.ActionContext;
@@ -19,19 +25,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.MergePosition;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.MergeToPackageAction;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.plugins.FilePackage;
-
-public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements ActionContext {
+public class MergeSameNamedPackagesAction<PgkType extends AbstractPackageNode<ChildType, PgkType>, ChildType extends AbstractPackageChildrenNode<PgkType>> extends CustomizableTableContextAppAction implements ActionContext {
     private boolean caseInsensitive = true;
 
     public static String getTranslationForMatchPackageNamesCaseInsensitive() {
@@ -71,126 +66,94 @@ public class MergeSameNamedPackagesAction extends CustomizableTableContextAppAct
         if (!isEnabled()) {
             return;
         }
-        try {
-            final boolean caseInsensitive = isMatchPackageNamesCaseInsensitive();
-            final SelectionInfo<?, ?> sel = getSelection();
-            /* If user has selected a package, only collect duplicates of name of selected package. */
-            Map<String, Object> selectedPackagesMap = null;
-            final List<?> selPackageViews = sel.getPackageViews();
-            if (sel != null && selPackageViews.size() > 0) {
-                selectedPackagesMap = new HashMap<>();
-                for (final PackageView<?, ?> pv : sel.getPackageViews()) {
-                    final AbstractPackageNode<?, ?> crawledpackage = pv.getPackage();
-                    // final CrawledPackage crawledpackage = pv.getPackage();
-                    final String compareName;
-                    if (caseInsensitive) {
-                        compareName = crawledpackage.getName().toLowerCase(Locale.ENGLISH);
-                    } else {
-                        compareName = crawledpackage.getName();
-                    }
-                    if (selectedPackagesMap.containsKey(compareName)) {
-                        /* Item is already contained in map - we want to merge all dupes into first package we find. */
-                        continue;
-                    }
-                    selectedPackagesMap.put(compareName, crawledpackage);
-                }
-                if (selectedPackagesMap.isEmpty()) {
-                    /* Do nothing */
-                    return;
-                }
-            }
-            final Map<String, List<AbstractNode>> dupes = new HashMap<String, List<AbstractNode>>();
-            final List<AbstractNode> packages = new ArrayList<AbstractNode>();
-            final boolean isLinkgrabber;
-            if (MainTabbedPane.getInstance().isDownloadView()) {
-                isLinkgrabber = false;
-                for (final FilePackage item : DownloadController.getInstance().getPackages()) {
-                    packages.add(item);
-                }
-            } else if (MainTabbedPane.getInstance().isLinkgrabberView()) {
-                isLinkgrabber = true;
-                for (final CrawledPackage item : LinkCollector.getInstance().getPackages()) {
-                    packages.add(item);
-                }
-            } else {
-                /* This should never happen */
-                return;
-            }
-            boolean foundDupes = false;
-            for (final AbstractNode pckage : packages) {
-                String packagename;
-                if (isLinkgrabber) {
-                    packagename = ((CrawledPackage) pckage).getName();
-                } else {
-                    packagename = ((FilePackage) pckage).getName();
-                }
-                if (caseInsensitive) {
-                    packagename = packagename.toLowerCase(Locale.ENGLISH);
-                }
-                if (selectedPackagesMap != null && !selectedPackagesMap.containsKey(packagename)) {
-                    /* Only search dupes for selected package(s) */
-                    continue;
-                }
-                List<AbstractNode> thisdupeslist = dupes.get(packagename);
-                if (thisdupeslist != null) {
-                    /* We got at least two packages with the same name */
-                    foundDupes = true;
-                } else {
-                    thisdupeslist = new ArrayList<AbstractNode>();
-                    dupes.put(packagename, thisdupeslist);
-                }
-                thisdupeslist.add(pckage);
-            }
-            if (!foundDupes) {
-                // TODO: Add logger
-                System.out.println("Failed to find any duplicated packages to merge");
-                return;
-            }
-            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-                @Override
-                protected Void run() throws RuntimeException {
-                    /* Merge dupes */
-                    final Iterator<Entry<String, List<AbstractNode>>> dupes_iterator = dupes.entrySet().iterator();
-                    while (dupes_iterator.hasNext()) {
-                        final Entry<String, List<AbstractNode>> entry = dupes_iterator.next();
-                        // final String packagename = entry.getKey();
-                        final List<AbstractNode> thisdupes = entry.getValue();
-                        if (thisdupes.size() == 1) {
-                            /* We need at least two packages to be able to merge them. */
+        final SelectionInfo<PgkType, ChildType> sel = getSelection();
+        final PackageController<PgkType, ChildType> controller = sel.getController();
+        controller.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                final boolean caseInsensitive = isMatchPackageNamesCaseInsensitive();
+
+                /* If user has selected a package, only collect duplicates of name of selected package. */
+                final Map<String, AbstractPackageNode> selectedPackagesMap;
+                final List<PackageView<PgkType, ChildType>> selPackageViews = sel.getPackageViews();
+                if (sel != null && selPackageViews.size() > 0) {
+                    selectedPackagesMap = new HashMap<String, AbstractPackageNode>();
+                    for (final PackageView<PgkType, ChildType> pv : selPackageViews) {
+                        final AbstractPackageNode<?, ?> crawledpackage = pv.getPackage();
+                        // final CrawledPackage crawledpackage = pv.getPackage();
+                        String compareName = crawledpackage.getName();
+                        if (caseInsensitive) {
+                            compareName = compareName.toLowerCase(Locale.ENGLISH);
+                        }
+                        if (selectedPackagesMap.containsKey(compareName)) {
+                            /* Item is already contained in map - we want to merge all dupes into first package we find. */
                             continue;
                         }
-                        /* Merge comments of all packages so we don't lose any information. */
-                        if (isLinkgrabber) {
-                            final List<CrawledPackage> casteddupes = new ArrayList<CrawledPackage>();
-                            for (final AbstractNode thisdupe : thisdupes) {
-                                casteddupes.add((CrawledPackage) thisdupe);
-                            }
-                            final String mergedComments = MergeToPackageAction.mergePackageComments(thisdupes);
-                            /* Pick package to merge the others into */
-                            final CrawledPackage target = (CrawledPackage) thisdupes.remove(0);
-                            if (!StringUtils.isEmpty(mergedComments)) {
-                                target.setComment(mergedComments);
-                            }
-                            LinkCollector.getInstance().merge(target, casteddupes, MergePosition.BOTTOM);
-                        } else {
-                            final List<FilePackage> casteddupes = new ArrayList<FilePackage>();
-                            for (final AbstractNode thisdupe : thisdupes) {
-                                casteddupes.add((FilePackage) thisdupe);
-                            }
-                            final String mergedComments = MergeToPackageAction.mergePackageComments(thisdupes);
-                            /* Pick package to merge the others into */
-                            final FilePackage target = (FilePackage) thisdupes.remove(0);
-                            if (!StringUtils.isEmpty(mergedComments)) {
-                                target.setComment(mergedComments);
-                            }
-                            DownloadController.getInstance().merge(target, casteddupes, MergePosition.BOTTOM);
-                        }
+                        selectedPackagesMap.put(compareName, crawledpackage);
                     }
+                    if (selectedPackagesMap.isEmpty()) {
+                        /* Do nothing */
+                        return null;
+                    }
+                } else {
+                    selectedPackagesMap = null;
+                }
+                final Map<String, List<PgkType>> dupes = new HashMap<String, List<PgkType>>();
+                boolean foundDupes = false;
+                final boolean readL = controller.readLock();
+                try {
+                    for (final PgkType packageNode : controller.getPackages()) {
+                        String packagename = packageNode.getName();
+                        if (caseInsensitive) {
+                            packagename = packagename.toLowerCase(Locale.ENGLISH);
+                        }
+                        if (selectedPackagesMap != null && !selectedPackagesMap.containsKey(packagename)) {
+                            /* Only search dupes for selected package(s) */
+                            continue;
+                        }
+                        List<PgkType> thisdupeslist = dupes.get(packagename);
+                        if (thisdupeslist != null) {
+                            /* We got at least two packages with the same name */
+                            foundDupes = true;
+                        } else {
+                            thisdupeslist = new ArrayList<PgkType>();
+                            dupes.put(packagename, thisdupeslist);
+                        }
+                        thisdupeslist.add(packageNode);
+                    }
+                } finally {
+                    controller.readUnlock(readL);
+                }
+                if (!foundDupes) {
+                    // TODO: Add logger
+                    System.out.println("Failed to find any duplicated packages to merge");
                     return null;
                 }
-            });
-        } catch (final Throwable ignore) {
-            System.out.println("wtf");
-        }
+                final Iterator<Entry<String, List<PgkType>>> dupes_iterator = dupes.entrySet().iterator();
+                while (dupes_iterator.hasNext()) {
+                    final Entry<String, List<PgkType>> entry = dupes_iterator.next();
+                    // final String packagename = entry.getKey();
+                    final List<PgkType> thisdupes = entry.getValue();
+                    if (thisdupes.size() == 1) {
+                        /* We need at least two packages to be able to merge them. */
+                        continue;
+                    }
+                    final String mergedComments = org.jdownloader.gui.views.linkgrabber.contextmenu.MergeToPackageAction.mergePackageComments(thisdupes);
+                    /* Pick package to merge the others into */
+                    final PgkType target = thisdupes.remove(0);
+                    if (!StringUtils.isEmpty(mergedComments)) {
+                        if (target instanceof CrawledPackage) {
+                            ((CrawledPackage) target).setComment(mergedComments);
+                        } else {
+                            ((FilePackage) target).setComment(mergedComments);
+                        }
+                    }
+                    controller.merge(target, thisdupes, MergePosition.BOTTOM);
+                }
+                return null;
+            }
+        });
+
     }
 }

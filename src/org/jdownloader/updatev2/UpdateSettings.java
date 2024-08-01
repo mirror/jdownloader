@@ -145,7 +145,7 @@ public interface UpdateSettings extends ConfigInterface {
                     if (buildJson.isFile()) {
                         final Map<String, Object> build = JSonStorage.restoreFromString(IO.readFileToString(buildJson), TypeRef.MAP);
                         if (build != null) {
-                            ret = build.toString();
+                            ret = JSonStorage.serializeToJson(build);
                         }
                     }
                 } catch (Throwable ignore) {
