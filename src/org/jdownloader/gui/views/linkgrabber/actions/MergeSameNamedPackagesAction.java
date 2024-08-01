@@ -9,12 +9,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.PackageController;
-import jd.plugins.FilePackage;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.contextmenu.ActionContext;
@@ -25,6 +19,12 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.MergePosition;
+
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.PackageController;
+import jd.plugins.FilePackage;
 
 public class MergeSameNamedPackagesAction<PgkType extends AbstractPackageNode<ChildType, PgkType>, ChildType extends AbstractPackageChildrenNode<PgkType>> extends CustomizableTableContextAppAction implements ActionContext {
     private boolean caseInsensitive = true;
@@ -69,31 +69,38 @@ public class MergeSameNamedPackagesAction<PgkType extends AbstractPackageNode<Ch
         final SelectionInfo<PgkType, ChildType> sel = getSelection();
         final PackageController<PgkType, ChildType> controller = sel.getController();
         controller.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 final boolean caseInsensitive = isMatchPackageNamesCaseInsensitive();
-
-                /* If user has selected a package, only collect duplicates of name of selected package. */
+                /* If user has selected package(s), only collect duplicates within selection. */
                 final Map<String, AbstractPackageNode> selectedPackagesMap;
                 final List<PackageView<PgkType, ChildType>> selPackageViews = sel.getPackageViews();
                 if (sel != null && selPackageViews.size() > 0) {
                     selectedPackagesMap = new HashMap<String, AbstractPackageNode>();
                     for (final PackageView<PgkType, ChildType> pv : selPackageViews) {
                         final AbstractPackageNode<?, ?> crawledpackage = pv.getPackage();
-                        // final CrawledPackage crawledpackage = pv.getPackage();
-                        String compareName = crawledpackage.getName();
+                        String packagename = crawledpackage.getName();
                         if (caseInsensitive) {
-                            compareName = compareName.toLowerCase(Locale.ENGLISH);
+                            packagename = packagename.toLowerCase(Locale.ENGLISH);
                         }
-                        if (selectedPackagesMap.containsKey(compareName)) {
+                        String downloaddestination;
+                        if (crawledpackage instanceof CrawledPackage) {
+                            downloaddestination = ((CrawledPackage) crawledpackage).getRawDownloadFolder();
+                        } else {
+                            downloaddestination = ((FilePackage) crawledpackage).getDownloadDirectory();
+                        }
+                        if (downloaddestination != null) {
+                            downloaddestination = downloaddestination.toLowerCase(Locale.ENGLISH);
+                        }
+                        final String compareString = packagename + downloaddestination;
+                        if (selectedPackagesMap.containsKey(compareString)) {
                             /* Item is already contained in map - we want to merge all dupes into first package we find. */
                             continue;
                         }
-                        selectedPackagesMap.put(compareName, crawledpackage);
+                        selectedPackagesMap.put(compareString, crawledpackage);
                     }
                     if (selectedPackagesMap.isEmpty()) {
-                        /* Do nothing */
+                        /* User has only selected items we can't work with -> Do nothing */
                         return null;
                     }
                 } else {
@@ -108,17 +115,27 @@ public class MergeSameNamedPackagesAction<PgkType extends AbstractPackageNode<Ch
                         if (caseInsensitive) {
                             packagename = packagename.toLowerCase(Locale.ENGLISH);
                         }
-                        if (selectedPackagesMap != null && !selectedPackagesMap.containsKey(packagename)) {
+                        String downloaddestination;
+                        if (packageNode instanceof CrawledPackage) {
+                            downloaddestination = ((CrawledPackage) packageNode).getDownloadFolder();
+                        } else {
+                            downloaddestination = ((FilePackage) packageNode).getDownloadDirectory();
+                        }
+                        if (downloaddestination != null) {
+                            downloaddestination = downloaddestination.toLowerCase(Locale.ENGLISH);
+                        }
+                        final String compareString = packagename + downloaddestination;
+                        if (selectedPackagesMap != null && !selectedPackagesMap.containsKey(compareString)) {
                             /* Only search dupes for selected package(s) */
                             continue;
                         }
-                        List<PgkType> thisdupeslist = dupes.get(packagename);
+                        List<PgkType> thisdupeslist = dupes.get(compareString);
                         if (thisdupeslist != null) {
                             /* We got at least two packages with the same name */
                             foundDupes = true;
                         } else {
                             thisdupeslist = new ArrayList<PgkType>();
-                            dupes.put(packagename, thisdupeslist);
+                            dupes.put(compareString, thisdupeslist);
                         }
                         thisdupeslist.add(packageNode);
                     }
@@ -133,7 +150,6 @@ public class MergeSameNamedPackagesAction<PgkType extends AbstractPackageNode<Ch
                 final Iterator<Entry<String, List<PgkType>>> dupes_iterator = dupes.entrySet().iterator();
                 while (dupes_iterator.hasNext()) {
                     final Entry<String, List<PgkType>> entry = dupes_iterator.next();
-                    // final String packagename = entry.getKey();
                     final List<PgkType> thisdupes = entry.getValue();
                     if (thisdupes.size() == 1) {
                         /* We need at least two packages to be able to merge them. */
@@ -154,6 +170,5 @@ public class MergeSameNamedPackagesAction<PgkType extends AbstractPackageNode<Ch
                 return null;
             }
         });
-
     }
 }

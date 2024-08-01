@@ -93,7 +93,6 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         mr.add(new SeparatorData());
         mr.add(createSettingsSubmenu());
         mr.add(SortAction.class);
-        mr.add(MergeSameNamedPackagesAction.class);
         mr.add(EnabledAction.class);
         mr.add(new SeparatorData());
         mr.add(CheckStatusAction.class);
@@ -146,6 +145,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         ret.add(CreateDLCAction.class);
         ret.add(MergeToPackageAction.class);
         ret.add(SplitPackagesByHost.class);
+        ret.add(MergeSameNamedPackagesAction.class);
         return ret;
     }
 
