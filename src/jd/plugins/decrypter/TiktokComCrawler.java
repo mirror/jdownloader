@@ -258,7 +258,9 @@ public class TiktokComCrawler extends PluginForDecrypt {
         try {
             return crawlSingleMediaWebsiteWebsite(hostPlg, url, account, forceGrabAll);
         } catch (final Exception e) {
-            if (websiteHandlingAsFallbackAndOfflineIfWebsiteHandlingFails) {
+            if (e instanceof AccountRequiredException) {
+                throw e;
+            } else if (websiteHandlingAsFallbackAndOfflineIfWebsiteHandlingFails) {
                 logger.log(e);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
             } else {
@@ -424,9 +426,20 @@ public class TiktokComCrawler extends PluginForDecrypt {
         checkErrorsWebsite(br);
         final String videoJson = br.getRegex("id=\"__UNIVERSAL_DATA_FOR_REHYDRATION__\" type=\"application/json\">(\\{.*?)</script>").getMatch(0);
         final Map<String, Object> entries = restoreFromString(videoJson, TypeRef.MAP);
-        final Map<String, Object> aweme_detail = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "__DEFAULT_SCOPE__/webapp.video-detail/itemInfo/itemStruct");
+        final Map<String, Object> defaultScopeWebappVideoDetail = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "__DEFAULT_SCOPE__/webapp.video-detail");
+        if (defaultScopeWebappVideoDetail == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Map<String, Object> aweme_detail = (Map<String, Object>) JavaScriptEngineFactory.walkJson(defaultScopeWebappVideoDetail, "itemInfo/itemStruct");
         if (aweme_detail == null || aweme_detail.isEmpty()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final String statusMsg = (String) defaultScopeWebappVideoDetail.get("statusMsg");
+            if (StringUtils.equalsIgnoreCase(statusMsg, "author_secret")) {
+                /* Private video -> Login needed */
+                throw new AccountRequiredException("Private video");
+            } else {
+                logger.info("Assume that video is offline | statusMsg: " + statusMsg + " | statusCode: " + defaultScopeWebappVideoDetail.get("statusCode"));
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         return this.crawlProcessWebsiteMediaMapSingleTiktokItem(hostPlg, aweme_detail, null, forceGrabAll);
     }

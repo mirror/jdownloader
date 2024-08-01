@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
@@ -193,6 +194,7 @@ public class OrfAt extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        final HashSet<String> allFMTs = new HashSet<String>();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(dateWithoutTime + " - " + mainVideoTitle);
         if (description != null) {
@@ -261,12 +263,12 @@ public class OrfAt extends PluginForDecrypt {
             final boolean enforceProgressive = true;
             final boolean allowProgressive = cfg != null ? cfg.getBooleanProperty(ORFMediathek.PROGRESSIVE_STREAM, ORFMediathek.PROGRESSIVE_STREAM_default) : true;
             final boolean hdsServersideBroken = true; // 2024-02-20: https://board.jdownloader.org/showthread.php?t=95259
-            final boolean allow_HDS = cfg != null ? cfg.getBooleanProperty(ORFMediathek.HDS_STREAM, ORFMediathek.HDS_STREAM_default) : true;
-            final boolean allow_HLS = cfg != null ? cfg.getBooleanProperty(ORFMediathek.HLS_STREAM, ORFMediathek.HLS_STREAM_default) : true;
-            if (allow_HDS && !hdsServersideBroken) {
+            final boolean user_wants_HDS = cfg != null ? cfg.getBooleanProperty(ORFMediathek.HDS_STREAM, ORFMediathek.HDS_STREAM_default) : true;
+            final boolean user_wants_HLS = cfg != null ? cfg.getBooleanProperty(ORFMediathek.HLS_STREAM, ORFMediathek.HLS_STREAM_default) : true;
+            if (user_wants_HDS && !hdsServersideBroken) {
                 selectedDeliveryTypes.add("hds");
             }
-            if (allow_HLS) {
+            if (user_wants_HLS) {
                 selectedDeliveryTypes.add("hls");
             }
             if (allowProgressive || enforceProgressive) {
@@ -311,10 +313,11 @@ public class OrfAt extends PluginForDecrypt {
                 final HashSet<String> allAvailableQualitiesAsHumanReadableIdentifiers = new HashSet<String>();
                 for (final Map<String, Object> source : sources) {
                     final String url_directlink_video = (String) source.get("src");
-                    final String fmt = (String) source.get("quality");
-                    final String protocol = (String) source.get("protocol");
-                    final String delivery = (String) source.get("delivery");
+                    final String fmt = source.get("quality").toString();
+                    final String protocol = source.get("protocol").toString();
+                    final String delivery = source.get("delivery").toString();
                     // final String subtitleUrl = (String) entry_source.get("SubTitleUrl");
+                    allFMTs.add(fmt);
                     if (StringUtils.equals(fmt, "QXADRM")) {
                         numberofSkippedDRMItems++;
                         continue;
@@ -523,9 +526,29 @@ public class OrfAt extends PluginForDecrypt {
             final String segmentID = "gapless";
             final List<DownloadLink> videoresults = new ArrayList<DownloadLink>();
             DownloadLink best = null;
+            Boolean hlsWorkaroundSuccess = null;
             for (final Map<String, Object> hlssource : sources_hls) {
                 final String hlsMaster = hlssource.get("src").toString();
-                br.getPage(hlsMaster);
+                boolean hlsWorkaroundSuccessThisLoop = false;
+                final String urlpart = new Regex(hlsMaster, "_QX(A|B)\\.mp4").getMatch(-1);
+                if (hlsWorkaroundSuccess != Boolean.FALSE && urlpart != null && allFMTs.contains("Q8C")) {
+                    /* 2024-08-01: Workaround to enforce special gapless HLS version where audio and video are streamed together. */
+                    final String hlsMasterVideoAudioTogether = hlsMaster.replaceFirst(Pattern.quote(urlpart), "_Q8C.mp4");
+                    br.getPage(hlsMasterVideoAudioTogether);
+                    if (br.getHttpConnection().isOK()) {
+                        logger.info("HLS workaround successful");
+                        hlsWorkaroundSuccess = Boolean.TRUE;
+                        hlsWorkaroundSuccessThisLoop = true;
+                    } else {
+                        logger.info("HLS workaround failed");
+                        hlsWorkaroundSuccess = Boolean.FALSE;
+                    }
+                } else {
+                    logger.info("HLS workaround impossible");
+                }
+                if (!hlsWorkaroundSuccessThisLoop) {
+                    br.getPage(hlsMaster);
+                }
                 if (ORFMediathek.isGeoBlocked(br.getURL())) {
                     /* Item is GEO-blocked */
                     throw new DecrypterRetryException(RetryReason.GEO);
