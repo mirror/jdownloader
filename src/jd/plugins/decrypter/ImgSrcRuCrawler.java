@@ -356,33 +356,37 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
         } else {
             imgs.add(br.getURL().replaceFirst("https?://imgsrc\\.ru", ""));
         }
-        String[] links = br.getRegex("(/" + Pattern.quote(username) + "/\\d+\\.html(\\?pwd=[a-z0-9]{32})?)[^']*'\\s*(?:>|target)").getColumn(0);
-        if (links == null || links.length == 0) {
-            // parse imageID directly from imageURL, anchors(href='#pID') are incomplete as last one is link to next page
-            links = br.getRegex("/imgsrc.ru_(\\d+)[a-zA-Z]{3}\\.(jpe?g|webp)").getColumn(0);
+        String[] images = br.getRegex("(/" + Pattern.quote(username) + "/\\d+\\.html(\\?pwd=[a-z0-9]{32})?)[^']*'\\s*(?:>|target)").getColumn(0);
+        if (images != null) {
+            imgs.addAll(Arrays.asList(images));
         }
-        if (links == null || links.length == 0) {
+        // parse imageID directly from imageURL, anchors(href='#pID') are incomplete as last one is link to next page
+        images = br.getRegex("/imgsrc.ru_(\\d+)[a-zA-Z]{3}\\.(jpe?g|webp)'[^>]*id").getColumn(0);
+        if (images != null) {
+            imgs.addAll(Arrays.asList(images));
+        }
+        if (imgs.size() == 0) {
             logger.warning("Possible plugin error: Please confirm in your webbrowser that this album " + param.getCryptedUrl() + " contains more than one image. If it does please report this issue to JDownloader Development Team.");
         }
-        if (links != null && links.length != 0) {
-            imgs.addAll(Arrays.asList(links));
-        }
         final String currentLink = br.getURL();
+        final Set<String> dups = new HashSet<String>();
         if (imgs.size() != 0) {
             for (String dl : imgs) {
                 if (dl.matches("^\\d+$")) {
                     dl = "/" + username + "/" + dl + ".html";
                 }
                 final String imageid = new Regex(dl, "/(\\d+)\\.html").getMatch(0);
-                final DownloadLink img = createDownloadlink("https://decryptedimgsrc.ru" + dl);
-                img.setReferrerUrl(currentLink);
-                // img.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPEG);
-                img.setName(imageid + ".jpg");
-                img.setAvailable(true);
-                if (password != null) {
-                    img.setDownloadPassword(password);
+                if (imageid != null && dups.add(imageid)) {
+                    final DownloadLink img = createDownloadlink("https://decryptedimgsrc.ru" + dl);
+                    img.setReferrerUrl(currentLink);
+                    // img.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPEG);
+                    img.setName(imageid + ".jpg");
+                    img.setAvailable(true);
+                    if (password != null) {
+                        img.setDownloadPassword(password);
+                    }
+                    ret.add(img);
                 }
-                ret.add(img);
             }
         }
         return ret;
@@ -393,6 +397,7 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
     }
 
     public static String getPage(Browser br, final String url) throws Exception {
+        br.setAllowedResponseCodes(400);
         br.getPage(url);
         handleIFrameContainer(br);
         return br.toString();

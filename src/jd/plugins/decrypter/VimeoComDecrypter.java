@@ -535,6 +535,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                             throw e;
                         }
                     }
+                    if (properties.containsKey("vimeo_password")) {
+                        password = (String) properties.get("vimeo_password");
+                    }
                 } catch (final DecrypterRetryException e) {
                     logger.log(e);
                     if (RetryReason.PASSWORD.equals(e.getReason())) {
@@ -1265,6 +1268,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 }
                 urlToAccessOnCorrectPassword = videourl;
             } else {
+                // TODO: needs support for API only password handling
                 pwform = getPasswordForm(br);
                 token = getXsrft(br);
                 if (StringUtils.isEmpty(token)) {

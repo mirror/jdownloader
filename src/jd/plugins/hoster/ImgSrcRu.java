@@ -123,7 +123,7 @@ public class ImgSrcRu extends PluginForHost {
         br = prepBrowser(br, false);
         final String r = getReferer(link);
         if (r != null) {
-            br.getHeaders().put("Referer", r);
+            br.getHeaders().put("Referer", "https://imgsrc.ru/");
         }
         getPage(link.getPluginPatternMatcher(), link);
         getDllink();

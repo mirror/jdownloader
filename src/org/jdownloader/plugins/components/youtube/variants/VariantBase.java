@@ -5,9 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.jdownloader.plugins.components.youtube.ExternalToolRequired;
@@ -21,6 +18,9 @@ import org.jdownloader.plugins.components.youtube.converter.YoutubeConverterMP4T
 import org.jdownloader.plugins.components.youtube.converter.YoutubeSRTConverter;
 import org.jdownloader.plugins.components.youtube.itag.VideoFrameRate;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
+
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
 
 public enum VariantBase {
     AAC_128KBIT_DASH(VariantGroup.AUDIO, DownloadType.DASH_AUDIO, FileContainer.AAC, null, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null),
@@ -890,7 +890,24 @@ public enum VariantBase {
     WEBM_VP9_BETTER_PROFILE_1_480P_30FPS_OPUS_32KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.WEBM, YoutubeITAG.DASH_WEBM_VIDEO_480P_VP9_2, YoutubeITAG.DASH_AUDIO_OPUS_32KBIT, null, null),
     WEBM_VP9_BETTER_PROFILE_2_480P_30FPS_OPUS_32KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.WEBM, YoutubeITAG.DASH_WEBM_VIDEO_480P_VP9_3, YoutubeITAG.DASH_AUDIO_OPUS_32KBIT, null, null),
     WEBM_VP9_720P_30FPS_OPUS_32KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.WEBM, YoutubeITAG.DASH_WEBM_VIDEO_720P_VP9, YoutubeITAG.DASH_AUDIO_OPUS_32KBIT, null, null),
-    WEBM_VP9_720P_60FPS_OPUS_32KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.WEBM, YoutubeITAG.DASH_WEBM_VIDEO_720P_VP9_60FPS, YoutubeITAG.DASH_AUDIO_OPUS_32KBIT, null, null);
+    WEBM_VP9_720P_60FPS_OPUS_32KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.WEBM, YoutubeITAG.DASH_WEBM_VIDEO_720P_VP9_60FPS, YoutubeITAG.DASH_AUDIO_OPUS_32KBIT, null, null),
+    MKV_VP9_144P_15FPS_AAC_128KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MKV, YoutubeITAG.DASH_WEBM_VIDEO_144P_VP9_15FPS, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null),
+    WEBM_VP9_144P_15FPS_VORBIS_128KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.WEBM, YoutubeITAG.DASH_WEBM_VIDEO_144P_VP9_15FPS, YoutubeITAG.DASH_AUDIO_128K_WEBM, null, null),
+    WEBM_VP9_144P_15FPS_VORBIS_192KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.WEBM, YoutubeITAG.DASH_WEBM_VIDEO_144P_VP9_15FPS, YoutubeITAG.DASH_AUDIO_192K_WEBM, null, null),
+    WEBM_VP9_144P_15FPS_VORBIS_SPATIAL_256KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.WEBM, YoutubeITAG.DASH_WEBM_VIDEO_144P_VP9_15FPS, YoutubeITAG.DASH_AUDIO_256K_WEBM_SPATIAL, null, null),
+    MKV_VP9_144P_15FPS_DTSE_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MKV, YoutubeITAG.DASH_WEBM_VIDEO_144P_VP9_15FPS, YoutubeITAG.DASH_AUDIO_384K_DTSE_SPATIAL, null, null),
+    MKV_VP9_144P_15FPS_EC3_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MKV, YoutubeITAG.DASH_WEBM_VIDEO_144P_VP9_15FPS, YoutubeITAG.DASH_AUDIO_384K_EC3_SPATIAL, null, null),
+    MKV_VP9_144P_15FPS_AC3_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MKV, YoutubeITAG.DASH_WEBM_VIDEO_144P_VP9_15FPS, YoutubeITAG.DASH_AUDIO_384K_AC3_SPATIAL, null, null),
+    MKV_VP9_144P_15FPS_AAC_256KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MKV, YoutubeITAG.DASH_WEBM_VIDEO_144P_VP9_15FPS, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null),
+    MKV_VP9_144P_15FPS_AAC_48KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MKV, YoutubeITAG.DASH_WEBM_VIDEO_144P_VP9_15FPS, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null),
+    MKV_VP9_144P_15FPS_AAC_32KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MKV, YoutubeITAG.DASH_WEBM_VIDEO_144P_VP9_15FPS, YoutubeITAG.DASH_AUDIO_32K_AAC, null, null),
+    WEBM_VP9_144P_15FPS_OPUS_SPATIAL_512KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.WEBM, YoutubeITAG.DASH_WEBM_VIDEO_144P_VP9_15FPS, YoutubeITAG.DASH_AUDIO_512K_OPUS_SPATIAL, null, null),
+    WEBM_VP9_144P_15FPS_OPUS_256KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.WEBM, YoutubeITAG.DASH_WEBM_VIDEO_144P_VP9_15FPS, YoutubeITAG.DASH_AUDIO_OPUS_256KBIT, null, null),
+    WEBM_VP9_144P_15FPS_OPUS_160KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.WEBM, YoutubeITAG.DASH_WEBM_VIDEO_144P_VP9_15FPS, YoutubeITAG.DASH_AUDIO_OPUS_160KBIT, null, null),
+    WEBM_VP9_144P_15FPS_OPUS_64KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.WEBM, YoutubeITAG.DASH_WEBM_VIDEO_144P_VP9_15FPS, YoutubeITAG.DASH_AUDIO_OPUS_64KBIT, null, null),
+    WEBM_VP9_144P_15FPS_OPUS_48KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.WEBM, YoutubeITAG.DASH_WEBM_VIDEO_144P_VP9_15FPS, YoutubeITAG.DASH_AUDIO_OPUS_48KBIT, null, null),
+    WEBM_VP9_144P_15FPS_OPUS_32KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.WEBM, YoutubeITAG.DASH_WEBM_VIDEO_144P_VP9_15FPS, YoutubeITAG.DASH_AUDIO_OPUS_32KBIT, null, null);
+
     // ###APPEND###
     public static HashMap<String, VariantBase> COMPATIBILITY_MAP = new HashMap<String, VariantBase>();
     static {

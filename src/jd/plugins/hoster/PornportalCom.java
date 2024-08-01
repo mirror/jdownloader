@@ -30,13 +30,16 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.config.PornportalComConfig;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -430,24 +433,29 @@ public class PornportalCom extends PluginForHost {
                 logger.info("Successfully found new directurl");
                 con = br.openHeadConnection(newDirecturl);
             }
-            if (con.getResponseCode() == 404) {
+            if (looksLikeDownloadableContent(con) || (con.getResponseCode() == 200 && LinkCrawlerDeepInspector.looksLikeMpegURL(con))) {
+                if (!LinkCrawlerDeepInspector.looksLikeMpegURL(con) && con.getCompleteContentLength() > 0) {
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
+                }
+                /*
+                 * 2020-04-08: Final filename is supposed to be set in crawler. Their internal filenames are always the same e.g.
+                 * "scene_320p.mp4".
+                 */
+                // link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                if (newDirecturl != null) {
+                    /* Only set new directurl if it is working. Keep old one until then! */
+                    logger.info("Successfully checked new directurl and set property");
+                    link.setProperty(PROPERTY_directurl, newDirecturl);
+                }
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (!this.looksLikeDownloadableContent(con)) {
+            } else {
                 br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Directurl did not lead to downloadable content");
-            }
-            if (con.getCompleteContentLength() > 0) {
-                link.setDownloadSize(con.getCompleteContentLength());
-            }
-            /*
-             * 2020-04-08: Final filename is supposed to be set in crawler. Their internal filenames are always the same e.g.
-             * "scene_320p.mp4".
-             */
-            // link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-            if (newDirecturl != null) {
-                /* Only set new directurl if it is working. Keep old one until then! */
-                logger.info("Successfully checked new directurl and set property");
-                link.setProperty(PROPERTY_directurl, newDirecturl);
             }
         } finally {
             try {
@@ -1205,13 +1213,19 @@ public class PornportalCom extends PluginForHost {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file");
+        if (dllink.contains("master.m3u8")) {
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br.cloneBrowser(), dllink));
+            if (hlsbest == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink, hlsbest.getStreamURL());
+            dl.startDownload();
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            handleConnectionErrors(br, dl.getConnection());
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override

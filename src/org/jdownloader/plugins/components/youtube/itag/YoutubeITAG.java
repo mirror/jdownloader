@@ -30,7 +30,6 @@ public enum YoutubeITAG {
     DASH_VIDEO_2160p_AV1_HIGHER_BITRATE(701, StreamContainer.DASH_VIDEO, VideoResolution.P_2160, VideoCodec.AV1, VideoFrameRate.FPS_60),
     DASH_VIDEO_4320p_AV1(402, StreamContainer.DASH_VIDEO, VideoResolution.P_4320, VideoCodec.AV1, VideoFrameRate.FPS_60),
     DASH_VIDEO_4320p_AV1_HIGHER_BITRATE(571, StreamContainer.DASH_VIDEO, VideoResolution.P_4320, VideoCodec.AV1, VideoFrameRate.FPS_60),
-
     DASH_VIDEO_4320p_AV1_HFR_HIGH(702, StreamContainer.DASH_VIDEO, VideoResolution.P_4320, VideoCodec.AV1, VideoFrameRate.FPS_60),
     // AAC (LC) 128 Kbps Stereo (2) Yes, YT Music
     DASH_AUDIO_128K_AAC(140, StreamContainer.DASH_AUDIO, AudioCodec.AAC, AudioBitrate.KBIT_128),
@@ -56,7 +55,6 @@ public enum YoutubeITAG {
     DASH_AUDIO_48K_AAC(139, StreamContainer.DASH_AUDIO, AudioCodec.AAC, AudioBitrate.KBIT_48),
     // AAC (HE v1) 30 Kbps Stereo (2) Yes
     DASH_AUDIO_32K_AAC(599, StreamContainer.DASH_AUDIO, AudioCodec.AAC, AudioBitrate.KBIT_32),
-
     // Opus (VBR) ~480 Kbps (?) Quadraphonic (4) ?*
     DASH_AUDIO_512K_OPUS_SPATIAL(338, StreamContainer.DASH_AUDIO, AudioCodec.OPUS_SPATIAL, AudioBitrate.KBIT_512),
     // Opus (VBR) ~256 Kbps Stereo (2) Some, YT Music*
@@ -69,13 +67,12 @@ public enum YoutubeITAG {
     DASH_AUDIO_OPUS_48KBIT(249, StreamContainer.DASH_AUDIO, AudioCodec.OPUS, AudioBitrate.KBIT_48),
     // Opus (VBR) ~35 Kbps Stereo (2) Yes
     DASH_AUDIO_OPUS_32KBIT(600, StreamContainer.DASH_AUDIO, AudioCodec.OPUS, AudioBitrate.KBIT_32),
-
     DASH_VIDEO_1080_H264_FPS60(299, StreamContainer.DASH_VIDEO, VideoResolution.P_1080, VideoCodec.H264, VideoFrameRate.FPS_60),
     DASH_VIDEO_1080P_H264(137, StreamContainer.DASH_VIDEO, VideoResolution.P_1080, VideoCodec.H264, VideoFrameRate.FPS_30),
     // http://www.youtube.com/watch?v=gBabKoHSErI
     DASH_VIDEO_1440P_H264(264, StreamContainer.DASH_VIDEO, VideoResolution.P_1440, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_144P_H264(160, StreamContainer.DASH_VIDEO, VideoResolution.P_144, VideoCodec.H264, VideoFrameRate.FPS_30),
-    DASH_VIDEO_144P_H264_FPS15(160, StreamContainer.DASH_VIDEO, VideoResolution.P_144, VideoCodec.H264, VideoFrameRate.FPS_15),
+    DASH_VIDEO_144P_H264_FPS15(597, StreamContainer.DASH_VIDEO, VideoResolution.P_144, VideoCodec.H264, VideoFrameRate.FPS_15),
     // Mobile/Portrait Format https://www.youtube.com/watch?v=kiZse2vZXfw
     DASH_VIDEO_1920_H264_FPS_60(266, StreamContainer.DASH_VIDEO, VideoResolution.P_1920, VideoCodec.H264, VideoFrameRate.FPS_60),
     DASH_VIDEO_2160_H264_FPS_60(266, StreamContainer.DASH_VIDEO, VideoResolution.P_2160, VideoCodec.H264, VideoFrameRate.FPS_60),
@@ -137,6 +134,7 @@ public enum YoutubeITAG {
     DASH_WEBM_VIDEO_1080P_VP9_60FPS(303, StreamContainer.DASH_VIDEO, VideoResolution.P_1080, VideoCodec.VP9, VideoFrameRate.FPS_60),
     DASH_WEBM_VIDEO_1440P_VP9(271, StreamContainer.DASH_VIDEO, VideoResolution.P_1440, VideoCodec.VP9, VideoFrameRate.FPS_30),
     DASH_WEBM_VIDEO_144P_VP9(278, StreamContainer.DASH_VIDEO, VideoResolution.P_144, VideoCodec.VP9, VideoFrameRate.FPS_30),
+    DASH_WEBM_VIDEO_144P_VP9_15FPS(598, StreamContainer.DASH_VIDEO, VideoResolution.P_144, VideoCodec.VP9, VideoFrameRate.FPS_15),
     // DASH_WEBM_VIDEO_720P_VP9(247, "VP9",null, null, VideoResolution.VIDEO_RESOLUTION_720P,
     // VideoContainer.WEBM, VideoCodec.VIDEO_CODEC_VP9),
     // itag 272 videos are either 3840x2160 (e.g. RtoitU2A-3E) or 7680x4320 (sLprVF6d7Ug)
@@ -227,6 +225,7 @@ public enum YoutubeITAG {
     HLS_VIDEO_MP4_720P_AUDIO_AAC(95, StreamContainer.MP4, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_256),
     HLS_VIDEO_MP4_720P_AUDIO_AAC_300(300, StreamContainer.MP4, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_256),
     HLS_VIDEO_MP4_1080P_AUDIO_AAC(96, StreamContainer.MP4, VideoResolution.P_1080, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_256);
+
     private static HashMap<Integer, List<YoutubeITAG>> TAG_MAP = new HashMap<Integer, List<YoutubeITAG>>();
     static {
         for (YoutubeITAG tag : values()) {
@@ -291,6 +290,7 @@ public enum YoutubeITAG {
         // YouTube will often update older videos to play better audio quality, if that higher quality audio was saved when it was
         // originally uploaded.
         V4(new Date(2012 - 1900, 6, 1, 0, 0, 0).getTime(), Long.MAX_VALUE);
+
         private long from;
         private long to;
 
