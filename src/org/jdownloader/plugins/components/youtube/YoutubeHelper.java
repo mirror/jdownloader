@@ -36,6 +36,23 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Request;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -100,23 +117,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Request;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 public class YoutubeHelper {
     static {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -180,7 +180,7 @@ public class YoutubeHelper {
     // public Map<String, YoutubeBasicVariant> getVariantsMap() {
     // return variantsMap;
     // }
-    public static final List<YoutubeReplacer> REPLACER = new ArrayList<YoutubeReplacer>();
+    public static final List<YoutubeReplacer> REPLACER                         = new ArrayList<YoutubeReplacer>();
     static {
         REPLACER.add(new YoutubeReplacer("GROUP") {
             @Override
@@ -1183,32 +1183,32 @@ public class YoutubeHelper {
             }
         });
     }
-    public static final String  YT_TITLE                         = "YT_TITLE";
-    public static final String  YT_TITLE_ALTERNATIVE             = "YT_TITLE_ALTERNATIVE";
-    public static final String  YT_CATEGORY                      = "YT_CATEGORY";
-    public static final String  YT_ID                            = "YT_ID";
-    public static final String  YT_CHANNEL_TITLE                 = "YT_CHANNEL";
-    public static final String  YT_CHANNEL_TITLE_ALTERNATIVE     = "YT_CHANNEL_ALTERNATIVE";
-    public static final String  YT_DATE                          = "YT_DATE";
-    public static final String  YT_VARIANTS                      = "YT_VARIANTS";
-    public static final String  YT_VARIANT                       = "YT_VARIANT";
+    public static final String                YT_TITLE                         = "YT_TITLE";
+    public static final String                YT_TITLE_ALTERNATIVE             = "YT_TITLE_ALTERNATIVE";
+    public static final String                YT_CATEGORY                      = "YT_CATEGORY";
+    public static final String                YT_ID                            = "YT_ID";
+    public static final String                YT_CHANNEL_TITLE                 = "YT_CHANNEL";
+    public static final String                YT_CHANNEL_TITLE_ALTERNATIVE     = "YT_CHANNEL_ALTERNATIVE";
+    public static final String                YT_DATE                          = "YT_DATE";
+    public static final String                YT_VARIANTS                      = "YT_VARIANTS";
+    public static final String                YT_VARIANT                       = "YT_VARIANT";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
+    public static final String                YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
+    public static final String                YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
+    public static final String                YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
-    private static final String REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
+    public static final String                YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
+    private static final String               REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
 
     private static String handleRule(String s, final String line) throws PluginException {
         final String method = new Regex(line, "\\.([\\w\\d]+?)\\(\\s*\\)").getMatch(0);
@@ -1332,7 +1332,6 @@ public class YoutubeHelper {
     private final boolean                            fmtMapEnabled       = true;
     private String                                   html5PlayerJs;
     private YoutubeClipData                          vid;
-    private String                                   html5PlayerSource;
     private Map<String, Object>                      ytInitialData;
     private Map<String, Object>                      ytInitialPlayerResponse;
     private Map<String, Object>                      ytPlayerConfig;
@@ -1385,14 +1384,17 @@ public class YoutubeHelper {
     }
 
     String descrambleThrottle(final String value) throws IOException, PluginException {
-        String ret = value;
-        if (ret != null) {
-            HashMap<String, String> cache = jsCache.get(vid.videoID);
+        final String input = value;
+        String output = input;
+        final String cacheKey = vid.videoID + html5PlayerJs;
+        if (output != null) {
+            HashMap<String, String> cache = jsCache.get(cacheKey);
             String function = cache != null ? cache.get("n_function") : null;
+            function = null;
             if (function == null) {
                 if (cache == null) {
                     cache = new HashMap<String, String>();
-                    jsCache.put(vid.videoID, cache);
+                    jsCache.put(cacheKey, cache);
                 }
                 final String html5PlayerSource = ensurePlayerSource();
                 // String[][] func = new Regex(html5PlayerSource,
@@ -1409,11 +1411,11 @@ public class YoutubeHelper {
                 }
                 cache.put("n_function", function);
             }
-            final String resultKey = "n_result_" + vid.videoID + "_" + Hash.getSHA256(function) + "_" + value;
+            final String resultKey = "n_result_" + cacheKey + "_" + Hash.getSHA256(function) + "_" + input;
             final String cachedResult = cache.get(resultKey);
             if (function != null) {
                 if (cachedResult != null) {
-                    ret = cachedResult;
+                    output = cachedResult;
                 } else {
                     final JSShutterDelegate jsShutter = new JSShutterDelegate() {
                         @Override
@@ -1428,11 +1430,11 @@ public class YoutubeHelper {
                         JSRhinoPermissionRestricter.THREAD_JSSHUTTER.put(Thread.currentThread(), jsShutter);
                         final ScriptEngineManager manager = org.jdownloader.scripting.JavaScriptEngineFactory.getScriptEngineManager(this);
                         final ScriptEngine engine = manager.getEngineByName("javascript");
-                        final String js = "var calculate" + function + " var result=calculate(\"" + value + "\")";
+                        final String js = "var calculate" + function + " var result=calculate(\"" + input + "\")";
                         engine.eval(js);
                         final String result = StringUtils.valueOfOrNull(engine.get("result"));
                         if (result != null) {
-                            ret = result;
+                            output = result;
                             if (result.startsWith("enhanced_except")) {
                                 throw new Exception("Invalid result:" + result);
                             }
@@ -1444,12 +1446,12 @@ public class YoutubeHelper {
                     } finally {
                         JSRhinoPermissionRestricter.THREAD_JSSHUTTER.remove(Thread.currentThread());
                     }
-                    cache.put(resultKey, ret);
+                    cache.put(resultKey, output);
                 }
             }
-            logger.info("nsig(" + (function != null) + "):" + value + "->" + ret + "(cached:" + (cachedResult != null) + ")");
+            logger.info("nsig(" + (function != null) + "):" + input + "->" + output + "(cached:" + (cachedResult != null) + ")");
         }
-        return ret;
+        return output;
     }
 
     String descrambleSignatureNew(final String sig) throws IOException, PluginException {
@@ -1459,7 +1461,8 @@ public class YoutubeHelper {
         String all = null;
         String descrambler = null;
         String des = null;
-        HashMap<String, String> cache = jsCache.get(vid.videoID);
+        final String cacheKey = vid.videoID + html5PlayerJs;
+        HashMap<String, String> cache = jsCache.get(cacheKey);
         if (cache != null && !cache.isEmpty()) {
             all = cache.get("all");
             descrambler = cache.get("descrambler");
@@ -1468,7 +1471,7 @@ public class YoutubeHelper {
         if (all == null || descrambler == null || des == null) {
             if (cache == null) {
                 cache = new HashMap<String, String>();
-                jsCache.put(vid.videoID, cache);
+                jsCache.put(cacheKey, cache);
             }
             final String html5PlayerSource = ensurePlayerSource();
             descrambler = new Regex(html5PlayerSource, "\"signature\"\\s*,\\s*([\\$\\w]+)\\([\\$\\w\\.]+\\s*\\)\\s*\\)(\\s*\\)\\s*){0,};").getMatch(0);
@@ -1557,15 +1560,19 @@ public class YoutubeHelper {
         }
     }
 
+    private final Map<String, String> playerSourceCache = new HashMap<String, String>();
+
     private String ensurePlayerSource() throws IOException {
-        if (html5PlayerSource == null) {
-            if (html5PlayerJs == null) {
-                throw new IOException("no html5 player js");
-            } else {
-                html5PlayerSource = br.cloneBrowser().getPage(html5PlayerJs);
-            }
+        final String html5PlayerJs = this.html5PlayerJs;
+        if (html5PlayerJs == null) {
+            throw new IOException("no html5 player js");
         }
-        return html5PlayerSource;
+        String ret = playerSourceCache.get(html5PlayerJs);
+        if (ret == null) {
+            ret = br.cloneBrowser().getPage(html5PlayerJs);
+            playerSourceCache.put(html5PlayerJs, ret);
+        }
+        return ret;
     }
 
     /**
