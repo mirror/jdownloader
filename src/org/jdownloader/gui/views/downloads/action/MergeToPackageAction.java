@@ -1,10 +1,9 @@
 package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -23,6 +22,7 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.NewPackageDialog;
 import org.jdownloader.translate._JDT;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -119,24 +119,9 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
                 newPackage.setExpanded(isExpandNewPackage());
                 newPackage.setName(name);
                 newPackage.setDownloadDirectory(PackagizerController.replaceDynamicTags(downloadFolder, name, newPackage));
-                final StringBuilder sb = new StringBuilder();
-                final HashSet<String> commentDups = new HashSet<String>();
-                for (PackageView<FilePackage, DownloadLink> pv : sel.getPackageViews()) {
-                    final String comment = pv.getPackage().getComment();
-                    if (StringUtils.isNotEmpty(comment)) {
-                        final String[] commentLines = Regex.getLines(comment);
-                        for (final String commentLine : commentLines) {
-                            if (StringUtils.isNotEmpty(commentLine) && commentDups.add(commentLine)) {
-                                if (sb.length() > 0) {
-                                    sb.append("\r\n");
-                                }
-                                sb.append(commentLine);
-                            }
-                        }
-                    }
-                }
-                if (sb.length() > 0) {
-                    newPackage.setComment(sb.toString());
+                final String mergedComment = mergePackageComments(sel.getPackageViews());
+                if (!StringUtils.isEmpty(mergedComment)) {
+                    newPackage.setComment(mergedComment);
                 }
                 switch (getLocation()) {
                 case AFTER_SELECTION:
@@ -170,22 +155,10 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
 
     /** Merges comments of multiple packages into one string. */
     public static String mergePackageComments(final List<PackageView<FilePackage, DownloadLink>> packages) {
-        final StringBuilder sb = new StringBuilder();
-        final HashSet<String> commentDups = new HashSet<String>();
+        final List<AbstractNode> filepackages = new ArrayList<AbstractNode>();
         for (PackageView<FilePackage, DownloadLink> pv : packages) {
-            final String comment = pv.getPackage().getComment();
-            if (StringUtils.isNotEmpty(comment)) {
-                final String[] commentLines = Regex.getLines(comment);
-                for (final String commentLine : commentLines) {
-                    if (StringUtils.isNotEmpty(commentLine) && commentDups.add(commentLine)) {
-                        if (sb.length() > 0) {
-                            sb.append("\r\n");
-                        }
-                        sb.append(commentLine);
-                    }
-                }
-            }
+            filepackages.add(pv.getPackage());
         }
-        return sb.toString();
+        return org.jdownloader.gui.views.linkgrabber.contextmenu.MergeToPackageAction.mergePackageComments(filepackages);
     }
 }

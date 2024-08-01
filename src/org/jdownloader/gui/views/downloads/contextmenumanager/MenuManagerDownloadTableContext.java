@@ -1,8 +1,5 @@
 package org.jdownloader.gui.views.downloads.contextmenumanager;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ActionData;
@@ -56,11 +53,15 @@ import org.jdownloader.gui.views.downloads.context.submenu.PriorityMenuContainer
 import org.jdownloader.gui.views.downloads.context.submenu.SettingsMenuContainer;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+import org.jdownloader.gui.views.linkgrabber.actions.MergeSameNamedPackagesAction;
 import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.AddContainerContextMenuAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.AddLinksContextMenuAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SortAction;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
+
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePackage, DownloadLink> {
     private static final MenuManagerDownloadTableContext INSTANCE = new MenuManagerDownloadTableContext();
@@ -91,7 +92,6 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         mr.add(AddLinksContextMenuAction.class);
         mr.add(AddContainerContextMenuAction.class);
         mr.add(new SeparatorData());
-        // mr.add()
         mr.add(createSettingsMenu());
         mr.add(new SeparatorData());
         mr.add(new DownloadsTablePluginLink());
@@ -142,6 +142,7 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         more.add(new SeparatorData());
         more.add(new MenuItemData(new ActionData(MergeToPackageAction.class)));
         more.add(new MenuItemData(new ActionData(SplitPackagesByHost.class)));
+        more.add(new MenuItemData(new ActionData(MergeSameNamedPackagesAction.class)));
         more.add(new MenuItemData(new ActionData(RunCheckSumAction.class)));
         more.add(new MenuItemData(new ActionData(ConfirmHashValuesDownloadAction.class)));
         more.add(new MenuItemData(new ActionData(CreateDLCAction.class)));
