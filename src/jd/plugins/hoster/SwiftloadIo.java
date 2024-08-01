@@ -22,6 +22,7 @@ import java.util.List;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -39,7 +40,11 @@ import jd.plugins.PluginForHost;
 public class SwiftloadIo extends PluginForHost {
     public SwiftloadIo(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     @Override
@@ -51,7 +56,7 @@ public class SwiftloadIo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://" + getHost();
+        return "https://" + getHost() + "/tos.html";
     }
 
     private static List<String[]> getPluginDomains() {
@@ -124,13 +129,17 @@ public class SwiftloadIo extends PluginForHost {
             }
         }
         String filename = br.getRegex("File Name:\\s*</div>\\s*<input[^>]*value=\"([^\"]+)").getMatch(0);
-        String filesizeBytesStr = br.getRegex("id=\"\"[^>]*value=\"(\\d+)").getMatch(0);
+        final String filesizeBytesStr = br.getRegex("id=\"\"[^>]*value=\"(\\d+)").getMatch(0);
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
+        } else {
+            logger.warning("Failed to find filename");
         }
         if (filesizeBytesStr != null) {
             link.setDownloadSize(Long.parseLong(filesizeBytesStr));
+        } else {
+            logger.warning("Failed to find filesize");
         }
         return AvailableStatus.TRUE;
     }
@@ -142,12 +151,12 @@ public class SwiftloadIo extends PluginForHost {
 
     private void handleDownload(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        checkFFmpeg(link, "Download a HLS Stream");
         String dllink = br.getRegex("id=\"downloadNow\"[^>]*href=\"(https?://[^\"]+master\\.m3u8)\"").getMatch(0);
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        checkFFmpeg(link, "Download a HLS Stream");
         dllink = Encoding.htmlOnlyDecode(dllink);
         br.getPage(dllink);
         final HlsContainer best = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));

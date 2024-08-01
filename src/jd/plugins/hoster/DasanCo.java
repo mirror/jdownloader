@@ -101,4 +101,10 @@ public class DasanCo extends YetiShareCore {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
+
+    @Override
+    protected boolean requiresWWW() {
+        // 2024-08-01
+        return false;
+    }
 }

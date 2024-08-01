@@ -839,7 +839,6 @@ public class TiktokCom extends PluginForHost {
                     throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                 }
             }
-            /* Save new cookie timestamp */
             logger.info("User Cookie login successful");
             /*
              * User can enter whatever he wants into the 'username' field but we want unique usernames --> Grab username from json response
