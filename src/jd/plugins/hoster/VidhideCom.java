@@ -58,6 +58,9 @@ public class VidhideCom extends XFileSharingProBasic {
     protected List<String> getDeadDomains() {
         final ArrayList<String> deadDomains = new ArrayList<String>();
         deadDomains.add("azipcdn.com");
+        deadDomains.add("filelions.com"); // 2024-08-02
+        deadDomains.add("filelions.site"); // 2024-08-02
+        deadDomains.add("alions.pro"); // 2024-08-02
         return deadDomains;
     }
 

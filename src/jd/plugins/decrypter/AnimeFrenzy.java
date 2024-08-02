@@ -108,14 +108,15 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
                 ret.add(this.createDownloadlink(hlsmaster));
             }
         }
-        final String token = "YopgjtY0CA0q6a7NX1Oe";
+        final String api_base = "https://api.hianimeto.site/";
+        final String api_token = "YopgjtY0CA0q6a7NX1Oe";
         final Regex animeurlRegex = new Regex(br.getURL(), "(?i)https?://[^/]+/anime/([\\w\\-]+)$");
         if (ret.isEmpty() && animeurlRegex.patternFind()) {
             /* Crawl all episodes from a series */
             final String animeSlug = animeurlRegex.getMatch(0);
             final Browser brc = br.cloneBrowser();
             brc.getHeaders().put("Origin", "https://" + br.getHost());
-            brc.getPage("https://animeheaven.app/anime/slug/" + animeSlug + "?token=" + token);
+            brc.getPage(api_base + "/anime/slug/" + animeSlug + "?token=" + api_token);
             final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             if (Boolean.TRUE.equals(entries.get("error"))) {
                 /* E.g. {"message":"Nothing to see here move along...","error":true} */
@@ -125,7 +126,7 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
             final List<Map<String, Object>> episodes = (List<Map<String, Object>>) data.get("episodes");
             for (final Map<String, Object> episode : episodes) {
                 final List<Map<String, Object>> videos = (List<Map<String, Object>>) episode.get("videos");
-                crawlVideos(ret, videos);
+                ret.addAll(crawlVideos(videos));
             }
         }
         /* 2023-08-17 */
@@ -134,7 +135,7 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
             /* 2023-08-17: Token is from: https://animefrenzy.org/static/js/main.60f4e127.chunk.js */
             final Browser brc = br.cloneBrowser();
             brc.getHeaders().put("Origin", "https://" + br.getHost());
-            brc.getPage("https://animeheaven.app/anime-episode/slug/" + slugFromURL + "?token=" + token);
+            brc.getPage(api_base + "/anime-episode/slug/" + slugFromURL + "?token=" + api_token);
             final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             if (Boolean.TRUE.equals(entries.get("error"))) {
                 /* E.g. {"message":"Nothing to see here move along...","error":true} */
@@ -143,7 +144,7 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
             final Map<String, Object> data = (Map<String, Object>) entries.get("data");
             fpName = data.get("name").toString();
             final List<Map<String, Object>> videos = (List<Map<String, Object>>) data.get("videos");
-            crawlVideos(ret, videos);
+            ret.addAll(crawlVideos(videos));
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
@@ -153,17 +154,26 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
         return ret;
     }
 
-    private void crawlVideos(final ArrayList<DownloadLink> ret, final List<Map<String, Object>> videos) {
+    private ArrayList<DownloadLink> crawlVideos(final List<Map<String, Object>> videos) {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         for (final Map<String, Object> video : videos) {
-            crawlVideo(ret, video);
+            final DownloadLink link = crawlVideo(video);
+            if (link != null) {
+                ret.add(link);
+            }
         }
+        return ret;
     }
 
-    private void crawlVideo(final ArrayList<DownloadLink> ret, final Map<String, Object> video) {
-        final String url = buildEmbedURL(video.get("host").toString(), video.get("video_id").toString());
-        if (url != null) {
-            ret.add(this.createDownloadlink(url));
+    private DownloadLink crawlVideo(final Map<String, Object> video) {
+        final String host = video.get("host").toString();
+        final String video_id = video.get("video_id").toString();
+        final String url = buildEmbedURL(host, video_id);
+        if (url == null) {
+            logger.warning("Failed to generate URL for host: " + host + " | video_id: " + video_id);
+            return null;
         }
+        return this.createDownloadlink(url);
     }
 
     private String buildEmbedURL(final String host, final String id) {
@@ -177,9 +187,9 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
         } else if (host.equals("xstreamcdn")) {
             result = "https://www.xstreamcdn.com/v/" + id;
         } else if (host.equals("vidstreaming")) {
-            result = "https://vidstreaming.io/streaming.php?id=" + id;
+            result = Gogoplay4Com.createStreamingURLForThisPlugin(id);
         } else if (host.equalsIgnoreCase("vidstream")) {
-            result = "https://gogoplay4.com/download?id=" + id;
+            result = Gogoplay4Com.createDownloadURLForThisPlugin(id);
         } else if (host.equals("yare.wtf")) {
             result = "https://yare.wtf/vidstreaming/download/" + id;
         } else if (host.equals("facebook")) {

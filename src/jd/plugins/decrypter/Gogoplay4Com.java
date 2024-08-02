@@ -21,6 +21,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -37,11 +42,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Gogoplay4Com extends PluginForDecrypt {
     public Gogoplay4Com(PluginWrapper wrapper) {
@@ -52,7 +52,7 @@ public class Gogoplay4Com extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "gogoplay4.com", "gogoplay5.com", "gogoplay1.com", "goload.pro", "asianwatch.net", "dembed1.com", "membed.net", "membed1.net", "asianplay.net", "asianplay.pro", "gogohd.net", "anihdplay.com", "goone.pro" });
+        ret.add(new String[] { "draplay.info", "asianbxkiun.pro", "gogoplay4.com", "gogoplay5.com", "gogoplay1.com", "goload.pro", "asianwatch.net", "dembed1.com", "membed.net", "membed1.net", "asianplay.net", "asianplay.pro", "gogohd.net", "anihdplay.com", "goone.pro", "embtaku.pro" });
         ret.add(new String[] { "asianload.net", "asianembed.io", "k-vid.net", "asianhdplay.net", "asianhdplay.pro", "asianhd1.com" });
         return ret;
     }
@@ -81,14 +81,14 @@ public class Gogoplay4Com extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(download\\?id=[^/]+|embedplus\\?id=[^/]+|streaming\\.php\\?id=[^/]+|videos/[\\w\\-]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(download\\?id=[^/]+|embedplus\\?id=[^/]+|(play|streaming)\\.php\\?id=[^/]+|videos/[\\w\\-]+)");
         }
         return ret.toArray(new String[0]);
     }
 
     private static final String TYPE_DOWNLOAD         = "(?i)(?:https?://[^/]+)?/download\\?id=[\\w\\-]+.*";
     private static final String TYPE_EMBEDPLUS        = "(?i)(?:https?://[^/]+)?/embedplus\\?id=[\\w\\-]+.*";
-    private static final String TYPE_STREAMING        = "(?i)(?:https?://[^/]+)?/streaming\\.php\\?id=[\\w\\-]+.*";
+    private static final String TYPE_STREAMING        = "(?i)(?:https?://[^/]+)?/(play|streaming)\\.php\\?id=[\\w\\-]+.*";
     private static final String TYPE_STREAM_SELFEMBED = "(?i)https?://[^/]+/videos/([\\w\\-]+)";
 
     /**
@@ -288,5 +288,15 @@ public class Gogoplay4Com extends PluginForDecrypt {
         }
         fp.addLinks(ret);
         return ret;
+    }
+
+    public static String createStreamingURLForThisPlugin(final String video_id) {
+        /* Important: Make sure this contains a working domain! */
+        return "https://embtaku.pro/streaming.php?id=" + video_id;
+    }
+
+    public static String createDownloadURLForThisPlugin(final String video_id) {
+        /* Important: Make sure this contains a working domain! */
+        return "https://embtaku.pro/download?id=" + video_id;
     }
 }

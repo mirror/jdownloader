@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,8 +53,27 @@ public class StreamwishCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "streamwish.com", "streamwish.to", "awish.pro", "embedwish.com", "wishembed.pro", "vidcloud.top", "gdplry.online" });
+        ret.add(new String[] { "streamwish.com", "streamwish.to", "awish.pro", "embedwish.com", "wishembed.pro", "vidcloud.top", "gdplry.online", "jwplayerhls.com" });
         return ret;
+    }
+
+    private static final String INTERNAL_DOWNLOAD_DOMAIN = "jwplayerhls.com";
+
+    @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("streamwish.to"); // 2024-08-02
+        deadDomains.add("embedwish.com"); // 2024-08-02
+        deadDomains.add("awish.pro"); // 2024-08-02
+        deadDomains.add("wishembed.pro"); // 2024-08-02
+        deadDomains.add("vidcloud.top"); // 2024-08-02
+        deadDomains.add("gdplry.online"); // 2024-08-02
+        return deadDomains;
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {
@@ -79,6 +99,19 @@ public class StreamwishCom extends XFileSharingProBasic {
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(?::\\d+)?" + StreamwishCom.getDefaultAnnotationPatternPartStreamwish());
         }
         return ret.toArray(new String[0]);
+    }
+
+    @Override
+    protected String getPreferredHost(final DownloadLink link, URL url) {
+        /*
+         * 2024-08-02: Special e.g. streamwish.com can be used for login and website navigation but only INTERNAL_DOWNLOAD_DOMAIN can be
+         * used for streaming/downloading.
+         */
+        if (link != null) {
+            return INTERNAL_DOWNLOAD_DOMAIN;
+        } else {
+            return super.getPreferredHost(link, url);
+        }
     }
 
     @Override
@@ -161,16 +194,6 @@ public class StreamwishCom extends XFileSharingProBasic {
             return URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD;
         } else {
             return super.getURLType(url);
-        }
-    }
-
-    @Override
-    protected String buildURLPath(final DownloadLink link, final String fuid, final URL_TYPE type) {
-        if (type == null || type == URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD) {
-            /* 2023-09-07: Special: They do not have working "/d/..." links anymore but users are still spreading them. */
-            return buildNormalURLPath(link, fuid);
-        } else {
-            return super.buildURLPath(link, fuid, type);
         }
     }
 

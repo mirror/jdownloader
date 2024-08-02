@@ -92,19 +92,9 @@ public class MegaDpUa extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = false;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = -1;
+    private static final boolean FREE_RESUME    = false;
+    private static final int     FREE_MAXCHUNKS = 1;
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    //
-    // /* don't touch the following! */
-    // private static AtomicInteger maxPrem = new AtomicInteger(1);
     private Form getPasswordProtectedForm(final Browser br) {
         return br.getFormbyKey("pass");
     }
@@ -113,12 +103,18 @@ public class MegaDpUa extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        link.setMD5Hash(getMd5HashFromURL(link.getPluginPatternMatcher()));
+        final String md5hash = getMd5HashFromURL(link.getPluginPatternMatcher());
+        if (!link.isNameSet()) {
+            /* Set weak filename */
+            link.setName(md5hash);
+        }
+        link.setMD5Hash(md5hash);
         br.getPage(link.getPluginPatternMatcher());
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (getPasswordProtectedForm(br) != null) {
             /* Don't ask for password during linkcheck */
+            logger.info("File is password protected -> File info can't be found and we will not ask user to enter password during availablecheck");
             return AvailableStatus.TRUE;
         }
         String filename = br.getRegex("class=\"urlfile\"[^>]*>([^<>\"]+)</div>").getMatch(0);
@@ -126,6 +122,8 @@ public class MegaDpUa extends PluginForHost {
             filename = Encoding.htmlDecode(filename).trim();
             /* 2021-02-26: They're tagging their filenames -> Prefer the ones we find here */
             link.setFinalFileName(filename);
+        } else {
+            logger.warning("Failed to find filename");
         }
         return AvailableStatus.TRUE;
     }
@@ -174,7 +172,7 @@ public class MegaDpUa extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
         dl.startDownload();
     }
 
@@ -208,7 +206,7 @@ public class MegaDpUa extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

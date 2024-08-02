@@ -60,13 +60,13 @@ public interface PornportalComConfig extends PluginConfigInterface {
         PROGRESSIVE_MP4 {
             @Override
             public String getLabel() {
-                return "MP4";
+                return "MP4 progressive";
             }
         },
         HLS {
             @Override
             public String getLabel() {
-                return "HLS";
+                return "MP4 HLS";
             }
         },
         ALL {
@@ -86,7 +86,7 @@ public interface PornportalComConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("PROGRESSIVE_MP4")
-    @DescriptionForConfigEntry("If preferred type is not found, all will be crawled instead")
+    @DescriptionForConfigEntry("If preferred type is not found, all types will be crawled instead")
     @Order(110)
     StreamTypePreference getStreamTypePreference();
 
