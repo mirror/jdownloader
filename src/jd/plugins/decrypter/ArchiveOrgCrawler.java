@@ -834,15 +834,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
         final String server = root.get("server").toString();
         final String dir = root.get("dir").toString();
-        /* Crawl files */
-        final ArrayList<DownloadLink> originalItems = new ArrayList<DownloadLink>();
-        final Map<String, DownloadLink> itemMapping = new HashMap<String, DownloadLink>();
-        final Map<String, String> originalMapping = new HashMap<String, String>();
-        final ArrayList<String> audioPlaylistItems = new ArrayList<String>();
-        final ArrayList<DownloadLink> desiredSubpathItems = new ArrayList<DownloadLink>();
-        DownloadLink singleDesiredFile = null;
-        DownloadLink singleDesiredFile2 = null;
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Object descriptionObject = root_metadata.get("description");
         final String description;
         if (descriptionObject instanceof String) {
@@ -852,6 +843,14 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         } else {
             description = null;
         }
+        /* Crawl files */
+        final Map<String, DownloadLink> itemMapping = new HashMap<String, DownloadLink>();
+        final Map<String, String> originalMapping = new HashMap<String, String>();
+        final ArrayList<String> audioPlaylistItems = new ArrayList<String>();
+        final ArrayList<DownloadLink> desiredSubpathItems = new ArrayList<DownloadLink>();
+        DownloadLink singleDesiredFile = null;
+        DownloadLink singleDesiredFile2 = null;
+        final ArrayList<DownloadLink> selectedItems = new ArrayList<DownloadLink>();
         final FilePackage fpRoot = FilePackage.getInstance();
         fpRoot.setName(identifier);
         if (!StringUtils.isEmpty(description)) {
@@ -862,7 +861,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final boolean crawlOriginalFilesOnly = cfg.isFileCrawlerCrawlOnlyOriginalVersions();
         final boolean crawlMetadataFiles = cfg.isFileCrawlerCrawlMetadataFiles();
         final boolean crawlThumbnails = cfg.isFileCrawlerCrawlThumbnails();
-        logger.info("Crawling all files below path: " + desiredSubpathDecoded);
         final List<String> skippedItemsFilepaths = new ArrayList<String>();
         String totalLengthSecondsStr = null;
         Object desiredFileArchiveFileCount = null;
@@ -871,6 +869,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final boolean isAccessRestricted = StringUtils.equalsIgnoreCase((String) root_metadata.get("access-restricted-item"), "true");
         /* If this gets set to true, we expect 60 second video streams to be available. */
         boolean identifierDotMp4Exists = false;
+        logger.info("Crawling all files below path: " + desiredSubpathDecoded);
         for (final Map<String, Object> filemap : root_files) {
             final String source = filemap.get("source").toString(); // "original", "derivative" or "metadata"
             final String format = (String) filemap.get("format");
@@ -997,11 +996,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 desiredFileArchiveFileCount = filemap.get("filecount");
                 singleDesiredFile2 = file;
             }
-            if (isOriginal) {
-                originalItems.add(file);
-                if (totalLengthSecondsStr == null) {
-                    totalLengthSecondsStr = (String) filemap.get("length");
-                }
+            if (isOriginal && totalLengthSecondsStr == null) {
+                totalLengthSecondsStr = (String) filemap.get("length");
             }
             /* Add items to list of all results. */
             /* Check some skip conditions */
@@ -1017,7 +1013,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 /* Only include thumbnails if wished by the user. */
                 skippedItemsFilepaths.add(pathWithFilename);
             } else {
-                ret.add(file);
+                selectedItems.add(file);
             }
             if (originalO instanceof String) {
                 originalFilenamesDupeCollection.add(originalO.toString());
@@ -1033,12 +1029,12 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 if (allowCrawlArchiveContents && desiredFileArchiveFileCount != null && Integer.parseInt(desiredFileArchiveFileCount.toString()) > 1) {
                     /* Single archive file which user wants but user wants to have the content of that archive (rare case). */
                     logger.info("Looks like user does not want to download single found file but instead wants to download all " + desiredFileArchiveFileCount + " files inside archive file: " + desiredSubpathDecoded);
-                    return this.crawlArchiveContentV2(sourceurlForThisHandling, null, ret);
+                    return this.crawlArchiveContentV2(sourceurlForThisHandling, null, selectedItems);
                 } else {
                     /* Single file which user wants */
-                    ret.clear(); // Clear list of previously collected results
-                    ret.add(singleDesiredFile); // Add desired result only
-                    return ret;
+                    selectedItems.clear(); // Clear list of previously collected results
+                    selectedItems.add(singleDesiredFile); // Add desired result only
+                    return selectedItems;
                 }
             } else if (desiredSubpathDecoded2 != null && singleDesiredFile2 != null && desiredFileArchiveFileCount != null) {
                 /* User wants file which is part of an archive. */
@@ -1090,14 +1086,14 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 if (subPrefixes.isEmpty()) {
                     /* This should never happen */
                     logger.warning("FATAL: Book handling failed: Failed to find any subPrefixes -> Returning original files as fallback");
-                    return ret;
+                    return selectedItems;
                 }
                 if (mode == BookCrawlMode.ORIGINAL_AND_LOOSE_PAGES) {
                     /*
                      * Make original files already appear in linkgrabber now already because crawling loose book pages can take a LOT of
                      * time.
                      */
-                    distribute(ret);
+                    distribute(selectedItems);
                 }
                 ensureInitHosterplugin();
                 final Account account = AccountController.getInstance().getValidAccount(hostPlugin.getHost());
@@ -1137,8 +1133,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     /*
                      * User also wants to have original book files -> Add loose book pages to our results and return all results.
                      */
-                    ret.addAll(bookResults);
-                    return ret;
+                    selectedItems.addAll(bookResults);
+                    return selectedItems;
                 } else {
                     /* Return loose pages only */
                     return bookResults;
@@ -1153,7 +1149,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 /* This should never happen */
                 logger.warning("Detected mediatype 'movies' item but failed to determine video playtime");
                 /* Return original files */
-                return ret;
+                return selectedItems;
             }
             final int secondsPerSegment = 60;
             final double totalLengthSeconds = Double.parseDouble(totalLengthSecondsStr);
@@ -1194,7 +1190,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 return videoPlaylistItems;
             } else if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_AND_FILES || playlistCrawlMode == PlaylistCrawlMode.AUTO) {
                 /* Return playlist items and original files */
-                ret.addAll(videoPlaylistItems);
+                selectedItems.addAll(videoPlaylistItems);
             } else {
                 /* Do not return any playlist items but only original files. */
                 logger.info("Skipping video playlist because user wants original files only");
@@ -1251,8 +1247,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 logger.info("Skipping audio playlist because user added '/download/' page in auto mode -> Return items visible on the website -> Paylist is only display for '/details/' links");
             } else if (playlistCrawlMode == PlaylistCrawlMode.AUTO || playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_AND_FILES) {
                 /* Return playlist and original files. */
-                ret.addAll(audioPlaylistFinalResults);
-                return ret;
+                selectedItems.addAll(audioPlaylistFinalResults);
+                return selectedItems;
             } else {
                 /* Do not return any playlist items but only original files. */
                 logger.info("Skipping audio playlist vecause user wants original files only");
@@ -1261,14 +1257,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (desiredSubpathDecoded != null && desiredSubpathItems.isEmpty()) {
             logger.info("User wanted specific path/file but that hasn't been found -> Returning all globally allowed items instead");
         }
-        /* "Normal" file handling */
-        if (crawlOriginalFilesOnly && originalItems.size() > 0) {
-            /* Return only original items */
-            return originalItems;
-        } else {
-            /* Return all collected items */
-            return ret;
-        }
+        return selectedItems;
     }
 
     private Map<String, Map<String, String>> parseFilterMap(final String url) {

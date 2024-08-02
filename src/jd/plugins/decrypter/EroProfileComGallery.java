@@ -66,6 +66,7 @@ public class EroProfileComGallery extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(url);
         // Check if account needed but none account entered
+        final String lastResortErrormessage = EroProfileCom.getGenericErrorMessage(br);
         if (br.containsHTML("(?i)>\\s*You are not allowed to view this profile")) {
             throw new AccountRequiredException();
         } else if (EroProfileCom.isAccountRequired(br)) {
@@ -140,7 +141,11 @@ public class EroProfileComGallery extends PluginForDecrypt {
                 }
             }
             if (ret.isEmpty()) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (lastResortErrormessage != null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, lastResortErrormessage);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             if (isProfile) {
                 break;

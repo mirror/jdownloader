@@ -78,7 +78,6 @@ public class EroProfileCom extends PluginForHost {
     }
 
     private static final String VIDEOLINK = "(?i)https?://(www\\.)?eroprofile\\.com/m/videos/view/[A-Za-z0-9\\-_]+";
-    private static final String MAINPAGE  = "https://eroprofile.com";
 
     public static boolean isAccountRequired(final Browser br) {
         if (br.getHttpConnection().getResponseCode() == 403) {
@@ -90,13 +89,22 @@ public class EroProfileCom extends PluginForHost {
         }
     }
 
+    public static String getGenericErrorMessage(final Browser br) {
+        String lastResortErrormessage = br.getRegex("<div class=\"boxCnt message-text-box\"[^>]*>([^<]+)</div>").getMatch(0);
+        if (lastResortErrormessage == null) {
+            return null;
+        }
+        lastResortErrormessage = Encoding.htmlDecode(lastResortErrormessage).trim();
+        return lastResortErrormessage;
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
         br.getPage(link.getDownloadURL());
-        if (this.isAccountRequired(br)) {
+        if (isAccountRequired(br)) {
             return AvailableStatus.TRUE;
         }
         final String fid = this.getFID(link);
@@ -118,7 +126,7 @@ public class EroProfileCom extends PluginForHost {
                 /* Fallback */
                 filename = fid;
             }
-            if (this.isAccountRequired(br)) {
+            if (isAccountRequired(br)) {
                 link.setName(filename + ".m4v");
                 link.getLinkStatus().setStatusText("This file is only available to premium members");
                 return AvailableStatus.TRUE;
@@ -162,17 +170,22 @@ public class EroProfileCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        doFree(link);
+        handleDownload(link);
     }
 
-    public void doFree(DownloadLink downloadLink) throws Exception {
-        if (this.isAccountRequired(br)) {
+    public void handleDownload(final DownloadLink link) throws Exception {
+        if (isAccountRequired(br)) {
             throw new AccountRequiredException();
         } else if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String lastResortErrormessage = getGenericErrorMessage(br);
+            if (lastResortErrormessage != null) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, lastResortErrormessage);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         // Resume & chunks works but server will only send 99% of the data if used
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -194,7 +207,7 @@ public class EroProfileCom extends PluginForHost {
                 br.setFollowRedirects(false);
                 br.getHeaders().put("X_REQUESTED_WITH", "XMLHttpRequest");
                 br.postPage("https://www." + account.getHoster() + "/ajax_v1.php", "p=profile&a=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (!isLoggedin()) {
+                if (!isLoggedin(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
@@ -205,8 +218,8 @@ public class EroProfileCom extends PluginForHost {
         }
     }
 
-    private boolean isLoggedin() {
-        return br.getCookie(MAINPAGE, "memberID", Cookies.NOTDELETEDPATTERN) != null;
+    private boolean isLoggedin(final Browser br) {
+        return br.getCookie(br.getHost(), "memberID", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     @Override
@@ -225,7 +238,7 @@ public class EroProfileCom extends PluginForHost {
         login(br, account, false);
         br.setFollowRedirects(false);
         requestFileInformation(link);
-        doFree(link);
+        handleDownload(link);
     }
 
     @Override

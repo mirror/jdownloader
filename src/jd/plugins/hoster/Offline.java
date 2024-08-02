@@ -167,6 +167,7 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "upload.ac" });
         ret.add(new String[] { "uploadcorner.com" });
         ret.add(new String[] { "uplod.net" });
+        ret.add(new String[] { "abload.de" });
         if (cache != null) {
             cache.put(cacheID, ret);
         }

@@ -365,28 +365,33 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
         if (images != null) {
             imgs.addAll(Arrays.asList(images));
         }
-        if (imgs.size() == 0) {
+        if (imgs.isEmpty()) {
             logger.warning("Possible plugin error: Please confirm in your webbrowser that this album " + param.getCryptedUrl() + " contains more than one image. If it does please report this issue to JDownloader Development Team.");
+            return ret;
         }
         final String currentLink = br.getURL();
         final Set<String> dups = new HashSet<String>();
         if (imgs.size() != 0) {
-            for (String dl : imgs) {
-                if (dl.matches("^\\d+$")) {
-                    dl = "/" + username + "/" + dl + ".html";
+            for (String url : imgs) {
+                if (url.matches("^\\d+$")) {
+                    url = "/" + username + "/" + url + ".html";
                 }
-                final String imageid = new Regex(dl, "/(\\d+)\\.html").getMatch(0);
-                if (imageid != null && dups.add(imageid)) {
-                    final DownloadLink img = createDownloadlink("https://decryptedimgsrc.ru" + dl);
-                    img.setReferrerUrl(currentLink);
-                    // img.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPEG);
-                    img.setName(imageid + ".jpg");
-                    img.setAvailable(true);
-                    if (password != null) {
-                        img.setDownloadPassword(password);
-                    }
-                    ret.add(img);
+                final String imageid = new Regex(url, "(?i)/(\\d+)\\.html").getMatch(0);
+                if (imageid == null) {
+                    logger.info("Skipping invalid item: " + url);
+                    continue;
+                } else if (!dups.add(imageid)) {
+                    logger.info("Skipping duplicated item: " + url);
+                    continue;
                 }
+                final DownloadLink img = createDownloadlink("https://decryptedimgsrc.ru" + url);
+                img.setReferrerUrl(currentLink);
+                img.setName(imageid + ".jpg");
+                img.setAvailable(true);
+                if (password != null) {
+                    img.setDownloadPassword(password);
+                }
+                ret.add(img);
             }
         }
         return ret;
