@@ -25,8 +25,8 @@ public abstract class CustomizableSelectionAppAction<PackageType extends Abstrac
         }
     }
 
-    protected boolean hasSelection(SelectionInfo<?, ?> selection2) {
-        return selection2 != null && !selection2.isEmpty();
+    protected boolean hasSelection(SelectionInfo<?, ?> selection) {
+        return selection != null && !selection.isEmpty();
     }
 
     @Override

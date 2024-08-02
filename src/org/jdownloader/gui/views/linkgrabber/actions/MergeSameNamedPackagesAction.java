@@ -171,4 +171,20 @@ public class MergeSameNamedPackagesAction<PgkType extends AbstractPackageNode<Ch
             }
         });
     }
+
+    @Override
+    public boolean isEnabled() {
+        final SelectionInfo<PgkType, ChildType> sel = getSelection();
+        if (sel == null) {
+            /* This shall never happen. */
+            return false;
+        }
+        final PackageController<PgkType, ChildType> controller = sel.getController();
+        if (controller == null || controller.getPackages() == null || controller.getPackages().size() == 0) {
+            /* Zero items in linkgrabberlist/downloadlist. */
+            return false;
+        } else {
+            return super.isEnabled();
+        }
+    }
 }
