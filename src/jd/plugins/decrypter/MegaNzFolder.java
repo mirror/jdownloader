@@ -120,7 +120,12 @@ public class MegaNzFolder extends PluginForDecrypt {
         if (key == null) {
             key = new Regex(url, PATTERN_FOLDER_OLD).getMatch(2);
         }
-        return key;
+        if (key != null && key.length() > 22) {
+            // auto shorten to correct/expected length
+            return key.substring(0, 22);
+        } else {
+            return key;
+        }
     }
 
     public static boolean isValidFileFolderNodeID(final String str) {
@@ -317,9 +322,9 @@ public class MegaNzFolder extends PluginForDecrypt {
                         }
                     } else {
                         con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID
-                                /*
-                                 * + "&domain=meganz
-                                 */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
+                        /*
+                         * + "&domain=meganz
+                         */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
                         // ->
                         // !nocache,
                         // commands.cpp
@@ -545,19 +550,19 @@ public class MegaNzFolder extends PluginForDecrypt {
 
         /*
          * p = parent node (ID)
-         *
+         * 
          * s = size
-         *
+         * 
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         *
+         * 
          * ts = timestamp
-         *
+         * 
          * h = node (ID)
-         *
+         * 
          * u = owner
-         *
+         * 
          * a = attribute (contains name)
-         *
+         * 
          * k = node key
          */
         final PluginForHost megaplugin = this.getNewPluginForHostInstance(getHost());

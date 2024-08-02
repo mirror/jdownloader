@@ -56,13 +56,41 @@ public interface PornportalComConfig extends PluginConfigInterface {
         };
     }
 
-    @AboutConfig
-    @DefaultEnumValue("ALL_SELECTED")
+    public static enum StreamTypePreference implements LabelInterface {
+        PROGRESSIVE_MP4 {
+            @Override
+            public String getLabel() {
+                return "MP4";
+            }
+        },
+        HLS {
+            @Override
+            public String getLabel() {
+                return "HLS";
+            }
+        },
+        ALL {
+            @Override
+            public String getLabel() {
+                return "ALL";
+            }
+        }
+    }
+
+    @DefaultEnumValue("ALL")
     @DescriptionForConfigEntry("If preferred qualities are not found, all will be crawled instead")
     @Order(100)
     QualitySelectionMode getQualitySelectionMode();
 
     void setQualitySelectionMode(QualitySelectionMode quality);
+
+    @AboutConfig
+    @DefaultEnumValue("PROGRESSIVE_MP4")
+    @DescriptionForConfigEntry("If preferred type is not found, all will be crawled instead")
+    @Order(110)
+    StreamTypePreference getStreamTypePreference();
+
+    void setStreamTypePreference(StreamTypePreference type);
 
     @AboutConfig
     @DefaultBooleanValue(true)

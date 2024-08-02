@@ -24,19 +24,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.PornportalComConfig;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
@@ -62,6 +49,19 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.decrypter.PornportalComCrawler;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.PornportalComConfig;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class PornportalCom extends PluginForHost {
@@ -289,6 +289,7 @@ public class PornportalCom extends PluginForHost {
     public static final String   PROPERTY_directurl              = "directurl";
     public static final String   PROPERTY_VIDEO_ID               = "videoid";
     public static final String   PROPERTY_VIDEO_QUALITY          = "quality";
+    public static final String   PROPERTY_VIDEO_STREAM_TYPE      = "stream_type";
     public static final String   PROPERTY_GALLERY_ID             = "galleryid";
     public static final String   PROPERTY_GALLERY_POSITION       = "gallery_position";
     public static final String   PROPERTY_GALLERY_IMAGE_POSITION = "gallery_image_position";
@@ -389,9 +390,8 @@ public class PornportalCom extends PluginForHost {
         try {
             con = br.openHeadConnection(dllink);
             /**
-             * 403 = Generic expired </br>
-             * 472 = Video-directurl expired 474 = Image directurl expired and/or any directurl is not expired but used with the wrong IP ->
-             * New one needs to be obtained.
+             * 403 = Generic expired </br> 472 = Video-directurl expired 474 = Image directurl expired and/or any directurl is not expired
+             * but used with the wrong IP -> New one needs to be obtained.
              */
             if (con.getResponseCode() == 403 || con.getResponseCode() == 472 || con.getResponseCode() == 474) {
                 br.followConnection(true);
@@ -937,8 +937,8 @@ public class PornportalCom extends PluginForHost {
                     final List<Map<String, Object>> bundles = (List<Map<String, Object>>) user.get("addons");
                     if (bundles != null) {
                         /**
-                         * Try to find alternative expire-date inside users' additional purchased "bundles". </br>
-                         * Each bundle can have different expire-dates and also separate pricing and so on.
+                         * Try to find alternative expire-date inside users' additional purchased "bundles". </br> Each bundle can have
+                         * different expire-dates and also separate pricing and so on.
                          */
                         logger.info("Looking for alternative expiredate");
                         long highestExpireTimestamp = -1;
@@ -1219,7 +1219,7 @@ public class PornportalCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             checkFFmpeg(link, "Download a HLS Stream");
-            dl = new HLSDownloader(link, br, dllink, hlsbest.getStreamURL());
+            dl = new HLSDownloader(link, br, hlsbest.getStreamURL());
             dl.startDownload();
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);

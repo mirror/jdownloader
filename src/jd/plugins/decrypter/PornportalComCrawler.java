@@ -22,16 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.PornportalComConfig;
-import org.jdownloader.plugins.components.config.PornportalComConfig.FilenameScheme;
-import org.jdownloader.plugins.components.config.PornportalComConfig.QualitySelectionMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -51,6 +41,16 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.PornportalCom;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.PornportalComConfig;
+import org.jdownloader.plugins.components.config.PornportalComConfig.FilenameScheme;
+import org.jdownloader.plugins.components.config.PornportalComConfig.QualitySelectionMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { PornportalCom.class })
@@ -176,8 +176,8 @@ public class PornportalComCrawler extends PluginForDecrypt {
             videoObjects.addAll(children);
         }
         final String host = this.getHost();
-        final HashMap<String, DownloadLink> foundTrailers = new HashMap<String, DownloadLink>();
-        final HashMap<String, DownloadLink> foundQualities = new HashMap<String, DownloadLink>();
+        final HashMap<String, List<DownloadLink>> foundTrailers = new HashMap<String, List<DownloadLink>>();
+        final HashMap<String, List<DownloadLink>> foundQualities = new HashMap<String, List<DownloadLink>>();
         for (final Map<String, Object> clipinfo : videoObjects) {
             final String type = (String) clipinfo.get("type");
             // final String type = (String) entries.get("type");
@@ -260,6 +260,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
                     continue;
                 }
                 String qualityIdentifier = (String) videomap.get("format");
+                final String streamType = (String) videomap.get("type");
                 final long filesize = JavaScriptEngineFactory.toLong(videomap.get("sizeBytes"), 0);
                 final Map<String, Object> downloadInfo = (Map<String, Object>) urlsO;
                 String downloadurl = (String) downloadInfo.get("download");
@@ -291,26 +292,40 @@ public class PornportalComCrawler extends PluginForDecrypt {
                 }
                 dl.setContentUrl(contentURL);
                 final String originalFilename = UrlQuery.parse(downloadurl).get("filename");
+                String filenameQualityIdentifier = qualityIdentifier;
+                if ("hls".equals(streamType)) {
+                    filenameQualityIdentifier += "_hls";
+                }
                 if (filenameScheme == FilenameScheme.ORIGINAL && originalFilename != null) {
                     dl.setFinalFileName(originalFilename);
                 } else if (filenameScheme == FilenameScheme.VIDEO_ID_TITLE_QUALITY_EXT) {
-                    dl.setFinalFileName(itemID + "_" + title + "_" + qualityIdentifier + ".mp4");
+                    dl.setFinalFileName(itemID + "_" + title + "_" + filenameQualityIdentifier + ".mp4");
                 } else {
-                    dl.setFinalFileName(title + "_" + qualityIdentifier + ".mp4");
+                    dl.setFinalFileName(title + "_" + filenameQualityIdentifier + ".mp4");
                 }
                 dl.setProperty(PornportalCom.PROPERTY_VIDEO_ID, itemID);
                 dl.setProperty(PornportalCom.PROPERTY_VIDEO_QUALITY, qualityIdentifier);
+                dl.setProperty(PornportalCom.PROPERTY_VIDEO_STREAM_TYPE, streamType);
                 dl.setProperty(PornportalCom.PROPERTY_directurl, downloadurl);
                 if (filesize > 0) {
                     dl.setDownloadSize(filesize);
                 }
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
+                final List<DownloadLink> list;
                 if (isTrailer) {
-                    foundTrailers.put(qualityIdentifier, dl);
+                    if (!foundTrailers.containsKey(qualityIdentifier)) {
+                        foundTrailers.put(qualityIdentifier, new ArrayList<DownloadLink>());
+                    }
+                    list = foundTrailers.get(qualityIdentifier);
+
                 } else {
-                    foundQualities.put(qualityIdentifier, dl);
+                    if (!foundQualities.containsKey(qualityIdentifier)) {
+                        foundQualities.put(qualityIdentifier, new ArrayList<DownloadLink>());
+                    }
+                    list = foundQualities.get(qualityIdentifier);
                 }
+                list.add(dl);
             }
             if (!foundQualities.isEmpty()) {
                 /*
@@ -352,7 +367,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
             if (cfg == null || cfg.getQualitySelectionMode() == QualitySelectionMode.ALL_SELECTED) {
                 for (final String selectedQuality : selectedQualities) {
                     if (foundQualities.containsKey(selectedQuality)) {
-                        foundSelection.add(foundQualities.get(selectedQuality));
+                        foundSelection.addAll(foundQualities.get(selectedQuality));
                     }
                 }
             } else {
@@ -362,7 +377,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
                 for (final String knownQuality : allKnownQualities) {
                     if (foundQualities.containsKey(knownQuality)) {
                         /* We found the best quality */
-                        foundSelection.add(foundQualities.get(knownQuality));
+                        foundSelection.addAll(foundQualities.get(knownQuality));
                         break;
                     }
                 }
@@ -372,9 +387,9 @@ public class PornportalComCrawler extends PluginForDecrypt {
             } else {
                 /* Fallback: Add all qualities if none were found by selection */
                 logger.info("Failed to find any results by selection -> Returning all");
-                final Iterator<Entry<String, DownloadLink>> iteratorQualities = foundQualities.entrySet().iterator();
+                final Iterator<Entry<String, List<DownloadLink>>> iteratorQualities = foundQualities.entrySet().iterator();
                 while (iteratorQualities.hasNext()) {
-                    videos.add(iteratorQualities.next().getValue());
+                    videos.addAll(iteratorQualities.next().getValue());
                 }
             }
             ret.addAll(videos);

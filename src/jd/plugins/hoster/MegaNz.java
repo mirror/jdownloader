@@ -151,12 +151,18 @@ public class MegaNz extends PluginForHost {
         return buildAnnotationUrls(getPluginDomains());
     }
 
-    public static final Pattern PATTERN_FILE_FOLDER_ID     = Pattern.compile("[a-zA-Z0-9]{8}");
-    public static final Pattern PATTERN_ENCRYPTION_KEY_URL = Pattern.compile("[a-zA-Z0-9_-]{43}");
-    public static final Pattern PATTERN_ENCRYPTION_KEY     = Pattern.compile("[a-zA-Z0-9+/]{43}");
-    public static final Pattern PATTERN_FILE_OLD           = Pattern.compile("(?:#|%23)!([A-Za-z0-9]+)(!([a-zA-Z0-9_-]+))?");
-    public static final Pattern PATTERN_FILE_NEW           = Pattern.compile("(embed|file)/([a-zA-Z0-9]+)((?:#|%23)([a-zA-Z0-9_-]+))?", Pattern.CASE_INSENSITIVE);
-    public static final Pattern PATTERN_FILE_IN_FOLDER     = Pattern.compile("folder/([a-zA-Z0-9]+)(?:#|%23)([a-zA-Z0-9_-]+)/file/([a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern PATTERN_FILE_FOLDER_ID        = Pattern.compile("[a-zA-Z0-9]{8}");
+    public static final Pattern PATTERN_ENCRYPTION_KEY_URL    = Pattern.compile("[a-zA-Z0-9_-]{43}");
+    public static final Pattern PATTERN_ENCRYPTION_KEY        = Pattern.compile("[a-zA-Z0-9+/]{43}");
+    public static final Pattern PATTERN_FILE_OLD              = Pattern.compile("(?:#|%23)!([A-Za-z0-9]+)(!([a-zA-Z0-9_-]+))?");
+    public static final Pattern PATTERN_FILE_NEW              = Pattern.compile("(embed|file)/([a-zA-Z0-9]+)((?:#|%23)([a-zA-Z0-9_-]+))?", Pattern.CASE_INSENSITIVE);
+    public static final Pattern PATTERN_FILE_IN_FOLDER        = Pattern.compile("folder/([a-zA-Z0-9]+)(?:#|%23)([a-zA-Z0-9_-]+)/file/([a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
+    /**
+     * e.g. mipony, see https://board.jdownloader.org/showpost.php?p=537735&postcount=49
+     *
+     * also backwards compatibility with old links in list
+     */
+    public static final Pattern PATTERN_NODE_IN_FOLDER_LEGACY = Pattern.compile("(?:#|%23)N(?:!|%21)([A-Za-z0-9]+)(?:!|%21)([a-zA-Z0-9_-]+)=*(?:#|%21){3}n=([a-zA-Z0-9]+)");
 
     public static boolean isValidDecryptionKey(final String str) {
         if (new Regex(str, PATTERN_ENCRYPTION_KEY).patternFind()) {
@@ -173,7 +179,7 @@ public class MegaNz extends PluginForHost {
         for (final String[] domains : pluginDomains) {
             String regex = jd.plugins.decrypter.MegaNzFolder.getUrlPatternBase(domains);
             /* Add domain-unspecific patterns */
-            regex += "(" + PATTERN_FILE_OLD.pattern() + "|" + PATTERN_FILE_NEW.pattern() + ")";
+            regex += "(" + PATTERN_FILE_OLD.pattern() + "|" + PATTERN_FILE_NEW.pattern() + "|" + PATTERN_NODE_IN_FOLDER_LEGACY.pattern() + ")";
             ret.add(regex);
         }
         return ret.toArray(new String[0]);
@@ -202,8 +208,7 @@ public class MegaNz extends PluginForHost {
     private static String getNodeFileID(final String url) {
         String nodeFileID = new Regex(url, PATTERN_FILE_IN_FOLDER).getMatch(2);
         if (nodeFileID == null) {
-            /* Legacy compatibility */
-            nodeFileID = new Regex(url, "#!?N(!|%21|\\?)([a-zA-Z0-9]+)(!|%21)").getMatch(1);
+            nodeFileID = new Regex(url, PATTERN_NODE_IN_FOLDER_LEGACY).getMatch(0);
         }
         return nodeFileID;
     }
@@ -232,15 +237,18 @@ public class MegaNz extends PluginForHost {
         if (key == null) {
             key = new Regex(url, PATTERN_FILE_OLD).getMatch(2);
         }
-        return key;
+        if (key != null && key.length() > 43) {
+            // auto shorten to correct/expected length
+            return key.substring(0, 43);
+        } else {
+            return key;
+        }
     }
 
     private static String getParentNodeID(final DownloadLink link) {
         String ret = link.getStringProperty("pn", null);
         if (ret == null) {
-            // TODO: Remove this because for links matching this regex, the above "pn" property should always be available.
-            /* Legacy compatibility to old internal links */
-            ret = new Regex(link.getPluginPatternMatcher(), "###n=([a-zA-Z0-9]+)$").getMatch(0);
+            ret = new Regex(link.getPluginPatternMatcher(), PATTERN_NODE_IN_FOLDER_LEGACY).getMatch(2);
         }
         return ret;
     }
@@ -248,8 +256,7 @@ public class MegaNz extends PluginForHost {
     private static String getNodeFileKey(final DownloadLink link) {
         String ret = link.getStringProperty("fk");
         if (ret == null) {
-            /* Backward compatibility */
-            ret = new Regex(link.getPluginPatternMatcher(), "#!?N(!|%21|\\?)[a-zA-Z0-9]+(!|%21)([a-zA-Z0-9_,\\-%]+)").getMatch(2);
+            ret = new Regex(link.getPluginPatternMatcher(), PATTERN_NODE_IN_FOLDER_LEGACY).getMatch(1);
             if (ret != null && ret.contains("%20")) {
                 ret = ret.replace("%20", "");
             }
@@ -297,7 +304,6 @@ public class MegaNz extends PluginForHost {
         String fileKey = getFileKey(link);
         final String nodeFileKey = getNodeFileKey(link);
         if (nodeFileKey != null && isPublic(link)) {
-            // TODO: Check this
             // update existing links
             link.setProperty("public", false);
         }
@@ -1062,7 +1068,6 @@ public class MegaNz extends PluginForHost {
     }
 
     private static final boolean isPublic(final DownloadLink downloadLink) {
-        // TODO: Remove this
         return downloadLink.getBooleanProperty("public", true);
     }
 
@@ -1824,7 +1829,10 @@ public class MegaNz extends PluginForHost {
         final String fileKey = getFileKey(link);
         final String parentNodeID = getParentNodeID(link);
         final String folderMasterKey = getFolderMasterKey(link);
-        if (fileID != null && parentNodeID != null && folderMasterKey != null) {
+        if (fileID != null && parentNodeID != null && folderMasterKey == null) {
+            // raw legacy node URLs don't contain folderMasterKey
+            return buildFileFolderLink(parentNodeID, "", "file", fileID);
+        } else if (fileID != null && parentNodeID != null && folderMasterKey != null) {
             return buildFileFolderLink(parentNodeID, folderMasterKey, "file", fileID);
         } else if (fileID != null) {
             return buildFileLink(fileID, fileKey);
