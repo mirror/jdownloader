@@ -49,7 +49,7 @@ public class GrosfichiersComFolder extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "grosfichiers.com" });
+        ret.add(new String[] { "grosfichiers.com", "grosfi.ch" });
         return ret;
     }
 
@@ -69,7 +69,7 @@ public class GrosfichiersComFolder extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]+)_([A-Za-z0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]+)(_([A-Za-z0-9]+))?");
         }
         return ret.toArray(new String[0]);
     }
@@ -107,6 +107,10 @@ public class GrosfichiersComFolder extends PluginForDecrypt {
         }
         final String[] filesizes = br.getRegex("class=\"file_size\">(\\d+[^<]+)<").getColumn(0);
         final String[] filenames = br.getRegex("class=\"file_name\">\\s*<a [^>]*>([^<]+)</a>").getColumn(0);
+        if (filesizes != null && pathsWithoutDupes.size() == filesizes.length + 1) {
+            /* First item = Download whole folder as .zip file -> Remove this */
+            pathsWithoutDupes.remove(0);
+        }
         for (int i = 0; i < pathsWithoutDupes.size(); i++) {
             final String path = pathsWithoutDupes.get(i);
             if (path.equals(thispath)) {
