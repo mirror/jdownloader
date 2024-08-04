@@ -177,6 +177,12 @@ public interface ArdConfigInterface extends PluginConfigInterface {
     void setGrabHLS1080pVideoEnabled(boolean b);
 
     @DefaultBooleanValue(true)
+    @Order(81)
+    boolean isGrabHLS2160pVideoEnabled();
+
+    void setGrabHLS2160pVideoEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
     @Order(85)
     boolean isGrabHTTP144pVideoEnabled();
 
@@ -235,6 +241,12 @@ public interface ArdConfigInterface extends PluginConfigInterface {
     boolean isGrabHTTP1080pVideoEnabled();
 
     void setGrabHTTP1080pVideoEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
+    @Order(152)
+    boolean isGrabHTTP2160pVideoEnabled();
+
+    void setGrabHTTP2160pVideoEnabled(boolean b);
 
     @AboutConfig
     @DescriptionForConfigEntry("Define priority of audio languages e.g. 'deu,ov' or 'de, en, original'. Only the first available source will be added. If none of the preferred languages are found, only the first found language will be added.")

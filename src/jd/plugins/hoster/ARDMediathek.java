@@ -255,7 +255,8 @@ public class ARDMediathek extends PluginForHost {
             br.setFollowRedirects(true);
             // Workaround to avoid DOWNLOAD INCOMPLETE errors
             boolean resume = true;
-            int maxChunks = 0;
+            // 2024-08-04: limit because with too many connections, the download server does stop accepting new requests
+            int maxChunks = -10;
             final boolean isSubtitle = isSubtitle(link);
             if (isSubtitle) {
                 br.getHeaders().put("Accept-Encoding", "identity");

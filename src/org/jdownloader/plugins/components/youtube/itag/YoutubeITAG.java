@@ -148,6 +148,8 @@ public enum YoutubeITAG {
     DESCRIPTION(10002, StreamContainer.PLAIN, MediaTagsVarious.DESCRIPTION),
     DASH_WEBM_VIDEO_480P_VP9_2(245, StreamContainer.DASH_VIDEO, VideoResolution.P_480, VideoCodec.VP9_BETTER_PROFILE_1, VideoFrameRate.FPS_30),
     DASH_WEBM_VIDEO_480P_VP9_3(246, StreamContainer.DASH_VIDEO, VideoResolution.P_480, VideoCodec.VP9_BETTER_PROFILE_2, VideoFrameRate.FPS_30),
+    DASH_WEBM_VIDEO_480P_VP9_4(779, StreamContainer.DASH_VIDEO, VideoResolution.P_480, VideoCodec.VP9_BETTER_PROFILE_2, VideoFrameRate.FPS_30),
+    DASH_WEBM_VIDEO_480P_VP9_5(780, StreamContainer.DASH_VIDEO, VideoResolution.P_480, VideoCodec.VP9_BETTER_PROFILE_2, VideoFrameRate.FPS_30),
     DASH_WEBM_VIDEO_720P_VP9(247, StreamContainer.DASH_VIDEO, VideoResolution.P_720, VideoCodec.VP9, VideoFrameRate.FPS_30),
     // https://www.youtube.com/watch?v=T3ny9zIckP0
     DASH_WEBM_VIDEO_720P_VP9_60FPS(302, StreamContainer.DASH_VIDEO, VideoResolution.P_720, VideoCodec.VP9, VideoFrameRate.FPS_60),

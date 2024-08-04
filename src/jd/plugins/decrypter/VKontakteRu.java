@@ -1268,6 +1268,92 @@ public class VKontakteRu extends PluginForDecrypt {
         return ret;
     }
 
+    private ArrayList<DownloadLink> crawlVideoAlbumNew(final CryptedLink param, final Browser br) throws Exception {
+        final ArrayList<DownloadLink> ret = this.getReturnArray();
+        if (br.getURL() == null || !StringUtils.equals(br.getURL(), param.getCryptedUrl())) {
+            this.getPage(param.getCryptedUrl());
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        }
+        String internalSectionName;
+        final String sectionNameURL = UrlQuery.parse(br.getURL()).get("section");
+        if (sectionNameURL != null) {
+            internalSectionName = sectionNameURL;
+        } else {
+            internalSectionName = "all";
+        }
+        final String videoAlbumsJson = br.getRegex("extend\\(window\\.cur[^,]*,\\s*(\\{\".*?\\})\\);(?:\\s+|\r|\n|Promise\\.resolve)").getMatch(0);
+        if (videoAlbumsJson == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        Map<String, Object> entries = restoreFromString(videoAlbumsJson, TypeRef.MAP);
+        // get from video.getAlbumById
+        final String owner_id = JavaScriptEngineFactory.walkJson(entries, "apiPrefetchCache/{1}/request/owner_id").toString();
+        // get from video.getAlbumById
+        final String album_id = JavaScriptEngineFactory.walkJson(entries, "apiPrefetchCache/{1}/request/album_id").toString();
+        // via regex as part of different json
+        final int maxItemsPerPage = Integer.parseInt(br.getRegex("\"VIDEO_SILENT_VIDEOS_CHUNK_SIZE\"\\s*:\\s*(\\d+)").getMatch(0));
+        // get from video.getAlbumById
+        final int numberofVideos = Integer.parseInt(JavaScriptEngineFactory.walkJson(entries, "apiPrefetchCache/{1}/response/count").toString());
+        logger.info("numberofVideos=" + numberofVideos + "|maxVideosPerPage=" + maxItemsPerPage);
+        int offset = 0;
+        int page = 0;
+        final String containerURL = "https://" + this.getHost() + "/video/playlist/" + owner_id + "_" + album_id;
+        final FilePackage fp = FilePackage.getInstance();
+        String galleryTitle = br.getRegex("<title>([^>]+) \\| VK</title>").getMatch(0);
+        if (cfg.getBooleanProperty(VKontakteRuHoster.VKVIDEO_ALBUM_USEIDASPACKAGENAME, VKontakteRuHoster.default_VKVIDEO_ALBUM_USEIDASPACKAGENAME)) {
+            fp.setName("videos" + owner_id + "_" + album_id);
+        } else if (galleryTitle == null) {
+            /* Fallback */
+            fp.setName(owner_id + " - " + internalSectionName);
+        } else {
+            fp.setName(Encoding.htmlDecode(galleryTitle).trim() + " - " + internalSectionName);
+        }
+        final LinkedHashSet<Integer> dupes = new LinkedHashSet<Integer>();
+        while (true) {
+            // get from video.get
+            final List<Map<String, Object>> items = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "apiPrefetchCache/{0}/response/items");
+            if (items == null || items.isEmpty()) {
+                logger.info("Stopping because: Current page does not contain any items");
+                break;
+            }
+            boolean foundNewItems = false;
+            for (final Map<String, Object> item : items) {
+                final int thisOwnerID = ((Number) item.get("owner_id")).intValue();
+                final int thisContentID = ((Number) item.get("id")).intValue();
+                final String videoTitle = (String) item.get("title");
+                if (dupes.add(thisContentID)) {
+                    // /* Fail-safe */
+                    // logger.info("Stopping because: Found dupe");
+                    // break pagination;
+                    foundNewItems = true;
+                }
+                final String completeVideolink = getProtocol() + this.getHost() + "/video" + thisOwnerID + "_" + thisContentID;
+                final DownloadLink dl = createDownloadlink(completeVideolink);
+                dl.setContainerUrl(containerURL);
+                dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN, Encoding.htmlDecode(videoTitle).trim());
+                dl._setFilePackage(fp);
+                ret.add(dl);
+                offset++;
+            }
+            logger.info("Page: " + page + " | Crawled: " + offset + " / " + numberofVideos);
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                break;
+            } else if (!foundNewItems) {
+                logger.info("Stopping because: Failed to find any new items on current page");
+                break;
+            } else if (offset >= numberofVideos) {
+                logger.info("Stopping because: Found all items");
+                break;
+            } else {
+                // TODO: Fix pagination
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        logger.info("Total videolinks found: " + offset);
+        return ret;
+    }
+
     private ArrayList<DownloadLink> crawlVideoAlbum(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = this.getReturnArray();
         this.getPage(param.getCryptedUrl());
@@ -1279,19 +1365,25 @@ public class VKontakteRu extends PluginForDecrypt {
         } else {
             internalSectionName = "all";
         }
-        String videoAlbumsJson = br.getRegex("(?:var|let) newCur\\s*=\\s*(\\{.*?\\});\\s+").getMatch(0);
+        String videoAlbumsJson = br.getRegex("extend\\(window\\.cur[^,]*,\\s*(\\{\".*?\\})\\);(?:\\s+|\r|\n|Promise\\.resolve)").getMatch(0);
         if (videoAlbumsJson == null) {
-            /* Old regexes/fallback */
-            videoAlbumsJson = br.getRegex("extend\\(cur, (\\{\"albumsPreload\".*?\\})\\);\\s+").getMatch(0);
+            videoAlbumsJson = br.getRegex("(?:var|let) newCur\\s*=\\s*(\\{.*?\\});\\s+").getMatch(0);
             if (videoAlbumsJson == null) {
-                /* Wider RegEx */
-                videoAlbumsJson = br.getRegex("extend\\(cur, (\\{\".*?\\})\\);\\s+").getMatch(0);
+                /* Old regexes/fallback */
+                videoAlbumsJson = br.getRegex("extend\\(cur, (\\{\"albumsPreload\".*?\\})\\);\\s+").getMatch(0);
+                if (videoAlbumsJson == null) {
+                    /* Wider RegEx */
+                    videoAlbumsJson = br.getRegex("extend\\(cur, (\\{\".*?\\})\\);\\s+").getMatch(0);
+                }
             }
         }
         if (videoAlbumsJson == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = restoreFromString(videoAlbumsJson, TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(videoAlbumsJson, TypeRef.MAP);
+        if (entries.containsKey("apiPrefetchCache")) {
+            return crawlVideoAlbumNew(param, br);
+        }
         final String oid = Integer.toString(((Number) entries.get("oid")).intValue());
         final int maxItemsPerPage = ((Number) entries.get("VIDEO_SILENT_VIDEOS_CHUNK_SIZE")).intValue();
         Map<String, Object> videoInfoMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "pageVideosList/" + oid + "/" + internalSectionName);

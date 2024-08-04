@@ -1390,7 +1390,7 @@ public class YoutubeHelper {
     String descrambleThrottle(final String value) throws IOException, PluginException {
         String input = value;
         String output = input;
-        final String cacheKey = vid.videoID + html5PlayerJs;
+        final String cacheKey = vid.videoID + "/" + getPlayerID(html5PlayerJs);
         if (output != null) {
             HashMap<String, String> cache = jsCache.get(cacheKey);
             String function = cache != null ? cache.get("n_function") : null;
@@ -1453,9 +1453,18 @@ public class YoutubeHelper {
                     cache.put(resultKey, output);
                 }
             }
-            logger.info("nsig(" + (function != null) + "):" + input + "->" + output + "(cached:" + (cachedResult != null) + ")");
+            logger.info("nsig(" + cacheKey + "," + (function != null) + "):" + input + "->" + output + "(cached:" + (cachedResult != null) + ")");
         }
         return output;
+    }
+
+    private String getPlayerID(String playerJS) {
+        final String ret = new Regex(playerJS, "/player/([^/]+)/player_").getMatch(0);
+        if (ret != null) {
+            return ret;
+        } else {
+            return playerJS;
+        }
     }
 
     String descrambleSignatureNew(final String sig) throws IOException, PluginException {
@@ -1465,7 +1474,7 @@ public class YoutubeHelper {
         String all = null;
         String descrambler = null;
         String des = null;
-        final String cacheKey = vid.videoID + html5PlayerJs;
+        final String cacheKey = vid.videoID + "/" + getPlayerID(html5PlayerJs);
         HashMap<String, String> cache = jsCache.get(cacheKey);
         if (cache != null && !cache.isEmpty()) {
             all = cache.get("all");
@@ -1564,19 +1573,22 @@ public class YoutubeHelper {
         }
     }
 
-    private final Map<String, String> playerSourceCache = new HashMap<String, String>();
+    private static final Map<String, String> PLAYERJS_CACHE = new HashMap<String, String>();
 
     private String ensurePlayerSource() throws IOException {
         final String html5PlayerJs = this.html5PlayerJs;
         if (html5PlayerJs == null) {
             throw new IOException("no html5 player js");
         }
-        String ret = playerSourceCache.get(html5PlayerJs);
-        if (ret == null) {
-            ret = br.cloneBrowser().getPage(html5PlayerJs);
-            playerSourceCache.put(html5PlayerJs, ret);
+        final String key = getPlayerID(html5PlayerJs);
+        synchronized (PLAYERJS_CACHE) {
+            String ret = PLAYERJS_CACHE.get(key);
+            if (ret == null) {
+                ret = br.cloneBrowser().getPage(html5PlayerJs);
+                PLAYERJS_CACHE.put(key, ret);
+            }
+            return ret;
         }
-        return ret;
     }
 
     /**
@@ -2225,7 +2237,7 @@ public class YoutubeHelper {
             logger.info("itag not allowed(dash):" + match.toString());
             return false;
         } else {
-            logger.info("add:" + match.toString());
+            logger.info("add(" + vid.videoID + "/" + getPlayerID(html5PlayerJs) + "):" + match.toString());
             StreamCollection lst = map.get(match.getItag());
             if (lst == null) {
                 lst = new StreamCollection();
@@ -2376,10 +2388,11 @@ public class YoutubeHelper {
         int collected = 0;
         if (isAPIPrefered(br)) {
             collected = collectMapsFromAPIResponse(br);
+            logger.info("found collectMapsFromAPIResponse(" + vid.videoID + "):" + collected);
         }
         if (collected <= 0) {
             collected = collectMapsFromPlayerResponse(map, br.getURL());
-            logger.info("found collectMapsFromPlayerResponse(refreshVideo):" + collected);
+            logger.info("found collectMapsFromPlayerResponse(" + vid.videoID + "):" + collected);
             collectMapsFormHtmlSource(br.getRequest().getHtmlCode(), "base");
         }
         // videos have data available even though they are blocked.

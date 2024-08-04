@@ -106,13 +106,13 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[^/]+/user/([\\w\\-\\.]+)(/post/\\d+)?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[^/]+/user/([\\w\\-\\.]+)(/post/[a-z0-9]+)?");
         }
         return ret.toArray(new String[0]);
     }
 
     private final String TYPE_PROFILE = "(?i)(?:https?://[^/]+)?/([^/]+)/user/([\\w\\-\\.]+)(\\?o=(\\d+))?$";
-    private final String TYPE_POST    = "(?i)(?:https?://[^/]+)?/([^/]+)/user/([\\w\\-\\.]+)/post/(\\d+)$";
+    private final String TYPE_POST    = "(?i)(?:https?://[^/]+)?/([^/]+)/user/([\\w\\-\\.]+)/post/([a-z0-9]+)$";
     private KemonoParty  hostPlugin   = null;
     private CryptedLink  cl           = null;
 
@@ -236,7 +236,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         final HashSet<String> dupes = new HashSet<String>();
         int page = 1;
         do {
-            final String[] posturls = br.getRegex("(?:https?://[^/]+)?/([^/]+)/user/([^/]+)/post/(\\d+)").getColumn(-1);
+            final String[] posturls = br.getRegex("(?:https?://[^/]+)?/([^/]+)/user/([^/]+)/post/([a-z0-9]+)").getColumn(-1);
             int numberofAddedItems = 0;
             for (String posturl : posturls) {
                 posturl = br.getURL(posturl).toString();
@@ -359,14 +359,16 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
             numberofResultsSimpleCount++;
         }
         final List<Map<String, Object>> attachments = (List<Map<String, Object>>) postmap.get("attachments");
-        for (final Map<String, Object> attachment : attachments) {
-            final DownloadLink media = buildFileDownloadLinkAPI(dupes, useAdvancedDupecheck, attachment, index);
-            /* null = item is a duplicate */
-            if (media != null) {
-                kemonoResults.add(media);
-                index++;
+        if (attachments != null) {
+            for (final Map<String, Object> attachment : attachments) {
+                final DownloadLink media = buildFileDownloadLinkAPI(dupes, useAdvancedDupecheck, attachment, index);
+                /* null = item is a duplicate */
+                if (media != null) {
+                    kemonoResults.add(media);
+                    index++;
+                }
+                numberofResultsSimpleCount++;
             }
-            numberofResultsSimpleCount++;
         }
         logger.info("Portal: " + portal + " | UserID: " + userID + " | PostID: " + postID + " | File items in API response: " + numberofResultsSimpleCount + " | Number of unique file items: " + kemonoResults.size());
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -379,6 +381,15 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
                 final List<CrawledLink> postTextContentLinks = getCrawler().find(getLinkCrawlerGeneration(), getCurrentLink(), postTextContent, br.getURL(), false, false);
                 if (postTextContentLinks != null) {
                     for (CrawledLink postTextContentLink : postTextContentLinks) {
+                        try {
+                            final URL url = new URL(postTextContentLink.getURL());
+                            if (!dupes.add(url.getPath())) {
+                                // alread part of attachments
+                                continue;
+                            }
+                        } catch (MalformedURLException e) {
+                            logger.log(e);
+                        }
                         ret.add(this.createDownloadlink(postTextContentLink.getURL()));
                     }
                 }

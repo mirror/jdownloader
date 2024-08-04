@@ -504,25 +504,25 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             // TODO: Add subtitle support
             final boolean best = cfg != null ? cfg.getBooleanProperty(DailyMotionCom.ALLOW_BEST, false) : false;
             final List<Integer> selectedQualities = new ArrayList<Integer>();
-            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_240)) {
+            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_240, DailyMotionCom.default_ALLOW_RESOLUTION)) {
                 selectedQualities.add(240);
             }
-            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_380)) {
+            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_380, DailyMotionCom.default_ALLOW_RESOLUTION)) {
                 selectedQualities.add(380);
             }
-            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_480)) {
+            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_480, DailyMotionCom.default_ALLOW_RESOLUTION)) {
                 selectedQualities.add(480);
             }
-            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_720)) {
+            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_720, DailyMotionCom.default_ALLOW_RESOLUTION)) {
                 selectedQualities.add(720);
             }
-            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_1080)) {
+            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_1080, DailyMotionCom.default_ALLOW_RESOLUTION)) {
                 selectedQualities.add(1080);
             }
-            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_1440)) {
+            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_1440, DailyMotionCom.default_ALLOW_RESOLUTION)) {
                 selectedQualities.add(1440);
             }
-            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_2160)) {
+            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_2160, DailyMotionCom.default_ALLOW_RESOLUTION)) {
                 selectedQualities.add(2160);
             }
             if (selectedQualities.isEmpty() && !best) {

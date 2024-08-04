@@ -26,35 +26,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNodeVisitor;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DecrypterRetryException;
-import jd.plugins.DecrypterRetryException.RetryReason;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.UserAgents;
-import jd.plugins.components.UserAgents.BrowserName;
-import jd.plugins.hoster.YoutubeDashV2;
-import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -104,6 +80,31 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
+
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNodeVisitor;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
+import jd.plugins.hoster.YoutubeDashV2;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TbCmV2 extends PluginForDecrypt {
@@ -228,22 +229,14 @@ public class TbCmV2 extends PluginForDecrypt {
         return userName;
     }
 
-    /**
-     * Returns true if given URL leads to a channel or profile "Shorts videos" -> Equivalent would be the "Shorts" tab in channel overview
-     * in browser.
-     */
-    private static boolean isChannelOrProfileShorts(final String url) {
-        final String channelTabName = getChannelTabNameFromURL(url);
-        if (StringUtils.equalsIgnoreCase(channelTabName, "shorts")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     /** Returns supported tab names from URLs e.g. "shorts" or "videos". */
     private static String getChannelTabNameFromURL(final String url) {
-        return new Regex(url, "(?i)/(shorts|videos).*$").getMatch(0);
+        final String ret = new Regex(url, "(?i)/(featured|videos|shorts|releases|playlists).*$").getMatch(0);
+        if (ret != null) {
+            return ret.toLowerCase(Locale.ENGLISH);
+        } else {
+            return ret;
+        }
     }
 
     private boolean linkCollectorContainsEntryByID(final String videoID) {
@@ -328,8 +321,8 @@ public class TbCmV2 extends PluginForDecrypt {
         /**
          * 2024-07-05 e.g.
          * https://www.google.com/url?sa=t&source=web&rct=j&opi=123456&url=https://www.youtube.com/watch%3Fv%3DREDACTED&ved=REDACTED
-         * &usg=REDACTED </br> We can safely url-decode this URL as the items we are looking for are not encoded anyways, all IDs are
-         * [a-z0-9_-]
+         * &usg=REDACTED </br>
+         * We can safely url-decode this URL as the items we are looking for are not encoded anyways, all IDs are [a-z0-9_-]
          */
         cleanedurl = Encoding.htmlDecode(cleanedurl);
         videoID = getVideoIDFromUrl(cleanedurl);
@@ -378,13 +371,27 @@ public class TbCmV2 extends PluginForDecrypt {
                     throw new InterruptedException();
                 }
                 /* Ask user: Prevents accidental crawling of entire Play-List or Channel-List or User-List. */
+                final String channelTabName = getChannelTabNameFromURL(cleanedurl);
                 IfUrlisAPlaylistAction playListAction = cfg.getLinkIsPlaylistUrlAction();
+                CrawledLink checkSource = getCurrentLink().getSourceLink();
+                while (checkSource != null) {
+                    // this playlist is result of /releases crawling, don't ask again
+                    if (StringUtils.endsWithCaseInsensitive(checkSource.getURL(), "/releases")) {
+                        playListAction = IfUrlisAPlaylistAction.PROCESS;
+                        break;
+                    } else {
+                        checkSource = checkSource.getSourceLink();
+                    }
+                }
                 if (playlistID != null) {
                     playlistHandlingHumanReadableTypeOfUrlToCrawl = "Playlist";
                     playlistHandlingHumanReadableTitle = "Playlist | " + playlistID;
-                } else if (userName != null && isChannelOrProfileShorts(cleanedurl)) {
+                } else if (userName != null && "shorts".equals(channelTabName)) {
                     playlistHandlingHumanReadableTypeOfUrlToCrawl = "Channel Shorts";
                     playlistHandlingHumanReadableTitle = "Channel | " + userName + " | Shorts";
+                } else if (userName != null && "releases".equals(channelTabName)) {
+                    playlistHandlingHumanReadableTypeOfUrlToCrawl = "Channel Releases";
+                    playlistHandlingHumanReadableTitle = "Channel | " + userName + " | Releases";
                 } else if (userName != null) {
                     playlistHandlingHumanReadableTypeOfUrlToCrawl = "Channel";
                     playlistHandlingHumanReadableTitle = "Channel | " + userName;
@@ -500,6 +507,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 logger.info(playlistHandlingLogtextForUserDisabledCrawlerByLimitSetting);
                 return ret;
             }
+            final String channelTabName = getChannelTabNameFromURL(cleanedurl);
             final Regex legacyurl = new Regex(cleanedurl, "(?i)https?://[^/]+/user/([^/]+).*");
             if (legacyurl.patternFind()) {
                 /* Workaround / legacy handling for such old URLs. */
@@ -528,7 +536,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 /* Grab additional information now that we've already opened the page. */
                 this.channelID = channelMetadataRenderer.get("externalId").toString();
             }
-            if (!isChannelOrProfileShorts(cleanedurl) && !StringUtils.isEmpty(userName) && StringUtils.isEmpty(playlistID) && cfg.getProfileCrawlMode() == ProfileCrawlMode.PLAYLIST) {
+            if (channelTabName == null && !StringUtils.isEmpty(userName) && StringUtils.isEmpty(playlistID) && cfg.getProfileCrawlMode() == ProfileCrawlMode.PLAYLIST) {
                 /*
                  * the user channel parser only parses 1050 videos. this workaround finds the user channel playlist and parses this playlist
                  * instead
@@ -554,7 +562,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
                 /* channelID starts with "UC". We can build channel-playlist out of channel-ID. */
                 playlistID = "UU" + channelID.substring(2);
-            } else if (!isChannelOrProfileShorts(cleanedurl) && StringUtils.isEmpty(playlistID) && !StringUtils.isEmpty(channelID) && cfg.getProfileCrawlMode() == ProfileCrawlMode.PLAYLIST) {
+            } else if (channelTabName == null && StringUtils.isEmpty(playlistID) && !StringUtils.isEmpty(channelID) && cfg.getProfileCrawlMode() == ProfileCrawlMode.PLAYLIST) {
                 /*
                  * you can not use this with /c or /channel based urls, it will pick up false positives. see
                  * https://www.youtube.com/channel/UCOSGEokQQcdAVFuL_Aq8dlg, it will find list=PLc-T0ryHZ5U_FtsfHQopuvQugBvRoVR3j which only
@@ -615,7 +623,6 @@ public class TbCmV2 extends PluginForDecrypt {
                                 channelOrPlaylistPackage.setName(playlistTitle);
                             } else {
                                 final String internalContainerURL = helper.getChannelPlaylistCrawlerContainerUrlOverride(param.getCryptedUrl());
-                                final boolean isShorts = isChannelOrProfileShorts(internalContainerURL);
                                 String packagename;
                                 if (channelName != null) {
                                     packagename = channelName;
@@ -624,8 +631,10 @@ public class TbCmV2 extends PluginForDecrypt {
                                 } else {
                                     packagename = playlistHandlingHumanReadableTitle;
                                 }
-                                if (isShorts) {
+                                if ("shorts".equals(channelTabName)) {
                                     packagename += " | Shorts";
+                                } else if ("releases".equals(channelTabName)) {
+                                    packagename += " | Releases";
                                 }
                                 channelOrPlaylistPackage.setName(packagename);
                             }
@@ -1174,9 +1183,6 @@ public class TbCmV2 extends PluginForDecrypt {
         String userOrPlaylistURL;
         String desiredChannelTab = null;
         final String channelTabFromURL = getChannelTabNameFromURL(referenceUrl);
-        // final Map<String, String> tabFallbackMapping = new HashMap<String, String>();
-        // tabFallbackMapping.put("Shorts", "Videos");
-        // tabFallbackMapping.put("Videos", "Shorts");
         String humanReadableTitle;
         if (playlistID != null) {
             userOrPlaylistURL = generatePlaylistURL(playlistID);
@@ -1255,9 +1261,11 @@ public class TbCmV2 extends PluginForDecrypt {
             } else if (run == 0) {
                 /* Channel */
                 final List<String> availableChannelTabs = new ArrayList<String>();
-                Map<String, Object> playlisttab = null;
-                Map<String, Object> shortstab = null;
+                Map<String, Object> featuredtab = null;
                 Map<String, Object> videostab = null;
+                Map<String, Object> shortstab = null;
+                Map<String, Object> releasestab = null;
+                Map<String, Object> playlisttab = null;
                 final List<Map<String, Object>> tabs = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(rootMap, "contents/twoColumnBrowseResultsRenderer/tabs");
                 if (tabs != null) {
                     for (final Map<String, Object> tab : tabs) {
@@ -1293,14 +1301,28 @@ public class TbCmV2 extends PluginForDecrypt {
                                 if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
                                     varray = varrayTmp;
                                 }
+                            } else if (StringUtils.endsWithCaseInsensitive(webCommandMetadata_url, "/releases") || StringUtils.equals(browseEndpoint_Params, "EghyZWxlYXNlc_IGBQoDsgEA")) {
+                                releasestab = tab;
+                                if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
+                                    varray = varrayTmp;
+                                }
+                            } else if (StringUtils.endsWithCaseInsensitive(webCommandMetadata_url, "/playlists") || StringUtils.equals(browseEndpoint_Params, "EglwbGF5bGlzdHPyBgQKAkIA")) {
+                                playlisttab = tab;
+                                if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
+                                    varray = varrayTmp;
+                                }
+                            } else if (StringUtils.endsWithCaseInsensitive(webCommandMetadata_url, "/featured") || StringUtils.equals(browseEndpoint_Params, "EghmZWF0dXJlZPIGBAoCMgA%3D")) {
+                                featuredtab = tab;
+                                if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
+                                    varray = varrayTmp;
+                                }
                             } else {
                                 /* Other/Unsupported tab -> Ignore */
                             }
                         }
                     }
                     logger.info("Available channel tabs: " + availableChannelTabs);
-                    final boolean isChannelOrProfileShorts = isChannelOrProfileShorts(referenceUrl);
-                    if (shortstab == null && isChannelOrProfileShorts && videostab != null && run == 0) {
+                    if (shortstab == null && "shorts".equals(channelTabFromURL) && run == 0 && videostab != null) {
                         logger.info("User wanted shorts but channel doesn't contain shorts tab -> Fallback to Videos tab and re-do loop with that URL");
                         if (channelID != null) {
                             userOrPlaylistURL = getChannelURLOLD(userName, "videos");
@@ -1311,7 +1333,7 @@ public class TbCmV2 extends PluginForDecrypt {
                             desiredChannelTab = "Videos";
                         }
                         continue;
-                    } else if (videostab == null && shortstab != null && !isChannelOrProfileShorts && run == 0) {
+                    } else if (videostab == null && ("videos".equals(channelTabFromURL) || channelTabFromURL == null) && run == 0 && shortstab != null) {
                         logger.info("User wanted videos but channel doesn't contain videos tab -> Fallback to shorts tab and re-do loop with that URL");
                         if (channelID != null) {
                             userOrPlaylistURL = getChannelURLOLD(userName, "shorts");
@@ -1328,8 +1350,8 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             }
             /**
-             * This message can also contain information like "2 unavailable videos won't be displayed in this list". </br> Only mind this
-             * errormessage if we can't find any content.
+             * This message can also contain information like "2 unavailable videos won't be displayed in this list". </br>
+             * Only mind this errormessage if we can't find any content.
              */
             alerts = (List<Map<String, Object>>) rootMap.get("alerts");
             errorOrWarningMessage = null;
@@ -1384,8 +1406,9 @@ public class TbCmV2 extends PluginForDecrypt {
                 videosCountText = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer, "numVideosText/runs/{0}/text");
             }
             /**
-             * Find extra information about channel </br> Do not do this if tab is e.g. "shorts" as we'd then pickup an incorrect number. YT
-             * ui does not display the total number of shorts of a user.
+             * Find extra information about channel </br>
+             * Do not do this if tab is e.g. "shorts" as we'd then pickup an incorrect number. YT ui does not display the total number of
+             * shorts of a user.
              */
             final Map<String, Object> channelHeaderRenderer = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "header/c4TabbedHeaderRenderer");
             if (channelHeaderRenderer != null && StringUtils.equalsIgnoreCase(desiredChannelTab, "Videos")) {
@@ -1457,6 +1480,57 @@ public class TbCmV2 extends PluginForDecrypt {
                                 /* Video of radio/mix auto generated playlist */
                                 id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistPanelVideoRenderer/videoId");
                             }
+                        }
+                    }
+                    final String vidPlayListID = (String) JavaScriptEngineFactory.walkJson(vid, "richItemRenderer/content/playlistRenderer/playlistId");
+                    if (vidPlayListID != null && id == null) {
+                        /**
+                         * eg on /releases or /playlists -> inner playlists
+                         *
+                         * TODO: decide which solution to go
+                         */
+                        if (true) {
+                            // proper playlist handling with packaging and correct container URLs
+                            final String playlistURL = generatePlaylistURL(vidPlayListID);
+                            distribute(createDownloadlink(playlistURL));
+                            break;
+                        } else if (true) {
+                            // fast but part of "Releases" or "Playlists" packages
+                            final List<Map<String, Object>> vidPlayListVideos = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(vid, "richItemRenderer/content/playlistRenderer/videos");
+                            for (Map<String, Object> vidPlayListVideo : vidPlayListVideos) {
+                                vidPlayListVideo = (Map<String, Object>) vidPlayListVideo.get("childVideoRenderer");
+                                id = (String) vidPlayListVideo.get("videoId");
+                                numberOfVideoItemsOnThisPage++;
+                                videoPositionCounter++;
+                                if (!playListDupes.add(id)) {
+                                    /* Playlists can contain the same video multiple times */
+                                    logger.info("Skipping dupe: " + id + " | Position: " + videoPositionCounter);
+                                    numberofSkippedDuplicates++;
+                                    continue;
+                                }
+                                ret.add(new YoutubeClipData(id, videoPositionCounter));
+                                if (playListDupes.size() == maxItemsLimit) {
+                                    break;
+                                }
+                            }
+                        } else {
+                            // slow but same as fast
+                            final Browser brc = br.cloneBrowser();
+                            final ArrayList<YoutubeClipData> playListItems = crawlPlaylistOrChannel(helper, brc, vidPlayListID, userName, channelID, referenceUrl, maxItemsLimit);
+                            playListLoop: for (YoutubeClipData playListItem : playListItems) {
+                                if (playListDupes.add(playListItem.videoID)) {
+                                    ret.add(playListItem);
+                                    if (playListDupes.size() == maxItemsLimit) {
+                                        break playListLoop;
+                                    }
+                                }
+                            }
+                        }
+                        if (playListDupes.size() == maxItemsLimit) {
+                            reachedUserDefinedMaxItemsLimit = true;
+                            break;
+                        } else {
+                            continue;
                         }
                     }
                     /* Typically last item (item 101) will contain the continuationToken. */
@@ -1549,8 +1623,9 @@ public class TbCmV2 extends PluginForDecrypt {
                     if (alerts != null && alerts.size() > 0) {
                         /**
                          * 2023-08-03: E.g. playlist with 700 videos but 680 of them are hidden/unavailable which means first pagination
-                         * attempt will fail. </br> Even via website this seems to be and edge case as the loading icon will never disappear
-                         * and no error is displayed.
+                         * attempt will fail. </br>
+                         * Even via website this seems to be and edge case as the loading icon will never disappear and no error is
+                         * displayed.
                          */
                         logger.info("Pagination failed -> Possible reason: " + errorOrWarningMessage);
                     } else {

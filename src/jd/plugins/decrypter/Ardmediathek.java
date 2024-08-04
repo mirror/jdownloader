@@ -146,6 +146,9 @@ public class Ardmediathek extends PluginForDecrypt {
         if (cfg.isGrabHLS1080pVideoEnabled()) {
             selectedQualities.add("hls_1080");
         }
+        if (cfg.isGrabHLS2160pVideoEnabled()) {
+            selectedQualities.add("hls_2160");
+        }
         /* If user has deselected all HLS qualities, we can later skip HLS crawling entirely which speeds up the crawl process. */
         if (selectedQualities.size() > 0) {
             this.grabHLS = true;
@@ -178,6 +181,9 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (cfg.isGrabHTTP1080pVideoEnabled()) {
             selectedQualities.add("http_1080");
+        }
+        if (cfg.isGrabHTTP2160pVideoEnabled()) {
+            selectedQualities.add("http_2160");
         }
     }
 
@@ -495,9 +501,6 @@ public class Ardmediathek extends PluginForDecrypt {
                         maxHeightHls = heightO.intValue();
                     }
                     continue;
-                }
-                if (exampleHTTPURL == null) {
-                    exampleHTTPURL = url;
                 }
                 if (exampleHTTPURL == null) {
                     exampleHTTPURL = url;
@@ -2063,6 +2066,7 @@ public class Ardmediathek extends PluginForDecrypt {
 
     public enum VideoResolution {
         // Order is default quality sort order
+        P_2160(3840, 2160),
         P_1080(1920, 1080),
         P_720(1280, 720),
         /** 2022-10-21: Removed as we now detect quality/resolution by height. */

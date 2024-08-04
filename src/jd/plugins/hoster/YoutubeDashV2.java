@@ -29,49 +29,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.Property;
-import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractNodeNotifier;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.http.requests.HeadRequest;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.BrowserAdapter;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.DownloadLinkDatabindingInterface;
-import jd.plugins.FilePackage;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginBrowser;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.decrypter.TbCmV2;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.HashResult;
-import jd.plugins.download.raf.ChunkRange;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
@@ -152,6 +109,49 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.HeadRequest;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.BrowserAdapter;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.DownloadLinkDatabindingInterface;
+import jd.plugins.FilePackage;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginBrowser;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.decrypter.TbCmV2;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashResult;
+import jd.plugins.download.raf.ChunkRange;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" })
 public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInterface {
@@ -460,7 +460,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             final HashSet<LinkVariant> checkedAlternatives = new HashSet<LinkVariant>();
             final AbstractVariant orgVariant = getVariant(downloadLink);
             try {
-                int maxAlternativesChecks = CFG_YOUTUBE.CFG.getAutoAlternativeSearchDepths();
+                int maxAlternativesChecks = CFG_YOUTUBE.CFG.isAutoAlternativeSearchEnabled() ? CFG_YOUTUBE.CFG.getAutoAlternativeSearchDepths() : 1;
                 final boolean hasCache = ClipDataCache.hasCache(helper, downloadLink);
                 boolean triedToResetTheCache = !hasCache;
                 test: while (maxAlternativesChecks-- >= 0 || triedToResetTheCache) {
@@ -749,7 +749,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     }
 
     private LinkVariant getAlternatives(YoutubeHelper helper, final DownloadLink downloadLink, final AbstractVariant variant, final HashSet<LinkVariant> blacklisted) throws Exception {
-        if (CFG_YOUTUBE.CFG.getAutoAlternativeSearchDepths() <= 0) {
+        if (!CFG_YOUTUBE.CFG.isAutoAlternativeSearchEnabled() || CFG_YOUTUBE.CFG.getAutoAlternativeSearchDepths() <= 0) {
             // auto alternative search is disabled
             return null;
         }

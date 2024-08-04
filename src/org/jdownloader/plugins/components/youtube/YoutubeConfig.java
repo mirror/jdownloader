@@ -655,6 +655,13 @@ public interface YoutubeConfig extends PluginConfigInterface {
     void setAutoAlternativeSearchDepths(int i);
 
     @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("If a Variant is not available, JD will try to find alternatives")
+    boolean isAutoAlternativeSearchEnabled();
+
+    void setAutoAlternativeSearchEnabled(boolean b);
+
+    @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("If disabled, JD will ignore the Youtube Collections, but create an extra link for every variant")
     boolean isCollectionMergingEnabled();

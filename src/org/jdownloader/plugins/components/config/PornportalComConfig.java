@@ -77,7 +77,7 @@ public interface PornportalComConfig extends PluginConfigInterface {
         }
     }
 
-    @DefaultEnumValue("ALL")
+    @DefaultEnumValue("ALL_SELECTED")
     @DescriptionForConfigEntry("If preferred qualities are not found, all will be crawled instead")
     @Order(100)
     QualitySelectionMode getQualitySelectionMode();

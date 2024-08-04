@@ -23,6 +23,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,14 +53,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.DailyMotionComDecrypter;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://dailymotion\\.com/video/\\w+" })
 public class DailyMotionCom extends PluginForHost {
@@ -80,38 +80,37 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     /** Settings stuff */
-    public static final String   ALLOW_SUBTITLE          = "ALLOW_SUBTITLE";
-    public static final String   ALLOW_BEST              = "ALLOW_BEST";
-    public static final String   ALLOW_240               = "ALLOW_1";
-    public static final String   ALLOW_380               = "ALLOW_2";
-    public static final String   ALLOW_480               = "ALLOW_3";
-    public static final String   ALLOW_720               = "ALLOW_4";
-    public static final String   ALLOW_1080              = "ALLOW_5";
-    public static final String   ALLOW_1440              = "ALLOW_6";
-    public static final String   ALLOW_2160              = "ALLOW_7";
-    public static final String   ALLOW_AUDIO             = "ALLOW_AUDIO";
-    private static final String  CUSTOM_DATE             = "CUSTOM_DATE";
-    private static final String  CUSTOM_FILENAME         = "CUSTOM_FILENAME";
-    private final static String  defaultCustomFilename   = "*videoname*_*quality**ext*";
-    private final static String  defaultCustomDate       = "dd.MM.yyyy";
-    public static final String   API_BASE_GRAPHQL        = "https://graphql.api.dailymotion.com/";
-    public final static boolean  default_ALLOW_SUBTITLE  = true;
-    private final static boolean defaultAllowAudio       = true;
-    public static final boolean  default_ALLOW_HLS       = true;
-    public static final boolean  default_ALLOW_MP4       = false;
-    public static final String   PROPERTY_HLS_MASTER     = "hls_master";
-    public static final String   PROPERTY_DIRECTURL      = "directurl";
-    public static final String   PROPERTY_TITLE          = "plain_videoname";
-    public static final String   PROPERTY_CONTENT_URL    = "mainlink";
-    public static final String   PROPERTY_VIDEO_ID       = "plain_videoid";
-    public static final String   PROPERTY_QUALITY_NAME   = "qualityname";
-    public static final String   PROPERTY_QUALITY_HEIGHT = "height";
-    public static final String   PROPERTY_DATE_TIMESTAMP = "plain_date";
-    public static final String   PROPERTY_CHANNEL        = "plain_channel";
-    public static final String   PROPERTY_TYPE           = "type";
-    public static final String   TYPE_AUDIO              = "audio";
-    public static final String   TYPE_VIDEO              = "video";
-    public static final String   TYPE_SUBTITLE           = "subtitle";
+    public static final String  ALLOW_SUBTITLE           = "ALLOW_SUBTITLE";
+    public static final String  ALLOW_BEST               = "ALLOW_BEST";
+    public static final String  ALLOW_240                = "ALLOW_1";
+    public static final String  ALLOW_380                = "ALLOW_2";
+    public static final String  ALLOW_480                = "ALLOW_3";
+    public static final String  ALLOW_720                = "ALLOW_4";
+    public static final String  ALLOW_1080               = "ALLOW_5";
+    public static final String  ALLOW_1440               = "ALLOW_6";
+    public static final String  ALLOW_2160               = "ALLOW_7";
+    public static final String  ALLOW_AUDIO              = "ALLOW_AUDIO";
+    private static final String CUSTOM_DATE              = "CUSTOM_DATE";
+    private static final String CUSTOM_FILENAME          = "CUSTOM_FILENAME";
+    private final static String defaultCustomFilename    = "*videoname*_*quality**ext*";
+    private final static String defaultCustomDate        = "dd.MM.yyyy";
+    public static final String  API_BASE_GRAPHQL         = "https://graphql.api.dailymotion.com/";
+    public final static boolean default_ALLOW_SUBTITLE   = true;
+    public final static boolean default_ALLOW_AUDIO      = true;
+    public final static boolean default_ALLOW_RESOLUTION = true;
+    public static final String  PROPERTY_HLS_MASTER      = "hls_master";
+    public static final String  PROPERTY_DIRECTURL       = "directurl";
+    public static final String  PROPERTY_TITLE           = "plain_videoname";
+    public static final String  PROPERTY_CONTENT_URL     = "mainlink";
+    public static final String  PROPERTY_VIDEO_ID        = "plain_videoid";
+    public static final String  PROPERTY_QUALITY_NAME    = "qualityname";
+    public static final String  PROPERTY_QUALITY_HEIGHT  = "height";
+    public static final String  PROPERTY_DATE_TIMESTAMP  = "plain_date";
+    public static final String  PROPERTY_CHANNEL         = "plain_channel";
+    public static final String  PROPERTY_TYPE            = "type";
+    public static final String  TYPE_AUDIO               = "audio";
+    public static final String  TYPE_VIDEO               = "video";
+    public static final String  TYPE_SUBTITLE            = "subtitle";
 
     public DailyMotionCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -172,7 +171,8 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     /**
-     * Returns height of this item. </br> -1 = Fallback / audio.
+     * Returns height of this item. </br>
+     * -1 = Fallback / audio.
      */
     public static int getQualityHeight(final DownloadLink link) {
         final int height = link.getIntegerProperty(PROPERTY_QUALITY_HEIGHT, -1);
@@ -542,14 +542,14 @@ public class DailyMotionCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_SUBTITLE, "Grab subtitle?").setDefaultValue(default_ALLOW_SUBTITLE));
         final ConfigEntry hq = addConfigElementBestOnly();
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_240, "Grab 240p?").setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_380, "Grab 380p?").setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480, "Grab 480p?").setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720, "Grab 720p?").setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080, "Grab 1080p?").setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1440, "Grab 1440p?").setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_2160, "Grab 2160p?").setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_AUDIO, "Allow audio download").setDefaultValue(defaultAllowAudio));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_240, "Grab 240p?").setDefaultValue(default_ALLOW_RESOLUTION).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_380, "Grab 380p?").setDefaultValue(default_ALLOW_RESOLUTION).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480, "Grab 480p?").setDefaultValue(default_ALLOW_RESOLUTION).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720, "Grab 720p?").setDefaultValue(default_ALLOW_RESOLUTION).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080, "Grab 1080p?").setDefaultValue(default_ALLOW_RESOLUTION).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1440, "Grab 1440p?").setDefaultValue(default_ALLOW_RESOLUTION).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_2160, "Grab 2160p?").setDefaultValue(default_ALLOW_RESOLUTION).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_AUDIO, "Allow audio download").setDefaultValue(default_ALLOW_AUDIO));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filenames"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.dailymotioncom.customdate", "Define how the date should look.")).setDefaultValue(defaultCustomDate));
