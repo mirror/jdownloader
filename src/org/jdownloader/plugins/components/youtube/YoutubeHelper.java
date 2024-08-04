@@ -2253,8 +2253,6 @@ public class YoutubeHelper {
         return getPage(br, getRequest);
     }
 
-    protected static boolean API_POSSIBLE = true;
-
     protected boolean isAPIPrefered(Browser br) {
         final String serializedExperimentIdsString = br.getRegex("\"serializedExperimentIds\"\\s*:\\s*\"([0-9 ,]+)\"").getMatch(0);
         if (serializedExperimentIdsString != null) {
@@ -2624,51 +2622,130 @@ public class YoutubeHelper {
         vid.subtitles = loadSubtitles();
     }
 
+    private static boolean API_IOS_ENABLED = true;
+
+    /**
+     * https://github.com/zerodytrash/YouTube-Internal-Clients
+     *
+     *
+     * does not return opus audio codec
+     */
+    protected Request buildAPI_IOS_Request(Browser br) throws Exception {
+        if (!API_IOS_ENABLED) {
+            logger.info("buildAPI_IOS_Request:disabled");
+            return null;
+        }
+        final Map<String, Object> post = new LinkedHashMap<String, Object>();
+        final Map<String, Object> client = new LinkedHashMap<String, Object>();
+        client.put("clientName", "IOS");
+        client.put("clientVersion", "19.29.1");
+        client.put("deviceMake", "Apple");
+        client.put("deviceModel", "iPhone16,2");
+        client.put("userAgent", "com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1 like Mac OS X;)");
+        client.put("osName", "iPhone");
+        client.put("osVersion", "17.5.1.21F90");
+        client.put("hl", "en");
+        client.put("timeZone", "UTC");
+        client.put("utcOffsetMinutes", 0);
+        final Map<String, Object> context = new LinkedHashMap<String, Object>();
+        context.put("client", client);
+        post.put("context", context);
+        post.put("videoId", vid.videoID);
+        final Map<String, Object> contentPlaybackContext = new LinkedHashMap<String, Object>();
+        contentPlaybackContext.put("html5Preferences", "HTML5_PREF_WANTS");
+        final Map<String, Object> playbackContext = new LinkedHashMap<String, Object>();
+        playbackContext.put("contentPlaybackContext", contentPlaybackContext);
+        post.put("playbackContext", playbackContext);
+        post.put("contentCheckOk", true);
+        post.put("racyCheckOk", true);
+        final PostRequest request = br.createJSonPostRequest("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", JSonStorage.serializeToJson(post));
+        request.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, (String) client.get("userAgent"));
+        return request;
+    }
+
+    private static boolean API_TV_ENABLED = true;
+
+    /**
+     * https://github.com/zerodytrash/YouTube-Internal-Clients
+     *
+     *
+     * does also return opus audio codec, max video resolution is 1080p
+     */
+    protected Request buildAPI_TV_Request(Browser br) throws Exception {
+        if (!API_TV_ENABLED) {
+            logger.info("buildAPI_TV_Request:disabled");
+            return null;
+        }
+        final Map<String, Object> post = new LinkedHashMap<String, Object>();
+        final Map<String, Object> client = new LinkedHashMap<String, Object>();
+        client.put("clientName", "TVHTML5");
+        client.put("clientVersion", "7.20240724.13.00");
+        client.put("hl", "en");
+        client.put("timeZone", "UTC");
+        client.put("utcOffsetMinutes", 0);
+        final Map<String, Object> context = new LinkedHashMap<String, Object>();
+        context.put("client", client);
+        post.put("context", context);
+        post.put("videoId", vid.videoID);
+        final Map<String, Object> contentPlaybackContext = new LinkedHashMap<String, Object>();
+        contentPlaybackContext.put("html5Preferences", "HTML5_PREF_WANTS");
+        final String sts = getSts();
+        if (sts == null) {
+            return null;
+        }
+        contentPlaybackContext.put("signatureTimestamp", Integer.parseInt(sts));
+        final Map<String, Object> playbackContext = new LinkedHashMap<String, Object>();
+        playbackContext.put("contentPlaybackContext", contentPlaybackContext);
+        post.put("playbackContext", playbackContext);
+        post.put("contentCheckOk", true);
+        post.put("racyCheckOk", true);
+        final PostRequest request = br.createJSonPostRequest("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", JSonStorage.serializeToJson(post));
+        return request;
+    }
+
     protected int collectMapsFromAPIResponse(Browser br) throws InterruptedException, Exception {
-        if (!API_POSSIBLE) {
+        if (!API_IOS_ENABLED && !API_TV_ENABLED) {
             logger.info("collectMapsFromAPIResponse:disabled");
             return -1;
         }
+        int ret = 0;
         try {
-            final Map<String, Object> post = new LinkedHashMap<String, Object>();
-            final Map<String, Object> client = new LinkedHashMap<String, Object>();
-            client.put("clientName", "IOS");
-            client.put("clientVersion", "19.29.1");
-            client.put("deviceMake", "Apple");
-            client.put("deviceModel", "iPhone16,2");
-            client.put("userAgent", "com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1 like Mac OS X;)");
-            client.put("osName", "iPhone");
-            client.put("osVersion", "17.5.1.21F90");
-            client.put("hl", "en");
-            client.put("timeZone", "UTC");
-            client.put("utcOffsetMinutes", 0);
-            final Map<String, Object> context = new LinkedHashMap<String, Object>();
-            context.put("client", client);
-            post.put("context", context);
-            post.put("videoId", vid.videoID);
-            final Map<String, Object> contentPlaybackContext = new LinkedHashMap<String, Object>();
-            contentPlaybackContext.put("html5Preferences", "HTML5_PREF_WANTS");
-            final Map<String, Object> playbackContext = new LinkedHashMap<String, Object>();
-            playbackContext.put("contentPlaybackContext", contentPlaybackContext);
-            post.put("playbackContext", playbackContext);
-            post.put("contentCheckOk", true);
-            post.put("racyCheckOk", true);
             final Browser brc = br.cloneBrowser();
-            final PostRequest request = brc.createJSonPostRequest("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", JSonStorage.serializeToJson(post));
-            request.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, (String) client.get("userAgent"));
-            brc.getPage(request);
-            if (request.getHttpConnection().getResponseCode() == 200) {
-                final Map<String, Object> response = JSonStorage.restoreFromString(request.getHtmlCode(), TypeRef.MAP);
-                return collectMapsFromPlayerResponse(response, "api");
+            final Request request = buildAPI_IOS_Request(brc);
+            if (request != null) {
+                brc.getPage(request);
+                if (request.getHttpConnection().getResponseCode() == 200) {
+                    final Map<String, Object> response = JSonStorage.restoreFromString(request.getHtmlCode(), TypeRef.MAP);
+                    ret += collectMapsFromPlayerResponse(response, "api.ios");
+                } else {
+                    throw new Exception("auto disable api due to unexpected responseCode:" + request.getHttpConnection().getResponseCode());
+                }
             }
-            throw new Exception("auto disable api due to unexpected responseCode:" + request.getHttpConnection().getResponseCode());
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
-            API_POSSIBLE = false;
+            API_IOS_ENABLED = false;
             logger.log(e);
-            return -1;
         }
+        try {
+            final Browser brc = br.cloneBrowser();
+            final Request request = buildAPI_TV_Request(brc);
+            if (request != null) {
+                brc.getPage(request);
+                if (request.getHttpConnection().getResponseCode() == 200) {
+                    final Map<String, Object> response = JSonStorage.restoreFromString(request.getHtmlCode(), TypeRef.MAP);
+                    ret += collectMapsFromPlayerResponse(response, "api.tv");
+                } else {
+                    throw new Exception("auto disable api due to unexpected responseCode:" + request.getHttpConnection().getResponseCode());
+                }
+            }
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (Exception e) {
+            API_TV_ENABLED = false;
+            logger.log(e);
+        }
+        return ret;
     }
 
     private boolean looksIncomplete(YoutubeStreamData data) {
@@ -2683,10 +2760,7 @@ public class YoutubeHelper {
 
     private String getSts() throws Exception {
         final String player = ensurePlayerSource();
-        String sts = new Regex(player, "\"sts\"\\s*:\\s*(\\d+)").getMatch(0);
-        if (StringUtils.isEmpty(sts)) {
-            sts = "";
-        }
+        final String sts = new Regex(player, "sts\\s*(?::|=)\\s*(?:\")(\\d+)").getMatch(0);
         return sts;
     }
 
