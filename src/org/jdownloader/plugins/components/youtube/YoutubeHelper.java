@@ -2377,14 +2377,14 @@ public class YoutubeHelper {
         final Map<String, Object> map = getYtInitialPlayerResponse();
         final String unavailableStatus = map != null ? (String) JavaScriptEngineFactory.walkJson(map, "playabilityStatus/status") : null;
         final String unavailableReason = getUnavailableReason(unavailableStatus);
-        fmtMaps = new HashSet<StreamMap>();
-        subtitleUrls = new HashSet<String>();
+        fmtMaps = new LinkedHashSet<StreamMap>();
+        subtitleUrls = new LinkedHashSet<String>();
         mpdUrls = new LinkedHashSet<StreamMap>();
-        videoInfo = new HashMap<String, String>();
+        videoInfo = new LinkedHashMap<String, String>();
         vid.ageCheck = br.containsHTML("\"status\"\\s*:\\s*\"LOGIN_REQUIRED\"");
         this.handleContentWarning(br);
         int collected = 0;
-        if (isAPIPrefered(br)) {
+        if (isAPIPrefered(br) || true) {
             collected = collectMapsFromAPIResponse(br);
             logger.info("found collectMapsFromAPIResponse(" + vid.videoID + "):" + collected);
         }
@@ -2678,8 +2678,13 @@ public class YoutubeHelper {
         }
         final Map<String, Object> post = new LinkedHashMap<String, Object>();
         final Map<String, Object> client = new LinkedHashMap<String, Object>();
-        client.put("clientName", "TVHTML5");
-        client.put("clientVersion", "7.20240724.13.00");
+        if (false) {
+            client.put("clientName", "TVHTML5_SIMPLY_EMBEDDED_PLAYER");
+            client.put("clientVersion", "2.0");
+        } else {
+            client.put("clientName", "TVHTML5");
+            client.put("clientVersion", "7.20240724.13.00");
+        }
         client.put("hl", "en");
         client.put("timeZone", "UTC");
         client.put("utcOffsetMinutes", 0);
@@ -3060,8 +3065,9 @@ public class YoutubeHelper {
                     for (final Map<String, Object> format : adaptiveFormats) {
                         final YoutubeStreamData data = convert(format, dataSrc);
                         if (data != null) {
-                            fmtMaps.add(new StreamMap(data, dataSrc));
-                            ret++;
+                            if (fmtMaps.add(new StreamMap(data, dataSrc))) {
+                                ret++;
+                            }
                         }
                     }
                 }
@@ -3073,8 +3079,9 @@ public class YoutubeHelper {
                     for (final Map<String, Object> format : formats) {
                         final YoutubeStreamData data = convert(format, dataSrc);
                         if (data != null) {
-                            fmtMaps.add(new StreamMap(data, dataSrc));
-                            ret++;
+                            if (fmtMaps.add(new StreamMap(data, dataSrc))) {
+                                ret++;
+                            }
                         }
                     }
                 }
@@ -3086,8 +3093,9 @@ public class YoutubeHelper {
                         final String dataSrc = "new_dashManifestUrl." + src;
                         final List<YoutubeStreamData> datas = parseDashManifest(dataSrc, br, br.getURL(url).toString());
                         for (YoutubeStreamData data : datas) {
-                            fmtMaps.add(new StreamMap(data, dataSrc));
-                            ret++;
+                            if (fmtMaps.add(new StreamMap(data, dataSrc))) {
+                                ret++;
+                            }
                         }
                     } catch (Exception e) {
                         logger.log(e);
