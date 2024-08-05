@@ -19,6 +19,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.uio.ComboBoxDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
@@ -216,14 +217,17 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         this.forceDownloads = forceDownloads;
     }
 
-    private Priority              piority               = Priority.DEFAULT;
-    private boolean               assignPriorityEnabled = false;
-    private PackageExpandBehavior packageExpandBehavior = PackageExpandBehavior.GLOBAL;
-    private OnOfflineLinksAction  handleOffline         = OnOfflineLinksAction.GLOBAL;
-    private OnDupesLinksAction    handleDupes           = OnDupesLinksAction.GLOBAL;
-    private AutoStartOptions      autoStart             = AutoStartOptions.AUTO;
-    private boolean               clearListAfterConfirm = false;
-    private boolean               metaCtrl              = false;
+    private Priority              piority                                               = Priority.DEFAULT;
+    private boolean               assignPriorityEnabled                                 = false;
+    private PackageExpandBehavior packageExpandBehavior                                 = PackageExpandBehavior.GLOBAL;
+    private OnOfflineLinksAction  handleOffline                                         = OnOfflineLinksAction.GLOBAL;
+    private OnDupesLinksAction    handleDupes                                           = OnDupesLinksAction.GLOBAL;
+    private AutoStartOptions      autoStart                                             = AutoStartOptions.AUTO;
+    private boolean               clearListAfterConfirm                                 = false;
+    private boolean               metaCtrl                                              = false;
+    private boolean               moveToDownloadlistConfirmationDialogEnabled           = false;
+    private int                   minNumberofPackagesForConfirmMoveToDownloadlistDialog = 1;
+    private int                   minNumberofLinksForConfirmMoveToDownloadlistDialog    = 1;
 
     public static String getTranslationForAssignPriorityEnabled() {
         return _JDT.T.ConfirmLinksContextAction_getTranslationForAssignPriorityEnabled();
@@ -264,6 +268,45 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         this.packageExpandBehavior = packageExpandBehavior;
     }
 
+    public static String getTranslationForMoveToDownloadlistConfirmationDialogEnabled() {
+        return "Display confirmation dialog if more than a specific amount of packages and links is to be moved?";
+    }
+
+    @Customizer(link = "#getTranslationForMoveToDownloadlistConfirmationDialogEnabled")
+    public boolean isMoveToDownloadlistConfirmationDialogEnabled() {
+        return moveToDownloadlistConfirmationDialogEnabled;
+    }
+
+    public void setMoveToDownloadlistConfirmationDialogEnabled(boolean bool) {
+        this.moveToDownloadlistConfirmationDialogEnabled = bool;
+    }
+
+    public static String getTranslationForMinNumberofPackagesForMoveToDownloadlistConfirmDialog() {
+        return "Min number of packages for confirm dialog";
+    }
+
+    @Customizer(link = "#getTranslationForMinNumberofPackagesForMoveToDownloadlistConfirmDialog")
+    public int getMinNumberofPackagesForMoveToDownloadlistConfirmDialog() {
+        return this.minNumberofPackagesForConfirmMoveToDownloadlistDialog;
+    }
+
+    public void setMinNumberofPackagesForMoveToDownloadlistConfirmDialog(int num) {
+        this.minNumberofPackagesForConfirmMoveToDownloadlistDialog = num;
+    }
+
+    public static String getTranslationForMinNumberofLinksForMoveToDownloadlistConfirmDialog() {
+        return "Min number of links for confirm dialog";
+    }
+
+    @Customizer(link = "#getTranslationForMinNumberofLinksForMoveToDownloadlistConfirmDialog")
+    public int getMinNumberofLinksForMoveToDownloadlistConfirmDialog() {
+        return this.minNumberofLinksForConfirmMoveToDownloadlistDialog;
+    }
+
+    public void setMinNumberofLinksForMoveToDownloadlistConfirmDialog(int num) {
+        this.minNumberofLinksForConfirmMoveToDownloadlistDialog = num;
+    }
+
     public static final String FORCE_START      = "forceDownloads";
     public static final String AUTO_START       = "autoStart";
     /**
@@ -274,14 +317,19 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     public static void confirmSelection(final MoveLinksMode moveLinksMode, final SelectionInfo<CrawledPackage, CrawledLink> selection, final boolean autoStart, final boolean clearLinkgrabber, final boolean doTabSwitch, final Priority newPriority, final PackageExpandBehavior packageExpandBehavior, final BooleanStatus forcedStart, final OnOfflineLinksAction handleOfflineLinks, final OnDupesLinksAction handleDupes) {
         final Thread thread = new Thread() {
             public void run() {
-                OnOfflineLinksAction handleOfflineLoc = handleOfflineLinks;
-                if (handleOfflineLoc == OnOfflineLinksAction.GLOBAL) {
+                OnOfflineLinksAction handleOfflineLoc;
+                if (handleOfflineLinks == OnOfflineLinksAction.GLOBAL) {
                     handleOfflineLoc = OnOfflineLinksAction.ASK;
+                } else {
+                    handleOfflineLoc = handleOfflineLinks;
                 }
-                OnDupesLinksAction handleDupesLoc = handleDupes;
-                if (handleDupesLoc == OnDupesLinksAction.GLOBAL) {
+                OnDupesLinksAction handleDupesLoc;
+                if (handleDupes == OnDupesLinksAction.GLOBAL) {
                     handleDupesLoc = OnDupesLinksAction.ASK;
+                } else {
+                    handleDupesLoc = handleDupes;
                 }
+                boolean alreadyDisplayedOtherDialogToUser = false;
                 final HashSet<CrawledLink> toDelete = new HashSet<CrawledLink>();
                 final HashSet<CrawledLink> toKeepInLinkgrabber = new HashSet<CrawledLink>();
                 try {
@@ -378,6 +426,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                 if (response.isDontShowAgainSelected()) {
                                     doAction = doActionForTheCurrentArchive;
                                 }
+                                alreadyDisplayedOtherDialogToUser = true;
                             }
                             switch (doActionForTheCurrentArchive) {
                             case DELETE:
@@ -402,14 +451,15 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                             }
                         }
                     }
-                } catch (DialogNoAnswerException e) {
+                } catch (final DialogNoAnswerException e) {
+                    /* User did not react -> Do nothing */
                     return;
                 } catch (Throwable e) {
                     org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                 }
                 final ArrayList<CrawledLink> offline = new ArrayList<CrawledLink>();
                 if (handleOfflineLoc != OnOfflineLinksAction.INCLUDE_OFFLINE) {
-                    for (CrawledLink cl : selection.getChildren()) {
+                    for (final CrawledLink cl : selection.getChildren()) {
                         if (toKeepInLinkgrabber.contains(cl)) {
                             continue;
                         }
@@ -459,6 +509,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                 }
                                 handleOfflineLoc = options[result.getSelectedIndex()];
                                 CFG_LINKGRABBER.CFG.setHandleOfflineOnConfirmLatestSelection(handleOfflineLoc);
+                                alreadyDisplayedOtherDialogToUser = true;
                             }
                             switch (handleOfflineLoc) {
                             case EXCLUDE_OFFLINE:
@@ -524,6 +575,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                 }
                                 handleDupesLoc = options[result.getSelectedIndex()];
                                 CFG_LINKGRABBER.CFG.setHandleDupesOnConfirmLatestSelection(handleDupesLoc);
+                                alreadyDisplayedOtherDialogToUser = true;
                             }
                             switch (handleDupesLoc) {
                             case EXCLUDE:
@@ -556,14 +608,22 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                     /* No items to move */
                     return;
                 }
-                final MoveLinksSettings moveLinksSettings = new MoveLinksSettings(moveLinksMode, autoStart, BooleanStatus.convert(forcedStart), newPriority);
-                moveLinksSettings.setPackageExpandBehavior(packageExpandBehavior);
                 final SelectionInfo<CrawledPackage, CrawledLink> finalSelection;
                 if (createNewSelectionInfo) {
                     finalSelection = new SelectionInfo<CrawledPackage, CrawledLink>(null, toMove);
                 } else {
                     finalSelection = selection;
                 }
+                final int numberofPackages = selection.getPackageViews().size();
+                final int numberofLinks = selection.getChildren().size();
+                if (!alreadyDisplayedOtherDialogToUser && numberofPackages >= 1 && numberofLinks >= 1 && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    if (!UIOManager.I().showConfirmDialog(0, _GUI.T.literall_are_you_sure(), "Are you sure you want to move " + numberofPackages + " packages and " + numberofLinks + " links to downloadlist?", new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI.T.literally_yes(), _GUI.T.literall_no())) {
+                        /* Canceled by user */
+                        return;
+                    }
+                }
+                final MoveLinksSettings moveLinksSettings = new MoveLinksSettings(moveLinksMode, autoStart, BooleanStatus.convert(forcedStart), newPriority);
+                moveLinksSettings.setPackageExpandBehavior(packageExpandBehavior);
                 LinkCollector.getInstance().moveLinksToDownloadList(moveLinksSettings, finalSelection);
                 if (doTabSwitch) {
                     switchToDownloadTab();
