@@ -20,15 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.parser.UrlQuery;
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.macs.HMac;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -40,6 +31,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.parser.UrlQuery;
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AudioMackComHoster extends PluginForHost {
@@ -179,7 +179,9 @@ public class AudioMackComHoster extends PluginForHost {
         if (durationSecondsStr != null && durationSecondsStr.matches("\\d+")) {
             /* Estimate filesize */
             final int durationSeconds = Integer.parseInt(durationSecondsStr);
-            link.setDownloadSize(256 * 1024l / 8 * durationSeconds);
+            if (durationSeconds > 0) {
+                link.setDownloadSize(256 * 1024l / 8 * durationSeconds);
+            }
         }
     }
 
