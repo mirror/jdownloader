@@ -371,7 +371,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     void setProfileCrawlerCrawlProfilePicture(boolean b);
 
     @AboutConfig
-    @SpinnerValidator(min = 12, max = 100, step = 1)
+    @SpinnerValidator(min = 1, max = 100, step = 1)
     @DefaultIntValue(12)
     @DescriptionForConfigEntry(text_ProfileCrawlerReelsPaginationMaxItemsPerPage)
     @Order(85)

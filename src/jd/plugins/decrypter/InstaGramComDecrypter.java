@@ -781,6 +781,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         final String userID = this.findUserID(param, account, loggedIN, username);
         final UrlQuery query = new UrlQuery();
         query.add("target_user_id", userID);
+        /* 12 = default pagination value of website */
         query.add("page_size", Integer.toString(PluginJsonConfig.get(InstagramConfig.class).getProfileCrawlerReelsPaginationMaxItemsPerPage()));
         query.add("include_feed_video", "true");
         String max_id = null;
@@ -790,7 +791,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         int page = 1;
         do {
             InstaGramCom.postPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/clips/user/", query);
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> paging_info = (Map<String, Object>) entries.get("paging_info");
             final List<Map<String, Object>> mediaItems = (List<Map<String, Object>>) entries.get("items");
             if (mediaItems.size() == 0) {
@@ -1311,7 +1312,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         final String url = "/graphql/query/?query_hash=" + qdb.getQueryHash() + "&variables=%7B%22reel_ids%22%3A%5B%22" + story_user_id + "%22%5D%2C%22tag_names%22%3A%5B%5D%2C%22location_ids%22%3A%5B%5D%2C%22highlight_reel_ids%22%3A%5B%5D%2C%22precomposed_overlay%22%3Afalse%2C%22show_story_viewer_list%22%3Atrue%2C%22story_viewer_fetch_count%22%3A50%2C%22story_viewer_cursor%22%3A%22%22%2C%22stories_video_dash_manifest%22%3Afalse%7D";
         getPage(param, br, url, null, null);
-        entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/reels_media/{0}/items");
         List<Object> qualities;
         final FilePackage fp = FilePackage.getInstance();
