@@ -837,6 +837,11 @@ public class Ardmediathek extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlWdrMediathekEmbedded(final CryptedLink param, final String url) throws Exception {
         br.getPage(url);
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new DecrypterRetryException(RetryReason.GEO);
+        } else if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String json = br.getRegex("\\$mediaObject\\.jsonpHelper\\.storeAndPlay\\((\\{.*?\\})\\);").getMatch(0);
         if (json == null) {
             /* Assume that content is offline */

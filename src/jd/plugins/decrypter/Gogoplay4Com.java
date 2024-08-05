@@ -171,13 +171,10 @@ public class Gogoplay4Com extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String titleFromQuery = query.get("title");
-        String packageName;
+        String packageName = null;
         if (titleFromQuery != null) {
             /* Use title in query as packagename */
             packageName = titleFromQuery;
-        } else {
-            /* Get packagename from HTML */
-            packageName = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setPackageKey("gogoplay4://" + id);
@@ -202,6 +199,13 @@ public class Gogoplay4Com extends PluginForDecrypt {
                 }
                 final String[] embedurls = br.getRegex("data-video=\"(https?://[^\"]+)").getColumn(0);
                 if (embedurls != null && embedurls.length > 0) {
+                    if (packageName == null) {
+                        packageName = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+                        if (packageName != null) {
+                            packageName = Encoding.htmlDecode(packageName).trim();
+                            fp.setName(packageName);
+                        }
+                    }
                     for (final String embedurl : embedurls) {
                         if (embedurl.equals(contenturl) || embedurl.contains("id=" + id)) {
                             logger.info("Found origin again; skipping it: " + embedurl);
@@ -227,6 +231,13 @@ public class Gogoplay4Com extends PluginForDecrypt {
         br.getPage("https://" + hostInsideContentURL + "/download?" + query.toString());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (packageName == null) {
+            packageName = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+            if (packageName != null) {
+                packageName = Encoding.htmlDecode(packageName).trim();
+                fp.setName(packageName);
+            }
         }
         /* 0-2 captchas are required */
         if (AbstractRecaptchaV2.containsRecaptchaV2Class(br) || (br.containsHTML("grecaptcha\\.execute") && br.containsHTML("captcha_v3"))) {

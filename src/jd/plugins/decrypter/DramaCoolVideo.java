@@ -40,9 +40,8 @@ public class DramaCoolVideo extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "dramacool.pa", "dramacool.cr", "dramacool.ch", "dramacool.bz", "dramacool.video", "dramacool.movie", "dramacool.so", "dramacool.link", "dramacool.vc", "dramacool.fo" });
-        ret.add(new String[] { "watchasian.pe", "watchasian.vc" });
-        ret.add(new String[] { "gogoanime3.net", "gogoanime3.co", "gogoanime.tel", "gogoanime.tv", "gogoanime.io", "gogoanime.vc", "gogoanime.sh", "gogoanime.gg", "gogoanime.run" });
+        ret.add(new String[] { "asianc.sh", "dramacool.pa", "dramacool.cr", "dramacool.ch", "dramacool.bz", "dramacool.video", "dramacool.movie", "dramacool.so", "dramacool.link", "dramacool.vc", "dramacool.fo" });
+        ret.add(new String[] { "gogoanime3.co", "gogoanime3.net", "gogoanime.tel", "gogoanime.tv", "gogoanime.io", "gogoanime.vc", "gogoanime.sh", "gogoanime.gg", "gogoanime.run" });
         return ret;
     }
 
@@ -66,7 +65,7 @@ public class DramaCoolVideo extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\d*\\.)?" + buildHostsPatternPart(domains) + "/[\\w\\-]+(\\.html)?");
+            ret.add("https?://(?:www\\d*\\.)?" + buildHostsPatternPart(domains) + "/[\\w\\-]+");
         }
         return ret.toArray(new String[0]);
     }
@@ -91,7 +90,15 @@ public class DramaCoolVideo extends PluginForDecrypt {
         } else {
             br.getPage(param.getCryptedUrl());
         }
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("<title>403 Forbidden</title>")) {
+            /* 403 forbidden response with response code 200 */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*404 Not Found")) {
+            /* 404 response with response code 200 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title = br.getRegex("<title>(?:Watch\\s+)([^<]+)\\s+\\|[\\s\\w]+").getMatch(0);
