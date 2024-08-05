@@ -839,7 +839,7 @@ public class Ardmediathek extends PluginForDecrypt {
         br.getPage(url);
         if (br.getHttpConnection().getResponseCode() == 403) {
             throw new DecrypterRetryException(RetryReason.GEO);
-        } else if (br.getHttpConnection().getResponseCode() == 403) {
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String json = br.getRegex("\\$mediaObject\\.jsonpHelper\\.storeAndPlay\\((\\{.*?\\})\\);").getMatch(0);
