@@ -42,8 +42,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class AudioMa extends PluginForHost {
-    public AudioMa(PluginWrapper wrapper) {
+public class AudioMackComHoster extends PluginForHost {
+    public AudioMackComHoster(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -294,7 +294,7 @@ public class AudioMa extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override

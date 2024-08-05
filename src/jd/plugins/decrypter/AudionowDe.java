@@ -73,17 +73,19 @@ public class AudionowDe extends PluginForDecrypt {
                 validUntil.set(System.currentTimeMillis() + (((Number) authmap.get("expires_in")).longValue() * 1000));
             }
         }
+        br.getHeaders().put("Accept", "application/json, text/plain, */*");
+        br.getHeaders().put("Referer", "https://plus.rtl.de/");
         br.getHeaders().put("Authorization", "Bearer " + token);
         br.getHeaders().put("Rtlplus-Client-Id", "rci:rtlplus:web");
-        br.getHeaders().put("Rtlplus-Client-Version", "2023.8.21.5");
+        br.getHeaders().put("Rtlplus-Client-Version", "2024.8.5.0");
         /* See main.*.js -> Yn = fn.sha256,... */
-        final String sha256Hash = "3a24ebe82cd8425d597419728fff9d7e4b8894e8c36af583699d2c196048e0ed";
+        final String sha256Hash = "efc69a7094e1c4d7195afd7d9e2597a052d45a2c134304e01a386a089be93334";
         final int itemsPerPage = 20;
         int offset = 0;
         final FilePackage fp = FilePackage.getInstance();
         int page = 1;
         do {
-            br.getPage("https://cdn.gateway.now-plus-prod.aws-cbc.cloud/graphql?operationName=PodcastDetail&variables=%7B%22offset%22:" + offset + ",%22id%22:%22" + contentID + "%22,%22take%22:" + itemsPerPage + "   ,%22sort%22:%7B%22direction%22:%22DEFAULT%22%7D%7D&extensions=%7B%22persistedQuery%22:%7B%22version%22:1,%22sha256Hash%22:%22" + sha256Hash + "%22%7D%7D");
+            br.getPage("https://cdn.gateway.now-plus-prod.aws-cbc.cloud/graphql?operationName=PodcastDetail&variables=%7B%22offset%22:" + offset + ",%22id%22:%22" + contentID + "%22,%22take%22:" + itemsPerPage + ",%22sort%22:%7B%22direction%22:%22DEFAULT%22%7D%7D&extensions=%7B%22persistedQuery%22:%7B%22version%22:1,%22sha256Hash%22:%22" + sha256Hash + "%22%7D%7D");
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> data = (Map<String, Object>) entries.get("data");
             final Map<String, Object> podcast = (Map<String, Object>) data.get("podcast");
@@ -95,7 +97,9 @@ public class AudionowDe extends PluginForDecrypt {
             }
             for (final Map<String, Object> episode : episodelist) {
                 final DownloadLink link = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(episode.get("url").toString()));
+                final int durationSeconds = ((Number) episode.get("duration")).intValue();
                 link.setFinalFileName(episode.get("title").toString() + ".mp3");
+                link.setDownloadSize(112 * 1024l / 8 * durationSeconds);
                 link.setComment(episode.get("description").toString());
                 link.setAvailable(true);
                 link._setFilePackage(fp);

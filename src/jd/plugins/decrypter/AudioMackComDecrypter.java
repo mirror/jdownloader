@@ -36,7 +36,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.AudioMa;
+import jd.plugins.hoster.AudioMackComHoster;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AudioMackComDecrypter extends PluginForDecrypt {
@@ -105,7 +105,7 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
         }
         final String artistID = match[0];
         final String musicSlug = match[2];
-        br.getPage(AudioMa.getOAuthQueryString(musicType, artistID, musicSlug));
+        br.getPage(AudioMackComHoster.getOAuthQueryString(musicType, artistID, musicSlug));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -132,10 +132,10 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
             final String url_slug = track.get("url_slug").toString();
             final DownloadLink dl = createDownloadlink("https://" + this.getHost() + "/" + uploader_url_slug + "/song/" + url_slug);
             if (isPlaylist) {
-                dl.setProperty(AudioMa.PROPERTY_PLAYLIST_POSITION, index + 1);
-                dl.setProperty(AudioMa.PROPERTY_PLAYLIST_NUMBEROF_ITEMS, tracks.size());
+                dl.setProperty(AudioMackComHoster.PROPERTY_PLAYLIST_POSITION, index + 1);
+                dl.setProperty(AudioMackComHoster.PROPERTY_PLAYLIST_NUMBEROF_ITEMS, tracks.size());
             }
-            AudioMa.parseSingleSongData(dl, track);
+            AudioMackComHoster.parseSingleSongData(dl, track);
             dl.setAvailable(true);
             dl.setContentUrl(ogurl);
             ret.add(dl);
