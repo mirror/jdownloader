@@ -24,6 +24,7 @@ import java.util.Random;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
@@ -74,57 +75,66 @@ public class BesargajiCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
-        final Form formForOldHandling = br.getFormbyProperty("id", "slu-form");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.canHandle(br.getURL())) {
             /* E.g. redirect to mainpage or random advertisement page. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String finallink;
-        if (br.containsHTML("/api/v1/verify") || formForOldHandling == null) {
-            /* 2023-04-17: New */
-            final Map<String, Object> postdata = new HashMap<String, Object>();
+        final Form preRedirect = br.getFormbyProperty("id", "form");
+        if (preRedirect != null) {
+            br.submitForm(preRedirect);
+        } else {
+            logger.warning("Failed to find preRedirect Form");
+        }
+        br.getPage("/api/v1/session");
+        final Map<String, Object> session = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Object session_step = session.get("step");
+        /* Verify response */
+        if (session_step == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Map<String, Object> postdata = new HashMap<String, Object>();
+        if (Boolean.TRUE.equals(session.get("captcha"))) {
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6LdVaIkkAAAAACskGYlDD6U_7vmE1N_caLQ5-JGN").getToken();
             postdata.put("g-recaptcha-response", recaptchaV2Response);
-            postdata.put("_a", true);
-            br.postPageRaw("/api/v1/verify", JSonStorage.serializeToJson(postdata));
-            final Map<String, Object> postdata2 = new HashMap<String, Object>();
-            /* Random values will work fine lol */
-            postdata2.put("key", new Random().nextInt(200));
-            postdata2.put("size", new Random().nextInt(200) + "." + new Random().nextInt(200));
-            br.postPageRaw("/api/v1/go", JSonStorage.serializeToJson(postdata2));
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            finallink = entries.get("url").toString();
-        } else {
-            this.sleep(7 * 1000, param);
-            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            formForOldHandling.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            // see: https://besargaji.com/wp-content/plugins/akismet/_inc/akismet-frontend.js?ver=1669965005
-            formForOldHandling.getInputField("captcha").setDisabled(false); // make sure this field gets sent
-            formForOldHandling.put("ak_bib", "");
-            formForOldHandling.put("ak_bfs", Long.toString(System.currentTimeMillis()));
-            formForOldHandling.put("ak_bkpc", "0");
-            formForOldHandling.put("ak_bkp", "");
-            formForOldHandling.put("ak_bmc", "39");
-            formForOldHandling.put("ak_bmcc", "1");
-            formForOldHandling.put("ak_bmk", "");
-            formForOldHandling.put("ak_bck", "");
-            formForOldHandling.put("ak_bmmc", "11");
-            formForOldHandling.put("ak_btmc", "0");
-            formForOldHandling.put("ak_bsc", "2");
-            formForOldHandling.put("ak_bte", "");
-            formForOldHandling.put("ak_btec", "0");
-            formForOldHandling.put("ak_bmm", "0");
-            br.setCookie(br.getHost(), "next", "1");
-            br.getHeaders().put("Origin", "https://besargaji.com");
-            br.submitForm(formForOldHandling);
-            finallink = this.br.getRegex("document\\.getElementById\\(\"slu-link\"\\)\\.setAttribute\\(\"href\", \"(http[^\"]+)\"").getMatch(0);
         }
-        if (StringUtils.isEmpty(finallink)) {
+        postdata.put("_a", true);
+        br.postPageRaw("/api/v1/verify", JSonStorage.serializeToJson(postdata));
+        final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String resp_message = resp.get("message").toString();
+        /* Verify response */
+        if (!StringUtils.equalsIgnoreCase(resp_message, "ok")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage("/api/v1/session");
+        final Map<String, Object> session2 = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String session2_ads = session2.get("ads").toString();
+        /* Verify response */
+        if (StringUtils.isEmpty(session2_ads)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Map<String, Object> postdata2 = new HashMap<String, Object>();
+        /* Random values will work fine lol */
+        postdata2.put("key", new Random().nextInt(200));
+        postdata2.put("size", new Random().nextInt(200) + "." + new Random().nextInt(200));
+        /* 2024-08-05: Parameter "_dvc" is used in browser but not needed. */
+        // postdata2.put("_dvc", "1234567890");
+        br.postPageRaw("/api/v1/go", JSonStorage.serializeToJson(postdata2));
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String url = entries.get("url").toString();
+        if (StringUtils.isEmpty(url)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final UrlQuery query = UrlQuery.parse(url);
+        final String maybeB64Result = query.get("u");
+        final String finallink;
+        if (maybeB64Result != null && maybeB64Result.startsWith("aHR")) {
+            finallink = Encoding.Base64Decode(maybeB64Result);
+        } else {
+            finallink = url;
+        }
         ret.add(createDownloadlink(finallink));
         return ret;
     }
