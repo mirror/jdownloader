@@ -7,23 +7,6 @@ import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.Icon;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.JDGui.Panels;
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.gui.swing.jdgui.interfaces.View;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -41,14 +24,31 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.PackageExpandBehavior;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.StartButtonAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
 
-public class StartDownloadsAction extends AbstractToolBarAction implements DownloadWatchdogListener, GUIListener, GenericConfigEventListener<Enum>, ActionContext {
+import jd.controlling.TaskQueue;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.JDGui.Panels;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.interfaces.View;
 
+public class StartDownloadsAction extends AbstractToolBarAction implements DownloadWatchdogListener, GUIListener, GenericConfigEventListener<Enum>, ActionContext {
     /**
      * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using
      * {@link #getInstance()}.
@@ -60,7 +60,6 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
         CFG_GUI.START_BUTTON_ACTION_IN_LINKGRABBER_CONTEXT.getEventSender().addListener(this, true);
         GUIEventSender.getInstance().addListener(this, true);
         onGuiMainTabSwitch(null, MainTabbedPane.getInstance().getSelectedView());
-
         setAccelerator(KeyEvent.VK_S);
         updateEnableState();
     }
@@ -68,7 +67,6 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
     @Override
     public void initContextDefaults() {
         setHideIfDownloadsAreRunning(false);
-
     }
 
     @Override
@@ -79,12 +77,11 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
         if (JDGui.getInstance().isCurrentPanel(Panels.LINKGRABBER)) {
             final SelectionInfo<CrawledPackage, CrawledLink> selection = LinkGrabberTable.getInstance().getSelectionInfo(false, true);
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     switch (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext()) {
                     case ADD_ALL_LINKS_AND_START_DOWNLOADS:
-                        ConfirmLinksContextAction.confirmSelection(MoveLinksMode.MANUAL, selection, true, false, true, null, BooleanStatus.FALSE, CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction(), CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
+                        ConfirmLinksContextAction.confirmSelection(MoveLinksMode.MANUAL, selection, true, false, true, null, PackageExpandBehavior.GLOBAL, BooleanStatus.FALSE, CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction(), CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
                         break;
                     case START_DOWNLOADS_ONLY:
                         DownloadWatchDog.getInstance().startDownloads();
@@ -96,11 +93,9 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
         } else {
             DownloadWatchDog.getInstance().startDownloads();
         }
-        DownloadSession session = DownloadWatchDog.getInstance().getSession();
-
+        final DownloadSession session = DownloadWatchDog.getInstance().getSession();
         if (session != null && session.isForcedOnlyModeEnabled()) {
             DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
-
                 @Override
                 public void interrupt() {
                 }
@@ -129,7 +124,6 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
     }
 
     private boolean            hideIfDownloadsAreRunning     = false;
-
     public static final String HIDE_IF_DOWNLOADS_ARE_RUNNING = "HideIfDownloadsAreRunning";
 
     public static String getHideIfDownloadsAreRunningTranslation() {
@@ -162,7 +156,6 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
 
     private void updateEnableState() {
         DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
-
             @Override
             public boolean isHighPriority() {
                 return false;
@@ -175,7 +168,6 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
             @Override
             public void execute(final DownloadSession session) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         final boolean isRunning = DownloadWatchDog.getInstance().isRunning();
@@ -200,7 +192,6 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
                         }
                         if (smallIcon == forcedSmall) {
                             setTooltipText(_JDT.T.StartDownloadsAction_forced_createTooltip_());
-
                         } else {
                             setTooltipText(_JDT.T.StartDownloadsAction_createTooltip_());
                         }
@@ -218,13 +209,12 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
                 };
             }
         });
-
     }
 
     private final Icon normalSmall = new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 18);
-    private final Icon forcedSmall = new AbstractIcon(IconKey.ICON_PLAY_BREAKUP_FORCED_ONLY, 18); ;
+    private final Icon forcedSmall = new AbstractIcon(IconKey.ICON_PLAY_BREAKUP_FORCED_ONLY, 18);;
     private final Icon normalLarge = new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24);
-    private final Icon forcedLarge = new AbstractIcon(IconKey.ICON_PLAY_BREAKUP_FORCED_ONLY, 24); ;
+    private final Icon forcedLarge = new AbstractIcon(IconKey.ICON_PLAY_BREAKUP_FORCED_ONLY, 24);;
     private Icon       smallIcon   = normalSmall;
     private Icon       largeIcon   = normalLarge;
 
@@ -250,14 +240,12 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
     @Override
     public AbstractButton createButton() {
         ExtButton bt = new ExtButton(this);
-
         bt.setHideActionText(true);
         return bt;
     }
 
     @Override
     public void onDownloadWatchdogStateIsPause() {
-
     }
 
     @Override

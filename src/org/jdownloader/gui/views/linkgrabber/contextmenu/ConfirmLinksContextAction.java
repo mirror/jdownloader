@@ -165,6 +165,27 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         };
     }
 
+    public static enum PackageExpandBehavior implements LabelInterface {
+        GLOBAL {
+            @Override
+            public String getLabel() {
+                return _JDT.T.PackageExpandBehavior_GLOBAL();
+            }
+        },
+        EXPANDED {
+            @Override
+            public String getLabel() {
+                return _JDT.T.PackageExpandBehavior_EXPANDED();
+            }
+        },
+        COLLAPSED {
+            @Override
+            public String getLabel() {
+                return _JDT.T.PackageExpandBehavior_COLLAPSED();
+            }
+        };
+    }
+
     private boolean ctrlToggle = true;
 
     public static String getTranslationForCtrlToggle() {
@@ -195,9 +216,14 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         this.forceDownloads = forceDownloads;
     }
 
-    private Priority            piority               = Priority.DEFAULT;
-    private boolean             assignPriorityEnabled = false;
-    private PackageExpandOption packageExpandOption   = PackageExpandOption.AUTO;
+    private Priority              piority               = Priority.DEFAULT;
+    private boolean               assignPriorityEnabled = false;
+    private PackageExpandBehavior packageExpandBehavior = PackageExpandBehavior.GLOBAL;
+    private OnOfflineLinksAction  handleOffline         = OnOfflineLinksAction.GLOBAL;
+    private OnDupesLinksAction    handleDupes           = OnDupesLinksAction.GLOBAL;
+    private AutoStartOptions      autoStart             = AutoStartOptions.AUTO;
+    private boolean               clearListAfterConfirm = false;
+    private boolean               metaCtrl              = false;
 
     public static String getTranslationForAssignPriorityEnabled() {
         return _JDT.T.ConfirmLinksContextAction_getTranslationForAssignPriorityEnabled();
@@ -225,38 +251,17 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         this.piority = piority;
     }
 
-    public static enum PackageExpandOption implements LabelInterface {
-        AUTO {
-            @Override
-            public String getLabel() {
-                return "Auto/Global behavior";
-            }
-        },
-        EXPANDED {
-            @Override
-            public String getLabel() {
-                return "Expanded";
-            }
-        },
-        COLLAPSED {
-            @Override
-            public String getLabel() {
-                return "Collapsed";
-            }
-        };
+    public static String getTranslationForPackageExpandBehavior() {
+        return _JDT.T.ConfirmLinksContextAction_getTranslationForPackageExpandBehavior();
     }
 
-    public static String getTranslationForPackageExpandOption() {
-        return _JDT.T.ConfirmLinksContextAction_getTranslationForPriority();
+    @Customizer(link = "#getTranslationForPackageExpandBehavior")
+    public PackageExpandBehavior getPackageExpandBehavior() {
+        return packageExpandBehavior;
     }
 
-    @Customizer(link = "#getTranslationForPackageExpandOption")
-    public PackageExpandOption getPackageExpandOption() {
-        return packageExpandOption;
-    }
-
-    public void setPackageExpandOption(PackageExpandOption packageExpandOption) {
-        this.packageExpandOption = packageExpandOption;
+    public void setPackageExpandBehavior(PackageExpandBehavior packageExpandBehavior) {
+        this.packageExpandBehavior = packageExpandBehavior;
     }
 
     public static final String FORCE_START      = "forceDownloads";
@@ -266,7 +271,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
      */
     private static final long  serialVersionUID = -3937346180905569896L;
 
-    public static void confirmSelection(final MoveLinksMode moveLinksMode, final SelectionInfo<CrawledPackage, CrawledLink> selection, final boolean autoStart, final boolean clearLinkgrabber, final boolean doTabSwitch, final Priority newPriority, final BooleanStatus forcedStart, final OnOfflineLinksAction handleOfflineLinks, final OnDupesLinksAction handleDupes) {
+    public static void confirmSelection(final MoveLinksMode moveLinksMode, final SelectionInfo<CrawledPackage, CrawledLink> selection, final boolean autoStart, final boolean clearLinkgrabber, final boolean doTabSwitch, final Priority newPriority, final PackageExpandBehavior packageExpandBehavior, final BooleanStatus forcedStart, final OnOfflineLinksAction handleOfflineLinks, final OnDupesLinksAction handleDupes) {
         final Thread thread = new Thread() {
             public void run() {
                 OnOfflineLinksAction handleOfflineLoc = handleOfflineLinks;
@@ -277,8 +282,8 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                 if (handleDupesLoc == OnDupesLinksAction.GLOBAL) {
                     handleDupesLoc = OnDupesLinksAction.ASK;
                 }
-                HashSet<CrawledLink> toDelete = new HashSet<CrawledLink>();
-                HashSet<CrawledLink> toKeepInLinkgrabber = new HashSet<CrawledLink>();
+                final HashSet<CrawledLink> toDelete = new HashSet<CrawledLink>();
+                final HashSet<CrawledLink> toKeepInLinkgrabber = new HashSet<CrawledLink>();
                 try {
                     // this validation step also copies the passwords from the CRawledlinks in the archive settings
                     final ExtractionExtension extension = ExtractionExtension.getInstance();
@@ -292,7 +297,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                 continue;
                             }
                             if (doAction == ConfirmIncompleteArchiveAction.ASK) {
-                                ConfirmIncompleteArchiveAction[] options = new ConfirmIncompleteArchiveAction[] { ConfirmIncompleteArchiveAction.DELETE, ConfirmIncompleteArchiveAction.KEEP_IN_LINKGRABBER, ConfirmIncompleteArchiveAction.MOVE_TO_DOWNLOADLIST };
+                                final ConfirmIncompleteArchiveAction[] options = new ConfirmIncompleteArchiveAction[] { ConfirmIncompleteArchiveAction.DELETE, ConfirmIncompleteArchiveAction.KEEP_IN_LINKGRABBER, ConfirmIncompleteArchiveAction.MOVE_TO_DOWNLOADLIST };
                                 int def = 0;
                                 final ConfirmIncompleteArchiveAction s = CFG_LINKGRABBER.CFG.getHandleIncompleteArchiveOnConfirmLatestSelection();
                                 for (int i = 0; i < options.length; i++) {
@@ -301,7 +306,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                         break;
                                     }
                                 }
-                                ComboBoxDialog guiDialog = new ComboBoxDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI.T.ConfirmAction_run_incomplete_archive_msg(), options, def, new AbstractIcon(IconKey.ICON_STOP, 32), _GUI.T.lit_continue(), null, null) {
+                                final ComboBoxDialog guiDialog = new ComboBoxDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI.T.ConfirmAction_run_incomplete_archive_msg(), options, def, new AbstractIcon(IconKey.ICON_STOP, 32), _GUI.T.lit_continue(), null, null) {
                                     public String getDontShowAgainKey() {
                                         return null;
                                     };
@@ -366,7 +371,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                         };
                                     }
                                 };
-                                ComboBoxDialogInterface response = UIOManager.I().show(ComboBoxDialogInterface.class, guiDialog);
+                                final ComboBoxDialogInterface response = UIOManager.I().show(ComboBoxDialogInterface.class, guiDialog);
                                 response.throwCloseExceptions();
                                 doActionForTheCurrentArchive = options[response.getSelectedIndex()];
                                 CFG_LINKGRABBER.CFG.setHandleIncompleteArchiveOnConfirmLatestSelection(doActionForTheCurrentArchive);
@@ -468,7 +473,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                 }
                 final ArrayList<CrawledLink> dupes = new ArrayList<CrawledLink>();
                 if (handleDupesLoc != OnDupesLinksAction.INCLUDE) {
-                    for (CrawledLink cl : selection.getChildren()) {
+                    for (final CrawledLink cl : selection.getChildren()) {
                         if (toKeepInLinkgrabber.contains(cl)) {
                             continue;
                         }
@@ -551,31 +556,20 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                     /* No items to move */
                     return;
                 }
+                final MoveLinksSettings moveLinksSettings = new MoveLinksSettings(moveLinksMode, autoStart, BooleanStatus.convert(forcedStart), newPriority);
+                moveLinksSettings.setPackageExpandBehavior(packageExpandBehavior);
+                final SelectionInfo<CrawledPackage, CrawledLink> finalSelection;
                 if (createNewSelectionInfo) {
-                    LinkCollector.getInstance().moveLinksToDownloadList(new MoveLinksSettings(moveLinksMode, autoStart, BooleanStatus.convert(forcedStart), newPriority), new SelectionInfo<CrawledPackage, CrawledLink>(null, toMove));
+                    finalSelection = new SelectionInfo<CrawledPackage, CrawledLink>(null, toMove);
                 } else {
-                    LinkCollector.getInstance().moveLinksToDownloadList(new MoveLinksSettings(moveLinksMode, autoStart, BooleanStatus.convert(forcedStart), newPriority), selection);
+                    finalSelection = selection;
                 }
+                LinkCollector.getInstance().moveLinksToDownloadList(moveLinksSettings, finalSelection);
                 if (doTabSwitch) {
                     switchToDownloadTab();
                 }
                 if (clearLinkgrabber) {
-                    LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-                        @Override
-                        protected Void run() throws RuntimeException {
-                            if (!Application.isHeadless()) {
-                                new EDTRunner() {
-                                    @Override
-                                    protected void runInEDT() {
-                                        LinkgrabberSearchField.getInstance().setText("");
-                                        LinkgrabberSearchField.getInstance().onChanged();
-                                    }
-                                };
-                            }
-                            LinkCollector.getInstance().clear();
-                            return null;
-                        }
-                    });
+                    clearLinkgrabber();
                 }
             }
         };
@@ -596,7 +590,24 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         }
     }
 
-    private OnOfflineLinksAction handleOffline = OnOfflineLinksAction.GLOBAL;
+    protected static void clearLinkgrabber() {
+        LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+            @Override
+            protected Void run() throws RuntimeException {
+                if (!Application.isHeadless()) {
+                    new EDTRunner() {
+                        @Override
+                        protected void runInEDT() {
+                            LinkgrabberSearchField.getInstance().setText("");
+                            LinkgrabberSearchField.getInstance().onChanged();
+                        }
+                    };
+                }
+                LinkCollector.getInstance().clear();
+                return null;
+            }
+        });
+    }
 
     public static String getTranslationForHandleOffline() {
         return _JDT.T.ConfirmLinksContextAction_getTranslationForHandleOffline();
@@ -615,9 +626,6 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         return this;
     }
 
-    //
-    private OnDupesLinksAction handleDupes = OnDupesLinksAction.GLOBAL;
-
     public static String getTranslationForHandleDupes() {
         return _JDT.T.ConfirmLinksContextAction_getTranslationForHandleDupes();
     }
@@ -634,11 +642,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         this.handleDupes = handleDupes;
         return this;
     }
-
     //
-    private AutoStartOptions autoStart             = AutoStartOptions.AUTO;
-    private boolean          clearListAfterConfirm = false;
-    private boolean          metaCtrl              = false;
 
     public ConfirmLinksContextAction() {
         super(false, true);
@@ -659,9 +663,9 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
             handleDupes = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
         }
         if (isSelectionOnly()) {
-            confirmSelection(MoveLinksMode.MANUAL, getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, handleOffline, handleDupes);
+            confirmSelection(MoveLinksMode.MANUAL, getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, this.packageExpandBehavior, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, handleOffline, handleDupes);
         } else {
-            confirmSelection(MoveLinksMode.MANUAL, getAllLinkgrabberItems(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, handleOffline, handleDupes);
+            confirmSelection(MoveLinksMode.MANUAL, getAllLinkgrabberItems(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, this.packageExpandBehavior, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, handleOffline, handleDupes);
         }
     }
 
@@ -766,8 +770,8 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
             } else {
                 setName(getTextForForcedAll());
             }
-            Image add = NewTheme.I().getImage("media-playback-start", 20);
-            Image play = NewTheme.I().getImage("prio_3", 14);
+            final Image add = NewTheme.I().getImage("media-playback-start", 20);
+            final Image play = NewTheme.I().getImage("prio_3", 14);
             setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, -4, 0, 6, 10)));
             setIconKey(null);
         } else if (doAutostart()) {
@@ -776,8 +780,8 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
             } else {
                 setName(getTextForAutoStartAll());
             }
-            Image add = NewTheme.I().getImage("media-playback-start", 16);
-            Image play = NewTheme.I().getImage("add", 14);
+            final Image add = NewTheme.I().getImage("media-playback-start", 16);
+            final Image play = NewTheme.I().getImage("add", 14);
             setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, 0, 0, 6, 6)));
             setIconKey(null);
         } else {

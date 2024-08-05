@@ -961,6 +961,15 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Autostart: Always start Downloads" })
     String AutoStartOptions_ENABLED();
 
+    @Default(lngs = { "en" }, values = { "Global/Auto" })
+    String PackageExpandBehavior_GLOBAL();
+
+    @Default(lngs = { "en" }, values = { "Collapsed" })
+    String PackageExpandBehavior_COLLAPSED();
+
+    @Default(lngs = { "en" }, values = { "Expanded" })
+    String PackageExpandBehavior_EXPANDED();
+
     @Default(lngs = { "en" }, values = { "CTRL Toggle Enabled" })
     String ConfirmLinksContextAction_getTranslationForCtrlToggle();
 
@@ -972,6 +981,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Download Priority:" })
     String ConfirmLinksContextAction_getTranslationForPriority();
+
+    @Default(lngs = { "en" }, values = { "Package expand behavior:" })
+    String ConfirmLinksContextAction_getTranslationForPackageExpandBehavior();
 
     @Default(lngs = { "en" }, values = { "If the selection contains offline links..." })
     String ConfirmLinksContextAction_getTranslationForHandleOffline();
