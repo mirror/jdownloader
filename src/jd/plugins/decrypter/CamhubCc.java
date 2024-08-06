@@ -41,10 +41,9 @@ public class CamhubCc extends PluginForDecrypt {
     }
     /* DEV NOTES */
     /* Porn_plugin */
-    /* Tags: camhub.world (sister-site - their "selfhosted content" is hosted there) */
+    /* Tags: camhub.world, zzpornozz.xyz (sister-site - their "selfhosted content" is hosted there) */
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -57,18 +56,19 @@ public class CamhubCc extends PluginForDecrypt {
         if (removeMe != null) {
             title = title.replace(removeMe, "");
         }
-        final String selfEmbeddedURL = br.getRegex("(https?://(?:www\\.)?camhub\\.world/embed/\\d+)").getMatch(0);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String selfEmbeddedURL = br.getRegex("(https?://(?:www\\.)?(camhub\\.world|zzpornozz\\.xyz)/embed/\\d+)").getMatch(0);
         if (selfEmbeddedURL != null) {
             /* Selfhosted but embedded on sister-site. */
             final DownloadLink link = this.createDownloadlink(selfEmbeddedURL);
             link.setFinalFileName(title + ".mp4");
-            decryptedLinks.add(link);
+            ret.add(link);
         } else {
             /* Selfhosted without embed */
             final DownloadLink link = this.createDownloadlink(param.getCryptedUrl());
             link.setName(title + ".mp4");
-            decryptedLinks.add(link);
+            ret.add(link);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

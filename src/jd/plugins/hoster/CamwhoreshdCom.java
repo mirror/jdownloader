@@ -76,4 +76,14 @@ public class CamwhoreshdCom extends KernelVideoSharingComV2 {
     protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
         return generateContentURLDefaultVideosPattern(host, fuid, urlTitle);
     }
+
+    @Override
+    protected boolean isOfflineWebsite(final Browser br) {
+        if (br.containsHTML("<title>404\\s*/\\s*Page not found")) {
+            /* 404 response without 404 responsecode */
+            return true;
+        } else {
+            return super.isOfflineWebsite(br);
+        }
+    }
 }

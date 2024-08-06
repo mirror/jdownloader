@@ -25,6 +25,15 @@ import java.util.Map.Entry;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.UpstoReConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.http.Browser;
@@ -43,15 +52,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.UpstoReConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpstoRe extends antiDDoSForHost {
@@ -101,7 +101,6 @@ public class UpstoRe extends antiDDoSForHost {
     private static final long          FREE_RECONNECTWAIT            = 1 * 60 * 60 * 1000L;
     private static final long          FREE_RECONNECTWAIT_ADDITIONAL = 60 * 1000l;
     private final String               INVALIDLINKS                  = "(?i)https?://[^/]+/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
-
     private static Map<String, Long>   blockedIPsMap                 = new HashMap<String, Long>();
     private static final String        PROPERTY_last_blockedIPsMap   = "UPSTORE_last_blockedIPsMap";
     /* Don't touch the following! */
@@ -177,7 +176,7 @@ public class UpstoRe extends antiDDoSForHost {
             /* Probably not a file url. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex fileInfo = br.getRegex("<h2 style=\"margin:0\">([^<>\"]*?)</h2>\\s*<div class=\"comment\">([^<>\"]*?)</div>");
+        final Regex fileInfo = br.getRegex("<h2 style=\"margin:0\">([^<]+)</h2>\\s*<div class=\"comment\">([^<]+)<");
         String filename = fileInfo.getMatch(0);
         if (filename == null) {
             filename = br.getRegex("(?i)<title>Download file ([^<>\"]*?) \\&mdash; Upload, store \\& share your files on").getMatch(0);
@@ -211,7 +210,6 @@ public class UpstoRe extends antiDDoSForHost {
         } else {
             requestFileInformation(link);
             handleErrorsHTML(this.br);
-
             synchronized (blockedIPsMap) {
                 /* Load list of saved IPs + timestamp of last download */
                 final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_last_blockedIPsMap);
