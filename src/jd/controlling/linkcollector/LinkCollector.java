@@ -93,6 +93,10 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
+import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.AutoStartOptions;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnDupesLinksAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnOfflineLinksAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.PackageExpandBehavior;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.images.AbstractIcon;
@@ -2680,6 +2684,24 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         AUTO
     }
 
+    public final static class ConfirmLinksSettings {
+        private MoveLinksMode        moveLinksMode                          = MoveLinksMode.AUTO;
+        private Boolean              autoStartDownloads                     = null;
+        private AutoStartOptions     autoStartOptions                       = CFG_LINKGRABBER.CFG.getAutoConfirmManagerAutoStart();
+        final Priority               priority                               = null;
+        private boolean              forceDownloads                         = CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads();
+        private OnOfflineLinksAction handleOffline                          = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
+        private OnDupesLinksAction   handleDupes                            = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
+        private boolean              clearLinkgrabberlistOnConfirm          = CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm();
+        private boolean              switchToDownloadlistOnConfirm          = JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled();
+        private boolean              confirmationDialogEnabled              = false;
+        int                          confirmationDialogThresholdMinPackages = 1;
+        int                          confirmationDialogThresholdMinLinks    = 1;
+
+        public ConfirmLinksSettings(MoveLinksMode mode, Boolean autoStart, Boolean autoForce, Priority autoPriority) {
+        }
+    }
+
     public final static class MoveLinksSettings {
         final MoveLinksMode mode;
 
@@ -2759,11 +2781,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
          * addBottom = negative number -> add at the end
          */
         final boolean finalAutoStart;
+        final Boolean autoStart = moveLinksSettings.getAutoStart();
         if (autoMode) {
-            final Boolean autoStart = moveLinksSettings.getAutoStart();
             finalAutoStart = autoStartLinks || Boolean.TRUE.equals(autoStart);
         } else {
-            final Boolean autoStart = moveLinksSettings.getAutoStart();
             if (autoStart != null) {
                 finalAutoStart = autoStart.booleanValue();
             } else {
