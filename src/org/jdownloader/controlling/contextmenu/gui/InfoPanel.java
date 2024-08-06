@@ -37,6 +37,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.CompareUtils;
 import org.appwork.utils.FileHandler;
 import org.appwork.utils.Files;
 import org.appwork.utils.GetterSetter;
@@ -60,6 +61,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.config.Order;
 
 public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
     public Dimension getPreferredScrollableViewportSize() {
@@ -450,15 +452,27 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                         @Override
                         public int compare(Entry o1, Entry o2) {
                             try {
-                                String lbl1 = o1.gs.getKey();
-                                String lbl2 = o2.gs.getKey();
-                                Customizer oc1 = o1.gs.getAnnotation(Customizer.class);
-                                Customizer oc2 = o2.gs.getAnnotation(Customizer.class);
+                                final Order orderAn1 = o1.gs.getAnnotation(Order.class);
+                                final Order orderAn2 = o2.gs.getAnnotation(Order.class);
+                                final int order1 = orderAn1 == null ? Integer.MAX_VALUE : orderAn1.value();
+                                final int order2 = orderAn2 == null ? Integer.MAX_VALUE : orderAn2.value();
+                                final int ret = CompareUtils.compareInt(order1, order2);
+                                if (ret != 0) {
+                                    return ret;
+                                }
+                                final Customizer oc1 = o1.gs.getAnnotation(Customizer.class);
+                                final String lbl1;
                                 if (oc1 != null) {
                                     lbl1 = CustomPanel.getNameForCustomizer(o1.gs);
+                                } else {
+                                    lbl1 = o1.gs.getKey();
                                 }
+                                final Customizer oc2 = o2.gs.getAnnotation(Customizer.class);
+                                final String lbl2;
                                 if (oc2 != null) {
                                     lbl2 = CustomPanel.getNameForCustomizer(o2.gs);
+                                } else {
+                                    lbl2 = o2.gs.getKey();
                                 }
                                 return lbl1.compareToIgnoreCase(lbl2);
                             } catch (Throwable e) {

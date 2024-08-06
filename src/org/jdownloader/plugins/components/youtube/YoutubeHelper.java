@@ -1406,14 +1406,18 @@ public class YoutubeHelper {
                         final String html5PlayerSource = ensurePlayerSource();
                         // String[][] func = new Regex(html5PlayerSource,
                         // "(?x)(?:\\.get\\(\"n\"\\)\\)&&\\(b=|b=String\\.fromCharCode\\(110\\),c=a\\.get\\(b\\)\\)&&\\(c=)([a-zA-Z0-9$]+)(?:\\[(\\d+)\\])?\\([a-zA-Z0-9]\\)").getMatches();
-                        // since 2024-07-31
-                        function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=String\\.prototype\\.split\\.call\\(a,\\(\"\"\\,\"\"\\)\\),c=\\[.*?\\};)\n").getMatch(0);
+                        // since 2024-08-06
+                        function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=a\\.split\\(a\\.slice\\(0,0\\)\\),c=\\[.*?\\};)\n").getMatch(0);
                         if (function == null) {
-                            // since 2024-07
-                            function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=String\\.prototype\\.split\\.call\\(a,\"\"\\),c=\\[.*?\\};)\n").getMatch(0);
+                            // since 2024-07-31
+                            function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=String\\.prototype\\.split\\.call\\(a,\\(\"\"\\,\"\"\\)\\),c=\\[.*?\\};)\n").getMatch(0);
                             if (function == null) {
-                                // before 2024-07
-                                function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=a\\.split\\(\"\"\\),c=\\[.*?\\};)\n").getMatch(0);
+                                // since 2024-07
+                                function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=String\\.prototype\\.split\\.call\\(a,\"\"\\),c=\\[.*?\\};)\n").getMatch(0);
+                                if (function == null) {
+                                    // before 2024-07
+                                    function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=a\\.split\\(\"\"\\),c=\\[.*?\\};)\n").getMatch(0);
+                                }
                             }
                         }
                         if (function != null) {
@@ -2268,13 +2272,14 @@ public class YoutubeHelper {
         handleRentalVideos();
         html5PlayerJs = getHtml5PlayerJs();
         final Map<String, Object> map = getYtInitialPlayerResponse();
-        final String unavailableStatus = map != null ? (String) JavaScriptEngineFactory.walkJson(map, "playabilityStatus/status") : null;
-        final String unavailableReason = getUnavailableReason(unavailableStatus);
         fmtMaps = new LinkedHashSet<StreamMap>();
         subtitleUrls = new LinkedHashSet<String>();
         mpdUrls = new LinkedHashSet<StreamMap>();
         videoInfo = new LinkedHashMap<String, String>();
+        final String unavailableStatus = map != null ? (String) JavaScriptEngineFactory.walkJson(map, "playabilityStatus/status") : null;
+        final String unavailableReason = getUnavailableReason(unavailableStatus);
         vid.ageCheck = br.containsHTML("\"status\"\\s*:\\s*\"LOGIN_REQUIRED\"");
+        logger.info("Login required:" + vid.ageCheck + "|Reason:" + unavailableReason);
         this.handleContentWarning(br);
         int collected = 0;
         if (isAPIPrefered(br)) {
@@ -2602,17 +2607,24 @@ public class YoutubeHelper {
     }
 
     protected int collectMapsFromAPIResponse(Browser br) throws InterruptedException, Exception {
-        if (!API_IOS_ENABLED && !API_TV_ENABLED) {
+        if (vid.ageCheck) {
+            logger.info("collectMapsFromAPIResponse:skiped:login_required");
+            return -1;
+        } else if (!API_IOS_ENABLED && !API_TV_ENABLED) {
             logger.info("collectMapsFromAPIResponse:disabled");
             return -1;
         }
         int ret = 0;
+        boolean loginRequired = false;
         try {
             final Browser brc = br.cloneBrowser();
             final Request request = buildAPI_TV_Request(brc);
             if (request != null) {
                 brc.getPage(request);
-                if (request.getHttpConnection().getResponseCode() == 200) {
+                loginRequired = brc.getRegex("\"status\"\\s*:\\s*\"LOGIN_REQUIRED\"").patternFind();
+                if (loginRequired) {
+                    // skip parsing
+                } else if (request.getHttpConnection().getResponseCode() == 200) {
                     final Map<String, Object> response = JSonStorage.restoreFromString(request.getHtmlCode(), TypeRef.MAP);
                     ret += collectMapsFromPlayerResponse(response, "api.tv");
                     if (ret > 0 && true) {
@@ -2629,23 +2641,28 @@ public class YoutubeHelper {
             API_TV_ENABLED = false;
             logger.log(e);
         }
-        try {
-            final Browser brc = br.cloneBrowser();
-            final Request request = buildAPI_IOS_Request(brc);
-            if (request != null) {
-                brc.getPage(request);
-                if (request.getHttpConnection().getResponseCode() == 200) {
-                    final Map<String, Object> response = JSonStorage.restoreFromString(request.getHtmlCode(), TypeRef.MAP);
-                    ret += collectMapsFromPlayerResponse(response, "api.ios");
-                } else {
-                    throw new Exception("auto disable api due to unexpected responseCode:" + request.getHttpConnection().getResponseCode());
+        if (!loginRequired) {
+            try {
+                final Browser brc = br.cloneBrowser();
+                final Request request = buildAPI_IOS_Request(brc);
+                if (request != null) {
+                    brc.getPage(request);
+                    loginRequired = brc.getRegex("\"status\"\\s*:\\s*\"LOGIN_REQUIRED\"").patternFind();
+                    if (loginRequired) {
+                        // skip parsing
+                    } else if (request.getHttpConnection().getResponseCode() == 200) {
+                        final Map<String, Object> response = JSonStorage.restoreFromString(request.getHtmlCode(), TypeRef.MAP);
+                        ret += collectMapsFromPlayerResponse(response, "api.ios");
+                    } else {
+                        throw new Exception("auto disable api due to unexpected responseCode:" + request.getHttpConnection().getResponseCode());
+                    }
                 }
+            } catch (InterruptedException e) {
+                throw e;
+            } catch (Exception e) {
+                API_IOS_ENABLED = false;
+                logger.log(e);
             }
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (Exception e) {
-            API_IOS_ENABLED = false;
-            logger.log(e);
         }
         return ret;
     }
