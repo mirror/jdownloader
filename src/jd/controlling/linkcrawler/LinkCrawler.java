@@ -910,8 +910,8 @@ public class LinkCrawler {
         String out = in.replaceAll("(?i)/\\s*Sharecode\\[\\?\\]:\\s*/", "/");
         out = out.replaceAll("(?i)\\s*Sharecode\\[\\?\\]:\\s*", "");
         out = out.replaceAll("(?i)/?\\s*Sharecode:\\s*/?", "/");
-        // fix <a href="https://mega.nz/folder/XYZ">https://mega.nz/folder/XYZ</a>#KEY
-        out = out.replaceAll("(?i)<a[^>]href\\s*=\\s*\"(.*?)\"[^>]*>\\s*\\1\\s*</a>\\s*(#[^< ]*)", "<a href=\"$1$2\"</a>");
+        // fix <a href="https://mega.nz/folder/XYZ">https://mega.nz/folder/XYZ</a>#KEY or </p><p>KEY:KEY
+        out = out.replaceAll("(?i)<a[^>]href\\s*=\\s*\"(.*?)\"[^>]*>\\s*\\1\\s*</a>(?:\\s*</p>[^>]*<p>)?\\s*(?:#|KEY:)\\s*([^< ]*)", "<a href=\"$1#$2\"</a>");
         return out;
     }
 
