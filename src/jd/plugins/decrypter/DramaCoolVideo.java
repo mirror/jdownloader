@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -37,10 +39,12 @@ public class DramaCoolVideo extends PluginForDecrypt {
         super(wrapper);
     }
 
+    public static final String DRAMACOOL_MAIN_DOMAIN = "asianc.sh";
+
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "asianc.sh", "dramacool.pa", "dramacool.cr", "dramacool.ch", "dramacool.bz", "dramacool.video", "dramacool.movie", "dramacool.so", "dramacool.link", "dramacool.vc", "dramacool.fo" });
+        ret.add(new String[] { DRAMACOOL_MAIN_DOMAIN, "dramacool.pa", "dramacool.cr", "dramacool.ch", "dramacool.bz", "dramacool.video", "dramacool.movie", "dramacool.so", "dramacool.link", "dramacool.vc", "dramacool.fo" });
         ret.add(new String[] { "gogoanime3.co", "gogoanime3.net", "gogoanime.tel", "gogoanime.tv", "gogoanime.io", "gogoanime.vc", "gogoanime.sh", "gogoanime.gg", "gogoanime.run" });
         return ret;
     }
@@ -65,9 +69,17 @@ public class DramaCoolVideo extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\d*\\.)?" + buildHostsPatternPart(domains) + "/[\\w\\-]+");
+            ret.add("https?://(?:www\\d*\\.)?" + buildHostsPatternPart(domains) + "/[\\w\\-]+(\\.html)?");
         }
         return ret.toArray(new String[0]);
+    }
+
+    private boolean requiresHTMLEnding() {
+        if (this.getHost().equals(DRAMACOOL_MAIN_DOMAIN)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -82,14 +94,20 @@ public class DramaCoolVideo extends PluginForDecrypt {
                 break;
             }
         }
+        final String contenturl;
         if (includedDeadDomain != null) {
             /* Replace dead domain with our main domain which is hopefully working. Do not touch subdomains. */
             final String newDomain = domainInAddedURL.replace(includedDeadDomain, this.getHost());
             logger.info("Added URL contains dead domain " + includedDeadDomain + " | Using this full domain instead: " + newDomain);
-            br.getPage(param.getCryptedUrl().replaceFirst(Pattern.quote(domainInAddedURL), newDomain));
+            contenturl = param.getCryptedUrl().replaceFirst(Pattern.quote(domainInAddedURL), newDomain);
         } else {
-            br.getPage(param.getCryptedUrl());
+            contenturl = param.getCryptedUrl();
         }
+        if (requiresHTMLEnding() && !StringUtils.endsWithCaseInsensitive(param.getCryptedUrl(), ".html")) {
+            /* Invalid URL */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("<title>403 Forbidden</title>")) {

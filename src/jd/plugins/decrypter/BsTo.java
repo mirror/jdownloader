@@ -127,7 +127,7 @@ public class BsTo extends PluginForDecrypt {
         br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("(?i)>\\s*Seite nicht gefunden<")) {
+        } else if (br.containsHTML("(?i)>\\s*(Seite|Serie) nicht gefunden[^<]*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // final String urlpart = new Regex(parameter, "(serie/.+)").getMatch(0);
