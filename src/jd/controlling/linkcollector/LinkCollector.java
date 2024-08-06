@@ -95,6 +95,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.AutoStartOptions;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.ConfirmationDialogBehavior;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnDupesLinksAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnOfflineLinksAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.PackageExpandBehavior;
@@ -1554,17 +1555,18 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     private final void clearCrawledLinkReferences(final CrawledLink link) {
-        if (link != null) {
-            link.setBrokenCrawlerHandler(null);
-            link.setCustomCrawledLinkModifier(null);
-            link.setUnknownHandler(null);
-            link.setDesiredPackageInfo(null);
-            link.setSourceLink(null);
-            link.setCollectingInfo(null);
-            link.setSourceJob(null);
-            link.setMatchingFilter(null);
-            link.setMatchingRule(null);
+        if (link == null) {
+            return;
         }
+        link.setBrokenCrawlerHandler(null);
+        link.setCustomCrawledLinkModifier(null);
+        link.setUnknownHandler(null);
+        link.setDesiredPackageInfo(null);
+        link.setSourceLink(null);
+        link.setCollectingInfo(null);
+        link.setSourceJob(null);
+        link.setMatchingFilter(null);
+        link.setMatchingRule(null);
     }
 
     public void handleFinalLink(final CrawledLink link) {
@@ -1686,17 +1688,19 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public static void applyJobCrawledLinkModifier(final CrawledLink link, final boolean prePackagizer, final LogSource logger) {
-        if (link != null) {
-            final LinkCollectingJob job = link.getSourceJob();
-            if (job != null) {
-                final List<CrawledLinkModifier> modifiers = prePackagizer ? job.getPrePackagizerModifier() : job.getPostPackagizerModifier();
-                for (final CrawledLinkModifier modifier : modifiers) {
-                    try {
-                        modifier.modifyCrawledLink(link);
-                    } catch (final Throwable e) {
-                        logger.log(e);
-                    }
-                }
+        if (link == null) {
+            return;
+        }
+        final LinkCollectingJob job = link.getSourceJob();
+        if (job == null) {
+            return;
+        }
+        final List<CrawledLinkModifier> modifiers = prePackagizer ? job.getPrePackagizerModifier() : job.getPostPackagizerModifier();
+        for (final CrawledLinkModifier modifier : modifiers) {
+            try {
+                modifier.modifyCrawledLink(link);
+            } catch (final Throwable e) {
+                logger.log(e);
             }
         }
     }
@@ -2685,18 +2689,18 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public final static class ConfirmLinksSettings {
-        private MoveLinksMode        moveLinksMode                          = MoveLinksMode.AUTO;
-        private Boolean              autoStartDownloads                     = null;
-        private AutoStartOptions     autoStartOptions                       = CFG_LINKGRABBER.CFG.getAutoConfirmManagerAutoStart();
-        final Priority               priority                               = null;
-        private boolean              forceDownloads                         = CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads();
-        private OnOfflineLinksAction handleOffline                          = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
-        private OnDupesLinksAction   handleDupes                            = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
-        private boolean              clearLinkgrabberlistOnConfirm          = CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm();
-        private boolean              switchToDownloadlistOnConfirm          = JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled();
-        private boolean              confirmationDialogEnabled              = false;
-        int                          confirmationDialogThresholdMinPackages = 1;
-        int                          confirmationDialogThresholdMinLinks    = 1;
+        private MoveLinksMode              moveLinksMode                          = MoveLinksMode.AUTO;
+        private Boolean                    autoStartDownloads                     = null;
+        private AutoStartOptions           autoStartOptions                       = CFG_LINKGRABBER.CFG.getAutoConfirmManagerAutoStart();
+        final Priority                     priority                               = Priority.DEFAULT;
+        private boolean                    forceDownloads                         = CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads();
+        private OnOfflineLinksAction       handleOffline                          = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
+        private OnDupesLinksAction         handleDupes                            = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
+        private boolean                    clearLinkgrabberlistOnConfirm          = CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm();
+        private boolean                    switchToDownloadlistOnConfirm          = JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled();
+        private ConfirmationDialogBehavior confirmationDialogBehavior             = ConfirmationDialogBehavior.DISABLED;
+        private int                        confirmationDialogThresholdMinPackages = 1;
+        private int                        confirmationDialogThresholdMinLinks    = 1;
 
         public ConfirmLinksSettings(MoveLinksMode mode, Boolean autoStart, Boolean autoForce, Priority autoPriority) {
         }

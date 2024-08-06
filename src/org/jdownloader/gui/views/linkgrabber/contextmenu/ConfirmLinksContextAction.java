@@ -187,6 +187,27 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         };
     }
 
+    public static enum ConfirmationDialogBehavior implements LabelInterface {
+        DISABLED {
+            @Override
+            public String getLabel() {
+                return "Disabled";
+            }
+        },
+        ENABLED_THRESHOLD_AUTO {
+            @Override
+            public String getLabel() {
+                return "Auto: Threshold & if no other dialogs were shown";
+            }
+        },
+        ENABLED_THRESHOLD_SIMPLE {
+            @Override
+            public String getLabel() {
+                return "Enabled: Threshold";
+            }
+        };
+    }
+
     private boolean ctrlToggle = true;
 
     public static String getTranslationForCtrlToggle() {
@@ -616,7 +637,10 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                 }
                 final int numberofPackages = selection.getPackageViews().size();
                 final int numberofLinks = selection.getChildren().size();
-                if (!alreadyDisplayedOtherDialogToUser && numberofPackages >= 1 && numberofLinks >= 1 && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                // TODO: Finish implementation of ConfirmationDialogBehavior
+                final ConfirmationDialogBehavior confirmationDialogBehavior = ConfirmationDialogBehavior.DISABLED;
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && ((confirmationDialogBehavior == ConfirmationDialogBehavior.ENABLED_THRESHOLD_AUTO && !alreadyDisplayedOtherDialogToUser) || confirmationDialogBehavior == ConfirmationDialogBehavior.ENABLED_THRESHOLD_SIMPLE) && numberofPackages >= 1 && numberofLinks >= 1) {
+                    /* Ask user if he really wants to move items to downloadlist. */
                     if (!UIOManager.I().showConfirmDialog(0, _GUI.T.literall_are_you_sure(), "Are you sure you want to move " + numberofPackages + " packages and " + numberofLinks + " links to downloadlist?", new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI.T.literally_yes(), _GUI.T.literall_no())) {
                         /* Canceled by user */
                         return;

@@ -4,15 +4,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.jdownloader.api.jdanywhere.api.interfaces.ILinkCrawlerApi;
@@ -22,12 +13,19 @@ import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class LinkCrawlerApi implements ILinkCrawlerApi {
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 
+public class LinkCrawlerApi implements ILinkCrawlerApi {
     LinkCollectorAPIImpl lcAPI = new LinkCollectorAPIImpl();
 
     public LinkCrawlerApi() {
-
     }
 
     public List<CrawledPackageStorable> list() {
@@ -184,7 +182,6 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
                             return link;
                         }
                     }
-
                 } finally {
                     cpkg.getModifyLock().readUnlock(readL);
                 }
@@ -196,25 +193,26 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
     }
 
     public boolean setCrawledLinkPriority(final List<Long> linkIds, int priority) {
-        if (linkIds != null && linkIds.size() > 0) {
-            final int size = linkIds.size();
-            final List<CrawledLink> lks = LinkCollector.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
-                @Override
-                public int returnMaxResults() {
-                    return size;
-                }
-
-                @Override
-                public boolean acceptNode(CrawledLink node) {
-                    return linkIds.contains(node.getUniqueID().getID());
-                }
-            });
-            if (lks.size() > 0) {
-                for (CrawledLink cl : lks) {
-                    setPriority(priority, cl);
-                }
-                return true;
+        if (linkIds == null || linkIds.size() == 0) {
+            return false;
+        }
+        final int size = linkIds.size();
+        final List<CrawledLink> lks = LinkCollector.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
+            @Override
+            public int returnMaxResults() {
+                return size;
             }
+
+            @Override
+            public boolean acceptNode(CrawledLink node) {
+                return linkIds.contains(node.getUniqueID().getID());
+            }
+        });
+        if (lks.size() > 0) {
+            for (CrawledLink cl : lks) {
+                setPriority(priority, cl);
+            }
+            return true;
         }
         return false;
     }
@@ -223,7 +221,6 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
         final CrawledPackage cp = getCrawledPackageFromID(ID);
         if (cp != null) {
             cp.getModifyLock().runReadLock(new Runnable() {
-
                 @Override
                 public void run() {
                     for (CrawledLink link : cp.getChildren()) {
@@ -237,43 +234,43 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
     }
 
     public boolean setCrawledLinkEnabled(final List<Long> linkIds, boolean enabled) {
-        if (linkIds != null && linkIds.size() > 0) {
-            final int size = linkIds.size();
-            List<CrawledLink> lks = LinkCollector.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
-                @Override
-                public int returnMaxResults() {
-                    return size;
-                }
-
-                @Override
-                public boolean acceptNode(CrawledLink node) {
-                    return linkIds.contains(node.getUniqueID().getID());
-                }
-            });
-            if (lks.size() > 0) {
-                for (CrawledLink cl : lks) {
-                    cl.setEnabled(enabled);
-                }
-                return true;
+        if (linkIds == null || linkIds.size() == 0) {
+            return false;
+        }
+        final int size = linkIds.size();
+        final List<CrawledLink> lks = LinkCollector.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
+            @Override
+            public int returnMaxResults() {
+                return size;
             }
+
+            @Override
+            public boolean acceptNode(CrawledLink node) {
+                return linkIds.contains(node.getUniqueID().getID());
+            }
+        });
+        if (lks.size() > 0) {
+            for (CrawledLink cl : lks) {
+                cl.setEnabled(enabled);
+            }
+            return true;
         }
         return false;
     }
 
     public boolean setCrawledPackageEnabled(long ID, final boolean enabled) {
         final CrawledPackage cp = getCrawledPackageFromID(ID);
-        if (cp != null) {
-            cp.getModifyLock().runReadLock(new Runnable() {
-
-                @Override
-                public void run() {
-                    for (CrawledLink link : cp.getChildren()) {
-                        link.setEnabled(enabled);
-                    }
-                }
-            });
+        if (cp == null) {
             return true;
         }
+        cp.getModifyLock().runReadLock(new Runnable() {
+            @Override
+            public void run() {
+                for (CrawledLink link : cp.getChildren()) {
+                    link.setEnabled(enabled);
+                }
+            }
+        });
         return true;
     }
 
@@ -286,28 +283,27 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
     }
 
     public boolean enableCrawledLink(final List<Long> linkIds, boolean enabled) {
-        if (linkIds != null && linkIds.size() > 0) {
-            final int size = linkIds.size();
-            final List<CrawledLink> lks = LinkCollector.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
-                @Override
-                public int returnMaxResults() {
-                    return size;
-                }
-
-                @Override
-                public boolean acceptNode(CrawledLink node) {
-                    return linkIds.contains(node.getUniqueID().getID());
-                }
-            });
-            if (lks.size() > 0) {
-                for (CrawledLink cl : lks) {
-                    cl.setEnabled(enabled);
-                }
-                return true;
+        if (linkIds == null || linkIds.size() == 0) {
+            return false;
+        }
+        final int size = linkIds.size();
+        final List<CrawledLink> lks = LinkCollector.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
+            @Override
+            public int returnMaxResults() {
+                return size;
             }
+
+            @Override
+            public boolean acceptNode(CrawledLink node) {
+                return linkIds.contains(node.getUniqueID().getID());
+            }
+        });
+        if (lks.size() > 0) {
+            for (CrawledLink cl : lks) {
+                cl.setEnabled(enabled);
+            }
+            return true;
         }
         return false;
-
     }
-
 }
