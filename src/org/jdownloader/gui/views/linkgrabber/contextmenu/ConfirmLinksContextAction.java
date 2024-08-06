@@ -891,7 +891,6 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
             setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, 0, 0, 6, 6)));
             setIconKey(null);
         } else {
-            // ContextMenuManager owner = _getOwner();
             if (isSelectionOnly()) {
                 setName(getTextForNoAutoStartSelectionOnly());
             } else {
