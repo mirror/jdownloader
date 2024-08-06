@@ -333,6 +333,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 handleAccountException(account, e);
             }
             throw e;
+        } catch (final AccountRequiredException e) {
+            logger.log(e);
+            throw e;
         }
     }
 
@@ -504,6 +507,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         try {
             InstaGramCom.checkErrors(this, br);
         } catch (final AccountRequiredException e) {
+            logger.log(e);
             if (account == null) {
                 // fail fast
                 throw e;
@@ -515,29 +519,34 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
         }
         if (accountRequired != null || (urlCheck != null && !br.getURL().contains(urlCheck))) {
-            /*
-             * E.g. private gallery and we're not logged in or we're not logged in with an account with the required permissions -> Redirect
-             * to main page or URL of the profile which uploaded the gallery.
-             */
-            if (account == null) {
-                // fail fast
-                throw new AccountRequiredException();
-            } else if (loginState.get()) {
-                // already logged in?
-                logger.info("Login required but user is already logged in?!");
-                throw new AccountRequiredException();
-            } else {
-                loginOrFail(account, loginState);
-                getPage(param, br, request, null, null);
-                try {
-                    InstaGramCom.checkErrors(this, br);
-                    if (urlCheck != null && !br.getURL().contains(urlCheck)) {
-                        throw new AccountRequiredException();
+            try {
+                /*
+                 * E.g. private gallery and we're not logged in or we're not logged in with an account with the required permissions ->
+                 * Redirect to main page or URL of the profile which uploaded the gallery.
+                 */
+                if (account == null) {
+                    // fail fast
+                    throw new AccountRequiredException();
+                } else if (loginState.get()) {
+                    // already logged in?
+                    logger.info("Login required but user is already logged in?!");
+                    throw new AccountRequiredException();
+                } else {
+                    loginOrFail(account, loginState);
+                    getPage(param, br, request, null, null);
+                    try {
+                        InstaGramCom.checkErrors(this, br);
+                        if (urlCheck != null && !br.getURL().contains(urlCheck)) {
+                            throw new AccountRequiredException();
+                        }
+                    } catch (final AccountRequiredException e) {
+                        logger.exception("Logged in but URL still isn't accessible", e);
+                        throw e;
                     }
-                } catch (final AccountRequiredException e) {
-                    logger.exception("Logged in but URL still isn't accessible", e);
-                    throw e;
                 }
+            } catch (Exception e) {
+                logger.log(e);
+                throw e;
             }
         }
     }
@@ -1079,13 +1088,19 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     private void loginOrFail(final Account account, final AtomicBoolean loggedIN) throws Exception {
-        if (account == null) {
-            throw new AccountRequiredException();
-        }
-        if (!loggedIN.get()) {
-            final PluginForHost plg = getNewPluginForHostInstance(getHost());
-            ((jd.plugins.hoster.InstaGramCom) plg).login(account, false);
-            loggedIN.set(true);
+        try {
+            if (account == null) {
+                throw new AccountRequiredException();
+            } else {
+                if (!loggedIN.get()) {
+                    final PluginForHost plg = getNewPluginForHostInstance(getHost());
+                    ((jd.plugins.hoster.InstaGramCom) plg).login(account, false);
+                    loggedIN.set(true);
+                }
+            }
+        } catch (Exception e) {
+            logger.log(e);
+            throw e;
         }
     }
 
