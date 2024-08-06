@@ -24,6 +24,7 @@ import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
 import jd.controlling.linkcollector.LinkCollectingInformation;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.ConfirmLinksSettings;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
@@ -124,6 +125,16 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                             } else {
                                 si = selectionInfo;
                             }
+                            final ConfirmLinksSettings cls = new ConfirmLinksSettings();
+                            cls.setMoveLinksMode(MoveLinksMode.AUTO);
+                            cls.setAutoStartDownloads(autoStart);
+                            // cls.setClearLinkgrabberlistOnConfirm(CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm());
+                            // cls.setSwitchToDownloadlistOnConfirm(CFG_LINKGRABBER.CFG.isAutoSwitchToDownloadTableOnConfirmDefaultEnabled());
+                            cls.setPriority(priority);
+                            // cls.setPackageExpandBehavior(PackageExpandBehavior.GLOBAL);
+                            // cls.setForceDownloads(CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads());
+                            // cls.setHandleOffline(onOfflineHandler);
+                            // cls.setHandleDupes(onDupesHandler);
                             ConfirmLinksContextAction.confirmSelection(MoveLinksMode.AUTO, si, autoStart, CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm(), CFG_LINKGRABBER.CFG.isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), priority, PackageExpandBehavior.GLOBAL, BooleanStatus.convert(CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads()), onOfflineHandler, onDupesHandler);
                         }
                         if (delayer.isDelayerActive() == false && eventSender.hasListener()) {

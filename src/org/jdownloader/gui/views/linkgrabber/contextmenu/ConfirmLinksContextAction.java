@@ -61,6 +61,7 @@ import org.jdownloader.translate._JDT;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.ConfirmLinksSettings;
 import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
 import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -263,17 +264,17 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         this.assignPriorityEnabled = assignPriorityEnabled;
     }
 
-    public static String getTranslationForPiority() {
+    public static String getTranslationForPriority() {
         return _JDT.T.ConfirmLinksContextAction_getTranslationForPriority();
     }
 
-    @Customizer(link = "#getTranslationForPiority")
-    public Priority getPiority() {
+    @Customizer(link = "#getTranslationForPriority")
+    public Priority getPriority() {
         return piority;
     }
 
-    public void setPiority(Priority piority) {
-        this.piority = piority;
+    public void setPriority(Priority priority) {
+        this.piority = priority;
     }
 
     public static String getTranslationForPackageExpandBehavior() {
@@ -746,10 +747,31 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         if (handleDupes == OnDupesLinksAction.GLOBAL) {
             handleDupes = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
         }
+        final ConfirmLinksSettings cls = new ConfirmLinksSettings();
+        cls.setMoveLinksMode(MoveLinksMode.MANUAL);
+        cls.setAutoStartDownloads(doAutostart());
+        cls.setClearLinkgrabberlistOnConfirm(isClearListAfterConfirm());
+        // cls.setSwitchToDownloadlistOnConfirm(CFG_LINKGRABBER.CFG.isAutoSwitchToDownloadTableOnConfirmDefaultEnabled());
+        if (isAssignPriorityEnabled()) {
+            cls.setPriority(getPriority());
+        }
+        cls.setPackageExpandBehavior(this.packageExpandBehavior);
+        cls.setForceDownloads(isForceDownloads());
+        // TODO: Remove global check
+        if (handleOffline != OnOfflineLinksAction.GLOBAL) {
+            cls.setHandleOffline(handleOffline);
+        }
+        // TODO: Remove global check
+        if (handleDupes != OnDupesLinksAction.GLOBAL) {
+            cls.setHandleDupes(handleDupes);
+        }
+        cls.setConfirmationDialogBehavior(ConfirmationDialogBehavior.DISABLED); // TODO: Add setting
+        cls.setConfirmationDialogThresholdMinPackages(minNumberofLinksForConfirmMoveToDownloadlistDialog);
+        cls.setConfirmationDialogThresholdMinLinks(minNumberofLinksForConfirmMoveToDownloadlistDialog);
         if (isSelectionOnly()) {
-            confirmSelection(MoveLinksMode.MANUAL, getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, this.packageExpandBehavior, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, handleOffline, handleDupes);
+            confirmSelection(MoveLinksMode.MANUAL, getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPriority() : null, this.packageExpandBehavior, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, handleOffline, handleDupes);
         } else {
-            confirmSelection(MoveLinksMode.MANUAL, getAllLinkgrabberItems(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, this.packageExpandBehavior, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, handleOffline, handleDupes);
+            confirmSelection(MoveLinksMode.MANUAL, getAllLinkgrabberItems(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPriority() : null, this.packageExpandBehavior, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, handleOffline, handleDupes);
         }
     }
 

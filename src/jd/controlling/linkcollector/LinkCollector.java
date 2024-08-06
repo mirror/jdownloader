@@ -2689,18 +2689,134 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public final static class ConfirmLinksSettings {
+        public final MoveLinksMode getMoveLinksMode() {
+            return moveLinksMode;
+        }
+
+        public final void setMoveLinksMode(MoveLinksMode moveLinksMode) {
+            this.moveLinksMode = moveLinksMode;
+        }
+
+        public final Boolean getAutoStartDownloads() {
+            return autoStartDownloads;
+        }
+
+        public final void setAutoStartDownloads(Boolean autoStartDownloads) {
+            this.autoStartDownloads = autoStartDownloads;
+        }
+
+        public final AutoStartOptions getAutoStartOptions() {
+            return autoStartOptions;
+        }
+
+        public final void setAutoStartOptions(AutoStartOptions autoStartOptions) {
+            this.autoStartOptions = autoStartOptions;
+        }
+
+        public final boolean isForceDownloads() {
+            return forceDownloads;
+        }
+
+        public final void setForceDownloads(boolean forceDownloads) {
+            this.forceDownloads = forceDownloads;
+        }
+
+        public final OnOfflineLinksAction getHandleOffline() {
+            return handleOffline;
+        }
+
+        public final void setHandleOffline(OnOfflineLinksAction handleOffline) {
+            if (handleOffline == OnOfflineLinksAction.GLOBAL) {
+                this.handleOffline = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
+            } else {
+                this.handleOffline = handleOffline;
+            }
+        }
+
+        public final OnDupesLinksAction getHandleDupes() {
+            return handleDupes;
+        }
+
+        public final void setHandleDupes(OnDupesLinksAction handleDupes) {
+            if (handleDupes == OnDupesLinksAction.GLOBAL) {
+                this.handleDupes = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
+            } else {
+                this.handleDupes = handleDupes;
+            }
+        }
+
+        public final boolean isClearLinkgrabberlistOnConfirm() {
+            return clearLinkgrabberlistOnConfirm;
+        }
+
+        public final void setClearLinkgrabberlistOnConfirm(boolean clearLinkgrabberlistOnConfirm) {
+            this.clearLinkgrabberlistOnConfirm = clearLinkgrabberlistOnConfirm;
+        }
+
+        public final boolean isSwitchToDownloadlistOnConfirm() {
+            return switchToDownloadlistOnConfirm;
+        }
+
+        public final void setSwitchToDownloadlistOnConfirm(boolean switchToDownloadlistOnConfirm) {
+            this.switchToDownloadlistOnConfirm = switchToDownloadlistOnConfirm;
+        }
+
+        public final ConfirmationDialogBehavior getConfirmationDialogBehavior() {
+            return confirmationDialogBehavior;
+        }
+
+        public final void setConfirmationDialogBehavior(ConfirmationDialogBehavior confirmationDialogBehavior) {
+            this.confirmationDialogBehavior = confirmationDialogBehavior;
+        }
+
+        public final int getConfirmationDialogThresholdMinPackages() {
+            return confirmationDialogThresholdMinPackages;
+        }
+
+        public final void setConfirmationDialogThresholdMinPackages(int confirmationDialogThresholdMinPackages) {
+            this.confirmationDialogThresholdMinPackages = confirmationDialogThresholdMinPackages;
+        }
+
+        public final int getConfirmationDialogThresholdMinLinks() {
+            return confirmationDialogThresholdMinLinks;
+        }
+
+        public final void setConfirmationDialogThresholdMinLinks(int confirmationDialogThresholdMinLinks) {
+            this.confirmationDialogThresholdMinLinks = confirmationDialogThresholdMinLinks;
+        }
+
+        public final Priority getPriority() {
+            return priority;
+        }
+
+        public final void setPriority(Priority priority) {
+            this.priority = priority;
+        }
+
+        public PackageExpandBehavior getPackageExpandBehavior() {
+            return packageExpandBehavior;
+        }
+
+        public void setPackageExpandBehavior(PackageExpandBehavior packageExpandBehavior) {
+            this.packageExpandBehavior = packageExpandBehavior;
+        }
+
         private MoveLinksMode              moveLinksMode                          = MoveLinksMode.AUTO;
         private Boolean                    autoStartDownloads                     = null;
         private AutoStartOptions           autoStartOptions                       = CFG_LINKGRABBER.CFG.getAutoConfirmManagerAutoStart();
-        final Priority                     priority                               = Priority.DEFAULT;
+        private Priority                   priority                               = Priority.DEFAULT;
         private boolean                    forceDownloads                         = CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads();
         private OnOfflineLinksAction       handleOffline                          = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
         private OnDupesLinksAction         handleDupes                            = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
         private boolean                    clearLinkgrabberlistOnConfirm          = CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm();
         private boolean                    switchToDownloadlistOnConfirm          = JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled();
+        private PackageExpandBehavior      packageExpandBehavior                  = PackageExpandBehavior.GLOBAL;
         private ConfirmationDialogBehavior confirmationDialogBehavior             = ConfirmationDialogBehavior.DISABLED;
         private int                        confirmationDialogThresholdMinPackages = 1;
         private int                        confirmationDialogThresholdMinLinks    = 1;
+
+        public ConfirmLinksSettings() {
+        }
 
         public ConfirmLinksSettings(MoveLinksMode mode, Boolean autoStart, Boolean autoForce, Priority autoPriority) {
         }
@@ -2733,10 +2849,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             this.packageExpandOption = packageExpandBehavior;
         }
 
-        final Boolean         autoStart;
-        final Boolean         autoForce;
-        final Priority        autoPriority;
-        PackageExpandBehavior packageExpandOption = PackageExpandBehavior.GLOBAL;
+        private final Boolean         autoStart;
+        private final Boolean         autoForce;
+        private final Priority        autoPriority;
+        private PackageExpandBehavior packageExpandOption = PackageExpandBehavior.GLOBAL;
 
         public MoveLinksSettings(MoveLinksMode mode, Boolean autoStart, Boolean autoForce, Priority autoPriority) {
             this.mode = mode;

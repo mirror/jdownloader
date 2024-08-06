@@ -40,6 +40,7 @@ import jd.controlling.downloadcontroller.DownloadWatchDogJob;
 import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.controlling.linkcollector.LinkCollector.ConfirmLinksSettings;
 import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -81,6 +82,17 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
                 protected Void run() throws RuntimeException {
                     switch (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext()) {
                     case ADD_ALL_LINKS_AND_START_DOWNLOADS:
+                        final ConfirmLinksSettings cls = new ConfirmLinksSettings();
+                        cls.setMoveLinksMode(MoveLinksMode.MANUAL);
+                        cls.setAutoStartDownloads(true);
+                        cls.setClearLinkgrabberlistOnConfirm(false);
+                        cls.setSwitchToDownloadlistOnConfirm(true);
+                        // cls.setPriority(null);
+                        // cls.setPackageExpandBehavior(PackageExpandBehavior.GLOBAL);
+                        cls.setForceDownloads(false);
+                        // cls.setHandleOffline(CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction());
+                        // cls.setHandleDupes(CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
+                        // cls.setConfirmationDialogBehavior(ConfirmationDialogBehavior.DISABLED);
                         ConfirmLinksContextAction.confirmSelection(MoveLinksMode.MANUAL, selection, true, false, true, null, PackageExpandBehavior.GLOBAL, BooleanStatus.FALSE, CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction(), CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
                         break;
                     case START_DOWNLOADS_ONLY:

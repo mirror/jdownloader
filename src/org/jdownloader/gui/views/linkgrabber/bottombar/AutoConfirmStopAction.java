@@ -60,7 +60,7 @@ public class AutoConfirmStopAction extends CustomizableAppAction implements Cust
         });
         p.add(cb);
         //
-        p.add(new JLabel(ConfirmLinksContextAction.getTranslationForPiority()), "newline");
+        p.add(new JLabel(ConfirmLinksContextAction.getTranslationForPriority()), "newline");
         final JComboBox<Priority> priority = new JComboBox<Priority>(Priority.values());
         p.add(priority, "newline,spanx");
         priority.setSelectedItem(CFG_LINKGRABBER.CFG.getAutoConfirmManagerPriority());
