@@ -362,7 +362,7 @@ public class RAFChunk extends Thread {
                 }
                 if (toWrite == -1 || isExternalyAborted() || connectionclosed.get()) {
                     if (toWrite > 0) {
-                        logger.warning("flush:exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
+                        logger.warning("flush(loop):exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
                         try {
                             writeCompleteFlag = true;
                             final long flush = dl.write(this);
@@ -374,7 +374,7 @@ public class RAFChunk extends Thread {
                                     toWrite = -1;
                                 }
                             }
-                            logger.warning("flushed:exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
+                            logger.warning("flushed(loop):exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
                         } catch (final Throwable throwable) {
                             LogSource.exception(logger, throwable);
                         }
@@ -403,6 +403,7 @@ public class RAFChunk extends Thread {
                 }
             }
             if (toWrite > 0) {
+                logger.warning("flush(final):exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
                 writeCompleteFlag = true;
                 remoteIO = false;
                 final long flush = dl.write(this);
@@ -411,6 +412,7 @@ public class RAFChunk extends Thread {
                     bytesWritten += flush;
                     toWrite -= flush;
                 }
+                logger.warning("flushed(final):exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
             }
             logger.info("ExternalAbort: " + isExternalyAborted());
             long endPosition = endByte;
