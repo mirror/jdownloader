@@ -172,6 +172,38 @@ public class MergeSameNamedPackagesAction<PgkType extends AbstractPackageNode<Ch
         });
     }
 
+    public final Map<String, List<PgkType>> getDuplicatedPackages(final PackageController<PgkType, ChildType> controller, final boolean case_insensitive) {
+        final Map<String, List<PgkType>> dupes = new HashMap<String, List<PgkType>>();
+        final boolean readL = controller.readLock();
+        try {
+            for (final PgkType packageNode : controller.getPackages()) {
+                String packagename = packageNode.getName();
+                if (case_insensitive) {
+                    packagename = packagename.toLowerCase(Locale.ENGLISH);
+                }
+                String downloaddestination;
+                if (packageNode instanceof CrawledPackage) {
+                    downloaddestination = ((CrawledPackage) packageNode).getDownloadFolder();
+                } else {
+                    downloaddestination = ((FilePackage) packageNode).getDownloadDirectory();
+                }
+                if (downloaddestination != null) {
+                    downloaddestination = downloaddestination.toLowerCase(Locale.ENGLISH);
+                }
+                final String compareString = packagename + downloaddestination;
+                List<PgkType> thisdupeslist = dupes.get(compareString);
+                if (thisdupeslist == null) {
+                    thisdupeslist = new ArrayList<PgkType>();
+                    dupes.put(compareString, thisdupeslist);
+                }
+                thisdupeslist.add(packageNode);
+            }
+        } finally {
+            controller.readUnlock(readL);
+        }
+        return dupes;
+    }
+
     @Override
     public boolean isEnabled() {
         final SelectionInfo<PgkType, ChildType> sel = getSelection();
