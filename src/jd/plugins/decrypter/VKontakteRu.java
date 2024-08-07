@@ -27,7 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.simplejson.JSonUtils;
@@ -723,7 +722,14 @@ public class VKontakteRu extends PluginForDecrypt {
         /* Check if fast-crawl is allowed */
         final QualitySelectionMode qualitySelectionMode = getQualitySelectionMode();
         final boolean userWantsMultipleQualities = qualitySelectionMode == QualitySelectionMode.ALL;
-        final boolean linkCanBeFastCrawled = param.getDownloadLink() != null && !param.getDownloadLink().hasProperty(VIDEO_PROHIBIT_FASTCRAWL) && param.getDownloadLink().hasProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN);
+        final boolean linkCanBeFastCrawled;
+        if (param.getDownloadLink() == null) {
+            linkCanBeFastCrawled = false;
+        } else if (!param.getDownloadLink().hasProperty(VIDEO_PROHIBIT_FASTCRAWL) && param.getDownloadLink().hasProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN)) {
+            linkCanBeFastCrawled = true;
+        } else {
+            linkCanBeFastCrawled = false;
+        }
         if (this.cfg.getBooleanProperty(VKontakteRuHoster.FASTCRAWL_VIDEO, VKontakteRuHoster.default_FASTCRAWL_VIDEO) && !userWantsMultipleQualities && linkCanBeFastCrawled) {
             final DownloadLink dl = this.createDownloadlink(param.getDownloadLink().getPluginPatternMatcher());
             /* Inherit all previously set properties */
@@ -1309,24 +1315,22 @@ public class VKontakteRu extends PluginForDecrypt {
             fp.setName(Encoding.htmlDecode(galleryTitle).trim() + " - " + internalSectionName);
         }
         final LinkedHashSet<Integer> dupes = new LinkedHashSet<Integer>();
-        while (true) {
+        pagination: while (true) {
             // get from video.get
             final List<Map<String, Object>> items = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "apiPrefetchCache/{0}/response/items");
             if (items == null || items.isEmpty()) {
                 logger.info("Stopping because: Current page does not contain any items");
-                break;
+                break pagination;
             }
-            boolean foundNewItems = false;
+            int numberofNewItems = 0;
             for (final Map<String, Object> item : items) {
                 final int thisOwnerID = ((Number) item.get("owner_id")).intValue();
                 final int thisContentID = ((Number) item.get("id")).intValue();
                 final String videoTitle = (String) item.get("title");
-                if (dupes.add(thisContentID)) {
-                    // /* Fail-safe */
-                    // logger.info("Stopping because: Found dupe");
-                    // break pagination;
-                    foundNewItems = true;
+                if (!dupes.add(thisContentID)) {
+                    continue;
                 }
+                numberofNewItems++;
                 final String completeVideolink = getProtocol() + this.getHost() + "/video" + thisOwnerID + "_" + thisContentID;
                 final DownloadLink dl = createDownloadlink(completeVideolink);
                 dl.setContainerUrl(containerURL);
@@ -1338,15 +1342,16 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("Page: " + page + " | Crawled: " + offset + " / " + numberofVideos);
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
-                break;
-            } else if (!foundNewItems) {
+                break pagination;
+            } else if (numberofNewItems == 0) {
                 logger.info("Stopping because: Failed to find any new items on current page");
-                break;
+                break pagination;
             } else if (offset >= numberofVideos) {
                 logger.info("Stopping because: Found all items");
-                break;
+                break pagination;
             } else {
                 // TODO: Fix pagination
+                logger.warning("@DEV! FIX BROKEN PAGINATION!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -1355,144 +1360,8 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlVideoAlbum(final CryptedLink param) throws Exception {
-        final ArrayList<DownloadLink> ret = this.getReturnArray();
         this.getPage(param.getCryptedUrl());
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        String internalSectionName;
-        final String sectionNameURL = UrlQuery.parse(br.getURL()).get("section");
-        if (sectionNameURL != null) {
-            internalSectionName = sectionNameURL;
-        } else {
-            internalSectionName = "all";
-        }
-        String videoAlbumsJson = br.getRegex("extend\\(window\\.cur[^,]*,\\s*(\\{\".*?\\})\\);(?:\\s+|\r|\n|Promise\\.resolve)").getMatch(0);
-        if (videoAlbumsJson == null) {
-            videoAlbumsJson = br.getRegex("(?:var|let) newCur\\s*=\\s*(\\{.*?\\});\\s+").getMatch(0);
-            if (videoAlbumsJson == null) {
-                /* Old regexes/fallback */
-                videoAlbumsJson = br.getRegex("extend\\(cur, (\\{\"albumsPreload\".*?\\})\\);\\s+").getMatch(0);
-                if (videoAlbumsJson == null) {
-                    /* Wider RegEx */
-                    videoAlbumsJson = br.getRegex("extend\\(cur, (\\{\".*?\\})\\);\\s+").getMatch(0);
-                }
-            }
-        }
-        if (videoAlbumsJson == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final Map<String, Object> entries = restoreFromString(videoAlbumsJson, TypeRef.MAP);
-        if (entries.containsKey("apiPrefetchCache")) {
-            return crawlVideoAlbumNew(param, br);
-        }
-        final String oid = Integer.toString(((Number) entries.get("oid")).intValue());
-        final int maxItemsPerPage = ((Number) entries.get("VIDEO_SILENT_VIDEOS_CHUNK_SIZE")).intValue();
-        Map<String, Object> videoInfoMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "pageVideosList/" + oid + "/" + internalSectionName);
-        if (videoInfoMap == null) {
-            Map<String, Object> pageVideosList = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "pageVideosList/" + oid);
-            if (pageVideosList != null && pageVideosList.size() == 1) {
-                final Entry<String, Object> entry = pageVideosList.entrySet().iterator().next();
-                internalSectionName = entry.getKey();
-                videoInfoMap = (Map<String, Object>) entry.getValue();
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        final int numberofVideos = ((Number) videoInfoMap.get("count")).intValue();
-        logger.info("numberofVideos=" + numberofVideos + "|maxVideosPerPage=" + maxItemsPerPage);
-        int offset = 0;
-        int page = 0;
-        String containerURL = "https://" + this.getHost() + "/videos" + oid;
-        if (internalSectionName != null) {
-            containerURL += "=section=" + Encoding.urlEncode(internalSectionName);
-        }
-        final FilePackage fp = FilePackage.getInstance();
-        String galleryTitle = br.getRegex("<title>([^>]+) \\| VK</title>").getMatch(0);
-        if (cfg.getBooleanProperty(VKontakteRuHoster.VKVIDEO_ALBUM_USEIDASPACKAGENAME, VKontakteRuHoster.default_VKVIDEO_ALBUM_USEIDASPACKAGENAME)) {
-            fp.setName("videos" + oid);
-        } else if (galleryTitle == null) {
-            /* Fallback */
-            fp.setName(oid + " - " + internalSectionName);
-        } else {
-            fp.setName(Encoding.htmlDecode(galleryTitle).trim() + " - " + internalSectionName);
-        }
-        final LinkedHashSet<Integer> dupes = new LinkedHashSet<Integer>();
-        while (true) {
-            List<List<Object>> videosO = (List<List<Object>>) videoInfoMap.get("list");
-            if (videosO.isEmpty()) {
-                logger.info("Stopping because: Current page does not contain any items");
-                break;
-            }
-            boolean foundNewItems = false;
-            for (final List<Object> videoInfos : videosO) {
-                final int thisOwnerID = ((Number) videoInfos.get(0)).intValue();
-                final int thisContentID = ((Number) videoInfos.get(1)).intValue();
-                String videoTitle = (String) videoInfos.get(3);
-                String uploader = null;
-                final String videoAuthorHTML = (String) videoInfos.get(8);
-                if (videoAuthorHTML != null) {
-                    final String uploaderRaw = new Regex(videoAuthorHTML, "<a href=[^>]*>(.*?)</a>").getMatch(0);
-                    if (uploaderRaw != null && !uploaderRaw.equalsIgnoreCase("DELETED")) {
-                        uploader = uploaderRaw;
-                        videoTitle = uploaderRaw + "_" + videoTitle;
-                    }
-                }
-                if (uploader != null) {
-                    videoTitle = uploader + "_" + videoTitle;
-                }
-                if (dupes.add(thisContentID)) {
-                    // /* Fail-safe */
-                    // logger.info("Stopping because: Found dupe");
-                    // break pagination;
-                    foundNewItems = true;
-                }
-                final String completeVideolink = getProtocol() + this.getHost() + "/video" + thisOwnerID + "_" + thisContentID;
-                final DownloadLink dl = createDownloadlink(completeVideolink);
-                dl.setContainerUrl(containerURL);
-                dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN, Encoding.htmlDecode(videoTitle).trim());
-                if (uploader != null) {
-                    dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_UPLOADER, uploader);
-                }
-                if (videoInfos.size() >= 12) {
-                    /* Check for external content. Fast-crawling is only possible for stuff hosted on vk.com! */
-                    final String externalContentProviderName = (String) videoInfos.get(11);
-                    if (!StringUtils.isEmpty(externalContentProviderName)) {
-                        /* E.g. "Coub" or "Youtube" */
-                        dl.setProperty(VIDEO_PROHIBIT_FASTCRAWL, true);
-                    }
-                }
-                dl._setFilePackage(fp);
-                ret.add(dl);
-                offset++;
-            }
-            logger.info("Page: " + page + " | Crawled: " + offset + " / " + numberofVideos);
-            if (this.isAbort()) {
-                logger.info("Stopping because: Aborted by user");
-                break;
-            } else if (!foundNewItems) {
-                logger.info("Stopping because: Failed to find any new items on current page");
-                break;
-            } else if (offset >= numberofVideos) {
-                logger.info("Stopping because: Found all items");
-                break;
-            } else {
-                final UrlQuery query = new UrlQuery();
-                query.add("al", "1");
-                query.add("need_albums", "0");
-                query.add("offset", Integer.toString(offset));
-                query.add("oid", oid);
-                // query.add("rowlen", "3");
-                if (!StringUtils.isEmpty(internalSectionName)) {
-                    query.add("section", Encoding.urlEncode(internalSectionName));
-                }
-                sleep(getPaginationSleepMillis(), param);
-                br.postPage(getBaseURL() + "/al_video.php?act=load_videos_silent", query.toString());
-                final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.MAP);
-                videoInfoMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(response, "payload/{1}/{0}/" + internalSectionName);
-                page += 1;
-            }
-        }
-        logger.info("Total videolinks found: " + offset);
-        return ret;
+        return this.websiteCrawlContent(br.getURL(), br.getRequest().getHtmlCode(), null, true, true, true, true, true, null);
     }
 
     private static Map<String, String> getSelectedVideoQualities(final Map<String, String> availableVideoQualities, final QualitySelectionMode mode, final String preferredVideoQuality) {
@@ -2167,14 +2036,15 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /**
-     * Crawls desired content from website html code from either a wall-POST or wall-COMMENT or ALBUMS URL from below a post.
+     * Universal method to crawl any desired content from website.
      *
      * @throws IOException
      * @throws DecrypterException
+     * @throws PluginException
      */
-    private ArrayList<DownloadLink> websiteCrawlContent(final String url_source, final String html, final FilePackage fp, final boolean grabAudio, final boolean grabVideo, final boolean grabPhoto, final boolean grabDocs, final boolean grabURLsInsideText, final boolean store_picture_directurls) throws IOException, DecrypterException {
+    private ArrayList<DownloadLink> websiteCrawlContent(final String url_source, final String html, final FilePackage fp, final boolean grabAudio, final boolean grabVideo, final boolean grabPhoto, final boolean grabDocs, final boolean grabURLsInsideText, final Boolean store_picture_directurls) throws IOException, DecrypterException, PluginException {
         if (url_source == null) {
-            throw new DecrypterException("Decrypter broken");
+            throw new DecrypterException("Crawler broken");
         }
         final String url_source_without_params = URLHelper.getUrlWithoutParams(url_source);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -2240,93 +2110,158 @@ public class VKontakteRu extends PluginForDecrypt {
             /* 2023-11-17: New */
             final Map<String, Object> entries = restoreFromString(websiteJson, TypeRef.MAP);
             final List<Map<String, Object>> apiPrefetchCache = (List<Map<String, Object>>) entries.get("apiPrefetchCache");
-            Map<String, Object> albumsMap = null;
-            Map<String, Object> photosMap = null;
+            String videoPlaylistOwnerID = null;
+            String videoPlaylistID = null;
+            String videoPlaylistTitle = null;
+            final List<DownloadLink> videoResults = new ArrayList<DownloadLink>();
+            Map<String, Object> errormap = null;
             for (final Map<String, Object> apiPrefetchCacheItem : apiPrefetchCache) {
+                errormap = (Map<String, Object>) apiPrefetchCacheItem.get("error");
+                if (errormap != null) {
+                    continue;
+                }
                 final String method = apiPrefetchCacheItem.get("method").toString();
+                final Map<String, Object> response = (Map<String, Object>) apiPrefetchCacheItem.get("response");
                 if (method.equalsIgnoreCase("photos.getAlbums")) {
-                    albumsMap = (Map<String, Object>) apiPrefetchCacheItem.get("response");
+                    if (grabPhotoAlbums) {
+                        final List<Map<String, Object>> albums = (List<Map<String, Object>>) response.get("items");
+                        for (final Map<String, Object> photoalbum : albums) {
+                            String albumID = photoalbum.get("id").toString();
+                            /* 2023-11-17: I have no idea what I'm doing lol */
+                            albumID = albumID.replace("-6", "0");
+                            albumID = albumID.replace("-7", "00");
+                            final String url = "https://vk.com/album" + photoalbum.get("owner_id") + "_" + albumID;
+                            final DownloadLink albumdl = this.createDownloadlink(url);
+                            ret.add(albumdl);
+                        }
+                    }
                 } else if (method.equalsIgnoreCase("photos.get")) {
-                    photosMap = (Map<String, Object>) apiPrefetchCacheItem.get("response");
+                    final int count = ((Number) response.get("count")).intValue();
+                    final List<Map<String, Object>> photos = (List<Map<String, Object>>) response.get("items");
+                    logger.info("WebAPI photos.get: Count: " + count + " | Crawling now: " + photos.size());
+                    for (final Map<String, Object> photo : photos) {
+                        final String owner_id = photo.get("owner_id").toString();
+                        final String content_id = photo.get("id").toString();
+                        final String photoContentStr = owner_id + "_" + content_id;
+                        if (!global_dupes.add(photoContentStr)) {
+                            /* Important: Skip dupes so upper handling will e.g. see that nothing has been added! */
+                            logger.info("Skipping dupe: " + photoContentStr);
+                            continue;
+                        }
+                        final DownloadLink photodl = getSinglePhotoDownloadLink(owner_id + "_" + content_id, null);
+                        /*
+                         * Override previously set content URL as this really is the direct link to the picture which works fine via
+                         * browser.
+                         */
+                        photodl.setContentUrl("https://vk.com/photo" + owner_id + "_" + content_id);
+                        if (isContentFromWall) {
+                            photodl.setProperty("postID", wall_post_content_id);
+                            photodl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_owner_id, owner_id);
+                        } else {
+                            /* Album content */
+                            photodl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_album_id, album_ID);
+                        }
+                        /*
+                         * 2020-01-27: Regarding photo_list_id and photo_module: If not set but required, it will more likely happen that a
+                         * "Too many requests in a short time" message appears on download attempt!
+                         */
+                        if (photo_list_id != null) {
+                            photodl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_list_id, photo_list_id);
+                        }
+                        if (photo_module != null) {
+                            photodl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_module, photo_module);
+                        }
+                        final List<Map<String, Object>> photosizes = (List<Map<String, Object>>) photo.get("sizes");
+                        if (photosizes != null) {
+                            final Map<String, Integer> sizeAltMapping = new HashMap<String, Integer>();
+                            sizeAltMapping.put("s", 100);
+                            sizeAltMapping.put("m", 200);
+                            sizeAltMapping.put("x", 300);
+                            sizeAltMapping.put("y", 400);
+                            sizeAltMapping.put("z", 500);
+                            sizeAltMapping.put("w", 600);
+                            int bestHeight = -1;
+                            String bestDirecturl = null;
+                            for (final Map<String, Object> photosize : photosizes) {
+                                int height = ((Number) photosize.get("height")).intValue();
+                                if (height == 0) {
+                                    /* Fallback */
+                                    height = sizeAltMapping.get(photosize.get("type").toString());
+                                }
+                                if (bestDirecturl == null || height > bestHeight) {
+                                    bestHeight = height;
+                                    bestDirecturl = photosize.get("url").toString();
+                                }
+                            }
+                            if (bestDirecturl != null) {
+                                photodl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_directlink, bestDirecturl);
+                            }
+                        }
+                        if (fp != null) {
+                            photodl._setFilePackage(fp);
+                        }
+                        ret.add(photodl);
+                    }
+                } else if (method.equalsIgnoreCase("video.get")) {
+                    /* Multiple video items */
+                    final List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("items");
+                    for (final Map<String, Object> item : items) {
+                        final String thisOwnerID = item.get("owner_id").toString();
+                        final String thisContentID = item.get("id").toString();
+                        final String videoTitle = (String) item.get("title");
+                        final String completeVideolink = getProtocol() + this.getHost() + "/video" + thisOwnerID + "_" + thisContentID;
+                        final DownloadLink dl = createDownloadlink(completeVideolink);
+                        dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN, Encoding.htmlDecode(videoTitle).trim());
+                        dl._setFilePackage(fp);
+                        videoResults.add(dl);
+                    }
+                } else if (method.equalsIgnoreCase("video.getAlbumById")) {
+                    /* Video album/playlist */
+                    final Map<String, Object> request = (Map<String, Object>) apiPrefetchCacheItem.get("request");
+                    videoPlaylistOwnerID = request.get("owner_id").toString();
+                    videoPlaylistID = request.get("album_id").toString();
+                    videoPlaylistTitle = response.get("title").toString();
+                } else {
+                    logger.warning("Skipping unknown 'method' type: " + method);
+                    continue;
                 }
             }
-            if (grabPhoto && photosMap != null) {
-                final int count = ((Number) photosMap.get("count")).intValue();
-                final List<Map<String, Object>> photos = (List<Map<String, Object>>) photosMap.get("items");
-                logger.info("WebAPI photos.get: Count: " + count + " | Crawling now: " + photos.size());
-                for (final Map<String, Object> photo : photos) {
-                    final String owner_id = photo.get("owner_id").toString();
-                    final String content_id = photo.get("id").toString();
-                    final String photoContentStr = owner_id + "_" + content_id;
-                    if (!global_dupes.add(photoContentStr)) {
-                        /* Important: Skip dupes so upper handling will e.g. see that nothing has been added! */
-                        logger.info("Skipping dupe: " + photoContentStr);
-                        continue;
-                    }
-                    final DownloadLink photodl = getSinglePhotoDownloadLink(owner_id + "_" + content_id, null);
-                    /*
-                     * Override previously set content URL as this really is the direct link to the picture which works fine via browser.
-                     */
-                    photodl.setContentUrl("https://vk.com/photo" + owner_id + "_" + content_id);
-                    if (isContentFromWall) {
-                        photodl.setProperty("postID", wall_post_content_id);
-                        photodl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_owner_id, owner_id);
+            if (ret.isEmpty() && errormap != null) {
+                logger.info("Item offline due to error: " + errormap);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (videoResults.size() > 0) {
+                /* Add additional information for video items */
+                String containerURL = null;
+                FilePackage videoPackage = null;
+                if (videoPlaylistOwnerID != null && videoPlaylistID != null) {
+                    String internalSectionName;
+                    final String sectionNameURL = UrlQuery.parse(br.getURL()).get("section");
+                    if (sectionNameURL != null) {
+                        internalSectionName = sectionNameURL;
                     } else {
-                        /* Album content */
-                        photodl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_album_id, album_ID);
+                        internalSectionName = "all";
                     }
-                    /*
-                     * 2020-01-27: Regarding photo_list_id and photo_module: If not set but required, it will more likely happen that a
-                     * "Too many requests in a short time" message appears on download attempt!
-                     */
-                    if (photo_list_id != null) {
-                        photodl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_list_id, photo_list_id);
+                    if (videoPlaylistOwnerID != null && videoPlaylistID != null) {
+                        containerURL = "https://" + this.getHost() + "/video/playlist/" + videoPlaylistOwnerID + "_" + videoPlaylistID;
                     }
-                    if (photo_module != null) {
-                        photodl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_module, photo_module);
+                    if (cfg.getBooleanProperty(VKontakteRuHoster.VKVIDEO_ALBUM_USEIDASPACKAGENAME, VKontakteRuHoster.default_VKVIDEO_ALBUM_USEIDASPACKAGENAME)) {
+                        videoPackage = FilePackage.getInstance();
+                        videoPackage.setName("videos" + videoPlaylistOwnerID + "_" + videoPlaylistID);
+                    } else if (videoPlaylistTitle != null) {
+                        videoPackage = FilePackage.getInstance();
+                        videoPackage.setName(Encoding.htmlDecode(videoPlaylistTitle).trim() + " - " + internalSectionName);
                     }
-                    final List<Map<String, Object>> photosizes = (List<Map<String, Object>>) photo.get("sizes");
-                    if (photosizes != null) {
-                        final Map<String, Integer> sizeAltMapping = new HashMap<String, Integer>();
-                        sizeAltMapping.put("s", 100);
-                        sizeAltMapping.put("m", 200);
-                        sizeAltMapping.put("x", 300);
-                        sizeAltMapping.put("y", 400);
-                        sizeAltMapping.put("z", 500);
-                        sizeAltMapping.put("w", 600);
-                        int bestHeight = -1;
-                        String bestDirecturl = null;
-                        for (final Map<String, Object> photosize : photosizes) {
-                            int height = ((Number) photosize.get("height")).intValue();
-                            if (height == 0) {
-                                /* Fallback */
-                                height = sizeAltMapping.get(photosize.get("type").toString());
-                            }
-                            if (bestDirecturl == null || height > bestHeight) {
-                                bestHeight = height;
-                                bestDirecturl = photosize.get("url").toString();
-                            }
-                        }
-                        if (bestDirecturl != null) {
-                            photodl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_directlink, bestDirecturl);
-                        }
-                    }
-                    if (fp != null) {
-                        photodl._setFilePackage(fp);
-                    }
-                    ret.add(photodl);
                 }
-            }
-            if (grabPhotoAlbums && albumsMap != null) {
-                final List<Map<String, Object>> albums = (List<Map<String, Object>>) albumsMap.get("items");
-                for (final Map<String, Object> photoalbum : albums) {
-                    String albumID = photoalbum.get("id").toString();
-                    /* 2023-11-17: I have no idea what I'm doing lol */
-                    albumID = albumID.replace("-6", "0");
-                    albumID = albumID.replace("-7", "00");
-                    final String url = "https://vk.com/album" + photoalbum.get("owner_id") + "_" + albumID;
-                    final DownloadLink albumdl = this.createDownloadlink(url);
-                    ret.add(albumdl);
+                for (final DownloadLink video : videoResults) {
+                    if (videoPackage != null) {
+                        video._setFilePackage(videoPackage);
+                    }
+                    if (containerURL != null) {
+                        video.setContainerUrl(containerURL);
+                    }
+                    /* Add item to our final list of results. */
+                    ret.add(video);
                 }
             }
         } else {
@@ -2458,7 +2393,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (photo_module != null) {
                     dl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_module, photo_module);
                 }
-                if (store_picture_directurls) {
+                if (Boolean.TRUE.equals(store_picture_directurls)) {
                     if (picture_preview_json != null) {
                         picture_preview_json = Encoding.htmlDecode(picture_preview_json);
                         dl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_directurls_fallback, picture_preview_json);

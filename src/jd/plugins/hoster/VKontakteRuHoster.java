@@ -1764,7 +1764,7 @@ public class VKontakteRuHoster extends PluginForHost {
         ALL {
             @Override
             public String getLabel() {
-                return "All available qualities (this will disable video album fast crawl!)";
+                return "All available qualities (disables fast crawl!)";
             }
         };
     }
