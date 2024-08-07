@@ -36,24 +36,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Request;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
@@ -119,6 +101,24 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Request;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 public class YoutubeHelper {
     static {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -182,7 +182,7 @@ public class YoutubeHelper {
     // public Map<String, YoutubeBasicVariant> getVariantsMap() {
     // return variantsMap;
     // }
-    public static final List<YoutubeReplacer> REPLACER                         = new ArrayList<YoutubeReplacer>();
+    public static final List<YoutubeReplacer> REPLACER = new ArrayList<YoutubeReplacer>();
     static {
         REPLACER.add(new YoutubeReplacer("GROUP") {
             @Override
@@ -1185,32 +1185,32 @@ public class YoutubeHelper {
             }
         });
     }
-    public static final String                YT_TITLE                         = "YT_TITLE";
-    public static final String                YT_TITLE_ALTERNATIVE             = "YT_TITLE_ALTERNATIVE";
-    public static final String                YT_CATEGORY                      = "YT_CATEGORY";
-    public static final String                YT_ID                            = "YT_ID";
-    public static final String                YT_CHANNEL_TITLE                 = "YT_CHANNEL";
-    public static final String                YT_CHANNEL_TITLE_ALTERNATIVE     = "YT_CHANNEL_ALTERNATIVE";
-    public static final String                YT_DATE                          = "YT_DATE";
-    public static final String                YT_VARIANTS                      = "YT_VARIANTS";
-    public static final String                YT_VARIANT                       = "YT_VARIANT";
+    public static final String  YT_TITLE                         = "YT_TITLE";
+    public static final String  YT_TITLE_ALTERNATIVE             = "YT_TITLE_ALTERNATIVE";
+    public static final String  YT_CATEGORY                      = "YT_CATEGORY";
+    public static final String  YT_ID                            = "YT_ID";
+    public static final String  YT_CHANNEL_TITLE                 = "YT_CHANNEL";
+    public static final String  YT_CHANNEL_TITLE_ALTERNATIVE     = "YT_CHANNEL_ALTERNATIVE";
+    public static final String  YT_DATE                          = "YT_DATE";
+    public static final String  YT_VARIANTS                      = "YT_VARIANTS";
+    public static final String  YT_VARIANT                       = "YT_VARIANT";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
+    public static final String  YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
+    public static final String  YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
+    public static final String  YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
-    private static final String               REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
+    public static final String  YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
+    private static final String REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
 
     private static String handleRule(String s, final String line) throws PluginException {
         final String method = new Regex(line, "\\.([\\w\\d]+?)\\(\\s*\\)").getMatch(0);
@@ -1438,7 +1438,6 @@ public class YoutubeHelper {
                         return trusted;
                     }
                 };
-
                 try {
                     JSRhinoPermissionRestricter.THREAD_JSSHUTTER.put(Thread.currentThread(), jsShutter);
                     final ScriptEngineManager manager = org.jdownloader.scripting.JavaScriptEngineFactory.getScriptEngineManager(this);
@@ -2282,7 +2281,7 @@ public class YoutubeHelper {
         logger.info("Login required:" + vid.ageCheck + "|Reason:" + unavailableReason);
         this.handleContentWarning(br);
         int collected = 0;
-        if (isAPIPrefered(br)) {
+        if (isAPIPrefered(br) || vid.ageCheck) {
             collected = collectMapsFromAPIResponse(br);
             logger.info("found collectMapsFromAPIResponse(" + vid.videoID + "):" + collected);
         }
@@ -2558,6 +2557,9 @@ public class YoutubeHelper {
         post.put("racyCheckOk", true);
         final PostRequest request = br.createJSonPostRequest("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", JSonStorage.serializeToJson(post));
         request.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, (String) client.get("userAgent"));
+        request.getHeaders().put("X-Youtube-Client-Name", "5");
+        request.getHeaders().put("X-Youtube-Client-Version", (String) client.get("clientVersion"));
+        request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://www.youtube.com");
         return request;
     }
 
@@ -2576,12 +2578,16 @@ public class YoutubeHelper {
         }
         final Map<String, Object> post = new LinkedHashMap<String, Object>();
         final Map<String, Object> client = new LinkedHashMap<String, Object>();
-        if (false) {
+        final int clientNameID;
+        if (vid.ageCheck) {
+            // This client can access age restricted videos (unless the uploader has disabled the 'allow embedding' option)
             client.put("clientName", "TVHTML5_SIMPLY_EMBEDDED_PLAYER");
             client.put("clientVersion", "2.0");
+            clientNameID = 85;
         } else {
             client.put("clientName", "TVHTML5");
             client.put("clientVersion", "7.20240724.13.00");
+            clientNameID = 7;
         }
         client.put("hl", "en");
         client.put("timeZone", "UTC");
@@ -2603,26 +2609,24 @@ public class YoutubeHelper {
         post.put("contentCheckOk", true);
         post.put("racyCheckOk", true);
         final PostRequest request = br.createJSonPostRequest("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", JSonStorage.serializeToJson(post));
+        request.getHeaders().put("X-Youtube-Client-Name", Integer.toString(clientNameID));
+        request.getHeaders().put("X-Youtube-Client-Version", (String) client.get("clientVersion"));
+        request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://www.youtube.com");
         return request;
     }
 
     protected int collectMapsFromAPIResponse(Browser br) throws InterruptedException, Exception {
-        if (vid.ageCheck) {
-            logger.info("collectMapsFromAPIResponse:skiped:login_required");
-            return -1;
-        } else if (!API_IOS_ENABLED && !API_TV_ENABLED) {
+        if (!API_IOS_ENABLED && !API_TV_ENABLED) {
             logger.info("collectMapsFromAPIResponse:disabled");
             return -1;
         }
         int ret = 0;
-        boolean loginRequired = false;
         try {
             final Browser brc = br.cloneBrowser();
             final Request request = buildAPI_TV_Request(brc);
             if (request != null) {
                 brc.getPage(request);
-                loginRequired = brc.getRegex("\"status\"\\s*:\\s*\"LOGIN_REQUIRED\"").patternFind();
-                if (loginRequired) {
+                if (brc.getRegex("\"status\"\\s*:\\s*\"LOGIN_REQUIRED\"").patternFind()) {
                     // skip parsing
                 } else if (request.getHttpConnection().getResponseCode() == 200) {
                     final Map<String, Object> response = JSonStorage.restoreFromString(request.getHtmlCode(), TypeRef.MAP);
@@ -2641,14 +2645,13 @@ public class YoutubeHelper {
             API_TV_ENABLED = false;
             logger.log(e);
         }
-        if (!loginRequired) {
+        if (!vid.ageCheck) {
             try {
                 final Browser brc = br.cloneBrowser();
                 final Request request = buildAPI_IOS_Request(brc);
                 if (request != null) {
                     brc.getPage(request);
-                    loginRequired = brc.getRegex("\"status\"\\s*:\\s*\"LOGIN_REQUIRED\"").patternFind();
-                    if (loginRequired) {
+                    if (brc.getRegex("\"status\"\\s*:\\s*\"LOGIN_REQUIRED\"").patternFind()) {
                         // skip parsing
                     } else if (request.getHttpConnection().getResponseCode() == 200) {
                         final Map<String, Object> response = JSonStorage.restoreFromString(request.getHtmlCode(), TypeRef.MAP);
