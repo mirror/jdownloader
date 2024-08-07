@@ -343,6 +343,8 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     private static final long  serialVersionUID = -3937346180905569896L;
 
     public static void confirmSelection(final MoveLinksMode moveLinksMode, final SelectionInfo<CrawledPackage, CrawledLink> selection, final boolean autoStart, final boolean clearLinkgrabber, final boolean doTabSwitch, final Priority newPriority, final PackageExpandBehavior packageExpandBehavior, final BooleanStatus forcedStart, final OnOfflineLinksAction handleOfflineLinks, final OnDupesLinksAction handleDupes) {
+        // TODO: Make use of this
+        final ConfirmLinksSettings clsDummy = new ConfirmLinksSettings();
         final Thread thread = new Thread() {
             public void run() {
                 OnOfflineLinksAction handleOfflineLoc;
@@ -645,7 +647,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                 final int numberofPackages = selection.getPackageViews().size();
                 final int numberofLinks = selection.getChildren().size();
                 // TODO: Finish implementation of ConfirmationDialogBehavior
-                final ConfirmationDialogBehavior confirmationDialogBehavior = ConfirmationDialogBehavior.DISABLED;
+                final ConfirmationDialogBehavior confirmationDialogBehavior = clsDummy.getConfirmationDialogBehavior();
                 if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && ((confirmationDialogBehavior == ConfirmationDialogBehavior.ENABLED_THRESHOLD_AUTO && !alreadyDisplayedOtherDialogToUser) || confirmationDialogBehavior == ConfirmationDialogBehavior.ENABLED_THRESHOLD_SIMPLE) && numberofPackages >= 1 && numberofLinks >= 1) {
                     /* Ask user if he really wants to move items to downloadlist. */
                     if (!UIOManager.I().showConfirmDialog(0, _GUI.T.literall_are_you_sure(), "Are you sure you want to move " + numberofPackages + " packages and " + numberofLinks + " links to downloadlist?", new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI.T.literally_yes(), _GUI.T.literall_no())) {
