@@ -50,7 +50,7 @@ public class VidhideCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vidhide.com", "vidhidepro.com", "moflix-stream.click", "javplaya.com", "filelions.to", "filelions.com", "filelions.online", "filelions.site", "alions.pro", "azipcdn.com" });
+        ret.add(new String[] { "vidhide.com", "vidhidepro.com", "moflix-stream.click", "javplaya.com", "filelions.to", "filelions.com", "filelions.online", "filelions.site", "alions.pro", "azipcdn.com", "vidhidepre.com" });
         return ret;
     }
 
@@ -78,7 +78,7 @@ public class VidhideCom extends XFileSharingProBasic {
     }
 
     public static final String getDefaultAnnotationPatternPartVidhideCom() {
-        return "/(?:d/[A-Za-z0-9]+|(?:embed-|e/|f/)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?)";
+        return "/(?:d/[A-Za-z0-9]+|(?:embed-|e/|f/|v/)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?)";
     }
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
@@ -139,11 +139,17 @@ public class VidhideCom extends XFileSharingProBasic {
         return false;
     }
 
-    private final String PATTERN_SPECIAL = "(?i)^https?://[^/]+/f/([a-z0-9]{12}).*";
+    private final String PATTERN_SPECIAL   = "(?i)^https?://[^/]+/f/([a-z0-9]{12}).*";
+    private final String PATTERN_SPECIAL_2 = "(?i)^https?://[^/]+/v/([a-z0-9]{12}).*";
 
     @Override
     protected URL_TYPE getURLType(final String url) {
-        if (url != null && url.matches(PATTERN_SPECIAL)) {
+        if (url == null) {
+            return null;
+        }
+        if (url.matches(PATTERN_SPECIAL)) {
+            return URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD;
+        } else if (url.matches(PATTERN_SPECIAL_2)) {
             return URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD;
         } else {
             return super.getURLType(url);
@@ -153,9 +159,12 @@ public class VidhideCom extends XFileSharingProBasic {
     @Override
     public String getFUIDFromURL(final DownloadLink link) {
         if (link != null && link.getPluginPatternMatcher() != null) {
-            final Regex special = new Regex(link.getPluginPatternMatcher(), PATTERN_SPECIAL);
-            if (special.patternFind()) {
-                return special.getMatch(0);
+            final Regex special1 = new Regex(link.getPluginPatternMatcher(), PATTERN_SPECIAL);
+            final Regex special2;
+            if (special1.patternFind()) {
+                return special1.getMatch(0);
+            } else if ((special2 = new Regex(link.getPluginPatternMatcher(), PATTERN_SPECIAL_2)).patternFind()) {
+                return special2.getMatch(0);
             }
         }
         return super.getFUIDFromURL(link);

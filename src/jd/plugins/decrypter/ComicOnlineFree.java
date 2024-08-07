@@ -16,8 +16,10 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -25,6 +27,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -49,10 +52,15 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "comiconlinefree.net", "comiconlinefree.com" });
-        ret.add(new String[] { "viewcomics.org", "viewcomics.co", "viewcomics.me" });
+        ret.add(new String[] { "azcomix.me", "viewcomics.org", "viewcomics.co", "viewcomics.me" });
         return ret;
+    }
+
+    private List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("viewcomics.co");
+        deadDomains.add("viewcomics.me");
+        return deadDomains;
     }
 
     public static String[] getAnnotationNames() {
@@ -73,15 +81,19 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        String url = param.getCryptedUrl();
+        String contenturl = param.getCryptedUrl();
         br.setFollowRedirects(true);
-        if (!new Regex(url, "(?i)/(comic/|issue-)").patternFind()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(contenturl, "(?i)/[^/]+/issue-\\d+$").patternFind() && !contenturl.endsWith("/full")) {
+            contenturl += "/full";
         }
-        if (new Regex(url, "(?i)/[^/]+/issue-\\d+$").patternFind() && !url.endsWith("/full")) {
-            url += "/full";
+        /* Replace domain in URL if we know that current domain is dead */
+        final String addedLinkDomain = Browser.getHost(contenturl, true);
+        String domainToUse = addedLinkDomain;
+        if (getDeadDomains().contains(addedLinkDomain)) {
+            domainToUse = this.getHost();
+            contenturl = contenturl.replaceFirst(Pattern.quote(addedLinkDomain), domainToUse);
         }
-        getPage(url);
+        getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -113,16 +125,17 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
                 ret.add(dl);
             }
         }
-        String[] images = br.getRegex("<img[^>]+class\\s*=\\s*\"[^\"]+chapter_img\"[^>]+data-original\\s*=\\s*\"([^\"]+)\"[^>]*>").getColumn(0);
-        if (images == null || images.length == 0) {
-            /* 2023-08-30: viewcomics.org */
-            images = br.getRegex("<img src=\"(https?://[^/]*\\.blogspot\\.com/[^\"]+)\" alt=").getColumn(0);
-        }
+        final String[] images = br.getRegex("(https?://[^\"]+)\" alt=.[^\"']*Page \\d+").getColumn(0);
         if (images != null && images.length > 0) {
+            final HashSet<String> dupes = new HashSet<String>();
             final String chapter_name = fpName;
             final int padlength = StringUtils.getPadLength(images.length);
             int page = 1;
             for (String imageURL : images) {
+                if (!dupes.add(imageURL)) {
+                    /* Skip dupes */
+                    continue;
+                }
                 String page_formatted = String.format(Locale.US, "%0" + padlength + "d", page++);
                 imageURL = Encoding.htmlDecode(imageURL);
                 final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(imageURL));
@@ -140,12 +153,7 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
             }
         }
         if (ret.isEmpty()) {
-            if (!br.containsHTML("class=\"chapter_select_col\"")) {
-                /* Empty page e.g. https://comiconlinefree.net/moon-knight-2016/issue-190 */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return ret;
     }

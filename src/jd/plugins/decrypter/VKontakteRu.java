@@ -1436,7 +1436,7 @@ public class VKontakteRu extends PluginForDecrypt {
         try {
             apiGetPageSafe("https://api.vk.com/method/wall.get?format=json&owner_id=" + ownerID + "&count=1&offset=0&filter=all&extended=0");
         } catch (final DecrypterException e) {
-            if (this.getCurrentAPIErrorcode() == 15) {
+            if (this.getCurrentAPIErrorcode(br) == 15) {
                 /* Access denied --> We have to be logged in via API --> Try website-fallback */
                 logger.info("API wall decryption failed because of 'Access denied' --> Trying via website");
                 return crawlWallWebsite(param);
@@ -2046,6 +2046,9 @@ public class VKontakteRu extends PluginForDecrypt {
         if (url_source == null) {
             throw new DecrypterException("Crawler broken");
         }
+        final UrlQuery query = UrlQuery.parse(br.getURL());
+        final String usernameFromURL = new Regex(br._getURL().getPath(), "/@(\\w+)").getMatch(0);
+        final String sectionFromURL = query.get("section");
         final String url_source_without_params = URLHelper.getUrlWithoutParams(url_source);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         boolean grabAlbums = false;
@@ -2110,6 +2113,9 @@ public class VKontakteRu extends PluginForDecrypt {
             /* 2023-11-17: New */
             final Map<String, Object> entries = restoreFromString(websiteJson, TypeRef.MAP);
             final List<Map<String, Object>> apiPrefetchCache = (List<Map<String, Object>>) entries.get("apiPrefetchCache");
+            if (apiPrefetchCache.isEmpty()) {
+                logger.info("No API prefetch data available");
+            }
             String videoPlaylistOwnerID = null;
             String videoPlaylistID = null;
             String videoPlaylistTitle = null;
@@ -2236,9 +2242,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 FilePackage videoPackage = null;
                 if (videoPlaylistOwnerID != null && videoPlaylistID != null) {
                     String internalSectionName;
-                    final String sectionNameURL = UrlQuery.parse(br.getURL()).get("section");
-                    if (sectionNameURL != null) {
-                        internalSectionName = sectionNameURL;
+                    if (sectionFromURL != null) {
+                        internalSectionName = sectionFromURL;
                     } else {
                         internalSectionName = "all";
                     }
@@ -2441,6 +2446,41 @@ public class VKontakteRu extends PluginForDecrypt {
         /* Videos */
         if (grabVideo) {
             ret.addAll(crawlVideos(this.br, fp));
+            final String videoPrefetchJson = br.getRegex("var newCur = (\\{.*?\\});\\s").getMatch(0);
+            processPrefetchVideoData: if (videoPrefetchJson != null) {
+                // 2024-08-07
+                final Map<String, Object> videodata = restoreFromString(videoPrefetchJson, TypeRef.MAP);
+                String currentSection = (String) videodata.get("showcaseSection");
+                if (currentSection == null) {
+                    currentSection = "all";
+                }
+                final Map<String, Object> video_info_map = (Map<String, Object>) JavaScriptEngineFactory.walkJson(videodata, "pageVideosList/{0}/" + currentSection);
+                if (video_info_map == null) {
+                    logger.info("Failed to find useful video prefetch data");
+                    break processPrefetchVideoData;
+                }
+                FilePackage videoPackage = FilePackage.getInstance();
+                if (usernameFromURL != null) {
+                    videoPackage = FilePackage.getInstance();
+                    videoPackage.setName(usernameFromURL + " - " + currentSection);
+                }
+                // final int video_count = ((Number) video_info_map.get("count")).intValue();
+                final List<List<Object>> items = (List<List<Object>>) video_info_map.get("list");
+                for (final List<Object> item : items) {
+                    final String thisOwnerID = item.get(0).toString();
+                    final String thisContentID = item.get(1).toString();
+                    final String videoTitle = item.get(3).toString();
+                    final String completeVideolink = getProtocol() + this.getHost() + "/video" + thisOwnerID + "_" + thisContentID;
+                    final DownloadLink video = createDownloadlink(completeVideolink);
+                    video.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN, Encoding.htmlDecode(videoTitle).trim());
+                    if (fp != null) {
+                        video._setFilePackage(fp);
+                    } else if (videoPackage != null) {
+                        video._setFilePackage(videoPackage);
+                    }
+                    ret.add(video);
+                }
+            }
         }
         if (grabDocs) {
             /* 2021-01-08 */
@@ -2606,6 +2646,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return this.crawlVideos(this.br, fp);
     }
 
+    @Deprecated
     private ArrayList<DownloadLink> crawlVideos(final Browser br, final FilePackage fp) {
         /* showInlineVideo = clips -> Short videos but internally both are the same */
         final String[] videoHTMLs = br.getRegex("(?:showVideo|showInlineVideo)\\(([^\\)]+)\\)").getColumn(0);
@@ -2683,7 +2724,7 @@ public class VKontakteRu extends PluginForDecrypt {
      * @return true = ready to retry, false = problem - failed!
      */
     private boolean apiHandleErrors(final Account account) throws Exception {
-        final int errcode = getCurrentAPIErrorcode();
+        final int errcode = getCurrentAPIErrorcode(br);
         switch (errcode) {
         case -1:
             break;
@@ -2882,7 +2923,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** Returns current API 'error_code', returns -1 if there is none */
-    private int getCurrentAPIErrorcode() {
+    private int getCurrentAPIErrorcode(final Browser br) {
         final String errcodeSTR = PluginJSonUtils.getJsonValue(br, "error_code");
         if (errcodeSTR == null) {
             return -1;

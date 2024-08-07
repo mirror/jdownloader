@@ -16,8 +16,10 @@
 package jd.plugins.decrypter;
 
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -191,6 +193,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        validateAddedLink(param);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         ret.addAll(handlePreCrawlProcess(param));
         if (!ret.isEmpty()) {
@@ -380,6 +383,16 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         return ret;
     }
 
+    protected void validateAddedLink(final CryptedLink param) throws Exception {
+        final String addedUrlPath = new URL(param.getCryptedUrl()).getPath();
+        final String addedUrlPathLowercase = new URL(param.getCryptedUrl()).getPath().toLowerCase(Locale.ENGLISH);
+        final boolean pathContainsNumbers = !addedUrlPathLowercase.replaceAll("\\d", "").equals(addedUrlPathLowercase);
+        if (addedUrlPath.equals(addedUrlPath.toLowerCase(Locale.ENGLISH)) && !pathContainsNumbers) {
+            /* Lowercase without numbers invalid URL e.g. https://clicksfly.com/payout */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
     /** Returns final link that shall be returned by the crawler. */
     protected String findFinallink(final Browser br) {
         String finallink = null;
@@ -436,7 +449,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
 
     /**
      * Override to do something after the captcha (also gets called when no captcha was needed).
-     * 
+     *
      */
     protected void hookAfterCaptcha(final Browser br, Form form) throws Exception {
         /*

@@ -35,8 +35,15 @@ public class ShrinkeMe extends MightyScriptAdLinkFly {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "shrinkme.io", "shrinke.me", "shrinkme.info", "shrinkme.site", "shrinkme.us" });
+        ret.add(new String[] { "shrinke.me", "shrinkme.io", "shrinkme.info", "shrinkme.site", "shrinkme.us", "shrinkme.dev", "shrinke.us" });
         return ret;
+    }
+
+    @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("shrinkme.io");
+        return deadDomains;
     }
 
     public static String[] getAnnotationNames() {

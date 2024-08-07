@@ -150,7 +150,7 @@ public class CompuPasteCom extends PluginForDecrypt {
                 captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 br.submitForm(captchaForm);
             } else {
-                logger.info("No captcha required or required captcha is not supported");
+                logger.info("No captcha required or required type of captcha is not supported");
             }
         }
         String title = null;

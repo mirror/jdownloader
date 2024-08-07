@@ -38,7 +38,9 @@ public class ComunidadmontepinarEs extends antiDDoSForDecrypt {
         final String episode = new Regex(param.getCryptedUrl(), "/\\d+x(\\d+)").getMatch(0);
         final String title = "Comunidad Montepinar - La Que Se Avecina" + "_S" + season + "E" + episode;
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final boolean findSubtitles;
+        String hlsMaster = null;
+        Browser brc = br.cloneBrowser();
+        final boolean lookForSubtitles;
         if (m3u8IframeURLNew != null) {
             getPage(m3u8IframeURLNew);
             final String[][] qualities = br.getRegex("<source src=\"(https?://[^\"]+)\" type='video/mp4' label='(\\d+p)'[^>]*/>").getMatches();
@@ -50,15 +52,17 @@ public class ComunidadmontepinarEs extends antiDDoSForDecrypt {
                 video.setAvailable(true);
                 ret.add(video);
             }
-            findSubtitles = true;
+            lookForSubtitles = true;
         } else {
-            Browser brc = br.cloneBrowser();
-            getPage(brc, "https://api.comunidadmontepinar.es/token");
+            brc = br.cloneBrowser();
+            brc.getHeaders().put("Origin", "https://" + br.getHost());
+            brc.getHeaders().put("Priority", "u=1, i");
+            getPage(brc, "https://api2.comunidadmontepinar.es/token");
             final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             final String token = entries.get("token").toString();
             final Browser brc2 = br.cloneBrowser();
-            getPage(brc2, m3u8IframeURLOld.replaceFirst("index\\.html$", "static/load.js"));
-            String hlsMaster = brc2.getRegex("\\?u=\"\\s*\\+\\s*\"(https?://[^\"]+\\.m3u8)").getMatch(0);
+            getPage(brc2, m3u8IframeURLOld.replaceFirst("index\\.html$", "load.js"));
+            hlsMaster = brc2.getRegex("\\?u=\"\\s*\\+\\s*\"(https?://[^\"]+\\.m3u8)").getMatch(0);
             if (hlsMaster != null) {
                 hlsMaster += "?" + token;
             } else {
@@ -78,19 +82,21 @@ public class ComunidadmontepinarEs extends antiDDoSForDecrypt {
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // }
             brc = br.cloneBrowser();
+            /* Access that iframe to find subtitles. */
+            lookForSubtitles = false;
+            if (lookForSubtitles) {
+                getPage(m3u8IframeURLOld + "?u=" + hlsMaster);
+            }
+        }
+        if (hlsMaster != null) {
             getPage(brc, hlsMaster);
             final ArrayList<DownloadLink> hlsResult = GenericM3u8Decrypter.parseM3U8(this, hlsMaster, brc, param.getCryptedUrl(), null, title);
             if (hlsResult == null || hlsResult.isEmpty()) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             ret.addAll(hlsResult);
-            /* Access that iframe to find subtitles. */
-            findSubtitles = false;
-            if (findSubtitles) {
-                getPage(m3u8IframeURLOld + "?u=" + hlsMaster);
-            }
         }
-        if (findSubtitles) {
+        if (lookForSubtitles) {
             final String subtitles[][] = br.getRegex("kind\\s*=\\s*\"captions\"\\s*src\\s*=\\s*\"([^\"]*\\.vtt)\"\\s*srclang\\s*=\\s*\"(.*?)\"").getMatches();
             if (subtitles != null && subtitles.length > 0) {
                 for (String[] subtitle : subtitles) {
