@@ -39,6 +39,7 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.InstagramConfig;
 import org.jdownloader.plugins.components.config.InstagramConfig.ActionOnRateLimitReached;
@@ -495,31 +496,34 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
      *            Ensures that we are on this URL after request has been performed.
      */
     private void getPageAutoLogin(final Account account, final AtomicBoolean loginState, Boolean forceLogin, final String urlCheck, final CryptedLink param, final Browser br, final Request request, final String rhxGis, final String variables) throws Exception {
-        if (PluginJsonConfig.get(InstagramConfig.class).isEnforceLoginIfAccountIsAvailable() && account != null && !loginState.get()) {
-            logger.info("Performing forced login according to user plugin setting");
-            this.loginOrFail(account, loginState);
-        } else if (Boolean.TRUE.equals(forceLogin) && !loginState.get()) {
-            logger.info("Performing forced login");
-            this.loginOrFail(account, loginState);
-        }
-        getPage(param, br, request, null, null);
-        AccountRequiredException accountRequired = null;
         try {
-            InstaGramCom.checkErrors(this, br);
-        } catch (final AccountRequiredException e) {
-            logger.log(e);
-            if (account == null) {
-                // fail fast
-                throw e;
-            } else if (loginState.get()) {
-                // already logged in?
-                throw e;
-            } else {
-                accountRequired = e;
+            if (PluginJsonConfig.get(InstagramConfig.class).isEnforceLoginIfAccountIsAvailable() && account != null && !loginState.get()) {
+                logger.info("Performing forced login according to user plugin setting");
+                this.loginOrFail(account, loginState);
+            } else if (Boolean.TRUE.equals(forceLogin) && !loginState.get()) {
+                logger.info("Performing forced login");
+                this.loginOrFail(account, loginState);
             }
-        }
-        if (accountRequired != null || (urlCheck != null && !br.getURL().contains(urlCheck))) {
+            getPage(param, br, request, null, null);
+            logger.info("getPage1");
+            AccountRequiredException accountRequired = null;
             try {
+                InstaGramCom.checkErrors(this, br);
+                logger.info("No error1");
+            } catch (final AccountRequiredException e) {
+                logger.log(e);
+                if (account == null) {
+                    // fail fast
+                    throw e;
+                } else if (loginState.get()) {
+                    // already logged in?
+                    throw e;
+                } else {
+                    accountRequired = e;
+                }
+            }
+            if (accountRequired != null || (urlCheck != null && !br.getURL().contains(urlCheck))) {
+                logger.info("if");
                 /*
                  * E.g. private gallery and we're not logged in or we're not logged in with an account with the required permissions ->
                  * Redirect to main page or URL of the profile which uploaded the gallery.
@@ -534,19 +538,25 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 } else {
                     loginOrFail(account, loginState);
                     getPage(param, br, request, null, null);
+                    logger.info("getPage2");
                     try {
                         InstaGramCom.checkErrors(this, br);
                         if (urlCheck != null && !br.getURL().contains(urlCheck)) {
                             throw new AccountRequiredException();
                         }
+                        logger.info("No error2");
                     } catch (final AccountRequiredException e) {
                         logger.exception("Logged in but URL still isn't accessible", e);
                         throw e;
                     }
                 }
-            } catch (Exception e) {
-                logger.log(e);
-                throw e;
+            }
+        } catch (Exception e) {
+            logger.log(e);
+            throw e;
+        } finally {
+            if (logger instanceof LogSource) {
+                ((LogSource) logger).flush();
             }
         }
     }
