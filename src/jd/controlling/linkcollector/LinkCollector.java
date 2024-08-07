@@ -2716,11 +2716,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             this.autoStartOptions = autoStartOptions;
         }
 
-        public final boolean isForceDownloads() {
+        public final Boolean isForceDownloads() {
             return forceDownloads;
         }
 
-        public final void setForceDownloads(boolean forceDownloads) {
+        public final void setForceDownloads(Boolean forceDownloads) {
             this.forceDownloads = forceDownloads;
         }
 
@@ -2729,7 +2729,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
 
         public final void setHandleOffline(OnOfflineLinksAction handleOffline) {
-            if (handleOffline == OnOfflineLinksAction.GLOBAL) {
+            if (handleOffline == null || handleOffline == OnOfflineLinksAction.GLOBAL) {
+                /* Default */
                 this.handleOffline = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
             } else {
                 this.handleOffline = handleOffline;
@@ -2741,26 +2742,27 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
 
         public final void setHandleDupes(OnDupesLinksAction handleDupes) {
-            if (handleDupes == OnDupesLinksAction.GLOBAL) {
+            if (handleDupes == null || handleDupes == OnDupesLinksAction.GLOBAL) {
+                /* Default */
                 this.handleDupes = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
             } else {
                 this.handleDupes = handleDupes;
             }
         }
 
-        public final boolean isClearLinkgrabberlistOnConfirm() {
+        public final Boolean isClearLinkgrabberlistOnConfirm() {
             return clearLinkgrabberlistOnConfirm;
         }
 
-        public final void setClearLinkgrabberlistOnConfirm(boolean clearLinkgrabberlistOnConfirm) {
+        public final void setClearLinkgrabberlistOnConfirm(Boolean clearLinkgrabberlistOnConfirm) {
             this.clearLinkgrabberlistOnConfirm = clearLinkgrabberlistOnConfirm;
         }
 
-        public final boolean isSwitchToDownloadlistOnConfirm() {
+        public final Boolean isSwitchToDownloadlistOnConfirm() {
             return switchToDownloadlistOnConfirm;
         }
 
-        public final void setSwitchToDownloadlistOnConfirm(boolean switchToDownloadlistOnConfirm) {
+        public final void setSwitchToDownloadlistOnConfirm(Boolean switchToDownloadlistOnConfirm) {
             this.switchToDownloadlistOnConfirm = switchToDownloadlistOnConfirm;
         }
 
@@ -2807,12 +2809,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         private MoveLinksMode              moveLinksMode                          = MoveLinksMode.AUTO;
         private Boolean                    autoStartDownloads                     = null;
         private AutoStartOptions           autoStartOptions                       = CFG_LINKGRABBER.CFG.getAutoConfirmManagerAutoStart();
-        private Priority                   priority                               = Priority.DEFAULT;
-        private boolean                    forceDownloads                         = CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads();
+        private Priority                   priority                               = null;
+        private Boolean                    forceDownloads                         = CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads();
         private OnOfflineLinksAction       handleOffline                          = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
         private OnDupesLinksAction         handleDupes                            = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
-        private boolean                    clearLinkgrabberlistOnConfirm          = CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm();
-        private boolean                    switchToDownloadlistOnConfirm          = JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled();
+        private Boolean                    clearLinkgrabberlistOnConfirm          = CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm();
+        private Boolean                    switchToDownloadlistOnConfirm          = JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled();
         private PackageExpandBehavior      packageExpandBehavior                  = PackageExpandBehavior.GLOBAL;
         private ConfirmationDialogBehavior confirmationDialogBehavior             = ConfirmationDialogBehavior.DISABLED;
         private int                        confirmationDialogThresholdMinPackages = 1;

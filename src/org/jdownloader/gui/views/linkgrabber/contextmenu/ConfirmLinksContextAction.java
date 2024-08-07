@@ -54,6 +54,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.config.Order;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.ConfirmIncompleteArchiveAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
@@ -209,13 +210,12 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         };
     }
 
-    private boolean ctrlToggle = true;
-
     public static String getTranslationForCtrlToggle() {
         return _JDT.T.ConfirmLinksContextAction_getTranslationForCtrlToggle();
     }
 
     @Customizer(link = "#getTranslationForCtrlToggle")
+    @Order(301)
     public boolean isCtrlToggle() {
         return ctrlToggle;
     }
@@ -223,8 +223,6 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     public void setCtrlToggle(boolean ctrlToggle) {
         this.ctrlToggle = ctrlToggle;
     }
-
-    private boolean forceDownloads = false;
 
     public static String getTranslationForForceDownloads() {
         return _JDT.T.ConfirmLinksContextAction_getTranslationForForceDownloads();
@@ -239,23 +237,26 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         this.forceDownloads = forceDownloads;
     }
 
-    private Priority              piority                                               = Priority.DEFAULT;
-    private boolean               assignPriorityEnabled                                 = false;
-    private PackageExpandBehavior packageExpandBehavior                                 = PackageExpandBehavior.GLOBAL;
-    private OnOfflineLinksAction  handleOffline                                         = OnOfflineLinksAction.GLOBAL;
-    private OnDupesLinksAction    handleDupes                                           = OnDupesLinksAction.GLOBAL;
-    private AutoStartOptions      autoStart                                             = AutoStartOptions.AUTO;
-    private boolean               clearListAfterConfirm                                 = false;
-    private boolean               metaCtrl                                              = false;
-    private boolean               moveToDownloadlistConfirmationDialogEnabled           = false;
-    private int                   minNumberofPackagesForConfirmMoveToDownloadlistDialog = 1;
-    private int                   minNumberofLinksForConfirmMoveToDownloadlistDialog    = 1;
+    private boolean                    ctrlToggle                                            = true;
+    private boolean                    forceDownloads                                        = false;
+    private Priority                   piority                                               = Priority.DEFAULT;
+    private boolean                    assignPriorityEnabled                                 = false;
+    private PackageExpandBehavior      packageExpandBehavior                                 = PackageExpandBehavior.GLOBAL;
+    private OnOfflineLinksAction       handleOffline                                         = OnOfflineLinksAction.GLOBAL;
+    private OnDupesLinksAction         handleDupes                                           = OnDupesLinksAction.GLOBAL;
+    private AutoStartOptions           autoStart                                             = AutoStartOptions.AUTO;
+    private boolean                    clearListAfterConfirm                                 = false;
+    private boolean                    metaCtrl                                              = false;
+    private ConfirmationDialogBehavior confirmationDialogBehavior                            = ConfirmationDialogBehavior.DISABLED;
+    private int                        minNumberofPackagesForConfirmMoveToDownloadlistDialog = 1;
+    private int                        minNumberofLinksForConfirmMoveToDownloadlistDialog    = 1;
 
     public static String getTranslationForAssignPriorityEnabled() {
         return _JDT.T.ConfirmLinksContextAction_getTranslationForAssignPriorityEnabled();
     }
 
     @Customizer(link = "#getTranslationForAssignPriorityEnabled")
+    @Order(20)
     public boolean isAssignPriorityEnabled() {
         return assignPriorityEnabled;
     }
@@ -269,6 +270,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     }
 
     @Customizer(link = "#getTranslationForPriority")
+    @Order(21)
     public Priority getPriority() {
         return piority;
     }
@@ -282,6 +284,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     }
 
     @Customizer(link = "#getTranslationForPackageExpandBehavior")
+    @Order(30)
     public PackageExpandBehavior getPackageExpandBehavior() {
         return packageExpandBehavior;
     }
@@ -290,17 +293,18 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         this.packageExpandBehavior = packageExpandBehavior;
     }
 
-    public static String getTranslationForMoveToDownloadlistConfirmationDialogEnabled() {
-        return "Display confirmation dialog if more than a specific amount of packages and links is to be moved?";
+    public static String getTranslationForConfirmationDialogBehavior() {
+        return "Add links conformation dialog behavior";
     }
 
-    @Customizer(link = "#getTranslationForMoveToDownloadlistConfirmationDialogEnabled")
-    public boolean isMoveToDownloadlistConfirmationDialogEnabled() {
-        return moveToDownloadlistConfirmationDialogEnabled;
+    @Customizer(link = "#getTranslationForConfirmationDialogBehavior")
+    @Order(40)
+    public ConfirmationDialogBehavior getConfirmationDialogBehavior() {
+        return this.confirmationDialogBehavior;
     }
 
-    public void setMoveToDownloadlistConfirmationDialogEnabled(boolean bool) {
-        this.moveToDownloadlistConfirmationDialogEnabled = bool;
+    public void setConfirmationDialogBehavior(ConfirmationDialogBehavior behavior) {
+        this.confirmationDialogBehavior = behavior;
     }
 
     public static String getTranslationForMinNumberofPackagesForMoveToDownloadlistConfirmDialog() {
@@ -308,6 +312,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     }
 
     @Customizer(link = "#getTranslationForMinNumberofPackagesForMoveToDownloadlistConfirmDialog")
+    @Order(41)
     public int getMinNumberofPackagesForMoveToDownloadlistConfirmDialog() {
         return this.minNumberofPackagesForConfirmMoveToDownloadlistDialog;
     }
@@ -321,6 +326,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     }
 
     @Customizer(link = "#getTranslationForMinNumberofLinksForMoveToDownloadlistConfirmDialog")
+    @Order(42)
     public int getMinNumberofLinksForMoveToDownloadlistConfirmDialog() {
         return this.minNumberofLinksForConfirmMoveToDownloadlistDialog;
     }
@@ -699,6 +705,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     }
 
     @Customizer(link = "#getTranslationForHandleOffline")
+    @Order(10)
     public OnOfflineLinksAction getHandleOffline() {
         return handleOffline;
     }
@@ -716,6 +723,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     }
 
     @Customizer(link = "#getTranslationForHandleDupes")
+    @Order(11)
     public OnDupesLinksAction getHandleDupes() {
         return handleDupes;
     }
@@ -727,7 +735,6 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         this.handleDupes = handleDupes;
         return this;
     }
-    //
 
     public ConfirmLinksContextAction() {
         super(false, true);
@@ -765,7 +772,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         if (handleDupes != OnDupesLinksAction.GLOBAL) {
             cls.setHandleDupes(handleDupes);
         }
-        cls.setConfirmationDialogBehavior(ConfirmationDialogBehavior.DISABLED); // TODO: Add setting
+        cls.setConfirmationDialogBehavior(this.confirmationDialogBehavior);
         cls.setConfirmationDialogThresholdMinPackages(minNumberofLinksForConfirmMoveToDownloadlistDialog);
         cls.setConfirmationDialogThresholdMinLinks(minNumberofLinksForConfirmMoveToDownloadlistDialog);
         if (isSelectionOnly()) {
@@ -787,6 +794,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         return ret;
     }
 
+    @Order(300)
     public AutoStartOptions getAutoStart() {
         return autoStart;
     }
@@ -801,6 +809,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     }
 
     @Customizer(link = "#getTranslationForClearListAfterConfirm")
+    @Order(200)
     public boolean isClearListAfterConfirm() {
         return clearListAfterConfirm;
     }
@@ -860,6 +869,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     }
 
     @Customizer(link = "#getTranslationForSelectionOnly")
+    @Order(1)
     public boolean isSelectionOnly() {
         return selectionOnly;
     }
