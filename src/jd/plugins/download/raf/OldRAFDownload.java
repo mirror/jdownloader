@@ -39,6 +39,9 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.CrossSystem.OSFamily;
+import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
@@ -450,10 +453,6 @@ public class OldRAFDownload extends DownloadInterface {
         synchronized (chunks) {
             chunks.notifyAll();
         }
-    }
-
-    protected synchronized boolean writeBytes(RAFChunk chunk) {
-        return writeChunkBytes(chunk);
     }
 
     /**
@@ -1031,24 +1030,21 @@ public class OldRAFDownload extends DownloadInterface {
         }
     }
 
-    protected boolean writeChunkBytes(RAFChunk chunk) {
+    protected int write(RAFChunk chunk) {
+        int written = -1;
         try {
             synchronized (outputPartFile) {
                 final RandomAccessFile raf = outputPartFileRaf.get();
-                raf.seek(chunk.getWritePosition());
-                raf.write(chunk.buffer.getInternalBuffer(), 0, chunk.buffer.size());
-                if (chunk.getID() >= 0) {
-                    final long[] chunkProgress = downloadable.getChunksProgress();
-                    chunkProgress[chunk.getID()] = chunk.getCurrentBytesPosition() - 1;
-                    downloadable.setChunksProgress(chunkProgress);
-                }
+                final long writePos = chunk.getCurrentBytesPosition();
+                raf.seek(writePos);
+                written = chunk.write(raf);
             }
             DownloadController.getInstance().requestSaving();
-            return true;
+            return written;
         } catch (Exception e) {
             LogSource.exception(logger, e);
             error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, Exceptions.getStackTrace(e), LinkStatus.VALUE_LOCAL_IO_ERROR));
-            return false;
+            return written;
         }
     }
 
@@ -1105,5 +1101,28 @@ public class OldRAFDownload extends DownloadInterface {
     @Override
     public Downloadable getDownloadable() {
         return downloadable;
+    }
+
+    private Integer allocationUnitSize = null;
+
+    protected synchronized int getAllocationUnitSize() {
+        if (allocationUnitSize == null) {
+            final File outputPartFile = this.outputPartFile;
+            if (outputPartFile == null) {
+                return 4096;
+            }
+            final OperatingSystem os = CrossSystem.getOS();
+            if (os.isMinimum(OperatingSystem.WINDOWS_XP)) {
+                allocationUnitSize = org.jdownloader.jna.windows.FileSystemHelper.getAllocationUnitSize(outputPartFile);
+            } else if (os.getFamily() == OSFamily.BSD || os.getFamily() == OSFamily.LINUX /* || os.getFamily()==OSFamily.MAC */) {
+                // TODO: check MAC compatibility, but should be fine as it is BSD based
+                allocationUnitSize = org.jdownloader.jna.unix.FileSystemHelper.getAllocationUnitSize(outputPartFile);
+            }
+            if (allocationUnitSize == null || allocationUnitSize.intValue() < 0) {
+                allocationUnitSize = 4096;
+            }
+            logger.info("AllocationUnitSize:" + allocationUnitSize + "|" + outputPartFile);
+        }
+        return allocationUnitSize.intValue();
     }
 }

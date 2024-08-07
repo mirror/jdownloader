@@ -1,5 +1,6 @@
 package jd.plugins.download.raf;
 
+import java.io.DataOutput;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.SocketException;
@@ -41,12 +42,12 @@ public class RAFChunk extends Thread {
      * kleinen Buffer und eine sehr hohe Intervalzeit. Das fuehrt zu verstaerkt intervalartigem laden und ist ungewuenscht
      */
     public static final long                MIN_CHUNKSIZE                          = 100 * 1024;
-    private long                            chunkBytesLoaded                       = 0;
+    private volatile long                   chunkBytesLoaded                       = 0;
     private URLConnectionAdapter            connection;
     private long                            endByte;
     private final int                       id;
     private MeteredThrottledInputStream     inputStream;
-    private long                            startByte;
+    private volatile long                   startByte;
     private long                            bytes2Do                               = -1;
     private AtomicBoolean                   connectionclosed                       = new AtomicBoolean(false);
     private long                            requestedEndByte;
@@ -56,6 +57,7 @@ public class RAFChunk extends Thread {
     protected ReusableByteArrayOutputStream buffer                                 = null;
     private AtomicBoolean                   running                                = new AtomicBoolean(false);
     private URLConnectionAdapter            originalConnection;
+    private boolean                         writeCompleteFlag                      = false;
 
     public URLConnectionAdapter getOriginalConnection() {
         return originalConnection;
@@ -103,10 +105,6 @@ public class RAFChunk extends Thread {
 
     @Deprecated
     public void setMaximalSpeed(final int i) {
-    }
-
-    private void addChunkBytesLoaded(long limit) {
-        chunkBytesLoaded += limit;
     }
 
     /**
@@ -259,13 +257,17 @@ public class RAFChunk extends Thread {
             long bytesWritten = 0;
             while (!isExternalyAborted() && !connectionclosed.get()) {
                 try {
-                    buffer.reset();
                     if (reachedEOF == true) {
                         /* we already reached EOF, so nothing more to read */
-                        toWrite = -1;
+                        final int bufSize = buffer.size();
+                        if (bufSize > 0) {
+                            toWrite = bufSize;
+                        } else {
+                            toWrite = -1;
+                        }
                     } else {
                         /* lets try to read some data */
-                        toWrite = 0;
+                        toWrite = buffer.size();
                     }
                     lastFlush = System.currentTimeMillis();
                     while (!reachedEOF && buffer.free() > 0 && buffer.size() <= flushLevel && !isExternalyAborted() && !connectionclosed.get()) {
@@ -310,7 +312,7 @@ public class RAFChunk extends Thread {
                             bytesRead += read;
                             toWrite += read;
                             dl.totalLinkBytesLoadedLive.getAndAdd(read);
-                            buffer.setUsed(toWrite);
+                            buffer.increaseUsed(read);
                         } else if (read == -1) {
                             /* we reached EOF */
                             logger.warning("reached EOF");
@@ -336,12 +338,16 @@ public class RAFChunk extends Thread {
                     if (toWrite > 0) {
                         logger.warning("flush:exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
                         try {
-                            final long flush = toWrite;
-                            toWrite = -1;
-                            dl.addToTotalLinkBytesLoaded(flush, false);
-                            addChunkBytesLoaded(flush);
-                            dl.writeBytes(this);
-                            bytesWritten += flush;
+                            writeCompleteFlag = true;
+                            final long flush = dl.write(this);
+                            if (flush > 0) {
+                                dl.addToTotalLinkBytesLoaded(flush, false);
+                                bytesWritten += flush;
+                                toWrite -= flush;
+                                if (toWrite == 0) {
+                                    toWrite = -1;
+                                }
+                            }
                             logger.warning("flushed:exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
                         } catch (final Throwable throwable) {
                             LogSource.exception(logger, throwable);
@@ -349,20 +355,25 @@ public class RAFChunk extends Thread {
                     }
                     if (!isExternalyAborted() && !connectionclosed.get()) {
                         throw e4;
+                    } else {
+                        toWrite = -1;
+                        break;
                     }
-                    toWrite = -1;
-                    break;
                 }
                 if (toWrite == -1 || isExternalyAborted() || connectionclosed.get()) {
                     if (toWrite > 0) {
                         logger.warning("flush:exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
                         try {
-                            final long flush = toWrite;
-                            toWrite = -1;
-                            dl.addToTotalLinkBytesLoaded(flush, false);
-                            addChunkBytesLoaded(flush);
-                            dl.writeBytes(this);
-                            bytesWritten += flush;
+                            writeCompleteFlag = true;
+                            final long flush = dl.write(this);
+                            if (flush > 0) {
+                                dl.addToTotalLinkBytesLoaded(flush, false);
+                                bytesWritten += flush;
+                                toWrite -= flush;
+                                if (toWrite == 0) {
+                                    toWrite = -1;
+                                }
+                            }
                             logger.warning("flushed:exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
                         } catch (final Throwable throwable) {
                             LogSource.exception(logger, throwable);
@@ -373,12 +384,15 @@ public class RAFChunk extends Thread {
                 }
                 if (toWrite > 0) {
                     remoteIO = false;
-                    final long flush = toWrite;
-                    toWrite = -1;
-                    dl.addToTotalLinkBytesLoaded(flush, false);
-                    addChunkBytesLoaded(flush);
-                    dl.writeBytes(this);
-                    bytesWritten += flush;
+                    final long flush = dl.write(this);
+                    if (flush > 0) {
+                        dl.addToTotalLinkBytesLoaded(flush, false);
+                        bytesWritten += flush;
+                        toWrite -= flush;
+                        if (toWrite == 0) {
+                            toWrite = -1;
+                        }
+                    }
                 }
                 /* enough bytes loaded */
                 if (bytes2Do == 0 && endByte > 0) {
@@ -386,6 +400,16 @@ public class RAFChunk extends Thread {
                 }
                 if (getCurrentBytesPosition() > endByte && endByte > 0) {
                     break;
+                }
+            }
+            if (toWrite > 0) {
+                writeCompleteFlag = true;
+                remoteIO = false;
+                final long flush = dl.write(this);
+                if (flush > 0) {
+                    dl.addToTotalLinkBytesLoaded(flush, false);
+                    bytesWritten += flush;
+                    toWrite -= flush;
                 }
             }
             logger.info("ExternalAbort: " + isExternalyAborted());
@@ -464,6 +488,37 @@ public class RAFChunk extends Thread {
         return getCurrentBytesPosition() - startByte;
     }
 
+    protected int write(final DataOutput raf) throws IOException {
+        final int bufSize = buffer.size();
+        final int toWrite;
+        if (writeCompleteFlag || buffer.free() == 0) {
+            toWrite = bufSize;
+        } else {
+            final int allocationUnitSize = dl.getAllocationUnitSize();
+            toWrite = bufSize - (bufSize % allocationUnitSize);
+        }
+        if (toWrite == 0) {
+            return 0;
+        }
+        raf.write(buffer.getInternalBuffer(), 0, toWrite);
+        if (toWrite == bufSize) {
+            buffer.reset();
+        } else {
+            final int remaining = bufSize - toWrite;
+            final byte[] buf = buffer.getInternalBuffer();
+            System.arraycopy(buf, toWrite, buf, 0, remaining);
+            buffer.setUsed(remaining);
+        }
+        chunkBytesLoaded += toWrite;
+        final int chunkID = getID();
+        if (chunkID >= 0) {
+            final long[] chunkProgress = downloadable.getChunksProgress();
+            chunkProgress[chunkID] = getCurrentBytesPosition() - 1;
+            downloadable.setChunksProgress(chunkProgress);
+        }
+        return toWrite;
+    }
+
     public long getChunkSize() {
         return endByte - startByte + 1;
     }
@@ -488,17 +543,6 @@ public class RAFChunk extends Thread {
 
     public long getStartByte() {
         return startByte;
-    }
-
-    /**
-     * Gibt die Schreibposition des Chunks in der gesamtfile zurueck
-     *
-     * @throws Exception
-     */
-    public long getWritePosition() throws Exception {
-        long c = getCurrentBytesPosition();
-        long l = buffer.size();
-        return c - l;
     }
 
     /**

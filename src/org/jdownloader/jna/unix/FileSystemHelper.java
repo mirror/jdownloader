@@ -1,4 +1,4 @@
-package org.jdownloader.jna.linux;
+package org.jdownloader.jna.unix;
 
 import java.io.File;
 
