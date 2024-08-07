@@ -498,7 +498,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                         } else if (toDelete.contains(cl)) {
                             /* Item has already been processed. */
                             continue;
-                        } else if (!cl.getDownloadLink().isAvailabilityStatusChecked() || !cl.getDownloadLink().isAvailable()) {
+                        } else if (!cl.getDownloadLink().isAvailabilityStatusChecked() || cl.getDownloadLink().isAvailable()) {
                             /* Item has not been checked or item is online -> We are only collecting offline items here. */
                             continue;
                         }
