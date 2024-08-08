@@ -823,7 +823,7 @@ public class OldRAFDownload extends DownloadInterface {
                 throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_doCRC2_failed(hashResult.getHashInfo().getType()));
             }
         }
-        boolean renameOkay = downloadable.rename(outputPartFile, outputCompleteFile);
+        final boolean renameOkay = downloadable.rename(outputPartFile, outputCompleteFile);
         if (renameOkay) {
             /* save absolutepath as final location property */
             // downloadable.setFinalFileOutput(outputCompleteFile.getAbsolutePath());
@@ -837,7 +837,14 @@ public class OldRAFDownload extends DownloadInterface {
                     outputCompleteFile.setLastModified(System.currentTimeMillis());
                 }
             } catch (final Throwable e) {
-                LogSource.exception(logger, e);
+                logger.log(e);
+            }
+            try {
+                if (CrossSystem.isWindows()) {
+                    logger.info("Removed SparseFlag:" + outputCompleteFile + "|" + org.jdownloader.jna.windows.FileSystemHelper.FSCTL_SET_SPARSE(outputCompleteFile, false));
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
             }
         } else {
             error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
