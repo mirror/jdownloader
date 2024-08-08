@@ -32,6 +32,31 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNodeVisitor;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
+import jd.plugins.hoster.YoutubeDashV2;
+import jd.utils.locale.JDL;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -80,31 +105,6 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
-
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNodeVisitor;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DecrypterRetryException;
-import jd.plugins.DecrypterRetryException.RetryReason;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.UserAgents;
-import jd.plugins.components.UserAgents.BrowserName;
-import jd.plugins.hoster.YoutubeDashV2;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TbCmV2 extends PluginForDecrypt {
@@ -321,8 +321,8 @@ public class TbCmV2 extends PluginForDecrypt {
         /**
          * 2024-07-05 e.g.
          * https://www.google.com/url?sa=t&source=web&rct=j&opi=123456&url=https://www.youtube.com/watch%3Fv%3DREDACTED&ved=REDACTED
-         * &usg=REDACTED </br>
-         * We can safely url-decode this URL as the items we are looking for are not encoded anyways, all IDs are [a-z0-9_-]
+         * &usg=REDACTED </br> We can safely url-decode this URL as the items we are looking for are not encoded anyways, all IDs are
+         * [a-z0-9_-]
          */
         cleanedurl = Encoding.htmlDecode(cleanedurl);
         videoID = getVideoIDFromUrl(cleanedurl);
@@ -376,7 +376,8 @@ public class TbCmV2 extends PluginForDecrypt {
                 CrawledLink checkSource = getCurrentLink().getSourceLink();
                 while (checkSource != null) {
                     // this playlist is result of /releases crawling, don't ask again
-                    if (StringUtils.endsWithCaseInsensitive(checkSource.getURL(), "/releases")) {
+                    final String checkURL = checkSource.getURL();
+                    if (canHandle(checkURL) && (StringUtils.endsWithCaseInsensitive(checkURL, "/releases") || StringUtils.containsIgnoreCase(checkURL, "/channel/"))) {
                         playListAction = IfUrlisAPlaylistAction.PROCESS;
                         break;
                     } else {
@@ -1194,8 +1195,8 @@ public class TbCmV2 extends PluginForDecrypt {
         } else if (channelID != null) {
             /* Channel via channelID (legacy - urls containing only channelID are not common anymore) */
             if (channelTabFromURL == null) {
-                userOrPlaylistURL = getChannelURLOLD(channelID, "videos");
-                desiredChannelTab = "Videos";
+                /* do not modify channelID links */
+                userOrPlaylistURL = referenceUrl;
             } else {
                 userOrPlaylistURL = getChannelURLOLD(channelID, channelTabFromURL);
                 desiredChannelTab = channelTabFromURL;
@@ -1266,6 +1267,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 Map<String, Object> shortstab = null;
                 Map<String, Object> releasestab = null;
                 Map<String, Object> playlisttab = null;
+                Map<String, Object> selectedtab = null;
                 final List<Map<String, Object>> tabs = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(rootMap, "contents/twoColumnBrowseResultsRenderer/tabs");
                 if (tabs != null) {
                     for (final Map<String, Object> tab : tabs) {
@@ -1287,7 +1289,10 @@ public class TbCmV2 extends PluginForDecrypt {
                             final String browseEndpoint_Params = (String) JavaScriptEngineFactory.walkJson(tabRenderer, "endpoint/browseEndpoint/params");
                             final String webCommandMetadata_url = (String) JavaScriptEngineFactory.walkJson(tabRenderer, "endpoint/commandMetadata/webCommandMetadata/url");
                             final Boolean selected = (Boolean) tabRenderer.get("selected");
-                            final List<Map<String, Object>> varrayTmp = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tabRenderer, "content/richGridRenderer/contents");
+                            List<Map<String, Object>> varrayTmp = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tabRenderer, "content/richGridRenderer/contents");
+                            if (varrayTmp == null) {
+                                varrayTmp = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tabRenderer, "content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/shelfRenderer/content/horizontalListRenderer/items");
+                            }
                             if (tabTitle != null) {
                                 availableChannelTabs.add(tabTitle);
                             }
@@ -1316,8 +1321,9 @@ public class TbCmV2 extends PluginForDecrypt {
                                 if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
                                     varray = varrayTmp;
                                 }
-                            } else {
-                                /* Other/Unsupported tab -> Ignore */
+                            } else if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
+                                selectedtab = tab;
+                                varray = varrayTmp;
                             }
                         }
                     }
@@ -1350,8 +1356,8 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             }
             /**
-             * This message can also contain information like "2 unavailable videos won't be displayed in this list". </br>
-             * Only mind this errormessage if we can't find any content.
+             * This message can also contain information like "2 unavailable videos won't be displayed in this list". </br> Only mind this
+             * errormessage if we can't find any content.
              */
             alerts = (List<Map<String, Object>>) rootMap.get("alerts");
             errorOrWarningMessage = null;
@@ -1406,9 +1412,8 @@ public class TbCmV2 extends PluginForDecrypt {
                 videosCountText = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer, "numVideosText/runs/{0}/text");
             }
             /**
-             * Find extra information about channel </br>
-             * Do not do this if tab is e.g. "shorts" as we'd then pickup an incorrect number. YT ui does not display the total number of
-             * shorts of a user.
+             * Find extra information about channel </br> Do not do this if tab is e.g. "shorts" as we'd then pickup an incorrect number. YT
+             * ui does not display the total number of shorts of a user.
              */
             final Map<String, Object> channelHeaderRenderer = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "header/c4TabbedHeaderRenderer");
             if (channelHeaderRenderer != null && StringUtils.equalsIgnoreCase(desiredChannelTab, "Videos")) {
@@ -1482,7 +1487,10 @@ public class TbCmV2 extends PluginForDecrypt {
                             }
                         }
                     }
-                    final String vidPlayListID = (String) JavaScriptEngineFactory.walkJson(vid, "richItemRenderer/content/playlistRenderer/playlistId");
+                    String vidPlayListID = (String) JavaScriptEngineFactory.walkJson(vid, "richItemRenderer/content/playlistRenderer/playlistId");
+                    if (vidPlayListID == null) {
+                        vidPlayListID = (String) JavaScriptEngineFactory.walkJson(vid, "gridPlaylistRenderer/playlistId");
+                    }
                     if (vidPlayListID != null && id == null) {
                         /**
                          * eg on /releases or /playlists -> inner playlists
@@ -1493,6 +1501,9 @@ public class TbCmV2 extends PluginForDecrypt {
                             // proper playlist handling with packaging and correct container URLs
                             final String playlistURL = generatePlaylistURL(vidPlayListID);
                             distribute(createDownloadlink(playlistURL));
+                            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                                return ret;
+                            }
                             break;
                         } else if (true) {
                             // fast but part of "Releases" or "Playlists" packages
@@ -1623,9 +1634,8 @@ public class TbCmV2 extends PluginForDecrypt {
                     if (alerts != null && alerts.size() > 0) {
                         /**
                          * 2023-08-03: E.g. playlist with 700 videos but 680 of them are hidden/unavailable which means first pagination
-                         * attempt will fail. </br>
-                         * Even via website this seems to be and edge case as the loading icon will never disappear and no error is
-                         * displayed.
+                         * attempt will fail. </br> Even via website this seems to be and edge case as the loading icon will never disappear
+                         * and no error is displayed.
                          */
                         logger.info("Pagination failed -> Possible reason: " + errorOrWarningMessage);
                     } else {
