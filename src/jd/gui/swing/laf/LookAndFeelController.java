@@ -28,8 +28,6 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import jd.SecondLevelLaunch;
-
 import org.appwork.loggingv3.LogV3;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
@@ -58,6 +56,8 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.gui.LAFOptions;
 import org.jdownloader.updatev2.gui.LookAndFeelType;
+
+import jd.SecondLevelLaunch;
 
 public class LookAndFeelController implements LAFManagerInterface {
     private static final LookAndFeelController INSTANCE = new LookAndFeelController();
@@ -156,14 +156,14 @@ public class LookAndFeelController implements LAFManagerInterface {
         } else if (ReflectionUtils.isInstanceOf("com.formdev.flatlaf.FlatLaf", laf)) {
             // https://www.formdev.com/flatlaf/window-decorations
             // https://www.formdev.com/flatlaf/system-properties/#flatlaf.useWindowDecorations
-            if (CrossSystem.isLinux()) {
-                if (LAFOptions.getInstance().getCfg().isWindowDecorationEnabled()) {
-                    JFrame.setDefaultLookAndFeelDecorated(true);
-                    JDialog.setDefaultLookAndFeelDecorated(true);
-                } else {
-                    JFrame.setDefaultLookAndFeelDecorated(false);
-                    JDialog.setDefaultLookAndFeelDecorated(false);
-                }
+            if (LAFOptions.getInstance().getCfg().isWindowDecorationEnabled()) {
+                System.setProperty("flatlaf.useWindowDecorations", "true");
+                JFrame.setDefaultLookAndFeelDecorated(true);
+                JDialog.setDefaultLookAndFeelDecorated(true);
+            } else {
+                System.setProperty("flatlaf.useWindowDecorations", "false");
+                JFrame.setDefaultLookAndFeelDecorated(false);
+                JDialog.setDefaultLookAndFeelDecorated(false);
             }
         }
     }
