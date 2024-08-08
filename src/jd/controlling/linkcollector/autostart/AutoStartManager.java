@@ -9,17 +9,12 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.controlling.Priority;
-import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnDupesLinksAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnOfflineLinksAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.PackageExpandBehavior;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
@@ -112,13 +107,11 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                             }
                         }
                         if (list.size() > 0) {
-                            final OnOfflineLinksAction onOfflineHandler = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
-                            final OnDupesLinksAction onDupesHandler = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
                             final Priority priority;
-                            if (!CFG_LINKGRABBER.CFG.isAutoConfirmManagerAssignPriorityEnabled()) {
-                                priority = null;
-                            } else {
+                            if (CFG_LINKGRABBER.CFG.isAutoConfirmManagerAssignPriorityEnabled()) {
                                 priority = CFG_LINKGRABBER.CFG.getAutoConfirmManagerPriority();
+                            } else {
+                                priority = null;
                             }
                             final SelectionInfo<CrawledPackage, CrawledLink> si;
                             if (createNewSelection) {
@@ -129,18 +122,8 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                             final ConfirmLinksSettings cls = new ConfirmLinksSettings();
                             cls.setMoveLinksMode(MoveLinksMode.AUTO);
                             cls.setAutoStartDownloads(autoStart);
-                            // cls.setClearLinkgrabberlistOnConfirm(CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm());
-                            // cls.setSwitchToDownloadlistOnConfirm(CFG_LINKGRABBER.CFG.isAutoSwitchToDownloadTableOnConfirmDefaultEnabled());
                             cls.setPriority(priority);
-                            // cls.setPackageExpandBehavior(PackageExpandBehavior.GLOBAL);
-                            // cls.setForceDownloads(CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads());
-                            // cls.setHandleOffline(onOfflineHandler);
-                            // cls.setHandleDupes(onDupesHandler);
-                            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                                ConfirmLinksContextAction.confirmSelectionV2(si, cls);
-                            } else {
-                                ConfirmLinksContextAction.confirmSelection(MoveLinksMode.AUTO, si, autoStart, CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm(), CFG_LINKGRABBER.CFG.isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), priority, PackageExpandBehavior.UNCHANGED, BooleanStatus.convert(CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads()), onOfflineHandler, onDupesHandler);
-                            }
+                            ConfirmLinksContextAction.confirmSelection(si, cls);
                         }
                         if (delayer.isDelayerActive() == false && eventSender.hasListener()) {
                             eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.DONE));

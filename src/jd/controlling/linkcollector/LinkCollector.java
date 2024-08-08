@@ -2691,6 +2691,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         AUTO
     }
 
+    /**
+     * This class describes, how a "move links to downloadlist" action shall behave. </br>
+     * Examples of what it can influence: </br>
+     * - define specific properties that should be set on the items to move e.g. set highest priority </br>
+     * - define what should happen afterwards such as "force download-start of added items" </br>
+     * - define what happens in linkgrabber afterwards such as "clean all remaining items in linkgrabber"
+     */
     public final static class ConfirmLinksSettings {
         public final MoveLinksMode getMoveLinksMode() {
             return moveLinksMode;
@@ -2839,59 +2846,19 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         public ConfirmLinksSettings() {
         }
 
-        public ConfirmLinksSettings(MoveLinksMode mode, Boolean autoStart, Boolean autoForce, Priority autoPriority) {
+        public ConfirmLinksSettings(final MoveLinksMode mode, final Boolean autoStartDownloads, final Boolean forceDownloads, final Priority priority) {
+            this.setMoveLinksMode(mode);
+            this.setAutoStartDownloads(autoStartDownloads);
+            this.setForceDownloads(forceDownloads);
+            this.setPriority(priority);
         }
     }
 
-    public final static class MoveLinksSettings {
-        final MoveLinksMode mode;
-
-        public final MoveLinksMode getMode() {
-            return mode;
-        }
-
-        public final Boolean getAutoStart() {
-            return autoStart;
-        }
-
-        public final Boolean getAutoForce() {
-            return autoForce;
-        }
-
-        public final Priority getAutoPriority() {
-            return autoPriority;
-        }
-
-        public final PackageExpandBehavior getPackageExpandBehavior() {
-            return packageExpandBehavior;
-        }
-
-        public final void setPackageExpandBehavior(PackageExpandBehavior packageExpandBehavior) {
-            if (packageExpandBehavior == null) {
-                this.packageExpandBehavior = PackageExpandBehavior.UNCHANGED;
-            } else {
-                this.packageExpandBehavior = packageExpandBehavior;
-            }
-        }
-
-        private final Boolean         autoStart;
-        private final Boolean         autoForce;
-        private final Priority        autoPriority;
-        private PackageExpandBehavior packageExpandBehavior = PackageExpandBehavior.UNCHANGED;
-
-        public MoveLinksSettings(MoveLinksMode mode, Boolean autoStart, Boolean autoForce, Priority autoPriority) {
-            this.mode = mode;
-            this.autoForce = autoForce;
-            this.autoStart = autoStart;
-            this.autoPriority = autoPriority;
-        }
-    }
-
-    public void moveLinksToDownloadList(final MoveLinksSettings moveLinksSettings, SelectionInfo<CrawledPackage, CrawledLink> selection) {
+    public void moveLinksToDownloadList(final SelectionInfo<CrawledPackage, CrawledLink> selection, final ConfirmLinksSettings moveLinksSettings) {
         final List<FilePackage> filePackagesToAdd = new ArrayList<FilePackage>();
         final List<DownloadLink> force = new ArrayList<DownloadLink>();
-        final boolean forcedAutoStart = Boolean.TRUE.equals(moveLinksSettings.getAutoForce());
-        final boolean autoMode = MoveLinksMode.AUTO.equals(moveLinksSettings.getMode());
+        final boolean forcedAutoStart = Boolean.TRUE.equals(moveLinksSettings.isForceDownloads());
+        final boolean autoMode = MoveLinksMode.AUTO.equals(moveLinksSettings.getMoveLinksMode());
         boolean autoStartLinks = false;
         for (final PackageView<CrawledPackage, CrawledLink> packageView : selection.getPackageViews()) {
             final List<CrawledLink> links = packageView.getChildren();
@@ -2901,8 +2868,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if ((autoMode && cl.isForcedAutoStartEnabled()) || forcedAutoStart) {
                     force.add(cl.getDownloadLink());
                 }
-                if (Priority.DEFAULT.equals(cl.getPriority())) {
-                    cl.setPriority(moveLinksSettings.getAutoPriority());
+                if (Priority.DEFAULT.equals(cl.getPriority()) && moveLinksSettings.getPriority() != null) {
+                    cl.setPriority(moveLinksSettings.getPriority());
                 }
             }
             if (convertedLinks != null) {
@@ -2926,7 +2893,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
          * addBottom = negative number -> add at the end
          */
         final boolean finalAutoStart;
-        final Boolean autoStart = moveLinksSettings.getAutoStart();
+        final Boolean autoStart = moveLinksSettings.getAutoStartDownloads();
         if (autoMode) {
             finalAutoStart = autoStartLinks || Boolean.TRUE.equals(autoStart);
         } else {

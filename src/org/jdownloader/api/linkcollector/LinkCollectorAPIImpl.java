@@ -15,8 +15,8 @@ import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.settings.GeneralSettings;
 
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.ConfirmLinksSettings;
 import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackageView;
@@ -269,7 +269,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
     public Boolean startDownloads(final List<Long> linkIds, final List<Long> packageIds) {
         final List<CrawledLink> lks = getAllTheLinks(linkIds, packageIds);
         if (lks.size() > 0) {
-            LinkCollector.getInstance().moveLinksToDownloadList(new MoveLinksSettings(MoveLinksMode.MANUAL, null, null, null), new SelectionInfo<CrawledPackage, CrawledLink>(null, lks));
+            LinkCollector.getInstance().moveLinksToDownloadList(new SelectionInfo<CrawledPackage, CrawledLink>(null, lks), new ConfirmLinksSettings(MoveLinksMode.MANUAL, null, null, null));
             return true;
         } else {
             return false;

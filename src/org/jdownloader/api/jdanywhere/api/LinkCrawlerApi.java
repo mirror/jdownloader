@@ -15,8 +15,8 @@ import org.jdownloader.gui.views.SelectionInfo;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.ConfirmLinksSettings;
 import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -115,7 +115,7 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
     public boolean AddCrawledPackageToDownloads(long crawledPackageID) {
         final CrawledPackage cp = getCrawledPackageFromID(crawledPackageID);
         if (cp != null) {
-            LinkCollector.getInstance().moveLinksToDownloadList(new MoveLinksSettings(MoveLinksMode.MANUAL, null, null, null), new SelectionInfo<CrawledPackage, CrawledLink>(cp));
+            LinkCollector.getInstance().moveLinksToDownloadList(new SelectionInfo<CrawledPackage, CrawledLink>(cp), new ConfirmLinksSettings(MoveLinksMode.MANUAL, null, null, null));
             return true;
         }
         return false;

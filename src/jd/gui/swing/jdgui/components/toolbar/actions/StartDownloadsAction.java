@@ -11,12 +11,10 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtButton;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.Customizer;
-import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
@@ -25,11 +23,9 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.PackageExpandBehavior;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.StartButtonAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
 
 import jd.controlling.TaskQueue;
@@ -88,17 +84,8 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
                         cls.setAutoStartDownloads(true);
                         cls.setClearLinkgrabberlistOnConfirm(false);
                         cls.setSwitchToDownloadlistOnConfirm(true);
-                        // cls.setPriority(null);
-                        // cls.setPackageExpandBehavior(PackageExpandBehavior.GLOBAL);
                         cls.setForceDownloads(false);
-                        // cls.setHandleOffline(CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction());
-                        // cls.setHandleDupes(CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
-                        // cls.setConfirmationDialogBehavior(ConfirmationDialogBehavior.DISABLED);
-                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                            ConfirmLinksContextAction.confirmSelectionV2(selection, cls);
-                        } else {
-                            ConfirmLinksContextAction.confirmSelection(MoveLinksMode.MANUAL, selection, true, false, true, null, PackageExpandBehavior.UNCHANGED, BooleanStatus.FALSE, CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction(), CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
-                        }
+                        ConfirmLinksContextAction.confirmSelection(selection, cls);
                         break;
                     case START_DOWNLOADS_ONLY:
                         DownloadWatchDog.getInstance().startDownloads();

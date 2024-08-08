@@ -40,7 +40,6 @@ import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.ExtOverlayRowHighlighter;
 import org.appwork.swing.exttable.ExtTable;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
@@ -55,7 +54,6 @@ import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
-import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -69,7 +67,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -196,11 +193,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                             // clicked on a not-selected row. only add the context item
                             si = new SelectionInfo<CrawledPackage, CrawledLink>(obj);
                         }
-                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                            ConfirmLinksContextAction.confirmSelectionV2(si, cls);
-                        } else {
-                            ConfirmLinksContextAction.confirmSelection(MoveLinksMode.MANUAL, si, org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled(), false, false, null, PackageExpandBehavior.UNCHANGED, BooleanStatus.FALSE, CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction(), CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
-                        }
+                        ConfirmLinksContextAction.confirmSelection(si, cls);
                     }
                 }
             }

@@ -4279,6 +4279,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Force all Downloads' Start" })
     String ConfirmAllContextmenuAction_context_add_and_force();
 
+    @Default(lngs = { "en" }, values = { "Are you sure you want to move %s1 packages and %s2 links to downloadlist?" })
+    String ConfirmContextmenuAction_confirmation_dialog_text(int i1, int i2);
+
     @Default(lngs = { "en" }, values = { "Skip File" })
     String OnSkipDueToAlreadyExistsAction_skip_file();
 
@@ -6275,9 +6278,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "JDownloader 2 import?" })
     String jd2_import_title();
-
-    @Default(lngs = { "en" }, values = { "Import %s1 package(s) and %s2 link(s) from JDownloader 1 to" })
-    String jd1_import_message(int numberOfPackages, int numberOfLinks);
 
     @Default(lngs = { "en" }, values = { "Import %s1 package(s) and %s2 link(s) from JDownloader 2 to %s3" })
     String jd2_import_message(int numberOfPackages, int numberOfLinks, String destination);
