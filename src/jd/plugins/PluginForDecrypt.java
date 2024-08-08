@@ -452,6 +452,7 @@ public abstract class PluginForDecrypt extends Plugin {
         }
         retry: while (true) {
             ArrayList<DownloadLink> results = null;
+            Throwable controlledThrown = null;
             try {
                 challenges = null;
                 setCurrentLink(link);
@@ -460,7 +461,7 @@ public abstract class PluginForDecrypt extends Plugin {
                  */
                 // prevent NPE when breakpointing
                 if (br == null) {
-                    br = new Browser();
+                    br = createNewBrowserInstance();
                 }
                 br.setLogger(logger);
                 br.setVerbose(true);
@@ -474,17 +475,10 @@ public abstract class PluginForDecrypt extends Plugin {
                     return results;
                 }
             } catch (final Throwable e) {
-                if (logger instanceof LogSource) {
-                    if (logger instanceof LogSource) {
-                        /* make sure we use the right logger */
-                        ((LogSource) logger).clear();
-                        ((LogSource) logger).log(e);
-                    } else {
-                        LogSource.exception(logger, e);
-                    }
-                }
+                logger.log(e);
                 try {
                     if (isAbort()) {
+                        controlledThrown = e;
                         return results;
                     } else if (e instanceof DecrypterRetryException) {
                         throw (DecrypterRetryException) e;
@@ -504,6 +498,7 @@ public abstract class PluginForDecrypt extends Plugin {
                     } else if (e instanceof AccountRequiredException) {
                         throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, e.getMessage(), null, e);
                     } else if (e instanceof DecrypterException || e.getCause() instanceof DecrypterException) {
+                        controlledThrown = e;
                         return results;
                     } else if (e instanceof PluginException) {
                         final PluginException pe = (PluginException) e;
@@ -515,6 +510,7 @@ public abstract class PluginForDecrypt extends Plugin {
                         case LinkStatus.ERROR_PLUGIN_DEFECT:
                             throw new DecrypterRetryException(RetryReason.PLUGIN_DEFECT, null, null, e);
                         case LinkStatus.ERROR_RETRY:
+                            controlledThrown = e;
                             continue retry;
                         case LinkStatus.ERROR_FATAL:
                             if (StringUtils.equals(_JDT.T.plugins_errors_wrongpassword(), e.getMessage())) {
@@ -525,7 +521,11 @@ public abstract class PluginForDecrypt extends Plugin {
                             break;
                         }
                     }
-                } catch (DecrypterRetryException retryException) {
+                } catch (final DecrypterRetryException retryException) {
+                    controlledThrown = retryException;
+                    if (retryException != e) {
+                        logger.log(retryException);
+                    }
                     if (RetryReason.PLUGIN_DEFECT.equals(retryException.getReason())) {
                         onPluginDefect(retryException, link);
                     }
@@ -536,7 +536,11 @@ public abstract class PluginForDecrypt extends Plugin {
                 clean();
                 challenges = null;
                 if (logger instanceof LogSource) {
-                    ((LogSource) logger).clear();
+                    if (controlledThrown != null) {
+                        ((LogSource) logger).clear();
+                    } else {
+                        ((LogSource) logger).flush();
+                    }
                 }
             }
         }
