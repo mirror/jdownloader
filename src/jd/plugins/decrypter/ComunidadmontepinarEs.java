@@ -28,16 +28,32 @@ public class ComunidadmontepinarEs extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
         br.setCookie(this.getHost(), "addtl_consent", "1~");
+        final String season = new Regex(param.getCryptedUrl(), "/(\\d+)").getMatch(0);
+        final String episode = new Regex(param.getCryptedUrl(), "/\\d+x(\\d+)").getMatch(0);
+        final String title = "Comunidad Montepinar - La Que Se Avecina" + "_S" + season + "E" + episode;
+        FilePackage fp = null;
+        if (title != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(title);
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         getPage(param.getCryptedUrl());
+        final String[] externaldownloadurls = br.getRegex("href=\"(https?://[^\"]+)\" target=\"_blank\" rel=\"noreferrer noopener\"").getColumn(0);
+        if (externaldownloadurls != null && externaldownloadurls.length > 0) {
+            for (final String externaldownloadurl : externaldownloadurls) {
+                final DownloadLink link = this.createDownloadlink(externaldownloadurl);
+                if (fp != null) {
+                    link._setFilePackage(fp);
+                }
+                ret.add(link);
+                distribute(link);
+            }
+        }
         final String m3u8IframeURLNew = br.getRegex("(https?://comunidadmontepinar\\.es/m3u8/t\\d+/[^/]+/nuevo\\.html)").getMatch(0);
         final String m3u8IframeURLOld = br.getRegex("(https?://comunidadmontepinar\\.es/m3u8/t\\d+/[^/]+/index\\.html)").getMatch(0);
         if (m3u8IframeURLNew == null && m3u8IframeURLOld == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String season = new Regex(param.getCryptedUrl(), "/(\\d+)").getMatch(0);
-        final String episode = new Regex(param.getCryptedUrl(), "/\\d+x(\\d+)").getMatch(0);
-        final String title = "Comunidad Montepinar - La Que Se Avecina" + "_S" + season + "E" + episode;
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String hlsMaster = null;
         Browser brc = br.cloneBrowser();
         final boolean lookForSubtitles;
@@ -106,9 +122,7 @@ public class ComunidadmontepinarEs extends antiDDoSForDecrypt {
                 }
             }
         }
-        if (title != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(title);
+        if (fp != null) {
             fp.addLinks(ret);
         }
         return ret;

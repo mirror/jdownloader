@@ -731,7 +731,10 @@ public class VKontakteRu extends PluginForDecrypt {
             linkCanBeFastCrawled = false;
         }
         if (this.cfg.getBooleanProperty(VKontakteRuHoster.FASTCRAWL_VIDEO, VKontakteRuHoster.default_FASTCRAWL_VIDEO) && !userWantsMultipleQualities && linkCanBeFastCrawled) {
-            final DownloadLink dl = this.createDownloadlink(param.getDownloadLink().getPluginPatternMatcher());
+            String url = param.getDownloadLink().getPluginPatternMatcher();
+            /* Small workaround/hack as hoster plugin pattern only supports "/video..." links. */
+            url = url.replaceFirst("/clip", "/video");
+            final DownloadLink dl = this.createDownloadlink(url);
             /* Inherit all previously set properties */
             dl.setProperties(param.getDownloadLink().getProperties());
             dl.setFinalFileName(param.getDownloadLink().getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN) + "_fastcrawl.mp4");
@@ -2051,6 +2054,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String sectionFromURL = query.get("section");
         final String url_source_without_params = URLHelper.getUrlWithoutParams(url_source);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> results_video = new ArrayList<DownloadLink>();
         boolean grabAlbums = false;
         String wall_post_owner_id = null;
         String wall_post_content_id = null;
@@ -2452,33 +2456,150 @@ public class VKontakteRu extends PluginForDecrypt {
                 final Map<String, Object> videodata = restoreFromString(videoPrefetchJson, TypeRef.MAP);
                 String currentSection = (String) videodata.get("showcaseSection");
                 if (currentSection == null) {
-                    currentSection = "all";
+                    currentSection = (String) videodata.get("section_id");
                 }
-                final Map<String, Object> video_info_map = (Map<String, Object>) JavaScriptEngineFactory.walkJson(videodata, "pageVideosList/{0}/" + currentSection);
-                if (video_info_map == null) {
-                    logger.info("Failed to find useful video prefetch data");
-                    break processPrefetchVideoData;
+                if (currentSection == null) {
+                    currentSection = sectionFromURL;
+                    if (currentSection == null) {
+                        currentSection = "all";
+                    }
                 }
                 FilePackage videoPackage = FilePackage.getInstance();
                 if (usernameFromURL != null) {
                     videoPackage = FilePackage.getInstance();
                     videoPackage.setName(usernameFromURL + " - " + currentSection);
                 }
-                // final int video_count = ((Number) video_info_map.get("count")).intValue();
-                final List<List<Object>> items = (List<List<Object>>) video_info_map.get("list");
-                for (final List<Object> item : items) {
-                    final String thisOwnerID = item.get(0).toString();
-                    final String thisContentID = item.get(1).toString();
-                    final String videoTitle = item.get(3).toString();
-                    final String completeVideolink = getProtocol() + this.getHost() + "/video" + thisOwnerID + "_" + thisContentID;
-                    final DownloadLink video = createDownloadlink(completeVideolink);
-                    video.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN, Encoding.htmlDecode(videoTitle).trim());
-                    if (fp != null) {
-                        video._setFilePackage(fp);
-                    } else if (videoPackage != null) {
-                        video._setFilePackage(videoPackage);
+                final String owner_id = videodata.get("oid").toString();
+                // final int maxPreloadItems = 30;
+                int numberofItemsAdded = 0;
+                final Map<String, Object> videodata_current_section_info = (Map<String, Object>) JavaScriptEngineFactory.walkJson(videodata, "pageVideosList/{0}/" + currentSection);
+                if (videodata_current_section_info == null) {
+                    logger.warning("Cannot handle this item via video section pagination prefetch handling");
+                    break processPrefetchVideoData;
+                }
+                final int video_count = ((Number) videodata_current_section_info.get("count")).intValue();
+                if (videodata_current_section_info.size() > 0) {
+                    if (video_count <= 0) {
+                        /* Empty album/playlist */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
+                    final List<List<Object>> items = (List<List<Object>>) videodata_current_section_info.get("list");
+                    if (items == null || items.isEmpty()) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    for (final List<Object> item : items) {
+                        final DownloadLink video = processVideoItemArrayListStyle(item);
+                        if (video == null) {
+                            /* Skip dupe */
+                            continue;
+                        }
+                        if (fp != null) {
+                            video._setFilePackage(fp);
+                        } else if (videoPackage != null) {
+                            video._setFilePackage(videoPackage);
+                        }
+                        ret.add(video);
+                        distribute(video);
+                        numberofItemsAdded++;
+                    }
+                }
+                /* Enter pagination handling if preload did not already contain all items. */
+                videoPagination: if (numberofItemsAdded < video_count) {
+                    int page = 1;
+                    int offset = 0;
+                    logger.info("Entering video pagination");
+                    final int itemsPerPage = 1000;
+                    final Browser brc = br.cloneBrowser();
+                    brc.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                    final UrlQuery query_load_videos_silent = new UrlQuery();
+                    query_load_videos_silent.add("al", "1");
+                    query_load_videos_silent.add("need_albums", "1");
+                    query_load_videos_silent.add("oid", owner_id);
+                    query_load_videos_silent.add("rowlen", "3");
+                    query_load_videos_silent.add("section", Encoding.urlEncode(currentSection));
+                    query_load_videos_silent.add("snippet_video", "0");
+                    do {
+                        query_load_videos_silent.addAndReplace("offset", Integer.toString(offset));
+                        brc.postPage("/al_video.php?act=load_videos_silent", query_load_videos_silent);
+                        final Map<String, Object> pagination_video = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+                        final Map<String, Object> pagination_video_overview = (Map<String, Object>) JavaScriptEngineFactory.walkJson(pagination_video, "payload/{1}/{0}/" + currentSection);
+                        final int pagination_video_overview_count = ((Number) pagination_video_overview.get("count")).intValue();
+                        final List<List<Object>> pagination_video_list = (List<List<Object>>) pagination_video_overview.get("list");
+                        int numberofItemsAddedThisPage = 0;
+                        for (final List<Object> item : pagination_video_list) {
+                            final DownloadLink video = processVideoItemArrayListStyle(item);
+                            if (video == null) {
+                                /* Skip dupe */
+                                continue;
+                            }
+                            if (fp != null) {
+                                video._setFilePackage(fp);
+                            } else if (videoPackage != null) {
+                                video._setFilePackage(videoPackage);
+                            }
+                            ret.add(video);
+                            distribute(video);
+                            numberofItemsAddedThisPage++;
+                            numberofItemsAdded++;
+                        }
+                        logger.info("Videos: Crawled page: " + page + " | Found items so far: " + pagination_video_list.size() + "/" + video_count + " | Offset: " + offset);
+                        if (this.isAbort()) {
+                            logger.info("Stopping because: Aborted by user");
+                            return ret;
+                        } else if (pagination_video_overview_count < itemsPerPage) {
+                            logger.info("Stopping because: Current page contains less items than max items per page -> Reached end?");
+                            return ret;
+                        } else if (numberofItemsAdded >= video_count) {
+                            logger.info("Stopping because: Found all items");
+                            return ret;
+                        } else if (numberofItemsAddedThisPage == 0) {
+                            logger.info("Stopping because: Failed to find any new items");
+                            return ret;
+                        } else {
+                            /* Continue to next page */
+                            offset += pagination_video_list.size();
+                            page++;
+                            continue;
+                        }
+                    } while (true);
+                }
+            }
+        }
+        final boolean grabClips = true;
+        if (grabClips) {
+            final String[] clip_urls = br.getRegex("(/clip-\\d+_\\d+)").getColumn(0);
+            if (clip_urls != null && clip_urls.length > 0) {
+                final FilePackage clippackage = FilePackage.getInstance();
+                clippackage.setName(br._getURL().getPath());
+                final String[] clipHTMLs = br.getRegex("<a class=\"ShortVideoGridItem _video_item\"([^>]+)>").getColumn(0);
+                for (final String clip_url : clip_urls) {
+                    // if (!this.global_dupes.add(clip_url)) {
+                    // logger.info("Skipped dupe: " + clip_url);
+                    // continue;
+                    // }
+                    final String clip_url_full = br.getURL(clip_url).toExternalForm();
+                    final DownloadLink video = this.createDownloadlink(clip_url_full);
+                    if (clipHTMLs != null && clipHTMLs.length > 0) {
+                        String source_html = null;
+                        for (final String clipHTML : clipHTMLs) {
+                            if (clipHTML.contains(clip_url)) {
+                                source_html = clipHTML;
+                                break;
+                            }
+                        }
+                        if (source_html != null) {
+                            String clipTitle = new Regex(source_html, "aria-label=\"([^\"]+)").getMatch(0);
+                            if (clipTitle != null) {
+                                clipTitle = Encoding.htmlDecode(clipTitle).trim();
+                                video.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN, clipTitle);
+                            } else {
+                                logger.warning("Failed to find clip title in clip html");
+                            }
+                        }
+                    }
+                    video._setFilePackage(clippackage);
                     ret.add(video);
+                    distribute(video);
                 }
             }
         }
@@ -2510,7 +2631,32 @@ public class VKontakteRu extends PluginForDecrypt {
         if (grabURLsInsideText && isContentFromWall) {
             ret.addAll(this.crawlUrlsInsidePosts(wall_post_text));
         }
+        if (results_video.size() > 0) {
+            /* Add more properties for video items */
+            FilePackage videoPackage = null;
+            for (final DownloadLink video : results_video) {
+                if (fp != null) {
+                    video._setFilePackage(fp);
+                } else if (videoPackage != null) {
+                    video._setFilePackage(videoPackage);
+                }
+                ret.add(video);
+            }
+        }
         return ret;
+    }
+
+    private DownloadLink processVideoItemArrayListStyle(final List<Object> item) {
+        final String thisOwnerID = item.get(0).toString();
+        final String thisContentID = item.get(1).toString();
+        if (!this.global_dupes.add(thisOwnerID + "_" + thisContentID)) {
+            return null;
+        }
+        final String videoTitle = item.get(3).toString();
+        final String completeVideolink = getProtocol() + this.getHost() + "/video" + thisOwnerID + "_" + thisContentID;
+        final DownloadLink video = createDownloadlink(completeVideolink);
+        video.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN, Encoding.htmlDecode(videoTitle).trim());
+        return video;
     }
 
     /** Works offline, simply converts the added link into a DownloadLink for the host plugin and sets required properties. */
@@ -2637,24 +2783,18 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlWallClips(final CryptedLink param) throws Exception {
-        final String clipCollectionName = new Regex(param.getCryptedUrl(), PATTERN_WALL_CLIPS).getMatch(0);
         this.getPage(br, param.getCryptedUrl());
-        final FilePackage fp = FilePackage.getInstance();
-        /* We want all links from this user/collection to go into the same package */
-        fp.setAllowInheritance(true);
-        fp.setName(clipCollectionName);
-        return this.crawlVideos(this.br, fp);
+        return this.websiteCrawlContent(br.getURL(), br.getRequest().getHtmlCode(), null, true, true, true, true, true, null);
     }
 
     @Deprecated
+    /** 2024-08-08: This should not be needed anymore. */
     private ArrayList<DownloadLink> crawlVideos(final Browser br, final FilePackage fp) {
         /* showInlineVideo = clips -> Short videos but internally both are the same */
         final String[] videoHTMLs = br.getRegex("(?:showVideo|showInlineVideo)\\(([^\\)]+)\\)").getColumn(0);
         final ArrayList<DownloadLink> ret = this.getReturnArray();
         for (String videoHTML : videoHTMLs) {
-            if (Encoding.isHtmlEntityCoded(videoHTML)) {
-                videoHTML = Encoding.htmlDecode(videoHTML);
-            }
+            videoHTML = Encoding.htmlOnlyDecode(videoHTML);
             videoHTML = videoHTML.replace("\"", "");
             videoHTML = videoHTML.replace("'", "");
             final String videoContentStr = new Regex(videoHTML, "^((?:-)?\\d+_\\d+)").getMatch(0);
