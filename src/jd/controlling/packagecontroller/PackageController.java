@@ -25,6 +25,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerSelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.MergePosition;
 import org.jdownloader.logging.LogController;
@@ -1005,7 +1006,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
             if (case_insensitive) {
                 packagename = packagename.toLowerCase(Locale.ENGLISH);
             }
-            String downloaddestination = packageNode.getDownloadDirectory();
+
+            String downloaddestination = LinkTreeUtils.getDownloadDirectory(packageNode).getPath();
             if (downloaddestination != null && CrossSystem.isWindows()) {
                 downloaddestination = downloaddestination.toLowerCase(Locale.ENGLISH);
             }
