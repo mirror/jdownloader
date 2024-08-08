@@ -1501,9 +1501,6 @@ public class TbCmV2 extends PluginForDecrypt {
                             // proper playlist handling with packaging and correct container URLs
                             final String playlistURL = generatePlaylistURL(vidPlayListID);
                             distribute(createDownloadlink(playlistURL));
-                            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                                return ret;
-                            }
                             break;
                         } else if (true) {
                             // fast but part of "Releases" or "Playlists" packages
