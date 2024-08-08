@@ -18,6 +18,7 @@ import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.components.ExtSpinner;
@@ -259,7 +260,14 @@ public class CustomPanel extends MigPanel {
                 if (value == null) {
                     value = (Number) gs.get(actionClass);
                 }
-                final ExtSpinner spinner = new ExtSpinner(new SpinnerNumberModel(value.intValue(), -1, 10000, 1));
+                final SpinnerValidator spinnerValidator = gs.getAnnotation(SpinnerValidator.class);
+                int min = -1;
+                int max = 10000;
+                if (spinnerValidator != null) {
+                    min = (int) spinnerValidator.min();
+                    max = (int) spinnerValidator.max();
+                }
+                final ExtSpinner spinner = new ExtSpinner(new SpinnerNumberModel(value.intValue(), min, max, 1));
                 spinner.addChangeListener(new ChangeListener() {
 
                     @Override
