@@ -2697,7 +2697,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
 
         public final void setMoveLinksMode(MoveLinksMode moveLinksMode) {
-            this.moveLinksMode = moveLinksMode;
+            if (moveLinksMode == null) {
+                this.moveLinksMode = MoveLinksMode.AUTO;
+            } else {
+                this.moveLinksMode = moveLinksMode;
+            }
         }
 
         public final Boolean getAutoStartDownloads() {
@@ -2713,7 +2717,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
 
         public final void setAutoStartOptions(AutoStartOptions autoStartOptions) {
-            this.autoStartOptions = autoStartOptions;
+            if (autoStartOptions == null) {
+                this.autoStartOptions = AutoStartOptions.AUTO;
+            } else {
+                this.autoStartOptions = autoStartOptions;
+            }
         }
 
         public final Boolean isForceDownloads() {
@@ -2771,7 +2779,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
 
         public final void setConfirmationDialogBehavior(ConfirmationDialogBehavior confirmationDialogBehavior) {
-            this.confirmationDialogBehavior = confirmationDialogBehavior;
+            if (confirmationDialogBehavior == null) {
+                this.confirmationDialogBehavior = ConfirmationDialogBehavior.DISABLED;
+            } else {
+                this.confirmationDialogBehavior = confirmationDialogBehavior;
+            }
         }
 
         public final int getConfirmationDialogThresholdMinPackages() {
@@ -2803,7 +2815,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
 
         public void setPackageExpandBehavior(PackageExpandBehavior packageExpandBehavior) {
-            this.packageExpandBehavior = packageExpandBehavior;
+            if (packageExpandBehavior == null) {
+                this.packageExpandBehavior = PackageExpandBehavior.UNCHANGED;
+            } else {
+                this.packageExpandBehavior = packageExpandBehavior;
+            }
         }
 
         private MoveLinksMode              moveLinksMode                          = MoveLinksMode.AUTO;
@@ -2815,7 +2831,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         private OnDupesLinksAction         handleDupes                            = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
         private Boolean                    clearLinkgrabberlistOnConfirm          = CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm();
         private Boolean                    switchToDownloadlistOnConfirm          = JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled();
-        private PackageExpandBehavior      packageExpandBehavior                  = PackageExpandBehavior.GLOBAL;
+        private PackageExpandBehavior      packageExpandBehavior                  = PackageExpandBehavior.UNCHANGED;
         private ConfirmationDialogBehavior confirmationDialogBehavior             = ConfirmationDialogBehavior.DISABLED;
         private int                        confirmationDialogThresholdMinPackages = 1;
         private int                        confirmationDialogThresholdMinLinks    = 1;
@@ -2857,7 +2873,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         private final Boolean         autoStart;
         private final Boolean         autoForce;
         private final Priority        autoPriority;
-        private PackageExpandBehavior packageExpandOption = PackageExpandBehavior.GLOBAL;
+        private PackageExpandBehavior packageExpandOption = PackageExpandBehavior.UNCHANGED;
 
         public MoveLinksSettings(MoveLinksMode mode, Boolean autoStart, Boolean autoForce, Priority autoPriority) {
             this.mode = mode;
@@ -2890,7 +2906,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
         }
         final PackageExpandBehavior packageExpandBehavior = moveLinksSettings.getPackageExpandBehavior();
-        if (packageExpandBehavior != PackageExpandBehavior.GLOBAL) {
+        if (packageExpandBehavior != PackageExpandBehavior.UNCHANGED) {
             /* Collapse/expand package */
             final boolean expand = packageExpandBehavior == PackageExpandBehavior.EXPANDED;
             for (final FilePackage fp : filePackagesToAdd) {

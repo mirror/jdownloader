@@ -169,10 +169,10 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     }
 
     public static enum PackageExpandBehavior implements LabelInterface {
-        GLOBAL {
+        UNCHANGED {
             @Override
             public String getLabel() {
-                return _JDT.T.PackageExpandBehavior_GLOBAL();
+                return _JDT.T.PackageExpandBehavior_UNCHANGED();
             }
         },
         EXPANDED {
@@ -241,7 +241,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     private boolean                    forceDownloads                                        = false;
     private Priority                   piority                                               = Priority.DEFAULT;
     private boolean                    assignPriorityEnabled                                 = false;
-    private PackageExpandBehavior      packageExpandBehavior                                 = PackageExpandBehavior.GLOBAL;
+    private PackageExpandBehavior      packageExpandBehavior                                 = PackageExpandBehavior.UNCHANGED;
     private OnOfflineLinksAction       handleOffline                                         = OnOfflineLinksAction.GLOBAL;
     private OnDupesLinksAction         handleDupes                                           = OnDupesLinksAction.GLOBAL;
     private AutoStartOptions           autoStart                                             = AutoStartOptions.AUTO;
@@ -776,14 +776,8 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         }
         cls.setPackageExpandBehavior(this.packageExpandBehavior);
         cls.setForceDownloads(isForceDownloads());
-        // TODO: Remove global check
-        if (handleOffline != OnOfflineLinksAction.GLOBAL) {
-            cls.setHandleOffline(handleOffline);
-        }
-        // TODO: Remove global check
-        if (handleDupes != OnDupesLinksAction.GLOBAL) {
-            cls.setHandleDupes(handleDupes);
-        }
+        cls.setHandleOffline(handleOffline);
+        cls.setHandleDupes(handleDupes);
         cls.setConfirmationDialogBehavior(this.confirmationDialogBehavior);
         cls.setConfirmationDialogThresholdMinPackages(minNumberofLinksForConfirmMoveToDownloadlistDialog);
         cls.setConfirmationDialogThresholdMinLinks(minNumberofLinksForConfirmMoveToDownloadlistDialog);

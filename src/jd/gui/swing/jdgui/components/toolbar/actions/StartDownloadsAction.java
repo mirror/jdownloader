@@ -93,7 +93,7 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
                         // cls.setHandleOffline(CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction());
                         // cls.setHandleDupes(CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
                         // cls.setConfirmationDialogBehavior(ConfirmationDialogBehavior.DISABLED);
-                        ConfirmLinksContextAction.confirmSelection(MoveLinksMode.MANUAL, selection, true, false, true, null, PackageExpandBehavior.GLOBAL, BooleanStatus.FALSE, CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction(), CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
+                        ConfirmLinksContextAction.confirmSelection(MoveLinksMode.MANUAL, selection, true, false, true, null, PackageExpandBehavior.UNCHANGED, BooleanStatus.FALSE, CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction(), CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
                         break;
                     case START_DOWNLOADS_ONLY:
                         DownloadWatchDog.getInstance().startDownloads();

@@ -961,8 +961,8 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Autostart: Always start Downloads" })
     String AutoStartOptions_ENABLED();
 
-    @Default(lngs = { "en" }, values = { "Global/Auto" })
-    String PackageExpandBehavior_GLOBAL();
+    @Default(lngs = { "en" }, values = { "Don't touch" })
+    String PackageExpandBehavior_UNCHANGED();
 
     @Default(lngs = { "en" }, values = { "Collapsed" })
     String PackageExpandBehavior_COLLAPSED();

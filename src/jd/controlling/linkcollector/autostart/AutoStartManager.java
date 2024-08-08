@@ -135,7 +135,7 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                             // cls.setForceDownloads(CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads());
                             // cls.setHandleOffline(onOfflineHandler);
                             // cls.setHandleDupes(onDupesHandler);
-                            ConfirmLinksContextAction.confirmSelection(MoveLinksMode.AUTO, si, autoStart, CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm(), CFG_LINKGRABBER.CFG.isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), priority, PackageExpandBehavior.GLOBAL, BooleanStatus.convert(CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads()), onOfflineHandler, onDupesHandler);
+                            ConfirmLinksContextAction.confirmSelection(MoveLinksMode.AUTO, si, autoStart, CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm(), CFG_LINKGRABBER.CFG.isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), priority, PackageExpandBehavior.UNCHANGED, BooleanStatus.convert(CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads()), onOfflineHandler, onDupesHandler);
                         }
                         if (delayer.isDelayerActive() == false && eventSender.hasListener()) {
                             eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.DONE));
