@@ -263,11 +263,13 @@ public class CustomPanel extends MigPanel {
                 final SpinnerValidator spinnerValidator = gs.getAnnotation(SpinnerValidator.class);
                 int min = -1;
                 int max = 10000;
+                int step = 1;
                 if (spinnerValidator != null) {
                     min = (int) spinnerValidator.min();
                     max = (int) spinnerValidator.max();
+                    step = (int) Math.max(1, spinnerValidator.step());
                 }
-                final ExtSpinner spinner = new ExtSpinner(new SpinnerNumberModel(value.intValue(), min, max, 1));
+                final ExtSpinner spinner = new ExtSpinner(new SpinnerNumberModel(value.intValue(), min, max, step));
                 spinner.addChangeListener(new ChangeListener() {
 
                     @Override
