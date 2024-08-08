@@ -33,6 +33,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.SocketStreamInterface;
 import org.appwork.utils.net.socketconnection.SocketConnection;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
@@ -321,8 +322,15 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
         if (downloadable.rename(outputPartFile, outputCompleteFile)) {
             try { /* set current timestamp as lastModified timestamp */
                 outputCompleteFile.setLastModified(System.currentTimeMillis());
-            } catch (final Throwable ignore) {
-                LogSource.exception(logger, ignore);
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+            try {
+                if (CrossSystem.isWindows()) {
+                    logger.info("Removed SparseFlag:" + outputCompleteFile + "|" + org.jdownloader.jna.windows.FileSystemHelper.FSCTL_SET_SPARSE(outputCompleteFile, false));
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
             }
         } else {
             throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR);

@@ -21,10 +21,14 @@ import java.util.Arrays;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.LookAndFeel;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalLookAndFeel;
+
+import jd.SecondLevelLaunch;
 
 import org.appwork.loggingv3.LogV3;
 import org.appwork.storage.config.JsonConfig;
@@ -36,6 +40,7 @@ import org.appwork.swing.synthetica.SyntheticaHelper;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
@@ -53,8 +58,6 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.gui.LAFOptions;
 import org.jdownloader.updatev2.gui.LookAndFeelType;
-
-import jd.SecondLevelLaunch;
 
 public class LookAndFeelController implements LAFManagerInterface {
     private static final LookAndFeelController INSTANCE = new LookAndFeelController();
@@ -145,6 +148,25 @@ public class LookAndFeelController implements LAFManagerInterface {
      */
     public static final String DEFAULT_PREFIX = "LAF_CFG";
     private static boolean     uiInitated     = false;
+
+    private void initLookAndFeel(final LookAndFeel laf) {
+        if (ReflectionUtils.isInstanceOf("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel", laf)) {
+            ExtTooltip.setForgroundColor(LAFOptions.getInstance().getColorForTooltipForeground());
+            UIManager.put(/* ExtTooltip.APPWORK_TOOLTIP_FOREGROUND */"Appwork.Tooltip.Foreground", LAFOptions.getInstance().getColorForTooltipForeground());
+        } else if (ReflectionUtils.isInstanceOf("com.formdev.flatlaf.FlatLaf", laf)) {
+            // https://www.formdev.com/flatlaf/window-decorations
+            // https://www.formdev.com/flatlaf/system-properties/#flatlaf.useWindowDecorations
+            if (CrossSystem.isLinux()) {
+                if (LAFOptions.getInstance().getCfg().isWindowDecorationEnabled()) {
+                    JFrame.setDefaultLookAndFeelDecorated(true);
+                    JDialog.setDefaultLookAndFeelDecorated(true);
+                } else {
+                    JFrame.setDefaultLookAndFeelDecorated(false);
+                    JDialog.setDefaultLookAndFeelDecorated(false);
+                }
+            }
+        }
+    }
 
     /**
      * setups the correct Look and Feel
@@ -246,12 +268,12 @@ public class LookAndFeelController implements LAFManagerInterface {
                 } else {
                     new SyntheticaHelper(LAFOptions.getInstance().getCfg()).load(laf, liz);
                 }
-                ExtTooltip.setForgroundColor(LAFOptions.getInstance().getColorForTooltipForeground());
-                UIManager.put(/* ExtTooltip.APPWORK_TOOLTIP_FOREGROUND */"Appwork.Tooltip.Foreground", LAFOptions.getInstance().getColorForTooltipForeground());
+                initLookAndFeel(UIManager.getLookAndFeel());
             } else {
                 /* init for all other laf */
                 UIManager.setLookAndFeel(laf);
                 LAFOptions.init(laf);
+                initLookAndFeel(UIManager.getLookAndFeel());
             }
         } catch (Throwable e) {
             LogV3.log(e);
@@ -265,6 +287,7 @@ public class LookAndFeelController implements LAFManagerInterface {
                 final String systemLookAndFeelClassName = UIManager.getSystemLookAndFeelClassName();
                 UIManager.setLookAndFeel(systemLookAndFeelClassName);
                 LAFOptions.init(systemLookAndFeelClassName);
+                initLookAndFeel(UIManager.getLookAndFeel());
             } catch (ClassNotFoundException e1) {
                 e1.printStackTrace();
             } catch (InstantiationException e1) {
