@@ -343,7 +343,6 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     private static final long  serialVersionUID = -3937346180905569896L;
 
     public static void confirmSelection(final MoveLinksMode moveLinksMode, final SelectionInfo<CrawledPackage, CrawledLink> selection, final boolean autoStart, final boolean clearLinkgrabber, final boolean doTabSwitch, final Priority newPriority, final PackageExpandBehavior packageExpandBehavior, final BooleanStatus forcedStart, final OnOfflineLinksAction handleOfflineLinks, final OnDupesLinksAction handleDupes) {
-        // TODO: Make use of this
         final ConfirmLinksSettings clsDummy = new ConfirmLinksSettings();
         final Thread thread = new Thread() {
             public void run() {
@@ -656,7 +655,6 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                 }
                 final int numberofPackages = selection.getPackageViews().size();
                 final int numberofLinks = selection.getChildren().size();
-                // TODO: Finish implementation of ConfirmationDialogBehavior
                 final ConfirmationDialogBehavior confirmationDialogBehavior = clsDummy.getConfirmationDialogBehavior();
                 if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && ((confirmationDialogBehavior == ConfirmationDialogBehavior.ENABLED_THRESHOLD_AUTO && !alreadyDisplayedOtherDialogToUser) || confirmationDialogBehavior == ConfirmationDialogBehavior.ENABLED_THRESHOLD_SIMPLE) && numberofPackages >= 1 && numberofLinks >= 1) {
                     /* Ask user if he really wants to move items to downloadlist. */
@@ -985,7 +983,6 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                 }
                 final int numberofPackages = selection.getPackageViews().size();
                 final int numberofLinks = selection.getChildren().size();
-                // TODO: Finish implementation of ConfirmationDialogBehavior
                 final ConfirmationDialogBehavior confirmationDialogBehavior = settings.getConfirmationDialogBehavior();
                 if (((confirmationDialogBehavior == ConfirmationDialogBehavior.ENABLED_THRESHOLD_AUTO && !alreadyDisplayedOtherDialogToUser) || confirmationDialogBehavior == ConfirmationDialogBehavior.ENABLED_THRESHOLD_SIMPLE) && numberofPackages >= 1 && numberofLinks >= 1) {
                     /* Ask user if he really wants to move items to downloadlist. */
@@ -1111,10 +1108,16 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         cls.setConfirmationDialogBehavior(this.confirmationDialogBehavior);
         cls.setConfirmationDialogThresholdMinPackages(minNumberofLinksForConfirmMoveToDownloadlistDialog);
         cls.setConfirmationDialogThresholdMinLinks(minNumberofLinksForConfirmMoveToDownloadlistDialog);
+        final SelectionInfo<CrawledPackage, CrawledLink> si;
         if (isSelectionOnly()) {
-            confirmSelection(MoveLinksMode.MANUAL, getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPriority() : null, this.packageExpandBehavior, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, handleOffline, handleDupes);
+            si = getSelection();
         } else {
-            confirmSelection(MoveLinksMode.MANUAL, getAllLinkgrabberItems(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPriority() : null, this.packageExpandBehavior, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, handleOffline, handleDupes);
+            si = getAllLinkgrabberItems();
+        }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            confirmSelectionV2(si, cls);
+        } else {
+            confirmSelection(MoveLinksMode.MANUAL, si, doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPriority() : null, this.packageExpandBehavior, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, handleOffline, handleDupes);
         }
     }
 

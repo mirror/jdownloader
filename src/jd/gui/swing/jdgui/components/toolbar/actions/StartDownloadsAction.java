@@ -11,6 +11,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtButton;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ActionContext;
@@ -93,7 +94,11 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
                         // cls.setHandleOffline(CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction());
                         // cls.setHandleDupes(CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
                         // cls.setConfirmationDialogBehavior(ConfirmationDialogBehavior.DISABLED);
-                        ConfirmLinksContextAction.confirmSelection(MoveLinksMode.MANUAL, selection, true, false, true, null, PackageExpandBehavior.UNCHANGED, BooleanStatus.FALSE, CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction(), CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
+                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                            ConfirmLinksContextAction.confirmSelectionV2(selection, cls);
+                        } else {
+                            ConfirmLinksContextAction.confirmSelection(MoveLinksMode.MANUAL, selection, true, false, true, null, PackageExpandBehavior.UNCHANGED, BooleanStatus.FALSE, CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction(), CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
+                        }
                         break;
                     case START_DOWNLOADS_ONLY:
                         DownloadWatchDog.getInstance().startDownloads();

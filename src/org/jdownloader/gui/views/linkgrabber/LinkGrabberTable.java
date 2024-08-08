@@ -40,6 +40,7 @@ import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.ExtOverlayRowHighlighter;
 import org.appwork.swing.exttable.ExtTable;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
@@ -187,12 +188,18 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                         // middle click
                         final int row = rowAtPoint(e.getPoint());
                         final AbstractNode obj = this.getModel().getObjectbyRow(row);
+                        final SelectionInfo<CrawledPackage, CrawledLink> si;
                         if (LinkGrabberTable.this.isRowSelected(row)) {
                             // clicked on a selected row. let's confirm them all
-                            ConfirmLinksContextAction.confirmSelection(MoveLinksMode.MANUAL, getSelectionInfo(true, true), org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled(), false, false, null, PackageExpandBehavior.UNCHANGED, BooleanStatus.FALSE, CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction(), CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
+                            si = getSelectionInfo(true, true);
                         } else {
                             // clicked on a not-selected row. only add the context item
-                            ConfirmLinksContextAction.confirmSelection(MoveLinksMode.MANUAL, new SelectionInfo<CrawledPackage, CrawledLink>(obj), org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled(), false, false, null, PackageExpandBehavior.UNCHANGED, BooleanStatus.FALSE, CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction(), CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
+                            si = new SelectionInfo<CrawledPackage, CrawledLink>(obj);
+                        }
+                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                            ConfirmLinksContextAction.confirmSelectionV2(si, cls);
+                        } else {
+                            ConfirmLinksContextAction.confirmSelection(MoveLinksMode.MANUAL, si, org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled(), false, false, null, PackageExpandBehavior.UNCHANGED, BooleanStatus.FALSE, CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction(), CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
                         }
                     }
                 }

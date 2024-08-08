@@ -9,6 +9,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.controlling.Priority;
@@ -135,7 +136,11 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                             // cls.setForceDownloads(CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads());
                             // cls.setHandleOffline(onOfflineHandler);
                             // cls.setHandleDupes(onDupesHandler);
-                            ConfirmLinksContextAction.confirmSelection(MoveLinksMode.AUTO, si, autoStart, CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm(), CFG_LINKGRABBER.CFG.isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), priority, PackageExpandBehavior.UNCHANGED, BooleanStatus.convert(CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads()), onOfflineHandler, onDupesHandler);
+                            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                                ConfirmLinksContextAction.confirmSelectionV2(si, cls);
+                            } else {
+                                ConfirmLinksContextAction.confirmSelection(MoveLinksMode.AUTO, si, autoStart, CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm(), CFG_LINKGRABBER.CFG.isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), priority, PackageExpandBehavior.UNCHANGED, BooleanStatus.convert(CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads()), onOfflineHandler, onDupesHandler);
+                            }
                         }
                         if (delayer.isDelayerActive() == false && eventSender.hasListener()) {
                             eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.DONE));
