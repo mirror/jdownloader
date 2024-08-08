@@ -22,6 +22,8 @@ public interface AbstractPackageNode<V extends AbstractPackageChildrenNode<E>, E
 
     PackageControllerComparator<AbstractNode> getCurrentSorter();
 
+    String getDownloadDirectory();
+
     ChildrenView<E, V> getView();
 
     boolean isExpanded();

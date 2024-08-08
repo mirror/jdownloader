@@ -22,14 +22,12 @@ import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerSelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.MergePosition;
 import org.jdownloader.logging.LogController;
-
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.plugins.FilePackage;
 
 public abstract class PackageController<PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> implements AbstractNodeNotifier {
     protected final AtomicLong structureChanged = new AtomicLong(System.currentTimeMillis());
@@ -988,8 +986,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * Returns packages with identical name and download path. </br>
-     * Those are packages you would typically want to merge in other functions.
+     * Returns packages with identical name and download path. </br> Those are packages you would typically want to merge in other
+     * functions.
      */
     public final Map<String, List<PackageType>> getPackagesWithSameName(final boolean case_insensitive) {
         final boolean readL = this.readLock();
@@ -1007,13 +1005,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
             if (case_insensitive) {
                 packagename = packagename.toLowerCase(Locale.ENGLISH);
             }
-            String downloaddestination;
-            if (packageNode instanceof CrawledPackage) {
-                downloaddestination = ((CrawledPackage) packageNode).getDownloadFolder();
-            } else {
-                downloaddestination = ((FilePackage) packageNode).getDownloadDirectory();
-            }
-            if (downloaddestination != null) {
+            String downloaddestination = packageNode.getDownloadDirectory();
+            if (downloaddestination != null && CrossSystem.isWindows()) {
                 downloaddestination = downloaddestination.toLowerCase(Locale.ENGLISH);
             }
             final String compareString = packagename + downloaddestination;

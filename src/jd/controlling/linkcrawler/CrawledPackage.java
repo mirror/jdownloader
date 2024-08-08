@@ -370,4 +370,9 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
             }
         }
     }
+
+    @Override
+    public String getDownloadDirectory() {
+        return getDownloadFolder();
+    }
 }
