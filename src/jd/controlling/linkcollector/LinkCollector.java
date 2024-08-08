@@ -2863,17 +2863,21 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
 
         public final PackageExpandBehavior getPackageExpandBehavior() {
-            return packageExpandOption;
+            return packageExpandBehavior;
         }
 
         public final void setPackageExpandBehavior(PackageExpandBehavior packageExpandBehavior) {
-            this.packageExpandOption = packageExpandBehavior;
+            if (packageExpandBehavior == null) {
+                this.packageExpandBehavior = PackageExpandBehavior.UNCHANGED;
+            } else {
+                this.packageExpandBehavior = packageExpandBehavior;
+            }
         }
 
         private final Boolean         autoStart;
         private final Boolean         autoForce;
         private final Priority        autoPriority;
-        private PackageExpandBehavior packageExpandOption = PackageExpandBehavior.UNCHANGED;
+        private PackageExpandBehavior packageExpandBehavior = PackageExpandBehavior.UNCHANGED;
 
         public MoveLinksSettings(MoveLinksMode mode, Boolean autoStart, Boolean autoForce, Priority autoPriority) {
             this.mode = mode;
