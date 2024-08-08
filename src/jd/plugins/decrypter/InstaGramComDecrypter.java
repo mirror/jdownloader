@@ -39,7 +39,6 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.InstagramConfig;
 import org.jdownloader.plugins.components.config.InstagramConfig.ActionOnRateLimitReached;
@@ -295,54 +294,45 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        br.setFollowRedirects(true);
+        br.addAllowedResponseCodes(new int[] { 502 });
+        final AtomicBoolean loggedIN = new AtomicBoolean(false);
+        final Account account = AccountController.getInstance().getValidAccount(getHost());
+        if (this.requiresLogin(param.getCryptedUrl()) && !loggedIN.get() && account == null) {
+            /* E.g. saved users own objects can only be crawled when he's logged in ;) */
+            throw new AccountRequiredException();
+        }
+        InstaGramCom.prepBRWebsite(this.br);
+        br.addAllowedResponseCodes(new int[] { 502 });
         try {
-            br.setFollowRedirects(true);
-            br.addAllowedResponseCodes(new int[] { 502 });
-            final AtomicBoolean loggedIN = new AtomicBoolean(false);
-            final Account account = AccountController.getInstance().getValidAccount(getHost());
-            if (this.requiresLogin(param.getCryptedUrl()) && !loggedIN.get() && account == null) {
-                /* E.g. saved users own objects can only be crawled when he's logged in ;) */
-                throw new AccountRequiredException();
+            if (param.getCryptedUrl().matches(TYPE_SAVED_OBJECTS)) {
+                return this.crawlUserSavedObjects(param, account, loggedIN);
+            } else if (param.getCryptedUrl().matches(TYPE_GALLERY)) {
+                /* Crawl single images & galleries */
+                return crawlGallery(param, account, loggedIN);
+            } else if (param.getCryptedUrl().matches(TYPE_HASHTAG)) {
+                return crawlHashtag(param, account, loggedIN);
+            } else if (param.getCryptedUrl().matches(TYPE_STORY_HIGHLIGHTS)) {
+                return this.crawlStoryHighlight(param, account, loggedIN);
+            } else if (new Regex(param.getCryptedUrl(), PATTERN_STORY).patternFind()) {
+                return this.crawlStory(param, account, loggedIN, true);
+            } else if (param.getCryptedUrl().matches(TYPE_PROFILE_REELS)) {
+                return this.crawlUserReels(param, account, loggedIN);
+            } else if (param.getCryptedUrl().matches(TYPE_PROFILE_TAGGED)) {
+                return this.crawlUserTagged(param, account, loggedIN);
+            } else {
+                return this.crawlUser(param, account, loggedIN);
             }
-            InstaGramCom.prepBRWebsite(this.br);
-            br.addAllowedResponseCodes(new int[] { 502 });
-            try {
-                if (param.getCryptedUrl().matches(TYPE_SAVED_OBJECTS)) {
-                    return this.crawlUserSavedObjects(param, account, loggedIN);
-                } else if (param.getCryptedUrl().matches(TYPE_GALLERY)) {
-                    /* Crawl single images & galleries */
-                    return crawlGallery(param, account, loggedIN);
-                } else if (param.getCryptedUrl().matches(TYPE_HASHTAG)) {
-                    return crawlHashtag(param, account, loggedIN);
-                } else if (param.getCryptedUrl().matches(TYPE_STORY_HIGHLIGHTS)) {
-                    return this.crawlStoryHighlight(param, account, loggedIN);
-                } else if (new Regex(param.getCryptedUrl(), PATTERN_STORY).patternFind()) {
-                    return this.crawlStory(param, account, loggedIN, true);
-                } else if (param.getCryptedUrl().matches(TYPE_PROFILE_REELS)) {
-                    return this.crawlUserReels(param, account, loggedIN);
-                } else if (param.getCryptedUrl().matches(TYPE_PROFILE_TAGGED)) {
-                    return this.crawlUserTagged(param, account, loggedIN);
-                } else {
-                    return this.crawlUser(param, account, loggedIN);
-                }
-            } catch (final AccountUnavailableException e) {
-                if (account != null) {
-                    handleAccountException(account, e);
-                }
-                throw e;
-            } catch (final AccountInvalidException e) {
-                if (account != null) {
-                    handleAccountException(account, e);
-                }
-                throw e;
+        } catch (final AccountUnavailableException e) {
+            if (account != null) {
+                handleAccountException(account, e);
             }
-        } catch (Exception e) {
-            logger.log(e);
             throw e;
-        } finally {
-            if (logger instanceof LogSource) {
-                ((LogSource) logger).flush();
+        } catch (final AccountInvalidException e) {
+            if (account != null) {
+                handleAccountException(account, e);
             }
+            throw e;
         }
     }
 
@@ -792,56 +782,47 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        try {
-            logger.info("Crawling all reels of user: " + username);
-            final String userID = this.findUserID(param, account, loggedIN, username);
-            final UrlQuery query = new UrlQuery();
-            query.add("target_user_id", userID);
-            /* 12 = default pagination value of website */
-            query.add("page_size", Integer.toString(PluginJsonConfig.get(InstagramConfig.class).getProfileCrawlerReelsPaginationMaxItemsPerPage()));
-            query.add("include_feed_video", "true");
-            String max_id = null;
-            final InstagramMetadata metadata = new InstagramMetadata();
-            metadata.setPackageName(username + " - reels");
-            InstaGramCom.prepBRAltAPI(this.br);
-            int page = 1;
-            do {
-                InstaGramCom.postPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/clips/user/", query);
-                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                final Map<String, Object> paging_info = (Map<String, Object>) entries.get("paging_info");
-                final List<Map<String, Object>> mediaItems = (List<Map<String, Object>>) entries.get("items");
-                if (mediaItems.size() == 0) {
-                    logger.info("Stopping because: empty?");
-                    ret.add(this.createOfflinelink(param.getCryptedUrl(), "PROFILE_CONTAINS_NO_REELS_" + username, "The following profile doesn't contain any reels: " + username));
-                    break;
-                }
-                ret.addAll(this.crawlPostListAltAPI(param, mediaItems, metadata));
-                max_id = (String) paging_info.get("max_id");
-                logger.info("Crawled page " + page + " | Found items so far: " + ret.size() + " | Next max_id: " + max_id);
-                if (this.isAbort()) {
-                    logger.info("Stopping because: Aborted by user");
-                    break;
-                } else if (((Boolean) paging_info.get("more_available")).booleanValue() == false) {
-                    logger.info("Stopping because: more_available == false");
-                    break;
-                } else if (StringUtils.isEmpty(max_id)) {
-                    /* Double fail-safe */
-                    logger.info("Stopping because: Reached last page");
-                    break;
-                } else {
-                    page++;
-                    query.addAndReplace("max_id", Encoding.urlEncode(max_id));
-                }
-            } while (true);
-            return ret;
-        } catch (Exception e) {
-            logger.log(e);
-            throw e;
-        } finally {
-            if (logger instanceof LogSource) {
-                ((LogSource) logger).flush();
+        logger.info("Crawling all reels of user: " + username);
+        final String userID = this.findUserID(param, account, loggedIN, username);
+        final UrlQuery query = new UrlQuery();
+        query.add("target_user_id", userID);
+        /* 12 = default pagination value of website */
+        query.add("page_size", Integer.toString(PluginJsonConfig.get(InstagramConfig.class).getProfileCrawlerReelsPaginationMaxItemsPerPage()));
+        query.add("include_feed_video", "true");
+        String max_id = null;
+        final InstagramMetadata metadata = new InstagramMetadata();
+        metadata.setPackageName(username + " - reels");
+        InstaGramCom.prepBRAltAPI(this.br);
+        int page = 1;
+        do {
+            InstaGramCom.postPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/clips/user/", query);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> paging_info = (Map<String, Object>) entries.get("paging_info");
+            final List<Map<String, Object>> mediaItems = (List<Map<String, Object>>) entries.get("items");
+            if (mediaItems.size() == 0) {
+                logger.info("Stopping because: empty?");
+                ret.add(this.createOfflinelink(param.getCryptedUrl(), "PROFILE_CONTAINS_NO_REELS_" + username, "The following profile doesn't contain any reels: " + username));
+                break;
             }
-        }
+            ret.addAll(this.crawlPostListAltAPI(param, mediaItems, metadata));
+            max_id = (String) paging_info.get("max_id");
+            logger.info("Crawled page " + page + " | Found items so far: " + ret.size() + " | Next max_id: " + max_id);
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                break;
+            } else if (((Boolean) paging_info.get("more_available")).booleanValue() == false) {
+                logger.info("Stopping because: more_available == false");
+                break;
+            } else if (StringUtils.isEmpty(max_id)) {
+                /* Double fail-safe */
+                logger.info("Stopping because: Reached last page");
+                break;
+            } else {
+                page++;
+                query.addAndReplace("max_id", Encoding.urlEncode(max_id));
+            }
+        } while (true);
+        return ret;
     }
 
     private ArrayList<DownloadLink> crawlUserTagged(final CryptedLink param, final Account account, final AtomicBoolean loggedIN) throws UnsupportedEncodingException, Exception {
