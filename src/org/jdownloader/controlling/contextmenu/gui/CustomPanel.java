@@ -234,15 +234,11 @@ public class CustomPanel extends MigPanel {
                 cb.setSelectedItem(values[index]);
                 add(new JLabel(getNameForCustomizer(gs)), "growx,spanx,wrap");
                 add(cb, "growx,spanx,wrap");
-            } else if (gs.getType() == String.class) {
-
-                String value = (String) actionData.fetchSetup(gs.getKey());
-
+            } else if (Clazz.isString(gs.getType())) {
+                String value = StringUtils.valueOfOrNull(actionData.fetchSetup(gs.getKey()));
                 if (value == null) {
                     value = (String) gs.get(actionClass);
-
                 }
-
                 final ExtTextField cb = new ExtTextField() {
 
                     @Override
@@ -253,21 +249,16 @@ public class CustomPanel extends MigPanel {
                         }
                         managerFrame.repaint();
                     }
-
                 };
 
                 cb.setText(value);
                 add(new JLabel(getNameForCustomizer(gs)), "growx,spanx,wrap");
                 add(cb, "growx,spanx,wrap,pushx,growx");
-            } else if (Clazz.isInteger(gs.getType())) {
-
-                Integer value = (Integer) actionData.fetchSetup(gs.getKey());
-
+            } else if (Clazz.isFixedPointNumber(gs.getType())) {
+                Number value = (Number) actionData.fetchSetup(gs.getKey());
                 if (value == null) {
-                    value = (Integer) gs.get(actionClass);
-
+                    value = (Number) gs.get(actionClass);
                 }
-
                 final ExtSpinner spinner = new ExtSpinner(new SpinnerNumberModel(value.intValue(), -1, 10000, 1));
                 spinner.addChangeListener(new ChangeListener() {
 
