@@ -26,6 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogInterface;
@@ -38,6 +39,7 @@ import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 public class SimpleFTPDownloadInterface extends DownloadInterface {
@@ -55,6 +57,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
     protected long                                  totalLinkBytesLoaded     = -1;
     protected final AtomicLong                      totalLinkBytesLoadedLive = new AtomicLong(0);
     private long                                    startTimeStamp           = -1;
+    private long                                    lastModifiedTimeStamp    = -1;
     private boolean                                 resumed                  = false;
 
     public SimpleFTPDownloadInterface(SimpleFTP simpleFTP, final DownloadLink link, String filePath) {
@@ -125,6 +128,13 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
     }
 
     protected void download(String filename, boolean resume) throws IOException, PluginException, SkipReasonException {
+        if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+            try {
+                lastModifiedTimeStamp = simpleFTP.getModTime(filename);
+            } catch (IOException e) {
+                logger.log(e);
+            }
+        }
         final File file = outputPartFile;
         if (!simpleFTP.isBinary()) {
             logger.info("Warning: Download in ASCII mode may fail!");
@@ -320,8 +330,12 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
 
     private void finalizeDownload(final File outputPartFile, final File outputCompleteFile) throws Exception {
         if (downloadable.rename(outputPartFile, outputCompleteFile)) {
-            try { /* set current timestamp as lastModified timestamp */
-                outputCompleteFile.setLastModified(System.currentTimeMillis());
+            try {
+                if (lastModifiedTimeStamp != -1) {
+                    outputCompleteFile.setLastModified(lastModifiedTimeStamp);
+                } else {
+                    outputCompleteFile.setLastModified(System.currentTimeMillis());
+                }
             } catch (final Throwable e) {
                 logger.log(e);
             }

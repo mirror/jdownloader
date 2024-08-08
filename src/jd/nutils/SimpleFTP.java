@@ -46,10 +46,12 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.TimeZone;
 
 import jd.plugins.Plugin;
 
@@ -148,6 +150,8 @@ public abstract class SimpleFTP {
         CLNT,
         PBSZ,
         PROT,
+        MDTM, // rfc3659, The FTP command, MODIFICATION TIME (MDTM), can be used to determine when a file in the server NVFS was last
+        // modified.
         MLST, // rfc3659, MLST provides data about exactly the object named on its command line, and no others.
         MLSD, // rfc3659, MLSD,on the other, lists the contents of a directory if a directory is named, otherwise a 501 reply is returned.
         PROT_C("PROT C"),
@@ -888,6 +892,39 @@ public abstract class SimpleFTP {
         }
         final String[] split = size.split(" ");
         return Long.parseLong(split[1].trim());
+    }
+
+    public long getModTime(final String filePath) throws IOException {
+        sendLine(getPathEncoding(), "MDTM " + filePath);
+        String modTime = null;
+        try {
+            modTime = readLines(new int[] { 213 }, "MDTM failed");
+        } catch (IOException e) {
+            if (e.getMessage().contains("MDTM") || e.getMessage().contains("550")) {
+                // 550 /path.....: not a regular file
+                // 550 /path....: not a plain file
+                logger.log(e);
+                return -1;
+            } else {
+                throw e;
+            }
+        }
+        final String[] split = modTime.split(" ");
+        final TimeZone GMT = TimeZone.getTimeZone("GMT");
+        for (final String format : new String[] { "yyyyMMddHHmmss.SSS", "yyyyMMddHHmmss" }) {
+            try {
+                if (format.contains(".") != split[1].contains(".")) {
+                    continue;
+                }
+                final SimpleDateFormat df = new SimpleDateFormat(format);
+                df.setTimeZone(GMT);
+                final long ret = df.parse(split[1]).getTime();
+                return ret;
+            } catch (Exception e) {
+                getLogger().log(e);
+            }
+        }
+        return -1;
     }
 
     /**
