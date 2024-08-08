@@ -58,7 +58,7 @@ public class FileSystemHelper {
         }
     }
 
-    @FieldOrder({ "setSparse" })
+    @FieldOrder({ "sparseFlag" })
     public static class FILE_SET_SPARSE_BUFFER extends Structure {
         public boolean sparseFlag;
 

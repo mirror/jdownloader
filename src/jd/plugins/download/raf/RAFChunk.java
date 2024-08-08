@@ -259,12 +259,7 @@ public class RAFChunk extends Thread {
                 try {
                     if (reachedEOF == true) {
                         /* we already reached EOF, so nothing more to read */
-                        final int bufSize = buffer.size();
-                        if (bufSize > 0) {
-                            toWrite = bufSize;
-                        } else {
-                            toWrite = -1;
-                        }
+                        toWrite = -1;
                     } else {
                         /* lets try to read some data */
                         toWrite = buffer.size();
@@ -335,8 +330,8 @@ public class RAFChunk extends Thread {
                     throw e;
                 } catch (IOException e4) {
                     LogSource.exception(logger, e4);
-                    if (toWrite > 0) {
-                        logger.warning("flush:exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
+                    if (buffer.size() > 0) {
+                        logger.warning("flush:exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten + "|buffer:" + buffer.size());
                         try {
                             writeCompleteFlag = true;
                             final long flush = dl.write(this);
@@ -344,11 +339,11 @@ public class RAFChunk extends Thread {
                                 dl.addToTotalLinkBytesLoaded(flush, false);
                                 bytesWritten += flush;
                                 toWrite -= flush;
-                                if (toWrite == 0) {
+                                if (toWrite <= 0) {
                                     toWrite = -1;
                                 }
                             }
-                            logger.warning("flushed:exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
+                            logger.warning("flushed:exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten + "|buffer:" + buffer.size());
                         } catch (final Throwable throwable) {
                             LogSource.exception(logger, throwable);
                         }
@@ -361,8 +356,8 @@ public class RAFChunk extends Thread {
                     }
                 }
                 if (toWrite == -1 || isExternalyAborted() || connectionclosed.get()) {
-                    if (toWrite > 0) {
-                        logger.warning("flush(loop):exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
+                    if (buffer.size() > 0) {
+                        logger.warning("flush(loop):exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten + "|buffer:" + buffer.size());
                         try {
                             writeCompleteFlag = true;
                             final long flush = dl.write(this);
@@ -370,16 +365,16 @@ public class RAFChunk extends Thread {
                                 dl.addToTotalLinkBytesLoaded(flush, false);
                                 bytesWritten += flush;
                                 toWrite -= flush;
-                                if (toWrite == 0) {
+                                if (toWrite <= 0) {
                                     toWrite = -1;
                                 }
                             }
-                            logger.warning("flushed(loop):exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
+                            logger.warning("flushed(loop):exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten + "|buffer:" + buffer.size());
                         } catch (final Throwable throwable) {
                             LogSource.exception(logger, throwable);
                         }
                     }
-                    logger.warning("break:exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
+                    logger.warning("break:exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten + "|buffer:" + buffer.size());
                     break;
                 }
                 if (toWrite > 0) {
@@ -389,7 +384,7 @@ public class RAFChunk extends Thread {
                         dl.addToTotalLinkBytesLoaded(flush, false);
                         bytesWritten += flush;
                         toWrite -= flush;
-                        if (toWrite == 0) {
+                        if (toWrite <= 0) {
                             toWrite = -1;
                         }
                     }
@@ -402,8 +397,8 @@ public class RAFChunk extends Thread {
                     break;
                 }
             }
-            if (toWrite > 0) {
-                logger.warning("flush(final):exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
+            if (buffer.size() > 0) {
+                logger.warning("flush(final):exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten + "|buffer:" + buffer.size());
                 writeCompleteFlag = true;
                 remoteIO = false;
                 final long flush = dl.write(this);
@@ -411,8 +406,11 @@ public class RAFChunk extends Thread {
                     dl.addToTotalLinkBytesLoaded(flush, false);
                     bytesWritten += flush;
                     toWrite -= flush;
+                    if (toWrite <= 0) {
+                        toWrite = -1;
+                    }
                 }
-                logger.warning("flushed(final):exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
+                logger.warning("flushed(final):exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten + "|buffer:" + buffer.size());
             }
             logger.info("ExternalAbort: " + isExternalyAborted());
             long endPosition = endByte;
@@ -420,7 +418,7 @@ public class RAFChunk extends Thread {
                 endPosition = downloadable.getVerifiedFileSize();
             }
             if (endPosition >= 0 && getCurrentBytesPosition() < endPosition) {
-                logger.warning("Download not finished. Loaded until now: " + getCurrentBytesPosition() + "/" + endPosition + " read:" + bytesRead + " written:" + bytesWritten);
+                logger.warning("Download not finished. Loaded until now: " + getCurrentBytesPosition() + "/" + endPosition + " read:" + bytesRead + " written:" + bytesWritten + "|buffer:" + buffer.size());
                 dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, "Download Incomplete").localizedMessage(_JDT.T.download_error_message_incomplete()));
             }
         } catch (FileNotFoundException e) {
