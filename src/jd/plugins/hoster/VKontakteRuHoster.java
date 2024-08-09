@@ -1135,14 +1135,19 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (userCookies != null) {
                     logger.info("Attempting user cookie login");
                     br.setCookies(DOMAIN, userCookies);
-                    if (checkCookieLogin(br, account)) {
+                    if (!forceCookieCheck) {
+                        /* Do not validate login cookies */
                         return;
+                    }
+                    if (checkCookieLogin(br, account)) {
+                        /* Success! */
+                        return;
+                    }
+                    /* Failure */
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                     } else {
-                        if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                        } else {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                        }
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                     }
                 }
                 final Cookies cookies = account.loadCookies("");
@@ -1152,12 +1157,11 @@ public class VKontakteRuHoster extends PluginForHost {
                     if (!forceCookieCheck) {
                         /* Do not validate login cookies */
                         return;
+                    }
+                    if (checkCookieLogin(br, account)) {
+                        return;
                     } else {
-                        if (checkCookieLogin(br, account)) {
-                            return;
-                        } else {
-                            br.clearCookies(null);
-                        }
+                        br.clearCookies(null);
                     }
                 }
                 logger.info("Performing full login");

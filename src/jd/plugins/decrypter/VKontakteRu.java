@@ -1716,12 +1716,13 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         }
         final String websiteJson = br.getRegex("extend\\(window\\.cur \\|\\| \\{\\}, (\\{\".*?\\})\\);").getMatch(0);
-        if (websiteJson != null) {
+        apiPrefetchCacheHandling: if (websiteJson != null) {
             /* 2023-11-17: New */
             final Map<String, Object> entries = restoreFromString(websiteJson, TypeRef.MAP);
             final List<Map<String, Object>> apiPrefetchCache = (List<Map<String, Object>>) entries.get("apiPrefetchCache");
             if (apiPrefetchCache.isEmpty()) {
                 logger.info("No API prefetch data available");
+                break apiPrefetchCacheHandling;
             }
             String videoPlaylistOwnerID = null;
             String videoPlaylistID = null;
@@ -1734,7 +1735,12 @@ public class VKontakteRu extends PluginForDecrypt {
                     continue;
                 }
                 final String method = apiPrefetchCacheItem.get("method").toString();
-                final Map<String, Object> response = (Map<String, Object>) apiPrefetchCacheItem.get("response");
+                final Object responseO = apiPrefetchCacheItem.get("response");
+                if (!(responseO instanceof Map)) {
+                    logger.info("Skipping unsupported item: " + responseO);
+                    continue;
+                }
+                final Map<String, Object> response = (Map<String, Object>) responseO;
                 if (method.equalsIgnoreCase("photos.getAlbums")) {
                     if (grabPhotoAlbums) {
                         final List<Map<String, Object>> albums = (List<Map<String, Object>>) response.get("items");
@@ -1849,12 +1855,6 @@ public class VKontakteRu extends PluginForDecrypt {
                 String containerURL = null;
                 FilePackage videoPackage = null;
                 if (videoPlaylistOwnerID != null && videoPlaylistID != null) {
-                    String internalSectionName;
-                    if (sectionFromURL != null) {
-                        internalSectionName = sectionFromURL;
-                    } else {
-                        internalSectionName = "all";
-                    }
                     if (videoPlaylistOwnerID != null && videoPlaylistID != null) {
                         containerURL = "https://" + this.getHost() + "/video/playlist/" + videoPlaylistOwnerID + "_" + videoPlaylistID;
                     }
@@ -1863,7 +1863,11 @@ public class VKontakteRu extends PluginForDecrypt {
                         videoPackage.setName("videos" + videoPlaylistOwnerID + "_" + videoPlaylistID);
                     } else if (videoPlaylistTitle != null) {
                         videoPackage = FilePackage.getInstance();
-                        videoPackage.setName(Encoding.htmlDecode(videoPlaylistTitle).trim() + " - " + internalSectionName);
+                        videoPackage.setName(Encoding.htmlDecode(videoPlaylistTitle).trim());
+                    } else {
+                        /* Fallback */
+                        videoPackage = FilePackage.getInstance();
+                        videoPackage.setName(br._getURL().getPath());
                     }
                 }
                 for (final DownloadLink video : videoResults) {
@@ -2053,20 +2057,27 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         /* Videos */
         if (grabVideo) {
-            ret.addAll(crawlVideos(this.br, fp));
             final String videoPrefetchJson = br.getRegex("var newCur = (\\{.*?\\});\\s").getMatch(0);
             processPrefetchVideoData: if (videoPrefetchJson != null) {
                 // 2024-08-07
                 final Map<String, Object> videodata = restoreFromString(videoPrefetchJson, TypeRef.MAP);
                 String currentSection = (String) videodata.get("showcaseSection");
                 if (currentSection == null) {
-                    currentSection = (String) videodata.get("section_id");
-                }
-                if (currentSection == null) {
-                    currentSection = sectionFromURL;
                     if (currentSection == null) {
-                        currentSection = "all";
+                        currentSection = (String) videodata.get("section_id");
                     }
+                    if (currentSection == null) {
+                        currentSection = sectionFromURL;
+                        if (currentSection == null) {
+                            currentSection = "all";
+                        }
+                    }
+                }
+                final String owner_id = videodata.get("oid").toString();
+                final Map<String, Object> videodata_current_section_info = (Map<String, Object>) JavaScriptEngineFactory.walkJson(videodata, "pageVideosList/" + owner_id + "/" + currentSection);
+                if (videodata_current_section_info == null) {
+                    logger.warning("Cannot handle this item via video section pagination prefetch handling");
+                    break processPrefetchVideoData;
                 }
                 FilePackage videoPackage = FilePackage.getInstance();
                 if (usernameFromURL != null) {
@@ -2074,14 +2085,8 @@ public class VKontakteRu extends PluginForDecrypt {
                     videoPackage.setName(usernameFromURL + " - " + currentSection);
                     videoPackage.setCleanupPackageName(false);
                 }
-                final String owner_id = videodata.get("oid").toString();
                 // final int maxPreloadItems = 30;
                 int numberofItemsAdded = 0;
-                final Map<String, Object> videodata_current_section_info = (Map<String, Object>) JavaScriptEngineFactory.walkJson(videodata, "pageVideosList/" + owner_id + "/" + currentSection);
-                if (videodata_current_section_info == null) {
-                    logger.warning("Cannot handle this item via video section pagination prefetch handling");
-                    break processPrefetchVideoData;
-                }
                 final int video_count = ((Number) videodata_current_section_info.get("count")).intValue();
                 if (videodata_current_section_info.size() > 0) {
                     if (video_count <= 0) {
@@ -2178,6 +2183,10 @@ public class VKontakteRu extends PluginForDecrypt {
                         }
                     } while (true);
                 }
+            }
+            if (ret.isEmpty()) {
+                /* Use legacy handling as fallback when nothing is found here. */
+                ret.addAll(crawlVideos(this.br, fp));
             }
         }
         final boolean grabClips = true;
@@ -2846,7 +2855,9 @@ public class VKontakteRu extends PluginForDecrypt {
      */
     private void siteGeneralErrorhandling(final Browser br) throws DecrypterException, PluginException, DecrypterRetryException {
         /* General errorhandling start */
-        if (br.containsHTML("(?i)>\\s*Unknown error")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*Unknown error")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)>\\s*Only logged in users can see this profile\\.<")) {
             throw new AccountRequiredException();
@@ -2863,6 +2874,8 @@ public class VKontakteRu extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("class=\"profile_deleted_text\"")) {
             /* Profile deleted or no permissions to view it */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("class=\"groups_blocked_spamfight_img\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getURL().matches("https?://[^/]+/login\\?.*")) {
             throw new AccountRequiredException();
