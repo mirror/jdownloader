@@ -14,6 +14,7 @@ import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
 import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.swing.MigPanel;
 import org.appwork.uio.ComboBoxDialogInterface;
 import org.appwork.uio.UIOManager;
@@ -294,6 +295,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
     @Customizer(link = "#getTranslationForConfirmationDialogBehavior")
     @Order(40)
+    @SpinnerValidator(min = 1, max = Integer.MAX_VALUE, step = 1)
     public ConfirmationDialogBehavior getConfirmationDialogBehavior() {
         return this.confirmationDialogBehavior;
     }
@@ -308,6 +310,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
     @Customizer(link = "#getTranslationForMinNumberofPackagesForMoveToDownloadlistConfirmDialog")
     @Order(41)
+    @SpinnerValidator(min = 1, max = Integer.MAX_VALUE, step = 1)
     public int getMinNumberofPackagesForMoveToDownloadlistConfirmDialog() {
         return this.minNumberofPackagesForConfirmMoveToDownloadlistDialog;
     }
