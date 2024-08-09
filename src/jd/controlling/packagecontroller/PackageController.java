@@ -570,6 +570,37 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         }
     }
 
+    /**
+     * This class describes, how a "merge packages" action shall behave. </br>
+     * Examples of what it can influence: </br>
+     * - position of merged items </br>
+     * - shall package comments be merged or not </br>
+     * // TODO: Make use of this class
+     */
+    public final static class MergePackageSettings {
+        private MergePosition mergeposition        = null;
+        private Boolean       mergePackageComments = null;
+
+        public MergePackageSettings() {
+        }
+
+        public MergePosition getMergeposition() {
+            return mergeposition;
+        }
+
+        public void setMergeposition(MergePosition mergeposition) {
+            this.mergeposition = mergeposition;
+        }
+
+        public Boolean getMergePackageComments() {
+            return mergePackageComments;
+        }
+
+        public void setMergePackageComments(Boolean mergePackageComments) {
+            this.mergePackageComments = mergePackageComments;
+        }
+    }
+
     public void merge(final PackageType dest, final java.util.List<PackageType> srcPkgs, final MergePosition mergeposition) {
         merge(dest, null, srcPkgs, mergeposition);
     }
@@ -987,8 +1018,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * Returns packages with identical name and download path. </br> Those are packages you would typically want to merge in other
-     * functions.
+     * Returns packages with identical name and download path. </br>
+     * Those are packages you would typically want to merge in other functions.
      */
     public final Map<String, List<PackageType>> getPackagesWithSameName(final boolean case_insensitive) {
         final boolean readL = this.readLock();
@@ -1006,7 +1037,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
             if (case_insensitive) {
                 packagename = packagename.toLowerCase(Locale.ENGLISH);
             }
-
             String downloaddestination = LinkTreeUtils.getDownloadDirectory(packageNode).getPath();
             if (downloaddestination != null && CrossSystem.isWindows()) {
                 downloaddestination = downloaddestination.toLowerCase(Locale.ENGLISH);
