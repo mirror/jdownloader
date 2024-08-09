@@ -815,7 +815,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = this.getReturnArray();
         do {
             final int linksnumBefore = ret.size();
-            ret.addAll(websiteCrawlContent(br.getURL(), br.toString(), fp, false, false, true, false, false, this.photos_store_picture_directurls));
+            ret.addAll(websiteCrawlContent(br.getURL(), br.toString(), fp, false, false, true, false, false));
             logger.info("Crawled page " + page + " | Offset: " + offset + " | Found items so far: " + ret.size() + "/" + numberOfItemsStr);
             final int linksnumAfter = ret.size();
             final int addedLinks = linksnumAfter - linksnumBefore;
@@ -940,7 +940,7 @@ public class VKontakteRu extends PluginForDecrypt {
             final int linksnumBefore = ret.size();
             /* 2023-11-17: Very ugly I know */
             this.grabPhotoAlbums = true;
-            ret.addAll(websiteCrawlContent(br.getURL(), correctedBR, fp, false, false, false, false, false, false));
+            ret.addAll(websiteCrawlContent(br.getURL(), correctedBR, fp, false, false, false, false, false));
             final int linksnumAfter = ret.size();
             addedLinks = linksnumAfter - linksnumBefore;
             addedLinksTotal += addedLinks;
@@ -967,7 +967,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlVideoAlbum(final CryptedLink param) throws Exception {
         this.getPage(param.getCryptedUrl());
-        return this.websiteCrawlContent(br.getURL(), br.getRequest().getHtmlCode(), null, true, true, true, true, true, null);
+        return this.websiteCrawlContent(br.getURL(), br.getRequest().getHtmlCode(), null, true, true, true, true, true);
     }
 
     private static Map<String, String> getSelectedVideoQualities(final Map<String, String> availableVideoQualities, final QualitySelectionMode mode, final String preferredVideoQuality) {
@@ -1317,12 +1317,12 @@ public class VKontakteRu extends PluginForDecrypt {
                 htmlBeforeReplies = br.getRequest().getHtmlCode();
             }
             /* Grab media inside users' post */
-            ret.addAll(websiteCrawlContent(contenturl, htmlBeforeReplies, fp, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.photos_store_picture_directurls));
+            ret.addAll(websiteCrawlContent(contenturl, htmlBeforeReplies, fp, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts));
             /* Open RegEx: Just grab all html starting from comments section until end */
             final String htmlReplies = br.getRegex("<div class=\"replies\"(.+)").getMatch(0);
             if (htmlReplies != null && this.vkwall_comments_grab_comments) {
                 /* Grab media inside replies/comments to users' post if wished by user. */
-                ret.addAll(websiteCrawlContent(contenturl, br.getRequest().getHtmlCode(), fp, this.vkwall_comment_grabaudio, this.vkwall_comment_grabvideo, this.vkwall_comment_grabphotos, false, this.vkwall_comment_grablink, this.photos_store_picture_directurls));
+                ret.addAll(websiteCrawlContent(contenturl, br.getRequest().getHtmlCode(), fp, this.vkwall_comment_grabaudio, this.vkwall_comment_grabvideo, this.vkwall_comment_grabphotos, false, this.vkwall_comment_grablink));
             }
             final int numberofItemsAddedThisLoop = ret.size() - numberofFoundItemsOld;
             logger.info("Offset " + offset + " contained " + numberofItemsAddedThisLoop + " items in total so far (including inside replies)");
@@ -1604,7 +1604,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
             } else {
                 logger.info("Crawling items inside single post as part of a wall");
-                ret.addAll(websiteCrawlContent(br.getURL(), br.toString(), fp, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.photos_store_picture_directurls));
+                ret.addAll(websiteCrawlContent(br.getURL(), br.toString(), fp, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts));
             }
             final int numberof_items_current = ret.size();
             final int counter_items_found_in_current_offset = numberof_items_current - numberof_items_old;
@@ -1649,7 +1649,7 @@ public class VKontakteRu extends PluginForDecrypt {
      * @throws PluginException
      * @throws InterruptedException
      */
-    private ArrayList<DownloadLink> websiteCrawlContent(final String url_source, final String html, final FilePackage fp, final boolean grabAudio, final boolean grabVideo, final boolean grabPhoto, final boolean grabDocs, final boolean grabURLsInsideText, final Boolean store_picture_directurls) throws IOException, DecrypterException, PluginException, InterruptedException {
+    private ArrayList<DownloadLink> websiteCrawlContent(final String url_source, final String html, final FilePackage fp, final boolean grabAudio, final boolean grabVideo, final boolean grabPhoto, final boolean grabDocs, final boolean grabURLsInsideText) throws IOException, DecrypterException, PluginException, InterruptedException {
         if (url_source == null) {
             throw new DecrypterException("Crawler broken");
         }
@@ -1658,7 +1658,6 @@ public class VKontakteRu extends PluginForDecrypt {
         final String sectionFromURL = query.get("section");
         final String url_source_without_params = URLHelper.getUrlWithoutParams(url_source);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final ArrayList<DownloadLink> results_video = new ArrayList<DownloadLink>();
         boolean grabAlbums = false;
         String wall_post_owner_id = null;
         String wall_post_content_id = null;
@@ -1676,7 +1675,7 @@ public class VKontakteRu extends PluginForDecrypt {
             album_ID = new Regex(url_source, PATTERN_PHOTO_ALBUMS).getMatch(0);
             grabAlbums = true;
         } else if (url_source.matches(PATTERN_PHOTO_ALBUM)) {
-            final String id_of_current_album = new Regex(url_source, "/album((?:\\-)?\\d+_\\d+)").getMatch(0);
+            final String id_of_current_album = new Regex(url_source, "(?i)/album((?:\\-)?\\d+_\\d+)").getMatch(0);
             if (id_of_current_album != null) {
                 photo_list_id = "album" + id_of_current_album;
             }
@@ -2007,7 +2006,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (photo_module != null) {
                     dl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_module, photo_module);
                 }
-                if (Boolean.TRUE.equals(store_picture_directurls)) {
+                if (photos_store_picture_directurls) {
                     if (picture_preview_json != null) {
                         picture_preview_json = Encoding.htmlDecode(picture_preview_json);
                         dl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_directurls_fallback, picture_preview_json);
@@ -2247,18 +2246,6 @@ public class VKontakteRu extends PluginForDecrypt {
         if (grabURLsInsideText && isContentFromWall) {
             ret.addAll(this.crawlUrlsInsidePosts(wall_post_text));
         }
-        if (results_video.size() > 0) {
-            /* Add more properties for video items */
-            FilePackage videoPackage = null;
-            for (final DownloadLink video : results_video) {
-                if (fp != null) {
-                    video._setFilePackage(fp);
-                } else if (videoPackage != null) {
-                    video._setFilePackage(videoPackage);
-                }
-                ret.add(video);
-            }
-        }
         return ret;
     }
 
@@ -2400,7 +2387,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlWallClips(final CryptedLink param) throws Exception {
         this.getPage(br, param.getCryptedUrl());
-        return this.websiteCrawlContent(br.getURL(), br.getRequest().getHtmlCode(), null, true, true, true, true, true, null);
+        return this.websiteCrawlContent(br.getURL(), br.getRequest().getHtmlCode(), null, true, true, true, true, true);
     }
 
     @Deprecated
