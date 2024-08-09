@@ -15,10 +15,6 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.TransferHandler;
 
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
@@ -26,6 +22,11 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
+
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.PackageController.MergePackageSettings;
 
 public abstract class PackageControllerTableTransferHandler<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends TransferHandler {
     /**
@@ -88,13 +89,13 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
 
     protected final WeakHashMap<Transferable, Map<Object, Object>> transferableCache        = new WeakHashMap<Transferable, Map<Object, Object>>();
     protected final DelayedRunnable                                transferableCacheCleanup = new DelayedRunnable(10000) {
-        @Override
-        public void delayedrun() {
-            synchronized (transferableCache) {
-                transferableCache.size();
-            }
-        }
-    };
+                                                                                                @Override
+                                                                                                public void delayedrun() {
+                                                                                                    synchronized (transferableCache) {
+                                                                                                        transferableCache.size();
+                                                                                                    }
+                                                                                                }
+                                                                                            };
 
     protected boolean isDataFlavorSupported(TransferSupport support, DataFlavor flavor) {
         try {
@@ -365,12 +366,18 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                 table.getController().getQueue().add(new QueueAction<Void, RuntimeException>(prio) {
                     @Override
                     protected Void run() throws RuntimeException {
+                        final MergePackageSettings mergesettings = new MergePackageSettings();
                         if (((PackageType) element).getCurrentSorter() == null) {
-                            table.getController().merge((PackageType) element, links, packages, org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR.DO_MERGE_TOP_BOTTOM.isEnabled() ? MergePosition.BOTTOM : MergePosition.TOP);
+                            if (org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR.DO_MERGE_TOP_BOTTOM.isEnabled()) {
+                                mergesettings.setMergePosition(MergePosition.BOTTOM);
+                            } else {
+                                mergesettings.setMergePosition(MergePosition.TOP);
+                            }
                         } else {
                             // we have a sorter.neither top nor bottom but sorted insert
-                            table.getController().merge((PackageType) element, links, packages, MergePosition.SORTED);
+                            mergesettings.setMergePosition(MergePosition.SORTED);
                         }
+                        table.getController().merge((PackageType) element, links, packages, mergesettings);
                         return null;
                     }
                 });

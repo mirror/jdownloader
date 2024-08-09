@@ -3,6 +3,7 @@ package jd.controlling.packagecontroller;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -18,6 +19,8 @@ import javax.swing.SwingUtilities;
 
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.ModifyLock;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
@@ -29,6 +32,9 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerSelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.MergePosition;
 import org.jdownloader.logging.LogController;
+
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.plugins.FilePackage;
 
 public abstract class PackageController<PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> implements AbstractNodeNotifier {
     protected final AtomicLong structureChanged = new AtomicLong(System.currentTimeMillis());
@@ -578,18 +584,23 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
      * // TODO: Make use of this class
      */
     public final static class MergePackageSettings {
-        private MergePosition mergeposition        = null;
+        private MergePosition mergeposition        = MergePosition.BOTTOM;
         private Boolean       mergePackageComments = null;
 
         public MergePackageSettings() {
         }
 
-        public MergePosition getMergeposition() {
+        public MergePosition getMergePosition() {
             return mergeposition;
         }
 
-        public void setMergeposition(MergePosition mergeposition) {
-            this.mergeposition = mergeposition;
+        public void setMergePosition(MergePosition mergeposition) {
+            if (mergeposition == null) {
+                /* Default */
+                this.mergeposition = MergePosition.BOTTOM;
+            } else {
+                this.mergeposition = mergeposition;
+            }
         }
 
         public Boolean getMergePackageComments() {
@@ -601,11 +612,11 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         }
     }
 
-    public void merge(final PackageType dest, final java.util.List<PackageType> srcPkgs, final MergePosition mergeposition) {
-        merge(dest, null, srcPkgs, mergeposition);
+    public void merge(final PackageType dest, final List<PackageType> srcPkgs, final MergePackageSettings mergesettings) {
+        merge(dest, null, srcPkgs, mergesettings);
     }
 
-    public void merge(final PackageType dest, final java.util.List<ChildType> srcLinks, final java.util.List<PackageType> srcPkgs, final MergePosition mergeposition) {
+    public void merge(final PackageType dest, final List<ChildType> srcLinks, final List<PackageType> srcPkgs, final MergePackageSettings mergesettings) {
         if (dest == null) {
             return;
         } else if (srcLinks == null && srcPkgs == null) {
@@ -615,7 +626,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
             @Override
             protected Void run() throws RuntimeException {
                 int positionMerge = 0;
-                switch (mergeposition) {
+                switch (mergesettings.getMergePosition()) {
                 case BOTTOM:
                     positionMerge = dest.getChildren().size();
                     break;
@@ -634,13 +645,49 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     }
                 }
                 if (srcPkgs != null) {
-                    for (PackageType pkg : srcPkgs) {
+                    final HashSet<String> commentDups = new HashSet<String>();
+                    for (final PackageType pkg : srcPkgs) {
                         /* move links from srcPkgs to dest */
                         int size = pkg.getChildren().size();
                         moveOrAddAt(dest, pkg.getChildren(), positionMerge);
                         if (positionMerge != -1) {
                             /* update positionMerge in case we want merge@top */
                             positionMerge += size;
+                        }
+                    }
+                    if (Boolean.TRUE.equals(mergesettings.getMergePackageComments())) {
+                        /* Merge package comments */
+                        /* Place main package at beginning of list so that comment of it is placed first in our merged comment string. */
+                        final StringBuilder sb = new StringBuilder();
+                        srcPkgs.add(0, dest);
+                        for (final PackageType pkg : srcPkgs) {
+                            final String comment;
+                            if (pkg instanceof CrawledPackage) {
+                                comment = ((CrawledPackage) pkg).getComment();
+                            } else {
+                                comment = ((FilePackage) pkg).getComment();
+                            }
+                            if (StringUtils.isEmpty(comment)) {
+                                continue;
+                            }
+                            final String[] commentLines = Regex.getLines(comment);
+                            for (final String commentLine : commentLines) {
+                                if (!StringUtils.isEmpty(commentLine) && commentDups.add(commentLine)) {
+                                    if (sb.length() > 0) {
+                                        sb.append("\r\n");
+                                    }
+                                    sb.append(commentLine);
+                                }
+                            }
+                        }
+                        final String mergedComments = sb.toString();
+                        if (!StringUtils.isEmpty(mergedComments)) {
+                            /* Set new comment */
+                            if (dest instanceof CrawledPackage) {
+                                ((CrawledPackage) dest).setComment(mergedComments);
+                            } else {
+                                ((FilePackage) dest).setComment(mergedComments);
+                            }
                         }
                     }
                 }
@@ -958,7 +1005,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         });
     }
 
-    public void move(final java.util.List<PackageType> srcPkgs, final PackageType afterDest) {
+    public void move(final List<PackageType> srcPkgs, final PackageType afterDest) {
         if (srcPkgs == null || srcPkgs.size() == 0) {
             return;
         }
@@ -981,7 +1028,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         });
     }
 
-    public void moveAfter(final java.util.List<ChildType> srcLinks, final PackageType dstPkg, final ChildType after) {
+    public void moveAfter(final List<ChildType> srcLinks, final PackageType dstPkg, final ChildType after) {
         if (dstPkg == null || srcLinks == null || srcLinks.size() == 0) {
             return;
         }
@@ -999,7 +1046,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         });
     }
 
-    public void moveBefore(final java.util.List<ChildType> srcLinks, final PackageType dstPkg, final ChildType before) {
+    public void moveBefore(final List<ChildType> srcLinks, final PackageType dstPkg, final ChildType before) {
         if (dstPkg == null || srcLinks == null || srcLinks.size() == 0) {
             return;
         }
@@ -1053,7 +1100,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     @Deprecated
-    public void move(final java.util.List<ChildType> srcLinks, final PackageType dstPkg, final ChildType afterLink) {
+    public void move(final List<ChildType> srcLinks, final PackageType dstPkg, final ChildType afterLink) {
         moveAfter(srcLinks, dstPkg, afterLink);
     }
 
