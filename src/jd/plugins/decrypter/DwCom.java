@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -29,9 +31,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.GenericM3u8;
-
-import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dw.com" }, urls = { "https?://(?:www\\.)?dw\\.com/[a-z]{2}/([^/]+)/av-(\\d+)" })
 public class DwCom extends PluginForDecrypt {
@@ -45,6 +46,9 @@ public class DwCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(addedurl);
         if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*404 - Page not found")) {
+            /* 404 error page without response 404 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title = HTMLSearch.searchMetaTag(br, "og:title");
@@ -75,7 +79,7 @@ public class DwCom extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (final String singleLink : links) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
+                final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(singleLink));
                 final String quality_part = new Regex(singleLink, "(_[a-z]+_[a-z]+\\.mp4)").getMatch(0);
                 if (quality_part != null) {
                     dl.setFinalFileName(title + quality_part);

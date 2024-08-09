@@ -27,6 +27,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -58,16 +68,6 @@ import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.Quality;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%@:\\!]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -112,19 +112,6 @@ public class VKontakteRu extends PluginForDecrypt {
     private String              vkwall_graburlsinsideposts_regex_default;
     /* Some supported url patterns */
     private static final String PATTERN_URL_EXTERN                        = "(?i)https?://[^/]+/away\\.php\\?to=.+";
-    /** 2022-01-19: Audio stuff is deprecated because it's all DRM protected. No need to fix crawl methods for audio content! */
-    @Deprecated
-    private static final String PATTERN_GENERAL_AUDIO                     = "(?i)https?://[^/]+/audio.*?";
-    @Deprecated
-    private static final String PATTERN_AUDIO_ALBUM                       = "(?i)https?://[^/]+/(?:audio(?:\\.php)?\\?id=(?:\\-)?\\d+|audios(?:\\-)?\\d+).*?";
-    @Deprecated
-    private static final String PATTERN_AUDIO_PAGE                        = "(?i)https?://[^/]+/page\\-\\d+_\\d+.*?";
-    @Deprecated
-    private static final String PATTERN_AUDIO_PAGE_oid                    = "(?i)https?://[^/]+/pages\\?oid=\\-\\d+\\&p=(?!va_c)[^<>/\"]+";
-    @Deprecated
-    private static final String PATTERN_AUDIO_AUDIOS_ALBUM                = "(?i)https?://[^/]+/(audios\\-\\d+\\?album_id=\\d+|music/album/-?\\d+_\\d+)";
-    @Deprecated
-    private static final String PATTERN_AUDIO_AUDIOS_ALBUM_2020           = "(?i)https?://[^/]+/music/album/(-?\\d+)_(\\d+).*?";
     public static final String  PATTERN_VIDEO_SINGLE_Z                    = "(?i)https?://[^/]+/.*?z=video(-?\\d+_\\d+).*?";
     private static final String PATTERN_CLIP_SINGLE_Z                     = "(?i)https?://[^/]+/.*?z=clip((?:\\-)?\\d+_\\d+).*?";
     private static final String PATTERN_VIDEO_SINGLE_ORIGINAL             = "(?i)https?://[^/]+/video((?:\\-)?\\d+_\\d+).*";
@@ -214,6 +201,7 @@ public class VKontakteRu extends PluginForDecrypt {
          */
         if (param.getCryptedUrl().matches("^https?://[^/]*/429\\.html.+")) {
             // rewrite 429.html URLs
+            logger.info("Handling 429 redirect");
             final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
             String redirect429 = query.get("redirect429");
             if (redirect429 != null) {
@@ -281,22 +269,7 @@ public class VKontakteRu extends PluginForDecrypt {
             throw new AccountRequiredException();
         }
         /* Decryption process START */
-        if (param.getCryptedUrl().matches(PATTERN_AUDIO_AUDIOS_ALBUM_2020)) {
-            return decryptAudiosAlbum2020(param);
-        } else if (param.getCryptedUrl().matches(PATTERN_GENERAL_AUDIO)) {
-            if (param.getCryptedUrl().matches(PATTERN_AUDIO_ALBUM)) {
-                /* Audio album */
-                return decryptAudioAlbumAndSection(param);
-            } else if (param.getCryptedUrl().matches(PATTERN_AUDIO_AUDIOS_ALBUM)) {
-                return decryptAudiosAlbum(param);
-            } else {
-                /* Single playlists */
-                return decryptAudioPlaylist(param);
-            }
-        } else if (param.getCryptedUrl().matches(PATTERN_AUDIO_PAGE) || param.getCryptedUrl().matches(PATTERN_AUDIO_PAGE_oid)) {
-            /* Audio page */
-            return crawlAudioPage(param);
-        } else if (isSingleVideo(param.getCryptedUrl())) {
+        if (isSingleVideo(param.getCryptedUrl())) {
             /* Single video */
             return crawlSingleVideo(param);
         } else if (isVideoAlbum(param.getCryptedUrl())) {
@@ -327,7 +300,6 @@ public class VKontakteRu extends PluginForDecrypt {
             /* Wall link or unsupported link! */
             return crawlWallLink(param);
         }
-        // return null;
     }
 
     /** @return true: Account is known to be required for given URL. */
@@ -350,7 +322,7 @@ public class VKontakteRu extends PluginForDecrypt {
         } else if (isUserStory(url)) {
             return true;
         } else {
-            if (url.matches(PATTERN_VIDEO_SINGLE_Z) || url.matches(PATTERN_PHOTO_ALBUM) || url.matches(PATTERN_PHOTO_ALBUMS) || url.matches(PATTERN_AUDIO_PAGE) || url.matches(PATTERN_GENERAL_WALL_LINK) || url.matches(PATTERN_GENERAL_AUDIO) || url.matches(PATTERN_WALL_POST_LINK) || url.matches(PATTERN_AUDIO_PAGE_oid) || url.matches(PATTERN_DOCS)) {
+            if (url.matches(PATTERN_VIDEO_SINGLE_Z) || url.matches(PATTERN_PHOTO_ALBUM) || url.matches(PATTERN_PHOTO_ALBUMS) || url.matches(PATTERN_GENERAL_WALL_LINK) || url.matches(PATTERN_WALL_POST_LINK) || url.matches(PATTERN_DOCS)) {
                 return true;
             } else {
                 return false;
@@ -366,293 +338,10 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
-    /**
-     * NOT Using API
-     *
-     * @throws Exception
-     */
-    @SuppressWarnings("deprecation")
-    private ArrayList<DownloadLink> decryptAudioAlbumAndSection(final CryptedLink param) throws Exception {
-        final String owner_ID = new Regex(param.getCryptedUrl(), "((?:\\-)?\\d+)$").getMatch(0);
-        final String album_id = UrlQuery.parse(param.getCryptedUrl()).get("album_id");
-        final String section = UrlQuery.parse(param.getCryptedUrl()).get("section");
-        if (StringUtils.equalsIgnoreCase(section, "playlists")) {
-            /* Overview of playlists */
-            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-            br.setFollowRedirects(true);
-            br.getPage(param.getCryptedUrl());
-            this.siteGeneralErrorhandling(br);
-            final String[] playlistURLs = br.getRegex("(/music/playlist/[^<>\"\\']+)").getColumn(0);
-            if (playlistURLs == null || playlistURLs.length == 0) {
-                logger.info("Nothing found --> Probably offline");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            logger.info("Found playlists: " + playlistURLs.length);
-            for (final String playlistURL : playlistURLs) {
-                ret.add(this.createDownloadlink(br.getURL(playlistURL).toString()));
-            }
-            return ret;
-        } else {
-            /* Single playlist */
-            String fpName = null;
-            if (cfg.getBooleanProperty(VKontakteRuHoster.VKAUDIOS_USEIDASPACKAGENAME, VKontakteRuHoster.default_VKAUDIOS_USEIDASPACKAGENAME)) {
-                fpName = "audios" + owner_ID;
-            }
-            final String postData;
-            if (album_id != null) {
-                postData = "act=load_silent&al=1&album_id=" + album_id + "&band=false&owner_id=" + owner_ID;
-            } else {
-                postData = "access_hash=&act=load_section&al=1&claim=0&offset=0&is_loading_all=1&owner_id=" + owner_ID + "&playlist_id=-1&type=playlist";
-            }
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage(getBaseURL() + "/al_audio.php", postData);
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
-            if (StringUtils.isEmpty(fpName)) {
-                fpName = (String) entries.get("title");
-            }
-            if (StringUtils.isEmpty(fpName)) {
-                /* Last chance fallback */
-                fpName = "vk.com audio - " + owner_ID;
-            }
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName).trim());
-            /* TODO: 2020-05-11: Fix this */
-            final List<Object> audioData = (List<Object>) entries.get("payload");
-            if (audioData == null || audioData.size() == 0) {
-                logger.info("Nothing found --> Probably offline");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return addJsonAudioObjects(param, audioData, fp);
-        }
-    }
-
-    /** NOT using API audio pages and audio playlist's are similar, TODO: Return host-plugin links here to improve the overall stability. */
-    private ArrayList<DownloadLink> decryptAudiosAlbum(final CryptedLink param) throws Exception {
-        this.getPage(param.getCryptedUrl());
-        if (br.containsHTML("id=\"not_found\"")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String audiotabletext = br.getRegex("<table class=\"audio_table\" cellspacing=\"0\" cellpadding=\"0\">(.*?)</table>").getMatch(0);
-        final String owner_ID = new Regex(param.getCryptedUrl(), "audios((?:\\-)?\\d+)").getMatch(0);
-        final String albumID = UrlQuery.parse(param.getCryptedUrl()).get("album_id");
-        final String fpName;
-        if (cfg.getBooleanProperty(VKontakteRuHoster.VKAUDIOS_USEIDASPACKAGENAME, VKontakteRuHoster.default_VKAUDIOS_USEIDASPACKAGENAME)) {
-            fpName = "audios" + owner_ID;
-        } else {
-            fpName = "audios_album " + albumID;
-        }
-        FilePackage fp = null;
-        fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        int overallCounter = 1;
-        final DecimalFormat df = new DecimalFormat("00000");
-        final String[] audioinfo = new Regex(audiotabletext, "class=\"audio  no_actions fl_l\"(.*?)class=\"duration fl_r\"").getColumn(0);
-        if (audioinfo == null || audioinfo.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final ArrayList<DownloadLink> ret = this.getReturnArray();
-        for (String audnfo : audioinfo) {
-            final String artist = new Regex(audnfo, "event: event, name: '([^<>\"]*?)'").getMatch(0);
-            // final String title = new Regex(audnfo, "return cancelEvent\\(event\\);\">([^<>\"]*?)</a>").getMatch(0);
-            final String title = new Regex(audnfo, "class=\"title\">([^<>\"]*?)<").getMatch(0);
-            final Regex idinfo = new Regex(audnfo, "id=\"play\\-(\\d+)_(\\d+)\"");
-            final String owner_id = idinfo.getMatch(0);
-            final String content_id = idinfo.getMatch(1);
-            final String finallink = new Regex(audnfo, "\"(https?://cs[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audios?/[^<>\"/]+)\"").getMatch(0);
-            if (finallink == null || artist == null || title == null || owner_id == null || content_id == null) {
-                logger.info("artist: " + artist + ", title: " + title + ", owner_id: " + owner_id + ", content_id: " + content_id + ", finallink: " + finallink);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String linkid = owner_id + "_" + content_id;
-            final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + linkid);
-            dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_mainlink, param.getCryptedUrl());
-            // Set filename so we have nice filenames here ;)
-            dl.setFinalFileName(Encoding.htmlDecode(artist) + " - " + Encoding.htmlDecode(title) + ".mp3");
-            if (fastcheck_audio) {
-                dl.setAvailable(true);
-            }
-            fp.add(dl);
-            /*
-             * Audiolinks have their directlinks and IDs but no "nice" links so let's simply use the link to the album to display to the
-             * user.
-             */
-            dl.setContentUrl(param.getCryptedUrl());
-            dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_directlink, finallink);
-            fp.add(dl);
-            ret.add(dl);
-            logger.info("Decrypted link number " + df.format(overallCounter) + " :" + finallink);
-            overallCounter++;
-        }
-        return ret;
-    }
-
-    private ArrayList<DownloadLink> decryptAudiosAlbum2020(final CryptedLink param) throws Exception {
-        this.getPage(param.getCryptedUrl());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String owner_ID = new Regex(param.getCryptedUrl(), PATTERN_AUDIO_AUDIOS_ALBUM_2020).getMatch(0);
-        final String albumID = new Regex(param.getCryptedUrl(), PATTERN_AUDIO_AUDIOS_ALBUM_2020).getMatch(1);
-        final String fpName;
-        if (cfg.getBooleanProperty(VKontakteRuHoster.VKAUDIOS_USEIDASPACKAGENAME, VKontakteRuHoster.default_VKAUDIOS_USEIDASPACKAGENAME)) {
-            fpName = "audios" + owner_ID;
-        } else {
-            fpName = "audios_album " + albumID;
-        }
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        final String json = br.getRegex("new PlayList\\(\\d+,\\s*(\\{.*?)\\);").getMatch(0);
-        if (json == null) {
-            /* Fallback */
-            ret.addAll(websiteCrawlContent(param.getCryptedUrl(), br.toString(), fp, true, false, false, false, false, false));
-            logger.info("Found " + ret.size() + " items");
-        } else {
-            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
-            final List<Object> audiolist = (List<Object>) entries.get("list");
-            ret.addAll(addJsonAudioObjects(param, audiolist, fp));
-            logger.info("Found " + ret.size() + " items");
-        }
-        return ret;
-    }
-
-    /** NOT using API audio pages and audio playlist's are similar. */
-    private ArrayList<DownloadLink> decryptAudioPlaylist(final CryptedLink param) throws Exception {
-        FilePackage fp = FilePackage.getInstance();
-        final String owner_ID = new Regex(param.getCryptedUrl(), "((?:\\-)?\\d+)_\\d+$").getMatch(0);
-        final String playlist_id = new Regex(param.getCryptedUrl(), "_(\\d+)$").getMatch(0);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage(getBaseURL() + "/al_audio.php", "access_hash=&act=load_section&al=1&claim=0&is_loading_all=1&offset=0&owner_id=" + owner_ID + "&playlist_id=-1&type=playlist");
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(regexJsonInsideHTML(this.br));
-        String fpName = (String) entries.get("title");
-        if (StringUtils.isEmpty(fpName)) {
-            /* Last chance fallback */
-            fpName = owner_ID + "_" + playlist_id;
-        }
-        /* Important! Even inside json, they html_encode some Strings! */
-        fpName = Encoding.htmlDecode(fpName.trim());
-        fp.setName(fpName);
-        final List<Object> audioData = (List<Object>) entries.get("list");
-        if (audioData == null || audioData.size() == 0) {
-            logger.info("Nothing found --> Probably offline");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        return addJsonAudioObjects(param, audioData, fp);
-    }
-
-    /**
-     * Creates DownloadLink Objects out of Objects of vk Audio Albums / Playlists after request of '/al_audio.php'
-     *
-     * @throws PluginException
-     */
-    private ArrayList<DownloadLink> addJsonAudioObjects(final CryptedLink param, final List<Object> audioData, final FilePackage fp) throws PluginException {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        for (final Object audioDataSingle : audioData) {
-            if (!(audioDataSingle instanceof List)) {
-                continue;
-            }
-            final List<Object> singleAudioDataAsArray = (List<Object>) audioDataSingle;
-            final String content_id = Long.toString(JavaScriptEngineFactory.toLong(singleAudioDataAsArray.get(0), 0));
-            final String owner_id = Long.toString(JavaScriptEngineFactory.toLong(singleAudioDataAsArray.get(1), 0));
-            final String directlink = (String) singleAudioDataAsArray.get(2);
-            final String title = (String) singleAudioDataAsArray.get(3);
-            final String artist = (String) singleAudioDataAsArray.get(4);
-            String specialKeys = null;
-            try {
-                specialKeys = (String) singleAudioDataAsArray.get(13);
-            } catch (final Throwable e) {
-            }
-            if (owner_id == null || owner_id.equals("0") || content_id == null || content_id.equals("0") || artist == null || artist.equals("") || title == null || title.equals("")) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + owner_id + "_" + content_id);
-            dl.setContentUrl(param.getCryptedUrl());
-            dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_mainlink, param.getCryptedUrl());
-            if (directlink != null && directlink.startsWith("http")) {
-                dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_directlink, directlink);
-            }
-            if (!StringUtils.isEmpty(specialKeys)) {
-                dl.setProperty(VKontakteRuHoster.PROPERTY_AUDIO_special_id, specialKeys);
-            }
-            dl.setFinalFileName(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(title.trim()) + ".mp3");
-            if (fastcheck_audio) {
-                dl.setAvailable(true);
-            }
-            if (fp != null) {
-                dl._setFilePackage(fp);
-            }
-            ret.add(dl);
-        }
-        return ret;
-    }
-
     /** Returns json inside html inside '<!json>'-tag, typically after request '/al_audio.php' */
+    @Deprecated
     public static String regexJsonInsideHTML(final Browser br) {
         return br.getRegex("<\\!json>(.*?)<\\!>").getMatch(0);
-    }
-
-    /**
-     * NOT Using API
-     *
-     * @throws Exception
-     */
-    private ArrayList<DownloadLink> crawlAudioPage(final CryptedLink param) throws Exception {
-        this.getPage(param.getCryptedUrl());
-        if (br.containsHTML("Page not found") || this.br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        if (param.getCryptedUrl().matches(PATTERN_AUDIO_PAGE_oid) && fpName == null) {
-            fpName = Encoding.htmlDecode(new Regex(param.getCryptedUrl(), "(?i)\\&p=(.+)").getMatch(0));
-        } else if (fpName == null) {
-            final String pageID = new Regex(param.getCryptedUrl(), "(?i)/page-(\\d+_\\d+)").getMatch(0);
-            fpName = "vk.com page " + pageID;
-        }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName).trim());
-        final String[][] audioLinks = br.getRegex("\"(https?://[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+/audio[^<>\"]*?)\".*?onclick=\"return nav\\.go\\(this, event\\);\">([^<>\"]*?)</a></b> \\&ndash; <span class=\"title\" id=\"title(?:\\-)?\\d+_\\d+_\\d+\">([^<>\"]*?)</span>").getMatches();
-        final ArrayList<DownloadLink> ret = this.getReturnArray();
-        if (audioLinks != null && audioLinks.length > 0) {
-            for (String audioInfo[] : audioLinks) {
-                String finallink = audioInfo[0];
-                if (finallink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(finallink));
-                dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_mainlink, param.getCryptedUrl());
-                /* Set filename so we have nice filenames for our directhttp links */
-                dl.setFinalFileName(Encoding.htmlDecode(audioInfo[2].trim()) + " - " + Encoding.htmlDecode(audioInfo[3].trim()) + ".mp3");
-                if (fastcheck_audio) {
-                    dl.setAvailable(true);
-                }
-                ret.add(dl);
-            }
-        }
-        /* 2023-04-21: Crawl external URLs and video URLs. Ignore everything else. */
-        final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
-        for (final String url : urls) {
-            final String host = Browser.getHost(url);
-            if (isSingleVideo(url)) {
-                /* vk video url */
-                ret.add(this.createDownloadlink(url));
-            } else if (host.equals(br.getHost()) && !this.canHandle(url)) {
-                /* External URL */
-                ret.add(this.createDownloadlink(url));
-            }
-        }
-        if (ret.isEmpty()) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        fp.addLinks(ret);
-        return ret;
-    }
-
-    private final boolean containsErrorTitle(final Browser br) {
-        if (br.containsHTML("(?i)<div class=\"message_page_title\"[^>]*>Error</div>")) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     private QualitySelectionMode mode      = null;
@@ -1958,8 +1647,9 @@ public class VKontakteRu extends PluginForDecrypt {
      * @throws IOException
      * @throws DecrypterException
      * @throws PluginException
+     * @throws InterruptedException
      */
-    private ArrayList<DownloadLink> websiteCrawlContent(final String url_source, final String html, final FilePackage fp, final boolean grabAudio, final boolean grabVideo, final boolean grabPhoto, final boolean grabDocs, final boolean grabURLsInsideText, final Boolean store_picture_directurls) throws IOException, DecrypterException, PluginException {
+    private ArrayList<DownloadLink> websiteCrawlContent(final String url_source, final String html, final FilePackage fp, final boolean grabAudio, final boolean grabVideo, final boolean grabPhoto, final boolean grabDocs, final boolean grabURLsInsideText, final Boolean store_picture_directurls) throws IOException, DecrypterException, PluginException, InterruptedException {
         if (url_source == null) {
             throw new DecrypterException("Crawler broken");
         }
@@ -2383,11 +2073,12 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (usernameFromURL != null) {
                     videoPackage = FilePackage.getInstance();
                     videoPackage.setName(usernameFromURL + " - " + currentSection);
+                    videoPackage.setCleanupPackageName(false);
                 }
                 final String owner_id = videodata.get("oid").toString();
                 // final int maxPreloadItems = 30;
                 int numberofItemsAdded = 0;
-                final Map<String, Object> videodata_current_section_info = (Map<String, Object>) JavaScriptEngineFactory.walkJson(videodata, "pageVideosList/{0}/" + currentSection);
+                final Map<String, Object> videodata_current_section_info = (Map<String, Object>) JavaScriptEngineFactory.walkJson(videodata, "pageVideosList/" + owner_id + "/" + currentSection);
                 if (videodata_current_section_info == null) {
                     logger.warning("Cannot handle this item via video section pagination prefetch handling");
                     break processPrefetchVideoData;
@@ -2458,11 +2149,12 @@ public class VKontakteRu extends PluginForDecrypt {
                             numberofItemsAdded++;
                         }
                         logger.info("Videos: Crawled page: " + page + " | Found items so far: " + pagination_video_list.size() + "/" + video_count + " | Offset: " + offset);
+                        if (pagination_video_overview_count < itemsPerPage) {
+                            /* Happens even via website e.g. first page contains 999 items, all subsequent full pages contain 1000 items. */
+                            logger.info("Current page contains less items than max items per page -> Continuing anyways");
+                        }
                         if (this.isAbort()) {
                             logger.info("Stopping because: Aborted by user");
-                            return ret;
-                        } else if (pagination_video_overview_count < itemsPerPage) {
-                            logger.info("Stopping because: Current page contains less items than max items per page -> Reached end?");
                             return ret;
                         } else if (numberofItemsAdded >= video_count) {
                             logger.info("Stopping because: Found all items");
@@ -2472,8 +2164,13 @@ public class VKontakteRu extends PluginForDecrypt {
                             return ret;
                         } else {
                             /* Continue to next page */
-                            offset += pagination_video_list.size();
+                            // offset += pagination_video_list.size();
+                            /* Static offset increase */
+                            offset += itemsPerPage;
                             page++;
+                            sleep(getPaginationSleepMillis(), null);
+                            /* Page > 1 ---> need_albums shall be 0 (but it doesn't really matter) */
+                            query_load_videos_silent.addAndReplace("need_albums", "0");
                             continue;
                         }
                     } while (true);
@@ -2488,10 +2185,10 @@ public class VKontakteRu extends PluginForDecrypt {
                 clippackage.setName(br._getURL().getPath());
                 final String[] clipHTMLs = br.getRegex("<a class=\"ShortVideoGridItem _video_item\"([^>]+)>").getColumn(0);
                 for (final String clip_url : clip_urls) {
-                    // if (!this.global_dupes.add(clip_url)) {
-                    // logger.info("Skipped dupe: " + clip_url);
-                    // continue;
-                    // }
+                    if (!this.global_dupes.add(clip_url)) {
+                        logger.info("Skipped dupe: " + clip_url);
+                        continue;
+                    }
                     final String clip_url_full = br.getURL(clip_url).toExternalForm();
                     final DownloadLink video = this.createDownloadlink(clip_url_full);
                     if (clipHTMLs != null && clipHTMLs.length > 0) {
@@ -3182,8 +2879,8 @@ public class VKontakteRu extends PluginForDecrypt {
         final String htmlrefresh = br.getRequest().getHTMLRefresh();
         if (StringUtils.containsIgnoreCase(htmlrefresh, "badbrowser.php")) {
             /**
-             * If this happens user needs to change User-Agent of this plugin to continue using it. </br> vk.com does not necessarily simply
-             * block a User-Agent value. They may as well just block it for specific users/IPs.
+             * If this happens user needs to change User-Agent of this plugin to continue using it. </br>
+             * vk.com does not necessarily simply block a User-Agent value. They may as well just block it for specific users/IPs.
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Blocked User-Agent");
         }
