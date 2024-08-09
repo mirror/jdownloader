@@ -36,11 +36,31 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Request;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.simplejson.MinimalMemoryMap;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.CompareUtils;
@@ -100,24 +120,6 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Request;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 
 public class YoutubeHelper {
     static {
@@ -182,7 +184,7 @@ public class YoutubeHelper {
     // public Map<String, YoutubeBasicVariant> getVariantsMap() {
     // return variantsMap;
     // }
-    public static final List<YoutubeReplacer> REPLACER = new ArrayList<YoutubeReplacer>();
+    public static final List<YoutubeReplacer> REPLACER                         = new ArrayList<YoutubeReplacer>();
     static {
         REPLACER.add(new YoutubeReplacer("GROUP") {
             @Override
@@ -314,11 +316,6 @@ public class YoutubeHelper {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_quality();
-            }
-
-            @Override
-            public String replace(String name, YoutubeHelper helper, DownloadLink link) {
-                return super.replace(name, helper, link);
             }
 
             @Override
@@ -1185,32 +1182,33 @@ public class YoutubeHelper {
             }
         });
     }
-    public static final String  YT_TITLE                         = "YT_TITLE";
-    public static final String  YT_TITLE_ALTERNATIVE             = "YT_TITLE_ALTERNATIVE";
-    public static final String  YT_CATEGORY                      = "YT_CATEGORY";
-    public static final String  YT_ID                            = "YT_ID";
-    public static final String  YT_CHANNEL_TITLE                 = "YT_CHANNEL";
-    public static final String  YT_CHANNEL_TITLE_ALTERNATIVE     = "YT_CHANNEL_ALTERNATIVE";
-    public static final String  YT_DATE                          = "YT_DATE";
-    public static final String  YT_VARIANTS                      = "YT_VARIANTS";
-    public static final String  YT_VARIANT                       = "YT_VARIANT";
+    public static final String                YT_TITLE                         = "YT_TITLE";
+    public static final String                YT_TITLE_ALTERNATIVE             = "YT_TITLE_ALTERNATIVE";
+    public static final String                YT_CATEGORY                      = "YT_CATEGORY";
+    public static final String                YT_ID                            = "YT_ID";
+    public static final String                YT_CHAPTERS                      = "YT_CHAPTERS";
+    public static final String                YT_CHANNEL_TITLE                 = "YT_CHANNEL";
+    public static final String                YT_CHANNEL_TITLE_ALTERNATIVE     = "YT_CHANNEL_ALTERNATIVE";
+    public static final String                YT_DATE                          = "YT_DATE";
+    public static final String                YT_VARIANTS                      = "YT_VARIANTS";
+    public static final String                YT_VARIANT                       = "YT_VARIANT";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
+    public static final String                YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
+    public static final String                YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
+    public static final String                YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
-    private static final String REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
+    public static final String                YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
+    private static final String               REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
 
     private static String handleRule(String s, final String line) throws PluginException {
         final String method = new Regex(line, "\\.([\\w\\d]+?)\\(\\s*\\)").getMatch(0);
@@ -1603,6 +1601,7 @@ public class YoutubeHelper {
         parseLivestreamInformation(vid);
         parseChannelID(vid);
         parseDuration(vid);
+        parseChapters(vid);
         parseChannelTitle(vid);
         parseUser(vid);
         parseAtID(vid);
@@ -1839,6 +1838,40 @@ public class YoutubeHelper {
             }
         }
         return -1;
+    }
+
+    protected String parseChapters(YoutubeClipData vid) {
+        if (vid.chapters == null) {
+            vid.chapters = getChaptersFromMaps();
+        }
+        return vid.chapters;
+    }
+
+    public String getChaptersFromMaps() {
+        final Map<String, Object> map = getYtInitialData();
+        if (map == null) {
+            return null;
+        }
+        final List<Map<String, Object>> chapters = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(map, "playerOverlays", "playerOverlayRenderer", "decoratedPlayerBarRenderer", "decoratedPlayerBarRenderer", "playerBar", "multiMarkersPlayerBarRenderer", "markersMap", "{}", "value", "chapters");
+        if (chapters == null || chapters.size() == 0) {
+            return null;
+        }
+        final List<Map<String, Object>> chapterList = new ArrayList<Map<String, Object>>();
+        for (Map<String, Object> chapter : chapters) {
+            MinimalMemoryMap<String, Object> chapterEntry = new MinimalMemoryMap<String, Object>();
+            final String title = (String) JavaScriptEngineFactory.walkJson(chapter, "chapterRenderer", "title", "simpleText");
+            final Number timeRangeStartMillis = (Number) JavaScriptEngineFactory.walkJson(chapter, "chapterRenderer", "timeRangeStartMillis");
+            chapterEntry.put("title", title);
+            chapterEntry.put("timeRangeStartMillis", timeRangeStartMillis);
+            chapterList.add(chapterEntry);
+        }
+        if (chapterList.size() == 0) {
+            return null;
+        }
+        final Map<String, Object> ret = new MinimalMemoryMap<String, Object>();
+        ret.put("chapters", chapterList);
+        final String json = new SimpleMapper().setPrettyPrintEnabled(false).objectToString(ret);
+        return json;
     }
 
     public String[] getChannelTitleFromMaps() {

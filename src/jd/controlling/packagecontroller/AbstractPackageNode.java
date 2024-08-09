@@ -32,5 +32,9 @@ public interface AbstractPackageNode<V extends AbstractPackageChildrenNode<E>, E
 
     void setExpanded(boolean b);
 
+    String getComment();
+
+    void setComment(String comment);
+
     int indexOf(V child);
 }

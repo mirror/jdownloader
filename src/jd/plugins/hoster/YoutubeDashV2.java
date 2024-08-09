@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 
@@ -28,87 +29,6 @@ import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
-
-import org.appwork.exceptions.WTFException;
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.swing.action.BasicAction;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Files;
-import org.appwork.utils.Hash;
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.logging2.extmanager.LoggerFactory;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
-import org.appwork.utils.net.httpserver.HttpServer;
-import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
-import org.appwork.utils.net.httpserver.requests.PostRequest;
-import org.appwork.utils.net.httpserver.responses.HttpResponse;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.ProgressDialog;
-import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
-import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
-import org.jdownloader.controlling.DownloadLinkView;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.controlling.ffmpeg.FFMpegException;
-import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
-import org.jdownloader.controlling.ffmpeg.FFmpeg;
-import org.jdownloader.controlling.ffmpeg.FFmpegMetaData;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.segment.Segment;
-import org.jdownloader.downloader.segment.SegmentDownloader;
-import org.jdownloader.downloader.text.TextDownloader;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.gui.views.linkgrabber.columns.VariantColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.DownloadPluginProgress;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.youtube.ClipDataCache;
-import org.jdownloader.plugins.components.youtube.StreamCollection;
-import org.jdownloader.plugins.components.youtube.YoutubeClipData;
-import org.jdownloader.plugins.components.youtube.YoutubeConfig;
-import org.jdownloader.plugins.components.youtube.YoutubeFinalLinkResource;
-import org.jdownloader.plugins.components.youtube.YoutubeHelper;
-import org.jdownloader.plugins.components.youtube.YoutubeHostPluginInterface;
-import org.jdownloader.plugins.components.youtube.YoutubeLinkGrabberExtender;
-import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
-import org.jdownloader.plugins.components.youtube.choosevariantdialog.YoutubeVariantSelectionDialog;
-import org.jdownloader.plugins.components.youtube.configpanel.YoutubeDashConfigPanel;
-import org.jdownloader.plugins.components.youtube.keepForCompatibility.SubtitleVariantOld;
-import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
-import org.jdownloader.plugins.components.youtube.variants.AudioVariant;
-import org.jdownloader.plugins.components.youtube.variants.DownloadType;
-import org.jdownloader.plugins.components.youtube.variants.FileContainer;
-import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
-import org.jdownloader.plugins.components.youtube.variants.SubtitleVariantInfo;
-import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
-import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
-import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
-import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -152,6 +72,88 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashResult;
 import jd.plugins.download.raf.ChunkRange;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.action.BasicAction;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
+import org.appwork.utils.net.httpserver.HttpServer;
+import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
+import org.appwork.utils.net.httpserver.requests.PostRequest;
+import org.appwork.utils.net.httpserver.responses.HttpResponse;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.ProgressDialog;
+import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
+import org.jdownloader.controlling.DownloadLinkView;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.controlling.ffmpeg.FFMpegException;
+import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
+import org.jdownloader.controlling.ffmpeg.FFmpeg;
+import org.jdownloader.controlling.ffmpeg.FFmpegMetaData;
+import org.jdownloader.controlling.ffmpeg.FFmpegMetaData.MetaDataEntry;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.segment.Segment;
+import org.jdownloader.downloader.segment.SegmentDownloader;
+import org.jdownloader.downloader.text.TextDownloader;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.gui.views.linkgrabber.columns.VariantColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.DownloadPluginProgress;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.youtube.ClipDataCache;
+import org.jdownloader.plugins.components.youtube.StreamCollection;
+import org.jdownloader.plugins.components.youtube.YoutubeClipData;
+import org.jdownloader.plugins.components.youtube.YoutubeConfig;
+import org.jdownloader.plugins.components.youtube.YoutubeFinalLinkResource;
+import org.jdownloader.plugins.components.youtube.YoutubeHelper;
+import org.jdownloader.plugins.components.youtube.YoutubeHostPluginInterface;
+import org.jdownloader.plugins.components.youtube.YoutubeLinkGrabberExtender;
+import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
+import org.jdownloader.plugins.components.youtube.choosevariantdialog.YoutubeVariantSelectionDialog;
+import org.jdownloader.plugins.components.youtube.configpanel.YoutubeDashConfigPanel;
+import org.jdownloader.plugins.components.youtube.keepForCompatibility.SubtitleVariantOld;
+import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
+import org.jdownloader.plugins.components.youtube.variants.AudioVariant;
+import org.jdownloader.plugins.components.youtube.variants.DownloadType;
+import org.jdownloader.plugins.components.youtube.variants.FileContainer;
+import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
+import org.jdownloader.plugins.components.youtube.variants.SubtitleVariantInfo;
+import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
+import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
+import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
+import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" })
 public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInterface {
@@ -1674,6 +1676,50 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 calendar.setTimeInMillis(timestamp);
                 ffMpegMetaData.setYear(calendar);
             }
+            final String chapters = downloadLink.getStringProperty(YoutubeHelper.YT_CHAPTERS, null);
+            if (chapters != null) {
+                try {
+                    final List<MetaDataEntry> metaDataEntries = new ArrayList<FFmpegMetaData.MetaDataEntry>();
+                    final Map<String, Object> map = restoreFromString(chapters, TypeRef.MAP);
+                    if (map != null && map.get("chapters") != null) {
+                        Map<String, Object> previousChapter = null;
+                        for (final Map<String, Object> currentChapter : (List<Map<String, Object>>) map.get("chapters")) {
+                            if (previousChapter == null) {
+                                previousChapter = currentChapter;
+                            } else {
+                                final String title = (String) previousChapter.get("title");
+                                final long startTimeStamp = ((Number) previousChapter.get("timeRangeStartMillis")).longValue();
+                                final long endTimeStamp = ((Number) currentChapter.get("timeRangeStartMillis")).longValue() - 1;
+                                final MetaDataEntry metaEntry = new MetaDataEntry("CHAPTER");
+                                metaEntry.put("TIMEBASE", "1/1000");
+                                metaEntry.put("START", Long.toString(startTimeStamp));
+                                metaEntry.put("END", Long.toString(endTimeStamp));
+                                metaEntry.put("title", title);
+                                metaDataEntries.add(metaEntry);
+                                previousChapter = currentChapter;
+                            }
+                        }
+                        if (previousChapter != null) {
+                            final String title = (String) previousChapter.get("title");
+                            final long startTimeStamp = ((Number) previousChapter.get("timeRangeStartMillis")).longValue();
+                            final int duration = downloadLink.getIntegerProperty(YoutubeHelper.YT_DURATION, -1) * 1000;
+                            if (duration > startTimeStamp) {
+                                final MetaDataEntry metaEntry = new MetaDataEntry("CHAPTER");
+                                metaEntry.put("TIMEBASE", "1/1000");
+                                metaEntry.put("START", Long.toString(startTimeStamp));
+                                metaEntry.put("END", Long.toString(duration));
+                                metaEntry.put("title", title);
+                                metaDataEntries.add(metaEntry);
+                            }
+                        }
+                        for (final MetaDataEntry metaDataEntry : metaDataEntries) {
+                            ffMpegMetaData.addEntry(metaDataEntry);
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.log(e);
+                }
+            }
             if (!ffMpegMetaData.isEmpty()) {
                 return ffMpegMetaData;
             }
@@ -1789,54 +1835,38 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 }
 
                 @Override
-                public boolean muxToMp4(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException, FFMpegException {
-                    if (isWriteFileEnabled()) {
-                        metaFile = writeMetaFile();
-                    } else {
-                        httpServer = startHttpServer();
-                    }
-                    try {
-                        return super.muxToMp4(progress, out, videoIn, audioIn);
-                    } finally {
-                        stopMetaFileProvider();
-                    }
-                }
-
-                @Override
-                public boolean generateM4a(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException, FFMpegException {
-                    if (isWriteFileEnabled()) {
-                        metaFile = writeMetaFile();
-                    } else {
-                        httpServer = startHttpServer();
-                    }
-                    try {
-                        return super.generateM4a(progress, out, audioIn);
-                    } finally {
-                        stopMetaFileProvider();
-                    }
-                }
-
-                @Override
-                public boolean demuxM4a(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
-                    if (isWriteFileEnabled()) {
-                        metaFile = writeMetaFile();
-                    } else {
-                        httpServer = startHttpServer();
-                    }
-                    try {
-                        return super.demuxM4a(progress, out, audioIn);
-                    } finally {
-                        stopMetaFileProvider();
-                    }
-                }
-
-                @Override
                 protected boolean demux(FFMpegProgress progress, String out, String audioIn, String[] demuxCommands) throws InterruptedException, IOException, FFMpegException {
-                    if (httpServer != null || metaFile != null) {
-                        final ArrayList<String> newDemuxCommands = new ArrayList<String>();
-                        boolean metaParamsAdded = false;
-                        String lastDemuxCommand = null;
-                        for (final String demuxCommand : demuxCommands) {
+                    if (isWriteFileEnabled()) {
+                        metaFile = writeMetaFile();
+                    } else {
+                        httpServer = startHttpServer();
+                    }
+                    try {
+                        if (httpServer != null || metaFile != null) {
+                            final ArrayList<String> newDemuxCommands = new ArrayList<String>();
+                            boolean metaParamsAdded = false;
+                            String lastDemuxCommand = null;
+                            for (final String demuxCommand : demuxCommands) {
+                                if ("%audio".equals(lastDemuxCommand) && !metaParamsAdded) {
+                                    newDemuxCommands.add("-i");
+                                    if (httpServer != null) {
+                                        newDemuxCommands.add("http://" + httpServer.getServerAddress() + "/meta?id=" + metaDataProcessID.getID());
+                                    } else {
+                                        final String path = metaFile.getAbsolutePath();
+                                        if (CrossSystem.isWindows() && path.length() > 259) {
+                                            // https://msdn.microsoft.com/en-us/library/aa365247.aspx
+                                            newDemuxCommands.add("\\\\?\\" + path);
+                                        } else {
+                                            newDemuxCommands.add(path);
+                                        }
+                                    }
+                                    newDemuxCommands.add("-map_metadata");
+                                    newDemuxCommands.add("1");
+                                    metaParamsAdded = true;
+                                }
+                                newDemuxCommands.add(demuxCommand);
+                                lastDemuxCommand = demuxCommand;
+                            }
                             if ("%audio".equals(lastDemuxCommand) && !metaParamsAdded) {
                                 newDemuxCommands.add("-i");
                                 if (httpServer != null) {
@@ -1854,60 +1884,52 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                 newDemuxCommands.add("1");
                                 metaParamsAdded = true;
                             }
-                            newDemuxCommands.add(demuxCommand);
-                            lastDemuxCommand = demuxCommand;
+                            return super.demux(progress, out, audioIn, newDemuxCommands.toArray(new String[0]));
+                        } else {
+                            return super.demux(progress, out, audioIn, demuxCommands);
                         }
-                        if ("%audio".equals(lastDemuxCommand) && !metaParamsAdded) {
-                            newDemuxCommands.add("-i");
-                            if (httpServer != null) {
-                                newDemuxCommands.add("http://" + httpServer.getServerAddress() + "/meta?id=" + metaDataProcessID.getID());
-                            } else {
-                                final String path = metaFile.getAbsolutePath();
-                                if (CrossSystem.isWindows() && path.length() > 259) {
-                                    // https://msdn.microsoft.com/en-us/library/aa365247.aspx
-                                    newDemuxCommands.add("\\\\?\\" + path);
-                                } else {
-                                    newDemuxCommands.add(path);
-                                }
-                            }
-                            newDemuxCommands.add("-map_metadata");
-                            newDemuxCommands.add("1");
-                            metaParamsAdded = true;
-                        }
-                        return super.demux(progress, out, audioIn, newDemuxCommands.toArray(new String[0]));
-                    } else {
-                        return super.demux(progress, out, audioIn, demuxCommands);
+                    } finally {
+                        stopMetaFileProvider();
                     }
                 }
 
                 @Override
                 protected boolean mux(FFMpegProgress progress, String out, String videoIn, String audioIn, String[] muxCommands) throws InterruptedException, IOException, FFMpegException {
-                    if (httpServer != null || metaFile != null) {
-                        final ArrayList<String> newMuxCommands = new ArrayList<String>();
-                        boolean metaParamsAdded = false;
-                        for (final String muxCommand : muxCommands) {
-                            if ("-map".equals(muxCommand) && !metaParamsAdded) {
-                                newMuxCommands.add("-i");
-                                if (httpServer != null) {
-                                    newMuxCommands.add("http://" + httpServer.getServerAddress() + "/meta?id=" + metaDataProcessID.getID());
-                                } else {
-                                    final String path = metaFile.getAbsolutePath();
-                                    if (CrossSystem.isWindows() && path.length() > 259) {
-                                        // https://msdn.microsoft.com/en-us/library/aa365247.aspx
-                                        newMuxCommands.add("\\\\?\\" + path);
-                                    } else {
-                                        newMuxCommands.add(path);
-                                    }
-                                }
-                                newMuxCommands.add("-map_metadata");
-                                newMuxCommands.add("2");
-                                metaParamsAdded = true;
-                            }
-                            newMuxCommands.add(muxCommand);
-                        }
-                        return super.mux(progress, out, videoIn, audioIn, newMuxCommands.toArray(new String[0]));
+                    if (isWriteFileEnabled()) {
+                        metaFile = writeMetaFile();
                     } else {
-                        return super.mux(progress, out, videoIn, audioIn, muxCommands);
+                        httpServer = startHttpServer();
+                    }
+                    try {
+                        if (httpServer != null || metaFile != null) {
+                            final ArrayList<String> newMuxCommands = new ArrayList<String>();
+                            boolean metaParamsAdded = false;
+                            for (final String muxCommand : muxCommands) {
+                                if ("-map".equals(muxCommand) && !metaParamsAdded) {
+                                    newMuxCommands.add("-i");
+                                    if (httpServer != null) {
+                                        newMuxCommands.add("http://" + httpServer.getServerAddress() + "/meta?id=" + metaDataProcessID.getID());
+                                    } else {
+                                        final String path = metaFile.getAbsolutePath();
+                                        if (CrossSystem.isWindows() && path.length() > 259) {
+                                            // https://msdn.microsoft.com/en-us/library/aa365247.aspx
+                                            newMuxCommands.add("\\\\?\\" + path);
+                                        } else {
+                                            newMuxCommands.add(path);
+                                        }
+                                    }
+                                    newMuxCommands.add("-map_metadata");
+                                    newMuxCommands.add("2");
+                                    metaParamsAdded = true;
+                                }
+                                newMuxCommands.add(muxCommand);
+                            }
+                            return super.mux(progress, out, videoIn, audioIn, newMuxCommands.toArray(new String[0]));
+                        } else {
+                            return super.mux(progress, out, videoIn, audioIn, muxCommands);
+                        }
+                    } finally {
+                        stopMetaFileProvider();
                     }
                 }
             };

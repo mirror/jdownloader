@@ -33,9 +33,6 @@ import org.jdownloader.gui.views.components.packagetable.PackageControllerSelect
 import org.jdownloader.gui.views.components.packagetable.dragdrop.MergePosition;
 import org.jdownloader.logging.LogController;
 
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.plugins.FilePackage;
-
 public abstract class PackageController<PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> implements AbstractNodeNotifier {
     protected final AtomicLong structureChanged = new AtomicLong(System.currentTimeMillis());
     protected final AtomicLong childrenChanged  = new AtomicLong(System.currentTimeMillis());
@@ -577,11 +574,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * This class describes, how a "merge packages" action shall behave. </br>
-     * Examples of what it can influence: </br>
-     * - position of merged items </br>
-     * - shall package comments be merged or not </br>
-     * // TODO: Make use of this class
+     * This class describes, how a "merge packages" action shall behave. </br> Examples of what it can influence: </br> - position of merged
+     * items </br> - shall package comments be merged or not </br> // TODO: Make use of this class
      */
     public final static class MergePackageSettings {
         private MergePosition mergeposition        = MergePosition.BOTTOM;
@@ -661,12 +655,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         final StringBuilder sb = new StringBuilder();
                         srcPkgs.add(0, dest);
                         for (final PackageType pkg : srcPkgs) {
-                            final String comment;
-                            if (pkg instanceof CrawledPackage) {
-                                comment = ((CrawledPackage) pkg).getComment();
-                            } else {
-                                comment = ((FilePackage) pkg).getComment();
-                            }
+                            final String comment = pkg.getComment();
                             if (StringUtils.isEmpty(comment)) {
                                 continue;
                             }
@@ -683,11 +672,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         final String mergedComments = sb.toString();
                         if (!StringUtils.isEmpty(mergedComments)) {
                             /* Set new comment */
-                            if (dest instanceof CrawledPackage) {
-                                ((CrawledPackage) dest).setComment(mergedComments);
-                            } else {
-                                ((FilePackage) dest).setComment(mergedComments);
-                            }
+                            dest.setComment(mergedComments);
                         }
                     }
                 }
@@ -1065,8 +1050,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * Returns packages with identical name and download path. </br>
-     * Those are packages you would typically want to merge in other functions.
+     * Returns packages with identical name and download path. </br> Those are packages you would typically want to merge in other
+     * functions.
      */
     public final Map<String, List<PackageType>> getPackagesWithSameName(final boolean case_insensitive) {
         final boolean readL = this.readLock();
@@ -1077,7 +1062,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         }
     }
 
-    public final Map<String, List<PackageType>> getPackagesWithSameName(final ArrayList<PackageType> packages, final boolean case_insensitive) {
+    public final Map<String, List<PackageType>> getPackagesWithSameName(final List<PackageType> packages, final boolean case_insensitive) {
         final Map<String, List<PackageType>> dupes = new HashMap<String, List<PackageType>>();
         for (final PackageType packageNode : this.getPackages()) {
             String packagename = packageNode.getName();

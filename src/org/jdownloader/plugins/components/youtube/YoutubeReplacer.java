@@ -5,10 +5,10 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+
+import org.appwork.utils.StringUtils;
 
 public abstract class YoutubeReplacer {
     public static enum TagTasks {
@@ -48,7 +48,7 @@ public abstract class YoutubeReplacer {
                 final ArrayList<TagTasks> performTasks = new ArrayList<TagTasks>();
                 final String[] mods = new Regex(usedTag, "(?:\\[(.*?)\\])").getColumn(0);
                 if (mods != null && mods.length > 0) {
-                    String date = null;
+                    String value = null;
                     for (final String mod : mods) {
                         // UC|LC. One or the other, but not both!
                         if ("UC".equalsIgnoreCase(mod) && !performTasks.contains(TagTasks.TO_LOWERCASE)) {
@@ -59,21 +59,21 @@ public abstract class YoutubeReplacer {
                             performTasks.add(TagTasks.WHITESPACE_TO_UNDERSCORE);
                         } else {
                             // this has to be last!
-                            date = getValue(link, helper, mod);
+                            value = getValue(link, helper, mod);
                         }
                     }
                     // dates are the only tags using [] without having easily parsible pattern,
-                    if (date != null) {
+                    if (value != null) {
                         // date format might be in text! So we should offer to reformat them also.
                         if (performTasks.contains(TagTasks.TO_LOWERCASE)) {
-                            date = date.toLowerCase(Locale.ENGLISH);
+                            value = value.toLowerCase(Locale.ENGLISH);
                         } else if (performTasks.contains(TagTasks.TO_UPPERCASE)) {
-                            date = date.toUpperCase(Locale.ENGLISH);
+                            value = value.toUpperCase(Locale.ENGLISH);
                         }
                         if (performTasks.contains(TagTasks.WHITESPACE_TO_UNDERSCORE)) {
-                            date = date.replaceAll("\\s+", "_");
+                            value = value.replaceAll("\\s+", "_");
                         }
-                        name = name.replace(usedTag, date);
+                        name = optimizedReduceSpacesReplace(name, usedTag, value);
                         continue modifyLoop;
                     }
                 }
@@ -89,17 +89,25 @@ public abstract class YoutubeReplacer {
                     }
                 }
                 if (StringUtils.isEmpty(value)) {
-                    if (name.contains("." + usedTag)) {
-                        name = name.replace("." + usedTag, "");
-                    } else {
-                        name = name.replace(usedTag, "");
-                    }
+                    name = optimizedReduceSpacesReplace(name, usedTag, null);
                 } else {
-                    name = name.replace(usedTag, value);
+                    name = optimizedReduceSpacesReplace(name, usedTag, value);
                 }
             }
         }
-        return name;
+    return name;
+    }
+
+    private static String optimizedReduceSpacesReplace(final String input, final String search, final String replace) {
+        if (replace != null) {
+            return input.replace(search, replace);
+        }
+        final String qSearch = Pattern.quote(search);
+        String ret = input.replaceAll("\\s" + qSearch + "((p|fps|kbit)?(_|\\-)?)?\\s", " ");
+        ret = ret.replaceAll("^" + qSearch + "((p|fps|kbit)?\\s*(_|\\-)?)?\\s*", "");
+        ret = ret.replaceAll("\\s*\\." + qSearch + "$", "");
+        ret = ret.replaceAll(qSearch + "((p|fps|kbit)?(_|\\-)?)?", "");
+        return ret;
     }
 
     abstract protected String getValue(DownloadLink link, YoutubeHelper helper, String mod);

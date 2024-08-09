@@ -1,7 +1,11 @@
 package org.jdownloader.controlling.ffmpeg;
 
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class FFmpegMetaData {
 
@@ -23,7 +27,23 @@ public class FFmpegMetaData {
         }
     }
 
-    private final HashMap<KEY, String> values = new HashMap<KEY, String>();
+    public static class MetaDataEntry extends LinkedHashMap<String, Object> {
+
+        private final String type;
+
+        public MetaDataEntry(final String type) {
+            this.type = type;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+    }
+
+    private final Map<KEY, String>    values  = new LinkedHashMap<KEY, String>();
+
+    private final List<MetaDataEntry> entries = new ArrayList<MetaDataEntry>();
 
     public String getValue(final KEY key) {
         return values.get(key);
@@ -42,7 +62,7 @@ public class FFmpegMetaData {
     }
 
     public boolean isEmpty() {
-        return values.size() == 0;
+        return values.size() == 0 && entries.size() == 0;
     }
 
     public String setComment(final String comment) {
@@ -69,6 +89,12 @@ public class FFmpegMetaData {
         return getValue(KEY.TITLE);
     }
 
+    public void addEntry(final MetaDataEntry entry) {
+        if (entry != null && entry.size() > 0) {
+            this.entries.add(entry);
+        }
+    }
+
     protected String setValue(final KEY key, String value) {
         if (value == null) {
             return removeKey(key);
@@ -81,6 +107,15 @@ public class FFmpegMetaData {
         return values.remove(key);
     }
 
+    private String toEscapedString(Object value) {
+        if (value == null) {
+            return "";
+        }
+        String ret = value.toString();
+        ret = ret.replace("\n", "\r").replaceAll("(=|;|#|\r)", "\\\\$0").replaceAll("(\\\\[^=;#\r]{1})", "\\\\$0");
+        return ret;
+    }
+
     public String getFFmpegMetaData() {
         final StringBuilder ret = new StringBuilder();
         ret.append(";FFMETADATA1\n");
@@ -89,8 +124,22 @@ public class FFmpegMetaData {
             if (value != null) {
                 ret.append(key.getKey());
                 ret.append("=");
-                ret.append(value.replace("\r", "\n").replaceAll("(=|;|#|\r)", "\\\\$0").replaceAll("(\\\\[^=;#\r]{1})", "\\\\$0"));
+                ret.append(toEscapedString(value));
                 ret.append("\n");
+            }
+        }
+        for (final MetaDataEntry metaDataEntry : entries) {
+            final String type = metaDataEntry.getType();
+            if (type != null && metaDataEntry.size() > 0) {
+                ret.append("[" + type + "]");
+                ret.append("\n");
+                for (Entry<String, Object> entry : metaDataEntry.entrySet()) {
+                    ret.append(entry.getKey());
+                    ret.append("=");
+                    ret.append(toEscapedString(entry.getValue()));
+                    ret.append("\n");
+                }
+
             }
         }
         return ret.toString();

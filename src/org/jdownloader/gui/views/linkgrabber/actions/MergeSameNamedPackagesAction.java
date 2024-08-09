@@ -7,6 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.PackageController;
+import jd.controlling.packagecontroller.PackageController.MergePackageSettings;
+
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
@@ -15,11 +20,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
-
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.PackageController;
-import jd.controlling.packagecontroller.PackageController.MergePackageSettings;
 
 public class MergeSameNamedPackagesAction<PgkType extends AbstractPackageNode<ChildType, PgkType>, ChildType extends AbstractPackageChildrenNode<PgkType>> extends CustomizableTableContextAppAction implements ActionContext {
     private boolean caseInsensitive = true;
@@ -72,16 +72,16 @@ public class MergeSameNamedPackagesAction<PgkType extends AbstractPackageNode<Ch
                 final Map<String, List<PgkType>> dupes;
                 if (sel != null && selPackageViews.size() > 0) {
                     /* Merge duplicates withing users' selection */
-                    final List<AbstractPackageNode> selectedPackages = new ArrayList<AbstractPackageNode>();
+                    final List<PgkType> selectedPackages = new ArrayList<PgkType>();
                     for (final PackageView<PgkType, ChildType> pv : selPackageViews) {
-                        final AbstractPackageNode<?, ?> selectedpackage = pv.getPackage();
+                        final PgkType selectedpackage = pv.getPackage();
                         selectedPackages.add(selectedpackage);
                     }
                     if (selectedPackages.isEmpty()) {
                         /* User has only selected items we can't work with -> Do nothing */
                         return null;
                     }
-                    dupes = controller.getPackagesWithSameName((ArrayList<PgkType>) selectedPackages, caseInsensitive);
+                    dupes = controller.getPackagesWithSameName(selectedPackages, caseInsensitive);
                 } else {
                     /* Merge duplicates in whole list */
                     dupes = controller.getPackagesWithSameName(caseInsensitive);

@@ -8,6 +8,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.plugins.DownloadLink;
+
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
@@ -19,8 +21,6 @@ import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
-
-import jd.plugins.DownloadLink;
 
 public class YoutubeClipData {
     /**
@@ -48,6 +48,7 @@ public class YoutubeClipData {
     public int                                playlistEntryNumber      = -1;
     public String                             category                 = null;
     public int                                duration                 = -1;
+    public String                             chapters                 = null;
     public String                             channelID                = null;
     public long                               dateUploaded             = -1;
     public Boolean                            isLiveNow                = null;
@@ -165,6 +166,7 @@ public class YoutubeClipData {
             dest.category = category;
             dest.playlistEntryNumber = playlistEntryNumber;
             dest.channelTitle = channelTitle;
+            dest.chapters = chapters;
             dest.channelTitle_alternative = channelTitle_alternative;
             dest.channelSize = channelSize;
             dest.playlistID = playlistID;
@@ -219,6 +221,7 @@ public class YoutubeClipData {
             setValue(dest, YoutubeHelper.YT_BEST_VIDEO, bestVideoItag.getBaseVariant().getiTagVideo().name());
             setValue(dest, YoutubeHelper.YT_BEST_VIDEO_HEIGHT, String.valueOf(bestVideoItag.getVideoHeight()));
         }
+        setValue(dest, YoutubeHelper.YT_CHAPTERS, chapters);
         setValue(dest, YoutubeHelper.YT_DATE, datePublished);
         setValue(dest, YoutubeHelper.YT_GOOGLE_PLUS_ID, userGooglePlusID);
         setValue(dest, YoutubeHelper.YT_CHANNEL_ID, channelID);
