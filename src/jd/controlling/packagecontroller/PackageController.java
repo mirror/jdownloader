@@ -574,8 +574,10 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * This class describes, how a "merge packages" action shall behave. </br> Examples of what it can influence: </br> - position of merged
-     * items </br> - shall package comments be merged or not </br> // TODO: Make use of this class
+     * This class describes, how a "merge packages" action shall behave. </br>
+     * Examples of what it can influence: </br>
+     * - position of merged items </br>
+     * - shall package comments be merged or not </br>
      */
     public final static class MergePackageSettings {
         private MergePosition mergeposition        = MergePosition.BOTTOM;
@@ -1050,8 +1052,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * Returns packages with identical name and download path. </br> Those are packages you would typically want to merge in other
-     * functions.
+     * Returns packages with identical name and download path. </br>
+     * Those are packages you would typically want to merge in other functions.
      */
     public final Map<String, List<PackageType>> getPackagesWithSameName(final boolean case_insensitive) {
         final boolean readL = this.readLock();
