@@ -1679,9 +1679,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             final String chapters = downloadLink.getStringProperty(YoutubeHelper.YT_CHAPTERS, null);
             if (chapters != null) {
                 try {
-                    final List<MetaDataEntry> metaDataEntries = new ArrayList<FFmpegMetaData.MetaDataEntry>();
                     final Map<String, Object> map = restoreFromString(chapters, TypeRef.MAP);
                     if (map != null && map.get("chapters") != null) {
+                        final List<MetaDataEntry> metaDataEntries = new ArrayList<FFmpegMetaData.MetaDataEntry>();
                         Map<String, Object> previousChapter = null;
                         for (final Map<String, Object> currentChapter : (List<Map<String, Object>>) map.get("chapters")) {
                             if (previousChapter == null) {
