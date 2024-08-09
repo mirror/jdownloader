@@ -1702,7 +1702,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                         if (previousChapter != null) {
                             final String title = (String) previousChapter.get("title");
                             final long startTimeStamp = ((Number) previousChapter.get("timeRangeStartMillis")).longValue();
-                            final int endTimeStamp = downloadLink.getIntegerProperty(YoutubeHelper.YT_DURATION, -1) * 1000;
+                            final long endTimeStamp = downloadLink.getIntegerProperty(YoutubeHelper.YT_DURATION, -1) * 1000l;
                             if (endTimeStamp > startTimeStamp) {
                                 final MetaDataEntry metaEntry = new MetaDataEntry("CHAPTER");
                                 metaEntry.put("TIMEBASE", "1/1000");
