@@ -29,7 +29,7 @@ import jd.plugins.HostPlugin;
 public class EvilangelGangbangcreampieCom extends EvilangelCore {
     public EvilangelGangbangcreampieCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.gangbangcreampie.com/en/join");
+        this.enablePremium(this.getPremiumRegisterLink());
     }
 
     private static List<String[]> getPluginDomains() {

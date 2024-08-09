@@ -18,19 +18,19 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.PluginWrapper;
-import jd.plugins.DownloadLink;
-import jd.plugins.HostPlugin;
-
 import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
 import org.jdownloader.plugins.components.config.EvilangelCoreConfigEvilangel;
+
+import jd.PluginWrapper;
+import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EvilAngelCom extends EvilangelCore {
     public EvilAngelCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.evilangel.com/en/join");
+        this.enablePremium(this.getPremiumRegisterLink());
     }
 
     private static final String URL_MOVIE = "https?://members\\.[^/]+/[a-z]{2}/video/(?:[A-Za-z0-9\\-_]+/)?([A-Za-z0-9\\-_]+)/(\\d+)";

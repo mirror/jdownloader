@@ -29,7 +29,7 @@ import jd.plugins.HostPlugin;
 public class EvilangelDfxtraCom extends EvilangelCore {
     public EvilangelDfxtraCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.dfxtra.com/en/join");
+        this.enablePremium(this.getPremiumRegisterLink());
     }
 
     private static List<String[]> getPluginDomains() {

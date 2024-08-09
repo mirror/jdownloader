@@ -185,7 +185,11 @@ public class BangCom extends PluginForHost {
                 if (hasAttemptedRefresh) {
                     logger.info("Fresh directurl is valid");
                 }
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
                 final String serverFilename = Plugin.getFileNameFromConnection(con);
                 if (serverFilename != null) {
                     link.setFinalFileName(serverFilename);

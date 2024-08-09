@@ -2149,10 +2149,6 @@ public class VKontakteRu extends PluginForDecrypt {
                             numberofItemsAdded++;
                         }
                         logger.info("Videos: Crawled page: " + page + " | Found items so far: " + pagination_video_list.size() + "/" + video_count + " | Offset: " + offset);
-                        if (pagination_video_overview_count < itemsPerPage) {
-                            /* Happens even via website e.g. first page contains 999 items, all subsequent full pages contain 1000 items. */
-                            logger.info("Current page contains less items than max items per page -> Continuing anyways");
-                        }
                         if (this.isAbort()) {
                             logger.info("Stopping because: Aborted by user");
                             return ret;
@@ -2164,6 +2160,14 @@ public class VKontakteRu extends PluginForDecrypt {
                             return ret;
                         } else {
                             /* Continue to next page */
+                            /* Log 'incomplete' pages */
+                            if (pagination_video_overview_count < itemsPerPage) {
+                                /*
+                                 * Happens even via website e.g. first page contains 999 items, all subsequent full pages contain 1000
+                                 * items.
+                                 */
+                                logger.info("Current page contains only " + pagination_video_overview_count + " of expected " + itemsPerPage + " items per page -> Continuing anyways");
+                            }
                             // offset += pagination_video_list.size();
                             /* Static offset increase */
                             offset += itemsPerPage;

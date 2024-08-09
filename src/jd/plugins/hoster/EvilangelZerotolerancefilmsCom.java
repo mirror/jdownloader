@@ -29,7 +29,7 @@ import jd.plugins.HostPlugin;
 public class EvilangelZerotolerancefilmsCom extends EvilangelCore {
     public EvilangelZerotolerancefilmsCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.zerotolerancefilms.com/en/join");
+        this.enablePremium(this.getPremiumRegisterLink());
     }
 
     private static List<String[]> getPluginDomains() {

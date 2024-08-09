@@ -29,7 +29,7 @@ import jd.plugins.HostPlugin;
 public class EvilangelMypervyfamilyCom extends EvilangelCore {
     public EvilangelMypervyfamilyCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.mypervyfamily.com/en/join");
+        this.enablePremium(this.getPremiumRegisterLink());
     }
 
     private static List<String[]> getPluginDomains() {

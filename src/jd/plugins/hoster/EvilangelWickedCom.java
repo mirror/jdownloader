@@ -30,7 +30,7 @@ import jd.plugins.HostPlugin;
 public class EvilangelWickedCom extends EvilangelCore {
     public EvilangelWickedCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.wicked.com/en/join");
+        this.enablePremium(this.getPremiumRegisterLink());
     }
 
     private static final String URL_MOVIE = "https?://members\\.[^/]+/[a-z]{2}/movie/([A-Za-z0-9\\-_]+)/(\\d+)";

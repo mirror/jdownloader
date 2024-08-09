@@ -19,15 +19,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
-import org.jdownloader.plugins.components.config.EvilangelCoreConfigXempireCom;
+import org.jdownloader.plugins.components.config.EvilangelCoreConfigAdulttime;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class EvilangelXempireCom extends EvilangelCore {
-    public EvilangelXempireCom(PluginWrapper wrapper) {
+public class EvilangelTouchmywifeCom extends EvilangelCore {
+    public EvilangelTouchmywifeCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(this.getPremiumRegisterLink());
     }
@@ -35,7 +35,7 @@ public class EvilangelXempireCom extends EvilangelCore {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "xempire.com" });
+        ret.add(new String[] { "touchmywife.com" });
         return ret;
     }
 
@@ -62,6 +62,12 @@ public class EvilangelXempireCom extends EvilangelCore {
 
     @Override
     public Class<? extends EvilangelCoreConfig> getConfigInterface() {
-        return EvilangelCoreConfigXempireCom.class;
+        return EvilangelCoreConfigAdulttime.class;
+    }
+
+    @Override
+    protected boolean allowCookieLoginOnly() {
+        /* 2024-08-09: Untested thus I'am only allowing cookie login as I know for sure that this will work. */
+        return true;
     }
 }

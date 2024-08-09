@@ -29,7 +29,7 @@ import jd.plugins.HostPlugin;
 public class EvilangelGirlfriendsfilmsCom extends EvilangelCore {
     public EvilangelGirlfriendsfilmsCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.girlfriendsfilms.com/en/join");
+        this.enablePremium(this.getPremiumRegisterLink());
     }
 
     private static List<String[]> getPluginDomains() {

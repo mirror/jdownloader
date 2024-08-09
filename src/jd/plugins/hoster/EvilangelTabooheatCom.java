@@ -29,7 +29,7 @@ import jd.plugins.HostPlugin;
 public class EvilangelTabooheatCom extends EvilangelCore {
     public EvilangelTabooheatCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.tabooheat.com/en/join");
+        this.enablePremium(this.getPremiumRegisterLink());
     }
 
     private static List<String[]> getPluginDomains() {

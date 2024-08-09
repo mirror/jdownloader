@@ -29,7 +29,7 @@ import jd.plugins.HostPlugin;
 public class EvilangelAdulttimeCom extends EvilangelCore {
     public EvilangelAdulttimeCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.adulttime.com/en/join");
+        this.enablePremium(this.getPremiumRegisterLink());
     }
 
     private static List<String[]> getPluginDomains() {
