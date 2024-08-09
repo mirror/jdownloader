@@ -15,11 +15,11 @@ public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFrom
 
     public GenericDeleteFromLinkgrabberContextAction() {
         super();
-        addContextSetup(tableContext = new TableContext(false, true));
+        addContextSetup(0, tableContext = new TableContext(false, true));
     }
 
     protected void initIncludeSelectionSupport() {
-        addContextSetup(includedSelection = new IncludedSelectionSetup(LinkGrabberTable.getInstance(), this, this) {
+        addContextSetup(1, includedSelection = new IncludedSelectionSetup(LinkGrabberTable.getInstance(), this, this) {
             @Override
             public void updateListeners() {
             }

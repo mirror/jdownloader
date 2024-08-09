@@ -435,53 +435,57 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 } else {
                     shortcut.setText("");
                 }
-                List<ActionContext> sos = action.getSetupObjects();
+                final List<ActionContext> sos = action.getSetupObjects();
                 if (sos != null) {
-                    ArrayList<Entry> lst = new ArrayList<Entry>();
+                    final ArrayList<Entry> entries = new ArrayList<Entry>();
                     for (ActionContext so : sos) {
-                        ArrayList<GetterSetter> gss = new ArrayList<GetterSetter>(ReflectionUtils.getGettersSetteres(so.getClass()));
+                        final ArrayList<GetterSetter> gss = new ArrayList<GetterSetter>(ReflectionUtils.getGettersSetteres(so.getClass()));
+                        final ArrayList<Entry> toSort = new ArrayList<Entry>();
                         for (GetterSetter gs : gss) {
                             if (gs.hasGetter() && gs.hasSetter()) {
                                 if (gs.hasAnnotation(Customizer.class)) {
-                                    lst.add(new Entry(mid, so, gs));
+                                    toSort.add(new Entry(mid, so, gs));
                                 }
                             }
+                        }
+                        if (toSort.size() > 0) {
+                            Collections.sort(toSort, new Comparator<Entry>() {
+                                @Override
+                                public int compare(Entry o1, Entry o2) {
+                                    try {
+                                        final Order orderAn1 = o1.gs.getAnnotation(Order.class);
+                                        final Order orderAn2 = o2.gs.getAnnotation(Order.class);
+                                        final int order1 = orderAn1 == null ? Integer.MAX_VALUE : orderAn1.value();
+                                        final int order2 = orderAn2 == null ? Integer.MAX_VALUE : orderAn2.value();
+                                        final int ret = CompareUtils.compareInt(order1, order2);
+                                        if (ret != 0) {
+                                            return ret;
+                                        }
+                                        final Customizer oc1 = o1.gs.getAnnotation(Customizer.class);
+                                        final String lbl1;
+                                        if (oc1 != null) {
+                                            lbl1 = CustomPanel.getNameForCustomizer(o1.gs);
+                                        } else {
+                                            lbl1 = o1.gs.getKey();
+                                        }
+                                        final Customizer oc2 = o2.gs.getAnnotation(Customizer.class);
+                                        final String lbl2;
+                                        if (oc2 != null) {
+                                            lbl2 = CustomPanel.getNameForCustomizer(o2.gs);
+                                        } else {
+                                            lbl2 = o2.gs.getKey();
+                                        }
+                                        return lbl1.compareToIgnoreCase(lbl2);
+                                    } catch (Throwable e) {
+                                        e.printStackTrace();
+                                        return 0;
+                                    }
+                                }
+                            });
+                            entries.addAll(toSort);
                         }
                     }
-                    Collections.sort(lst, new Comparator<Entry>() {
-                        @Override
-                        public int compare(Entry o1, Entry o2) {
-                            try {
-                                final Order orderAn1 = o1.gs.getAnnotation(Order.class);
-                                final Order orderAn2 = o2.gs.getAnnotation(Order.class);
-                                final int order1 = orderAn1 == null ? Integer.MAX_VALUE : orderAn1.value();
-                                final int order2 = orderAn2 == null ? Integer.MAX_VALUE : orderAn2.value();
-                                final int ret = CompareUtils.compareInt(order1, order2);
-                                if (ret != 0) {
-                                    return ret;
-                                }
-                                final Customizer oc1 = o1.gs.getAnnotation(Customizer.class);
-                                final String lbl1;
-                                if (oc1 != null) {
-                                    lbl1 = CustomPanel.getNameForCustomizer(o1.gs);
-                                } else {
-                                    lbl1 = o1.gs.getKey();
-                                }
-                                final Customizer oc2 = o2.gs.getAnnotation(Customizer.class);
-                                final String lbl2;
-                                if (oc2 != null) {
-                                    lbl2 = CustomPanel.getNameForCustomizer(o2.gs);
-                                } else {
-                                    lbl2 = o2.gs.getKey();
-                                }
-                                return lbl1.compareToIgnoreCase(lbl2);
-                            } catch (Throwable e) {
-                                e.printStackTrace();
-                                return 0;
-                            }
-                        }
-                    });
-                    for (Entry e : lst) {
+                    for (Entry e : entries) {
                         customPanel.add(e.mid.getActionData(), action, e.so, e.gs);
                     }
                 }

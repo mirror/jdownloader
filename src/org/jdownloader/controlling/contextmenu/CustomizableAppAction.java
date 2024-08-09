@@ -2,7 +2,6 @@ package org.jdownloader.controlling.contextmenu;
 
 import java.awt.AlphaComposite;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
 import javax.swing.Action;
@@ -31,23 +30,27 @@ public abstract class CustomizableAppAction extends AppAction {
         return menuItemData;
     }
 
-    private HashSet<ActionContext> setupObjects;
+    private ArrayList<ActionContext> setupObjects;
 
     public List<ActionContext> getSetupObjects() {
+        final List<ActionContext> setupObjects = this.setupObjects;
         if (setupObjects != null) {
             return new ArrayList<ActionContext>(setupObjects);
+        } else {
+            return null;
         }
-        return null;
     }
 
     protected ContextMenuManager _getOwner() {
-        if (getMenuItemData() == null) {
+        final MenuItemData menuData = getMenuItemData();
+        if (menuData == null) {
             return null;
         }
-        if (getMenuItemData()._getRoot() == null) {
+        final MenuContainerRoot root = menuData._getRoot();
+        if (root == null) {
             return null;
         }
-        return getMenuItemData()._getRoot()._getOwner();
+        return root._getOwner();
     }
 
     protected static ImageIcon getCheckBoxedIcon(String string, boolean selected, boolean enabled) {
@@ -56,20 +59,41 @@ public abstract class CustomizableAppAction extends AppAction {
 
     private long lastRequestUpdate;
 
-    public void removeContextSetup(ActionContext contextSetup) {
+    public boolean removeContextSetup(ActionContext contextSetup) {
+        final List<ActionContext> setupObjects = this.setupObjects;
         if (setupObjects != null) {
-            this.setupObjects.remove(contextSetup);
+            return setupObjects.remove(contextSetup);
+        } else {
+            return false;
         }
     }
 
-    public void addContextSetup(ActionContext contextSetup) {
-        if (this.setupObjects == null) {
-            this.setupObjects = new HashSet<ActionContext>();
+    public void addContextSetup(final ActionContext contextSetup) {
+        addContextSetup(-1, contextSetup);
+    }
+
+    public void addContextSetup(final int index, final ActionContext contextSetup) {
+        ArrayList<ActionContext> setupObjects = this.setupObjects;
+        if (setupObjects == null) {
+            setupObjects = this.setupObjects = new ArrayList<ActionContext>();
         }
-        this.setupObjects.add(contextSetup);
+        if (index < 0) {
+            if (!setupObjects.contains(contextSetup)) {
+                setupObjects.add(contextSetup);
+            }
+        } else {
+            final int exist = setupObjects.indexOf(contextSetup);
+            if (exist != -1 && exist != index) {
+                setupObjects.remove(exist);
+                setupObjects.add(index, contextSetup);
+            } else if (exist == -1) {
+                setupObjects.add(index, contextSetup);
+            }
+        }
     }
 
     public void loadContextSetups() {
+        final List<ActionContext> setupObjects = this.setupObjects;
         if (setupObjects != null) {
             fill(setupObjects);
         }
@@ -78,7 +102,7 @@ public abstract class CustomizableAppAction extends AppAction {
     /**
      * @param setupObjects2
      */
-    private void fill(HashSet<ActionContext> setupObjects2) {
+    private void fill(List<ActionContext> setupObjects2) {
         if (setupObjects2 != null && menuItemData != null) {
             for (ActionContext setupObject : setupObjects2) {
                 for (GetterSetter f : ReflectionUtils.getGettersSetteres(setupObject.getClass())) {

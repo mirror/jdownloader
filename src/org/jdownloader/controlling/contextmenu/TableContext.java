@@ -36,7 +36,6 @@ public class TableContext implements ActionContext {
     }
 
     public TableContext(boolean setItemVisibleForEmptySelection, boolean setItemVisibleForSelections) {
-
         setItemVisibleForEmptySelection(setItemVisibleForEmptySelection);
         setItemVisibleForSelections(setItemVisibleForSelections);
     }

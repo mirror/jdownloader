@@ -18,7 +18,7 @@ public abstract class CustomizableTableContextAppAction<PackageType extends Abst
 
     protected void initTableContext(boolean empty, boolean selection) {
         tableContext = new TableContext(empty, selection);
-        addContextSetup(tableContext);
+        addContextSetup(0, tableContext);
     }
 
     protected void removeTableContext() {

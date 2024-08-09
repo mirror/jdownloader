@@ -14,11 +14,11 @@ public class GenericDeleteFromDownloadlistContextAction extends GenericDeleteFro
 
     public GenericDeleteFromDownloadlistContextAction() {
         super();
-        addContextSetup(tableContext = new TableContext(false, true));
+        addContextSetup(0, tableContext = new TableContext(false, true));
     }
 
     protected void initIncludeSelectionSupport() {
-        addContextSetup(includedSelection = new IncludedSelectionSetup(DownloadsTable.getInstance(), this, this) {
+        addContextSetup(1, includedSelection = new IncludedSelectionSetup(DownloadsTable.getInstance(), this, this) {
             @Override
             public void updateListeners() {
             }
