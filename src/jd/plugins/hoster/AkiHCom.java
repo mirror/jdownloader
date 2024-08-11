@@ -142,11 +142,16 @@ public class AkiHCom extends PluginForHost {
         brc = br.cloneBrowser();
         brc.getPage("https://v.aki-h.com/v/" + videoID);
         brc.getPage("https://v.aki-h.com/f/" + publicVideoID);
-        final String streamID = brc.getRegex("stream/v/([^\"]*)").getMatch(0);
-        brc.getPage("https://aki-h.stream/v/" + streamID);
+        final String v = brc.getRegex("stream/(v\\d*)/[^\"]*").getMatch(0);
+        final String streamID = brc.getRegex("stream/v\\d*/([^\"]*)").getMatch(0);
+        brc.getPage("https://aki-h.stream/" + v + "/" + streamID);
         brc = brc.cloneBrowser();
         brc.getHeaders().put(new HTTPHeader("Accept", "*/*"));
-        brc.getPage("https://aki-h.stream/file/" + streamID + "/");
+        if ("v2".equals(v)) {
+            brc.getPage("https://aki-h.stream/file2/" + streamID + "/");
+        } else {
+            brc.getPage("https://aki-h.stream/file/" + streamID + "/");
+        }
         final List<HlsContainer> containers = HlsContainer.getHlsQualities(brc);
         if (containers == null || containers.size() == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
