@@ -1119,11 +1119,15 @@ public class OldRAFDownload extends DownloadInterface {
                 return 4096;
             }
             final OperatingSystem os = CrossSystem.getOS();
-            if (os.isMinimum(OperatingSystem.WINDOWS_XP)) {
-                allocationUnitSize = org.jdownloader.jna.windows.FileSystemHelper.getAllocationUnitSize(outputPartFile);
-            } else if (os.getFamily() == OSFamily.BSD || os.getFamily() == OSFamily.LINUX /* || os.getFamily()==OSFamily.MAC */) {
-                // TODO: check MAC compatibility, but should be fine as it is BSD based
-                allocationUnitSize = org.jdownloader.jna.unix.FileSystemHelper.getAllocationUnitSize(outputPartFile);
+            try {
+                if (os.isMinimum(OperatingSystem.WINDOWS_XP)) {
+                    allocationUnitSize = org.jdownloader.jna.windows.FileSystemHelper.getAllocationUnitSize(outputPartFile);
+                } else if (os.getFamily() == OSFamily.BSD || os.getFamily() == OSFamily.LINUX /* || os.getFamily()==OSFamily.MAC */) {
+                    // TODO: check MAC compatibility, but should be fine as it is BSD based
+                    allocationUnitSize = org.jdownloader.jna.unix.FileSystemHelper.getAllocationUnitSize(outputPartFile);
+                }
+            } catch (Throwable e) {
+                logger.log(e);
             }
             if (allocationUnitSize == null || allocationUnitSize.intValue() < 0) {
                 allocationUnitSize = 4096;
