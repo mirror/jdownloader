@@ -91,7 +91,7 @@ public class SaintTo extends PluginForHost {
         } else if (br.containsHTML("\"(Video not found|Video has been removed)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+        String filename = br.getRegex("<title>\\s*([^<]+)\\s*</title>").getMatch(0);
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
@@ -107,7 +107,7 @@ public class SaintTo extends PluginForHost {
     private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty)) {
             requestFileInformation(link);
-            String dllink = br.getRegex("<source src=\"(https?://[^\"]+)\" type=\"video/mp4\">").getMatch(0);
+            final String dllink = br.getRegex("<source src\\s*=\\s*\"(https?://[^\"]+)\" type=\"video/mp4\">").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
