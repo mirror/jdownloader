@@ -67,7 +67,6 @@ public class EvilangelTouchmywifeCom extends EvilangelCore {
 
     @Override
     protected boolean allowCookieLoginOnly() {
-        /* 2024-08-09: Untested thus I'am only allowing cookie login as I know for sure that this will work. */
         return true;
     }
 }

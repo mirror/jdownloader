@@ -125,7 +125,7 @@ public class ImcontentMe extends PluginForDecrypt {
         final UrlQuery query = new UrlQuery();
         query.add("key", Encoding.urlEncode(key));
         query.add("sv", "");
-        br.postPage("https://player.imcontent.me/plyr/getvideo", query);
+        br.postPage("https://player.imcontent.me/v2/getVideo", query);
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final String titleSlug = (String) entries.get("jid");
         final String cryptedData = (String) entries.get("data");

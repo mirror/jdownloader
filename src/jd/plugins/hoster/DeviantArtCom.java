@@ -155,15 +155,14 @@ public class DeviantArtCom extends PluginForHost {
      * 2023-09-19: Doesn't work anymore(?) Ticket: https://svn.jdownloader.org/issues/90403
      */
     public static String buildUnlimitedJWT(final DownloadLink link, final String url) throws UnsupportedEncodingException {
-        final String path = new Regex(url, "(/f/.+)").getMatch(0);
-        if (path != null) {
-            final String b64Header = "eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0";
-            final String payload = "{\"sub\":\"urn:app:\",\"iss\":\"urn:app:\",\"obj\":[[{\"path\":\"" + PluginJSonUtils.escape(path) + "\"}]],\"aud\":[\"urn:service:file.download\"]}";
-            final String ret = b64Header + "." + Base64.encodeToString(payload.getBytes("UTF-8")).replaceFirst("(=+$)", "") + ".";
-            return ret;
-        } else {
+        final String path = new Regex(url, "(?i)(/f/.+)").getMatch(0);
+        if (path == null) {
             return null;
         }
+        final String b64Header = "eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0";
+        final String payload = "{\"sub\":\"urn:app:\",\"iss\":\"urn:app:\",\"obj\":[[{\"path\":\"" + PluginJSonUtils.escape(path) + "\"}]],\"aud\":[\"urn:service:file.download\"]}";
+        final String ret = b64Header + "." + Base64.encodeToString(payload.getBytes("UTF-8")).replaceFirst("(=+$)", "") + ".";
+        return ret;
     }
 
     public static Map<String, Object> parseDeviationJSON(final Plugin plugin, final DownloadLink link, Map<String, Object> deviation) {
@@ -512,14 +511,40 @@ public class DeviantArtCom extends PluginForHost {
                 link.setDownloadSize(originalFileSizeBytes.longValue());
             }
             if (isDownload) {
-                throw new AccountRequiredException();
+                throw new AccountRequiredException("Paid content");
             } else {
                 return AvailableStatus.TRUE;
             }
-        } else if (blockReasons != null && blockReasons.contains("mature_loggedout")) {
-            /* Mature content (account required) or blocked for other reasons. */
-            /* Examplkes for block reasons we can always circumvent: mature_filter */
-            this.accountRequiredWhenDownloadImpossible = true;
+        } else if (blockReasons != null && !blockReasons.isEmpty()) {
+            /* Item not viewable for reasons given in this map. */
+            if (blockReasons.contains("mature_loggedout")) {
+                /* Mature content (account required) or blocked for other reasons. */
+                /* Examples for block reasons we can always circumvent: mature_filter */
+                this.accountRequiredWhenDownloadImpossible = true;
+                if (dllink != null && isBlurredImageLink(dllink)) {
+                    /* Mature-content filter is not skippable (sometimes it is!) */
+                    if (isDownload) {
+                        throw new AccountRequiredException("Account required to access mature content");
+                    } else {
+                        return AvailableStatus.TRUE;
+                    }
+                } else if (dllink != null && blockReasons.size() == 1) {
+                    /*
+                     * Item is blocked due to mature content (= the only blocked reason here) but that limitation can be skipped as image
+                     * does not seem to be blurred.
+                     */
+                    return AvailableStatus.TRUE;
+                }
+            }
+            /* 2024-08-12: E.g. blurred mature content cannot be downloaded without account anymore. */
+            final boolean trustAnyBlockReason = true;
+            if (trustAnyBlockReason) {
+                if (isDownload) {
+                    throw new AccountRequiredException("Item blocked for reasons: " + blockReasons);
+                } else {
+                    return AvailableStatus.TRUE;
+                }
+            }
         }
         if (downloadHTML) {
             link.setVerifiedFileSize(-1);
@@ -582,6 +607,14 @@ public class DeviantArtCom extends PluginForHost {
 
     public static boolean isLiterature(DownloadLink link) {
         return StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "literature");
+    }
+
+    private static boolean isBlurredImageLink(final String url) {
+        if (StringUtils.containsIgnoreCase(url, "blur_")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -726,6 +759,12 @@ public class DeviantArtCom extends PluginForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+            } else if (isBlurredImageLink(dllink)) {
+                /**
+                 * Last resort errorhandling for "probably premium-only items". </br>
+                 * This should usually be catched before.
+                 */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Avoiding download of blurred image");
             }
             /* Workaround for old downloadcore bug that can lead to incomplete files */
             br.getHeaders().put("Accept-Encoding", "identity");

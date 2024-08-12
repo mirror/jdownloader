@@ -92,6 +92,7 @@ public class GenericYetiShareFolder extends PluginForDecrypt {
         ret.add(new String[] { "fileknot.io" });
         ret.add(new String[] { "blazingshare.me" });
         ret.add(new String[] { "iwara.zip" });
+        ret.add(new String[] { "megaup.net" });
         return ret;
     }
 

@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.cloudflareturnstile.AbstractCloudflareTurnstileCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
@@ -29,6 +30,8 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -42,7 +45,7 @@ public class ShrtflyVip extends MightyScriptAdLinkFly {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "shrtfly.com", "shrtfly.vip", "shrtvip.com", "stfly.io", "stfly.me", "stfly.cc", "stfly.xyz", "smwebs.xyz" });
+        ret.add(new String[] { "shrtfly.com", "shrtfly.vip", "shrtvip.com", "stfly.io", "stfly.me", "stfly.cc", "stfly.xyz", "smwebs.xyz", "stly.link" });
         return ret;
     }
 
@@ -164,6 +167,10 @@ public class ShrtflyVip extends MightyScriptAdLinkFly {
             this.submitForm(nextForm);
             page++;
         } while (true);
+        if (AbstractCloudflareTurnstileCaptcha.containsCloudflareTurnstileClass(br) || br.containsHTML("challenges\\.cloudflare\\.com/turnstile")) {
+            /* https://svn.jdownloader.org/issues/90281 */
+            throw new DecrypterRetryException(RetryReason.BLOCKED_BY, "Cloudflare Turnstile captcha is not supported");
+        }
         /* Old handling down below */
         // final String alias = br.getRegex("var alias\\s*=\\s*'([a-z0-9]+)';").getMatch(0);
         // final String token = br.getRegex("var token\\s*=\\s*'([a-f0-9]{32})';").getMatch(0);

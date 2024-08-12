@@ -124,7 +124,11 @@ public class FcLc extends antiDDoSForDecrypt {
                     redirect = new Regex(redirect, "^\\d+, (http.+)").getMatch(0);
                 }
             }
-            if (redirect != null && !redirect.contains(source_host + "/")) {
+            if (redirect == null) {
+                logger.info("Exit redirect loop at URL: " + br.getURL());
+                break;
+            }
+            if (!redirect.contains(source_host + "/")) {
                 /*
                  * 2018-07-18: Direct redirect without captcha or any Form e.g. vivads.net OR redirect to other domain of same service e.g.
                  * wi.cr --> wicr.me
@@ -132,11 +136,8 @@ public class FcLc extends antiDDoSForDecrypt {
                 ret.add(this.createDownloadlink(redirect));
                 return ret;
             } else {
-                if (redirect != null) {
-                    getPage(redirect);
-                } else {
-                    break;
-                }
+                getPage(redirect);
+                continue;
             }
         }
         br.setFollowRedirects(true);
@@ -299,12 +300,20 @@ public class FcLc extends antiDDoSForDecrypt {
                 logger.info("No captcha required");
                 this.submitForm(form);
             }
-            final Form[] forms = br.getForms();
-            if (forms != null && forms.length > 0) {
-                /* 2023-10-07: We are on tophostingapp.com -> Form -> Another form -> Wait -> Form -> Final URL */
-                final Form continueForm = forms[0];
-                this.submitForm(continueForm);
+            String anotherRedirect = br.getRequest().getHTMLRefresh();
+            if (anotherRedirect == null) {
+                anotherRedirect = br.getRegex("var redirectUrl\\s*=\\s*'(https?://[^\\']+/)';").getMatch(0);
             }
+            if (anotherRedirect != null) {
+                getPage(anotherRedirect);
+            }
+            // 2024-08-12: Old stuff down below
+            // final Form[] forms = br.getForms();
+            // if (forms != null && forms.length > 0) {
+            // /* 2023-10-07: We are on tophostingapp.com -> Form -> Another form -> Wait -> Form -> Final URL */
+            // final Form continueForm = forms[0];
+            // this.submitForm(continueForm);
+            // }
             Form finalform = null;
             int counter = -1;
             do {

@@ -54,14 +54,13 @@ public class CompuPasteCom extends PluginForDecrypt {
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "compupaste.com" });
         ret.add(new String[] { "lupaste.com" });
         ret.add(new String[] { "pfree.gatonplayseries.com" });
-        /* 2023-08-09 */
         ret.add(new String[] { "avohdlinks.latinomegahd.net" });
         ret.add(new String[] { "hopepaste.download" });
         ret.add(new String[] { "fullpaste.todofullxd.com" });
+        ret.add(new String[] { "box.sphinxanime.net" });
         return ret;
     }
 

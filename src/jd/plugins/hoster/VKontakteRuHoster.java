@@ -607,6 +607,8 @@ public class VKontakteRuHoster extends PluginForHost {
                     logger.info("Resume failed --> Retrying from zero");
                     link.setChunksProgress(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else if (dl.getConnection().getResponseCode() == 451) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Error 451 unavailable for legal reasons");
                 } else {
                     logger.info("vk.com: Plugin broken after download-try");
                     br.followConnection(true);
