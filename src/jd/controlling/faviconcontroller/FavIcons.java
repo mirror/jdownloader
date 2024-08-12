@@ -502,12 +502,16 @@ public class FavIcons {
             int colors = -1;
             for (final BufferedImage img : images) {
                 /*
+                 * remove transparent area
+                 */
+                final BufferedImage croppedImage = IconIO.getCroppedImage(img);
+                /*
                  * loop through all available images to find best resolution
                  */
-                if (img == null) {
+                if (croppedImage == null) {
                     continue;
-                } else if (ret == null || (img.getHeight() * img.getWidth()) > size || countColors(img) > colors) {
-                    ret = img;
+                } else if (ret == null || (croppedImage.getHeight() * croppedImage.getWidth()) > size || countColors(croppedImage) > colors) {
+                    ret = croppedImage;
                     size = ret.getHeight() * ret.getWidth();
                     colors = countColors(ret);
                 }

@@ -22,10 +22,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -40,6 +36,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.decrypter.ImgSrcRuCrawler;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
@@ -85,14 +85,14 @@ public class ImgSrcRu extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), "(?i)(\\d+)\\.html").getMatch(0);
     }
 
-    public Browser prepBrowser(Browser prepBr, Boolean neew) {
-        if (neew) {
+    public Browser prepBrowser(Browser prepBr, boolean newFlag) {
+        if (newFlag) {
             String refer = prepBr.getHeaders().get("Referer");
             prepBr = new Browser();
             prepBr.getHeaders().put("Referer", refer);
         }
         prepBr.setFollowRedirects(true);
-        if (uaInt.incrementAndGet() > 25 || userAgent.get() == null || neew) {
+        if (uaInt.incrementAndGet() > 25 || userAgent.get() == null || newFlag) {
             userAgent.set(UserAgents.stringUserAgent());
             uaInt.set(0);
         }
@@ -169,7 +169,6 @@ public class ImgSrcRu extends PluginForHost {
         }
         if (dllink == null) {
             /* Old: < rev. 42336 */
-            Object result = null;
             try {
                 String js = br.getRegex(".+<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*((?:var|let) [a-z]=[^<]+.*?)</script>.+").getMatch(1);
                 if (js != null) {
@@ -187,13 +186,14 @@ public class ImgSrcRu extends PluginForHost {
                         final ScriptEngine engine = mgr.getEngineByName("javascript");
                         engine.put("elementSrc", br.getURL(varSrc).toString());
                         engine.eval(sb.toString());
-                        result = engine.get("result");
+                        final Object result = engine.get("result");
+                        if (result != null && result instanceof ConsString) {
+                            dllink = result.toString();
+                        }
                     } catch (final Throwable e) {
                         logger.log(e);
                     }
-                    if (result != null && result instanceof ConsString) {
-                        dllink = result.toString();
-                    }
+
                 }
             } catch (final Throwable e) {
                 logger.log(e);
@@ -239,6 +239,7 @@ public class ImgSrcRu extends PluginForHost {
         br.setAllowedResponseCodes(new int[] { 410 });
         ImgSrcRuCrawler.getPage(br, url);
         if (br.getHttpConnection().getResponseCode() == 400) {
+            Browser.setRequestIntervalLimitGlobal(getHost(), 750);
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 400 rate limit reached", 1 * 60 * 1000l);
         } else if (br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

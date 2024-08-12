@@ -29,17 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -71,6 +60,17 @@ import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.Quality;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%@:\\!]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -665,6 +665,10 @@ public class VKontakteRu extends PluginForDecrypt {
             return 720;
         case 1920:
             return 1080;
+        case 2560:
+            return 1440;
+        case 3840:
+            return 2160;
         }
     }
 
@@ -678,6 +682,10 @@ public class VKontakteRu extends PluginForDecrypt {
             return 1280;
         case 1080:
             return 1920;
+        case 1440:
+            return 2560;
+        case 2160:
+            return 3840;
         }
     }
 
@@ -1729,7 +1737,10 @@ public class VKontakteRu extends PluginForDecrypt {
                 ret.add(dl);
             }
         }
-        final String websiteJson = br.getRegex("extend\\(window\\.cur \\|\\| \\{\\}, (\\{\".*?\\})\\);").getMatch(0);
+        String websiteJson = br.getRegex("extend\\(window\\.cur \\|\\| \\{\\}, (\\{\".*?\\})\\);").getMatch(0);
+        if (websiteJson == null) {
+            websiteJson = br.getRegex("window\\.cur\\s*=\\s*Object\\.assign\\(window\\.cur \\|\\| \\{\\}, (\\{\".*?\\})\\);").getMatch(0);
+        }
         apiPrefetchCacheHandling: if (websiteJson != null) {
             /* 2023-11-17: New */
             final Map<String, Object> entries = restoreFromString(websiteJson, TypeRef.MAP);
@@ -3094,8 +3105,8 @@ public class VKontakteRu extends PluginForDecrypt {
         final String htmlrefresh = br.getRequest().getHTMLRefresh();
         if (StringUtils.containsIgnoreCase(htmlrefresh, "badbrowser.php")) {
             /**
-             * If this happens user needs to change User-Agent of this plugin to continue using it. </br>
-             * vk.com does not necessarily simply block a User-Agent value. They may as well just block it for specific users/IPs.
+             * If this happens user needs to change User-Agent of this plugin to continue using it. </br> vk.com does not necessarily simply
+             * block a User-Agent value. They may as well just block it for specific users/IPs.
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Blocked User-Agent");
         }

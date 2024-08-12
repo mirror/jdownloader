@@ -1501,7 +1501,7 @@ public class TbCmV2 extends PluginForDecrypt {
                             // proper playlist handling with packaging and correct container URLs
                             final String playlistURL = generatePlaylistURL(vidPlayListID);
                             distribute(createDownloadlink(playlistURL));
-                            break;
+                            continue;
                         } else if (true) {
                             // fast but part of "Releases" or "Playlists" packages
                             final List<Map<String, Object>> vidPlayListVideos = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(vid, "richItemRenderer/content/playlistRenderer/videos");
