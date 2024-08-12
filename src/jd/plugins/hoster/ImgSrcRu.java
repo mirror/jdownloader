@@ -85,14 +85,14 @@ public class ImgSrcRu extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), "(?i)(\\d+)\\.html").getMatch(0);
     }
 
-    public Browser prepBrowser(Browser prepBr, Boolean neu) {
-        if (neu) {
+    public Browser prepBrowser(Browser prepBr, Boolean neew) {
+        if (neew) {
             String refer = prepBr.getHeaders().get("Referer");
             prepBr = new Browser();
             prepBr.getHeaders().put("Referer", refer);
         }
         prepBr.setFollowRedirects(true);
-        if (uaInt.incrementAndGet() > 25 || userAgent.get() == null || neu) {
+        if (uaInt.incrementAndGet() > 25 || userAgent.get() == null || neew) {
             userAgent.set(UserAgents.stringUserAgent());
             uaInt.set(0);
         }
@@ -238,14 +238,16 @@ public class ImgSrcRu extends PluginForHost {
         }
         br.setAllowedResponseCodes(new int[] { 410 });
         ImgSrcRuCrawler.getPage(br, url);
-        if (br.getRequest().getHttpConnection().getResponseCode() == 410) {
+        if (br.getHttpConnection().getResponseCode() == 400) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 400 rate limit reached", 1 * 60 * 1000l);
+        } else if (br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String enterOver18 = br.getRegex("(/main/warn[^<>\"\\']*over18[^<>\"\\']*)").getMatch(-1);
         if (enterOver18 != null) {
             logger.info("Entering over18 content: " + enterOver18);
             ImgSrcRuCrawler.getPage(br, enterOver18);
-        } else if (br.containsHTML(">This album has not been checked by the moderators yet\\.|<u>Proceed at your own risk</u>")) {
+        } else if (br.containsHTML(">\\s*This album has not been checked by the moderators yet\\.|<u>Proceed at your own risk\\s*</u>")) {
             // /main/passcheck.php?ad=\d+ links can not br.getURL + "?warned=yeah"
             // lets look for the link
             final String yeah = br.getRegex("/[^/]+/a\\d+\\.html\\?warned=yeah").getMatch(-1);
@@ -279,7 +281,7 @@ public class ImgSrcRu extends PluginForHost {
                 link.setDownloadPassword(password);
             }
         }
-        if (br.containsHTML(">Album foreword:.+Continue to album >></a>")) {
+        if (br.containsHTML(">\\s*Album foreword:.+Continue to album\\s*>></a>")) {
             final String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(https?://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html(\\?pwd=([a-z0-9]{32})?)?)\\'").getMatch(0);
             if (newLink == null) {
                 logger.warning("Couldn't process Album forward");

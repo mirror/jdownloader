@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -150,11 +151,11 @@ public class CivitaiComCrawler extends PluginForDecrypt {
              * Only with the nsfw parameter set to "X", all items will be returned.
              */
             final int maxItemsPerPage = 10;
-            String nextPage = apiBase + "/images?username=" + itemID + "&limit=" + maxItemsPerPage + "&nsfw=X";
-            int page = 0;
-            pagination: while (nextPage != null && !isAbort()) {
-                page++;
-                br.getPage(nextPage);
+            String nextpage = apiBase + "/images?username=" + itemID + "&limit=" + maxItemsPerPage + "&nsfw=X";
+            int page = 1;
+            final HashSet<String> dupes = new HashSet<String>();
+            pagination: while (nextpage != null && !isAbort()) {
+                br.getPage(nextpage);
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -163,10 +164,16 @@ public class CivitaiComCrawler extends PluginForDecrypt {
                 if (images == null || images.isEmpty()) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+                int numberofNewItems = 0;
                 for (final Map<String, Object> image : images) {
                     final String imageurl = image.get("url").toString();
                     final String tempName = getFileNameFromURL(new URL(imageurl));
-                    final DownloadLink link = this.createDownloadlink(br.getURL("/images/" + image.get("id")).toExternalForm());
+                    final String imageid = image.get("id").toString();
+                    if (!dupes.add(imageid)) {
+                        continue;
+                    }
+                    numberofNewItems++;
+                    final DownloadLink link = this.createDownloadlink(br.getURL("/images/" + imageid).toExternalForm());
                     link._setFilePackage(fp);
                     if (tempName != null) {
                         link.setName(tempName);
@@ -175,20 +182,25 @@ public class CivitaiComCrawler extends PluginForDecrypt {
                     ret.add(link);
                     distribute(link);
                 }
-                logger.info("Crawled page " + page + " | Found items so far: " + ret.size());
+                logger.info("Crawled page " + page + " | Found items so far: " + ret.size() + " | New items on this page: " + numberofNewItems);
                 final Map<String, Object> metadata = (Map<String, Object>) entries.get("metadata");
-                if (metadata != null) {
-                    nextPage = (String) metadata.get("nextPage");
-                } else {
-                    nextPage = null;
+                if (metadata == null) {
+                    logger.info("Stopping because: Metadata map doesnt exist");
+                    break pagination;
                 }
-                if (nextPage == null) {
+                nextpage = (String) metadata.get("nextPage");
+                if (nextpage == null) {
                     logger.info("Stopping because: Failed to find nextPage");
-                    break;
-                } else if (images.size() < maxItemsPerPage) {
+                    break pagination;
+                }
+                if (numberofNewItems == 0) {
                     /* Fail-safe */
-                    logger.info("Stopping because: Current page contains only " + images.size() + " / " + maxItemsPerPage + " items -> Reached end?");
-                    break;
+                    logger.info("Stopping because: Current page did not contain any new items -> Reached end?");
+                    break pagination;
+                } else {
+                    /* Continue to next page */
+                    page++;
+                    continue pagination;
                 }
             }
         } else {

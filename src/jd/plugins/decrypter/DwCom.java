@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.GenericM3u8;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dw.com" }, urls = { "https?://(?:www\\.)?dw\\.com/[a-z]{2}/([^/]+)/av-(\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dw.com" }, urls = { "https?://(?:www\\.)?dw\\.com/[a-z]{2}/([^/]+)/(av|video)-(\\d+)" })
 public class DwCom extends PluginForDecrypt {
     public DwCom(PluginWrapper wrapper) {
         super(wrapper);
