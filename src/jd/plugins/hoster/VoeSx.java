@@ -404,7 +404,8 @@ public class VoeSx extends XFileSharingProBasic {
         super.runPostRequestTask(ibr);
         final String redirect = ibr.getRegex("else \\{\\s*window\\.location\\.href = '(https?://[^\"\\']+)';").getMatch(0);
         if (redirect != null) {
-            if (canHandle(redirect)) {
+            final String fuid = this.getFUIDFromURL(this.getDownloadLink());
+            if (canHandle(redirect) || (fuid != null && redirect.endsWith("/" + fuid))) {
                 logger.info("Handle special js redirect: " + redirect);
                 getPage(ibr, redirect);
             } else {
