@@ -129,7 +129,10 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
                     }
                 }
             } catch (InterruptedException e) {
-                throw new DialogClosedException(Dialog.RETURN_INTERRUPT);
+                if (dialog.getReturnmask() == 0) {
+                    dialog.setCloseReason(CloseReason.INTERRUPT);
+                }
+                throw new DialogClosedException(Dialog.RETURN_INTERRUPT, e);
             } finally {
                 try {
                     dialog.dispose();

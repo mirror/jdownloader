@@ -10,6 +10,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
@@ -149,24 +150,24 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
         } catch (DialogNoAnswerException e) {
             /* no external response available */
             if (e.isCausedByInterrupt()) {
-                throw new InterruptedException("Dialog Interrupted");
+                throw Exceptions.initCause(new InterruptedException("Dialog Interrupted"), e);
             } else if (e.isCausedByTimeout()) {
-                throw new SkipException(captchaChallenge, SkipRequest.TIMEOUT);
+                throw new SkipException(captchaChallenge, SkipRequest.TIMEOUT, e);
             } else {
-                throw new SkipException(captchaChallenge, SkipRequest.SINGLE);
+                throw new SkipException(captchaChallenge, SkipRequest.SINGLE, e);
             }
         } catch (HideCaptchasByHostException e) {
-            throw new SkipException(captchaChallenge, SkipRequest.BLOCK_HOSTER);
+            throw new SkipException(captchaChallenge, SkipRequest.BLOCK_HOSTER, e);
         } catch (HideCaptchasByPackageException e) {
-            throw new SkipException(captchaChallenge, SkipRequest.BLOCK_PACKAGE);
+            throw new SkipException(captchaChallenge, SkipRequest.BLOCK_PACKAGE, e);
         } catch (StopCurrentActionException e) {
-            throw new SkipException(captchaChallenge, SkipRequest.STOP_CURRENT_ACTION);
+            throw new SkipException(captchaChallenge, SkipRequest.STOP_CURRENT_ACTION, e);
         } catch (HideAllCaptchasException e) {
-            throw new SkipException(captchaChallenge, SkipRequest.BLOCK_ALL_CAPTCHAS);
+            throw new SkipException(captchaChallenge, SkipRequest.BLOCK_ALL_CAPTCHAS, e);
         } catch (RuntimeException e) {
             LogSource.exception(getLogger(), e);
         } catch (RefreshException e) {
-            throw new SkipException(captchaChallenge, SkipRequest.REFRESH);
+            throw new SkipException(captchaChallenge, SkipRequest.REFRESH, e);
         }
     }
 

@@ -15,7 +15,12 @@ public class SkipException extends Exception {
     }
 
     public SkipException(Challenge<?> challenge, SkipRequest skipRequest) {
-        this(challenge, skipRequest, null);
+        this(challenge, skipRequest, (String) null);
+    }
+
+    public SkipException(Challenge<?> challenge, SkipRequest skipRequest, Throwable cause) {
+        this(challenge, skipRequest, (String) null);
+        this.initCause(cause);
     }
 
     public SkipException(Challenge<?> challenge, SkipRequest skipRequest, final String message) {
