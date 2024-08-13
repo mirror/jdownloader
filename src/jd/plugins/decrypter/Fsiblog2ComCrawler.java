@@ -67,7 +67,8 @@ public class Fsiblog2ComCrawler extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        final String addedlink = param.getCryptedUrl().replaceFirst("(?i)^http://", "https://");
+        br.getPage(addedlink);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -91,6 +92,12 @@ public class Fsiblog2ComCrawler extends PluginForDecrypt {
             }
         }
         for (final DownloadLink result : ret) {
+            /* Direct link cannot be used without correct referer so let's set a contentURL which the user can actually open in browser. */
+            result.setContentUrl(addedlink);
+            /*
+             * Direct-URL cannot be used without correct referer -> Set that here so that DirectHTTP plugin is able to download the file
+             * later on.
+             */
             result.setReferrerUrl(br.getURL());
         }
         final FilePackage fp = FilePackage.getInstance();

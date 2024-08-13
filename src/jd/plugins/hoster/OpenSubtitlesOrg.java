@@ -61,11 +61,11 @@ public class OpenSubtitlesOrg extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://2pu.net/v/opensubtitles";
+        return "https://www." + getHost() + "/en/disclaimer";
     }
 
     private String getContentURL(final DownloadLink link) {
-        return "https://www.opensubtitles.org/en/subtitles/" + getFID(link);
+        return "https://www." + getHost() + "/en/subtitles/" + getFID(link);
     }
 
     @Override
