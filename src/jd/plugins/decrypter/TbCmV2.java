@@ -607,7 +607,7 @@ public class TbCmV2 extends PluginForDecrypt {
                         channelOrPlaylistPackage.setAllowMerge(true);
                         final DownloadLink dummy = this.createDownloadlink("ytdummy");
                         dummy.setProperties(globalPropertiesForDownloadLink);
-                        String formattedPackagename = YoutubeHelper.applyReplacer(channelOrPlaylistPackageNamePattern, helper, dummy);
+                        final String formattedPackagename = YoutubeHelper.applyReplacer(channelOrPlaylistPackageNamePattern, helper, dummy);
                         if (!StringUtils.isEmpty(formattedPackagename)) {
                             /* Formatted result is valid -> Use it */
                             channelOrPlaylistPackage.setName(formattedPackagename);
