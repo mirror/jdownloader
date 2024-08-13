@@ -84,7 +84,6 @@ import org.jdownloader.plugins.components.youtube.YoutubeConfig.IfUrlisAPlaylist
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.ProfileCrawlMode;
 import org.jdownloader.plugins.components.youtube.YoutubeHelper;
-import org.jdownloader.plugins.components.youtube.YoutubeReplacer;
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
 import org.jdownloader.plugins.components.youtube.configpanel.AbstractVariantWrapper;
 import org.jdownloader.plugins.components.youtube.configpanel.YoutubeVariantCollection;
@@ -608,10 +607,7 @@ public class TbCmV2 extends PluginForDecrypt {
                         channelOrPlaylistPackage.setAllowMerge(true);
                         final DownloadLink dummy = this.createDownloadlink("ytdummy");
                         dummy.setProperties(globalPropertiesForDownloadLink);
-                        String formattedPackagename = channelOrPlaylistPackageNamePattern;
-                        for (YoutubeReplacer r : YoutubeHelper.REPLACER) {
-                            formattedPackagename = r.replace(formattedPackagename, this.helper, dummy);
-                        }
+                        String formattedPackagename = YoutubeHelper.applyReplacer(channelOrPlaylistPackageNamePattern, helper, dummy);
                         if (!StringUtils.isEmpty(formattedPackagename)) {
                             /* Formatted result is valid -> Use it */
                             channelOrPlaylistPackage.setName(formattedPackagename);

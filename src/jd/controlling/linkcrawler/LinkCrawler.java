@@ -1717,6 +1717,7 @@ public class LinkCrawler {
                 if ((con.getResponseCode() == 401 || con.getResponseCode() == 403) && con.getHeaderField(HTTPConstants.HEADER_RESPONSE_WWW_AUTHENTICATE) != null) {
                     /* Invalid or missing auth */
                     br.followConnection(true);
+                    req.resetConnection();
                     con = null;
                     continue authloop;
                 } else {
@@ -4190,7 +4191,7 @@ public class LinkCrawler {
                         if (directoryContent != null && directoryContent.size() > 0) {
                             /* Let http directory crawler process this link. */
                             final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
-                            ret.add(lc.crawledLinkFactorybyURL("jd://directoryindex://" + br._getURL().toExternalForm()));
+                            ret.add(lc.crawledLinkFactorybyURL("jd://directoryindex://" + br._getURL(true).toExternalForm()));
                             return ret;
                         }
                     } catch (final Throwable e) {

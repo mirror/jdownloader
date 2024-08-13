@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
@@ -175,7 +176,7 @@ public class YoutubeHelper {
         return logger;
     }
 
-    private String                            base;
+    private String                                    base;
     // private List<YoutubeBasicVariant> variants;
     // public List<YoutubeBasicVariant> getVariants() {
     // return variants;
@@ -184,7 +185,60 @@ public class YoutubeHelper {
     // public Map<String, YoutubeBasicVariant> getVariantsMap() {
     // return variantsMap;
     // }
-    public static final List<YoutubeReplacer> REPLACER                         = new ArrayList<YoutubeReplacer>();
+    private static final Map<String, YoutubeReplacer> REPLACER_MAP = new HashMap<String, YoutubeReplacer>();
+    public static final List<YoutubeReplacer>         REPLACER     = new ArrayList<YoutubeReplacer>() {
+                                                                       @Override
+                                                                       public boolean add(final YoutubeReplacer e) {
+                                                                           for (final String tag : e.getTags()) {
+                                                                               if (REPLACER_MAP.put(tag, e) != null) {
+                                                                                   if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                                                                                       throw new WTFException("Duplicate error:" + tag);
+                                                                                   }
+                                                                               }
+                                                                           }
+                                                                           return super.add(e);
+                                                                       };
+                                                                   };
+
+    public static String applyReplacer(String name, YoutubeHelper helper, DownloadLink link) {
+        final Matcher tagMatcher = Pattern.compile("(?i)([A-Z0-9\\_]+)(\\[[^\\]]*\\])?").matcher("");
+        final Matcher tagsMatcher = Pattern.compile("\\*([^\\*]*)\\*").matcher(name);
+        if (!tagsMatcher.find()) {
+            return name;
+        } else {
+            final StringBuffer sb = new StringBuffer();
+            do {
+                final String tagSection = tagsMatcher.group(1);
+                String replacement = null;
+                tagMatcher.reset(tagSection);
+                replacerLookup: while (tagMatcher.find()) {
+                    final String tagID = tagMatcher.group(1);
+                    YoutubeReplacer replacer = REPLACER_MAP.get(tagID);
+                    if (replacer == null) {
+                        replacer = REPLACER_MAP.get(tagID.toUpperCase(Locale.ENGLISH));
+                    }
+                    if (replacer != null) {
+                        final String completeTag = tagMatcher.group(0);
+                        final String replaced = replacer.replace("*" + completeTag + "*", helper, link);
+                        if (StringUtils.isNotEmpty(replaced)) {
+                            replacement = tagSection.replace(completeTag, replaced);
+                        } else {
+                            replacement = "";
+                        }
+                        break replacerLookup;
+                    }
+                }
+                if (replacement == null) {
+                    // keep tags with no assigned REPLACER
+                    replacement = Matcher.quoteReplacement(tagsMatcher.group(0));
+                }
+                tagsMatcher.appendReplacement(sb, replacement);
+            } while (tagsMatcher.find());
+            tagsMatcher.appendTail(sb);
+            return sb.toString();
+        }
+    }
+
     static {
         REPLACER.add(new YoutubeReplacer("GROUP") {
             @Override
@@ -1182,33 +1236,33 @@ public class YoutubeHelper {
             }
         });
     }
-    public static final String                YT_TITLE                         = "YT_TITLE";
-    public static final String                YT_TITLE_ALTERNATIVE             = "YT_TITLE_ALTERNATIVE";
-    public static final String                YT_CATEGORY                      = "YT_CATEGORY";
-    public static final String                YT_ID                            = "YT_ID";
-    public static final String                YT_CHAPTERS                      = "YT_CHAPTERS";
-    public static final String                YT_CHANNEL_TITLE                 = "YT_CHANNEL";
-    public static final String                YT_CHANNEL_TITLE_ALTERNATIVE     = "YT_CHANNEL_ALTERNATIVE";
-    public static final String                YT_DATE                          = "YT_DATE";
-    public static final String                YT_VARIANTS                      = "YT_VARIANTS";
-    public static final String                YT_VARIANT                       = "YT_VARIANT";
+    public static final String  YT_TITLE                         = "YT_TITLE";
+    public static final String  YT_TITLE_ALTERNATIVE             = "YT_TITLE_ALTERNATIVE";
+    public static final String  YT_CATEGORY                      = "YT_CATEGORY";
+    public static final String  YT_ID                            = "YT_ID";
+    public static final String  YT_CHAPTERS                      = "YT_CHAPTERS";
+    public static final String  YT_CHANNEL_TITLE                 = "YT_CHANNEL";
+    public static final String  YT_CHANNEL_TITLE_ALTERNATIVE     = "YT_CHANNEL_ALTERNATIVE";
+    public static final String  YT_DATE                          = "YT_DATE";
+    public static final String  YT_VARIANTS                      = "YT_VARIANTS";
+    public static final String  YT_VARIANT                       = "YT_VARIANT";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
+    public static final String  YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
+    public static final String  YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
+    public static final String  YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
-    private static final String               REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
+    public static final String  YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
+    private static final String REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
 
     private static String handleRule(String s, final String line) throws PluginException {
         final String method = new Regex(line, "\\.([\\w\\d]+?)\\(\\s*\\)").getMatch(0);
@@ -3482,11 +3536,11 @@ public class YoutubeHelper {
         AbstractVariant variant = AbstractVariant.get(link);
         String formattedFilename = variant.getFileNamePattern();
         // validate the pattern
-        if (!formattedFilename.toLowerCase(Locale.ENGLISH).contains("*ext*")) {
+        if (formattedFilename != null && !formattedFilename.toLowerCase(Locale.ENGLISH).matches(".*\\*[^\\*]*ext[^\\*]*\\*.*")) {
             formattedFilename = null;
         }
         if (formattedFilename == null || formattedFilename.equals("")) {
-            formattedFilename = "*videoname* (*quality*) *ext*";
+            formattedFilename = "*VIDEONAME* (*QUALITY*).*EXT*";
         }
         formattedFilename = replaceVariables(link, formattedFilename);
         final String playlistID = link.getStringProperty(YoutubeHelper.YT_PLAYLIST_ID);
@@ -3502,19 +3556,17 @@ public class YoutubeHelper {
         if (logger == null) {
             logger = Log.DF;
         }
-        AbstractVariant variant = AbstractVariant.get(link);
+        final AbstractVariant variant = AbstractVariant.get(link);
         try {
             formattedFilename = variant.modifyFileName(formattedFilename, link);
         } catch (Throwable e) {
-            e.printStackTrace();
+            logger.log(e);
         }
-        for (YoutubeReplacer r : REPLACER) {
-            formattedFilename = r.replace(formattedFilename, this, link);
-        }
+        formattedFilename = YoutubeHelper.applyReplacer(formattedFilename, this, link);
         try {
             formattedFilename = variant.modifyFileName(formattedFilename, link);
         } catch (Throwable e) {
-            e.printStackTrace();
+            logger.log(e);
         }
         return formattedFilename;
     }

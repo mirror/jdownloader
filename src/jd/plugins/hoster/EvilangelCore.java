@@ -26,20 +26,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
-import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -61,6 +47,21 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
+import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class EvilangelCore extends PluginForHost {
@@ -113,10 +114,10 @@ public abstract class EvilangelCore extends PluginForHost {
 
     private String       dllink                          = null;
     @Deprecated
-    private final String URL_EVILANGEL_FILM              = "(?i)https?://members\\.evilangel.com/[a-z]{2}/([A-Za-z0-9\\-_]+)/film/(\\d+)";
+    private final String URL_EVILANGEL_FILM              = "(?i)https?://members\\.evilangel.com/[a-z]{2}/([A-Za-z0-9\\-_%]+)/film/(\\d+)";
     @Deprecated
-    private final String URL_EVILANGEL_FREE_TRAILER      = "(?i)https?://(?:www\\.)?evilangel\\.com/[a-z]{2}/video/([A-Za-z0-9\\-]+)/(\\d+)";
-    private final String URL_VIDEO                       = "(?i)https?://[^/]+/[a-z]{2}/(?:video|movie)/([A-Za-z0-9\\-_]+)(?:/([A-Za-z0-9\\-_]+))?/(\\d+)";
+    private final String URL_EVILANGEL_FREE_TRAILER      = "(?i)https?://(?:www\\.)?evilangel\\.com/[a-z]{2}/video/([A-Za-z0-9\\-_%]+)/(\\d+)";
+    private final String URL_VIDEO                       = "(?i)https?://[^/]+/[a-z]{2}/(?:video|movie)/([A-Za-z0-9\\-_%]+)(?:/([A-Za-z0-9\\-_%]+))?/(\\d+)";
     private final String PROPERTY_ACTORS                 = "actors";
     private final String PROPERTY_DATE                   = "date";
     private final String PROPERTY_QUALITY                = "quality";
@@ -127,7 +128,7 @@ public abstract class EvilangelCore extends PluginForHost {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             /* Default regex for most of all supported websites. */
-            ret.add("https?://(?:(?:www|members)\\.)?" + buildHostsPatternPart(domains) + "/[a-z]{2}/(?:movie|video)/[A-Za-z0-9\\-_]+(?:/[A-Za-z0-9\\-_]+)?/\\d+");
+            ret.add("https?://(?:(?:www|members)\\.)?" + buildHostsPatternPart(domains) + "/[a-z]{2}/(?:movie|video)/[A-Za-z0-9\\-_%]+(?:/[A-Za-z0-9\\-_%]+)?/\\d+");
         }
         return ret.toArray(new String[0]);
     }
@@ -265,8 +266,7 @@ public abstract class EvilangelCore extends PluginForHost {
                 List<Map<String, Object>> qualitiesList = null;
                 if (htmlVideoJson == null && htmlVideoJson2 == null) {
                     /**
-                     * 2023-04-19: New (tested with: evilangel.com) </br>
-                     * TODO: Test this with other supported websites such as wicked.com.
+                     * 2023-04-19: New (tested with: evilangel.com) </br> TODO: Test this with other supported websites such as wicked.com.
                      */
                     final Browser brc = br.cloneBrowser();
                     brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -366,8 +366,8 @@ public abstract class EvilangelCore extends PluginForHost {
                         }
                     }
                     /**
-                     * A scene can also contain DVD-information. </br>
-                     * --> Ensure to set the correct information which is later used for filenames.
+                     * A scene can also contain DVD-information. </br> --> Ensure to set the correct information which is later used for
+                     * filenames.
                      */
                     final Map<String, Object> movieInfos = (Map<String, Object>) root.get("movieInfos");
                     if (movieInfos != null) {
@@ -627,24 +627,26 @@ public abstract class EvilangelCore extends PluginForHost {
     }
 
     protected String getURLTitle(final DownloadLink link) {
+        final String ret;
         if (link.getPluginPatternMatcher().matches(URL_EVILANGEL_FILM)) {
-            return new Regex(link.getPluginPatternMatcher(), URL_EVILANGEL_FILM).getMatch(0);
+            ret = new Regex(link.getPluginPatternMatcher(), URL_EVILANGEL_FILM).getMatch(0);
         } else if (link.getPluginPatternMatcher().matches(URL_EVILANGEL_FREE_TRAILER)) {
-            return new Regex(link.getPluginPatternMatcher(), URL_EVILANGEL_FREE_TRAILER).getMatch(0);
+            ret = new Regex(link.getPluginPatternMatcher(), URL_EVILANGEL_FREE_TRAILER).getMatch(0);
         } else if (link.getPluginPatternMatcher().matches(URL_VIDEO)) {
             final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), URL_VIDEO);
             /* Sometimes author/studio + title is given and sometimes title(=param1) only. */
             final String param1 = urlinfo.getMatch(0);
             final String param2 = urlinfo.getMatch(1);
             if (param1 != null && param2 != null) {
-                return param1 + "_" + param2;
+                ret = param1 + "_" + param2;
             } else {
-                return param1;
+                ret = param1;
             }
         } else {
             logger.warning("!Developer mistake! Unsupported URL!");
             return null;
         }
+        return URLEncode.decodeURIComponent(ret);
     }
 
     private String getQualityFilesizeMapping(final String str) {
@@ -768,8 +770,8 @@ public abstract class EvilangelCore extends PluginForHost {
             }
             login.remove("submit");
             /**
-             * 2021-09-01: Form may contain "rememberme" two times with value "0" AND "1"! Same via browser! </br>
-             * Only add "rememberme": "1" if that is not already present in our form.
+             * 2021-09-01: Form may contain "rememberme" two times with value "0" AND "1"! Same via browser! </br> Only add "rememberme":
+             * "1" if that is not already present in our form.
              */
             final String remembermeCookieKey = "rememberme";
             boolean containsRemembermeFieldWithValue1 = false;
@@ -875,8 +877,8 @@ public abstract class EvilangelCore extends PluginForHost {
             account.setUser(username);
         }
         /**
-         * TODO: Add support for "scheduledCancelDate" whenever a test account with such a date is available. </br>
-         * "scheduledCancelDate" can also be a Boolean!
+         * TODO: Add support for "scheduledCancelDate" whenever a test account with such a date is available. </br> "scheduledCancelDate"
+         * can also be a Boolean!
          */
         if (Boolean.TRUE.equals(user.get("isExpired"))) {
             ai.setExpired(true);

@@ -7,6 +7,11 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import jd.controlling.downloadcontroller.DownloadControllerConfig;
+import jd.controlling.faviconcontroller.FavIconsConfig;
+import jd.controlling.linkchecker.LinkCheckerConfig;
+import jd.controlling.linkcrawler.LinkCrawlerConfig;
+
 import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
@@ -50,13 +55,13 @@ import org.jdownloader.updatev2.LastChanceSettings;
 import org.jdownloader.updatev2.UpdateSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import jd.controlling.downloadcontroller.DownloadControllerConfig;
-import jd.controlling.faviconcontroller.FavIconsConfig;
-import jd.controlling.linkchecker.LinkCheckerConfig;
-import jd.controlling.linkcrawler.LinkCrawlerConfig;
-
 public class AdvancedConfigManager {
-    private static final AdvancedConfigManager INSTANCE = new AdvancedConfigManager();
+    private static final AdvancedConfigManager INSTANCE;
+    static {
+        INSTANCE = new AdvancedConfigManager();
+        // does access AdvancedConfigManager.getInstance
+        HosterRuleController.getInstance();// ensure HosterRuleController has been registered in AdvancedConfigManager
+    }
 
     public static AdvancedConfigManager getInstance() {
         return AdvancedConfigManager.INSTANCE;
@@ -103,7 +108,6 @@ public class AdvancedConfigManager {
                 logger.log(e);
             }
         }
-        HosterRuleController.getInstance();// ensure HosterRuleController has been registered in AdvancedConfigManager
     }
 
     public AdvancedConfigEventSender getEventSender() {

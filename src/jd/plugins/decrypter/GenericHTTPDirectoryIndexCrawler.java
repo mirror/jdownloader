@@ -20,15 +20,11 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.abstractGenericHTTPDirectoryIndexCrawler;
-import org.jdownloader.plugins.controller.LazyPlugin;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.AuthenticationFactory;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
@@ -36,11 +32,20 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.plugins.components.abstractGenericHTTPDirectoryIndexCrawler;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "HTTPDirectoryCrawler" }, urls = { "jd://directoryindex://.+" })
 public class GenericHTTPDirectoryIndexCrawler extends abstractGenericHTTPDirectoryIndexCrawler {
@@ -73,15 +78,29 @@ public class GenericHTTPDirectoryIndexCrawler extends abstractGenericHTTPDirecto
     }
 
     protected ArrayList<DownloadLink> crawlHTTPDirectory(final CryptedLink param) throws IOException, PluginException, DecrypterRetryException {
-        /* First check if maybe the user has added a directURL. */
-        // TODO: Add authentication handling see jd.plugins.decrypter.LinkCrawlerDeepHelper
         final String url = param.getCryptedUrl().replaceFirst("(?i)^jd://directoryindex://", "");
-        final GetRequest getRequest = br.createGetRequest(url);
-        final URLConnectionAdapter con = this.br.openRequestConnection(getRequest);
+        final GetRequest request = br.createGetRequest(url);
+        final List<AuthenticationFactory> authenticationFactories = AuthenticationController.getInstance().buildAuthenticationFactories(request.getURL(), null);
+        URLConnectionAdapter con = null;
         try {
+            for (final AuthenticationFactory authenticationFactory : authenticationFactories) {
+                br.setCustomAuthenticationFactory(authenticationFactory);
+                con = br.openRequestConnection(request);
+                if (looksLikeDownloadableContent(con)) {
+                    break;
+                } else if ((con.getResponseCode() == 401 || con.getResponseCode() == 403) && con.getHeaderField(HTTPConstants.HEADER_RESPONSE_WWW_AUTHENTICATE) != null) {
+                    /* Invalid or missing auth */
+                    br.followConnection(true);
+                    request.resetConnection();
+                    continue;
+                } else {
+                    break;
+                }
+            }
             if (this.looksLikeDownloadableContent(con)) {
+                /* First check if maybe the user has added a directURL. */
                 final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-                final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(getRequest, con);
+                final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(request, con);
                 final String pathToFile = getCurrentDirectoryPath(url);
                 /* Set relative path if one is available. */
                 if (pathToFile.contains("/")) {
@@ -92,7 +111,10 @@ public class GenericHTTPDirectoryIndexCrawler extends abstractGenericHTTPDirecto
                 return ret;
             } else {
                 br.followConnection();
-                if (br.getHttpConnection().getResponseCode() == 404) {
+                con = br.getHttpConnection();
+                if ((con.getResponseCode() == 401 || con.getResponseCode() == 403) && con.getHeaderField(HTTPConstants.HEADER_RESPONSE_WWW_AUTHENTICATE) != null) {
+                    throw new DecrypterRetryException(RetryReason.PASSWORD);
+                } else if (con.getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (!con.isOK()) {
                     /* E.g. response 403 */
