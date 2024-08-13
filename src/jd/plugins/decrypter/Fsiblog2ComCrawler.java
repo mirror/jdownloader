@@ -40,7 +40,7 @@ public class Fsiblog2ComCrawler extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "fsiblog.club", "fsiblog2.com" });
+        ret.add(new String[] { "fsiblog.club", "fsiblog2.com", "fsiblog3.club" });
         return ret;
     }
 
@@ -81,7 +81,7 @@ public class Fsiblog2ComCrawler extends PluginForDecrypt {
             ret.add(video);
         } else {
             final String[] photos = br.getRegex("class=\"e-gallery-item elementor-gallery-item elementor-animated-content\" href=\"(https?://[^\"]+)\"").getColumn(0);
-            if (photos.length == 0) {
+            if (photos == null || photos.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (final String singleLink : photos) {
@@ -89,6 +89,9 @@ public class Fsiblog2ComCrawler extends PluginForDecrypt {
                 link.setAvailable(true);
                 ret.add(link);
             }
+        }
+        for (final DownloadLink result : ret) {
+            result.setReferrerUrl(br.getURL());
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(titleFromURL);

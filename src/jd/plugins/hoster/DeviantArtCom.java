@@ -30,6 +30,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.text.TextDownloader;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -52,19 +65,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.text.TextDownloader;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.DeviantArtComConfig;
-import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(([\\w\\-]+/)?(art|journal)/[\\w\\-]+-\\d+|([\\w\\-]+/)?status(?:-update)?/\\d+)" })
 public class DeviantArtCom extends PluginForHost {
@@ -151,7 +151,8 @@ public class DeviantArtCom extends PluginForHost {
     /**
      * github.com/mikf/gallery-dl/blob/master/gallery_dl/extractor/deviantart.py
      *
-     * All credit goes to @Ironchest337 </br> 2023-09-19: Doesn't work anymore(?) Ticket: https://svn.jdownloader.org/issues/90403
+     * All credit goes to @Ironchest337 </br>
+     * 2023-09-19: Doesn't work anymore(?) Ticket: https://svn.jdownloader.org/issues/90403
      */
     public static String buildUnlimitedJWT(final DownloadLink link, final String url) throws UnsupportedEncodingException {
         final String path = new Regex(url, "(?i)(/f/.+)").getMatch(0);
@@ -436,8 +437,8 @@ public class DeviantArtCom extends PluginForHost {
             dllink = getDirecturl(br, link, account);
         } catch (final PluginException e) {
             /**
-             * This will happen if the item is not downloadable. </br> We're ignoring this during linkcheck as by now we know the file is
-             * online.
+             * This will happen if the item is not downloadable. </br>
+             * We're ignoring this during linkcheck as by now we know the file is online.
              */
         }
         String extByMimeType = null;
@@ -503,22 +504,21 @@ public class DeviantArtCom extends PluginForHost {
                 link.setName(filenameFromURL);
             }
         }
-        if ("locked".equalsIgnoreCase(tierAccess)) {
-            /* Paid content. All we could download would be a blurred image of the content. */
-            /* Example: https://www.deviantart.com/ohshinakai/art/Stretched-to-the-limit-Shanoli-996105058 */
-            if (originalFileSizeBytes != null) {
-                link.setDownloadSize(originalFileSizeBytes.longValue());
-            }
-            if (isDownload) {
+        try {
+            if ("locked".equalsIgnoreCase(tierAccess)) {
+                /* Paid content. All we could download would be a blurred image of the content. */
+                /* Example: https://www.deviantart.com/ohshinakai/art/Stretched-to-the-limit-Shanoli-996105058 */
+                if (originalFileSizeBytes != null) {
+                    link.setDownloadSize(originalFileSizeBytes.longValue());
+                }
                 throw new AccountRequiredException("Paid content");
-            } else {
-                return AvailableStatus.TRUE;
-            }
-        } else if (blockReasons != null && !blockReasons.isEmpty()) {
-            /* Mature content (account required) or blocked for other reasons. */
-            /* Examples for block reasons we can always circumvent: mature_filter */
-            this.accountRequiredWhenDownloadImpossible = true;
-            if (dllink != null) {
+            } else if (blockReasons != null && !blockReasons.isEmpty()) {
+                /* Mature content (account required) or blocked for other reasons. */
+                /* Examples for block reasons we can always circumvent: mature_filter */
+                this.accountRequiredWhenDownloadImpossible = true;
+                if (dllink == null) {
+                    throw new AccountRequiredException("Item blocked for reasons: " + blockReasons);
+                }
                 /*
                  * Item is blocked due to mature content (= the only blocked reason here) but that limitation can be skipped as image does
                  * not seem to be blurred.
@@ -528,13 +528,15 @@ public class DeviantArtCom extends PluginForHost {
                 remainingReasons.remove("mature_loggedout");
                 if (remainingReasons.isEmpty() && !isBlurredImageLink(dllink)) {
                     return AvailableStatus.TRUE;
-                } else if (isDownload) {
-                    throw new AccountRequiredException("Item blocked for reasons: " + blockReasons);
                 } else {
-                    return AvailableStatus.TRUE;
+                    throw new AccountRequiredException("Item blocked for reasons: " + blockReasons);
                 }
+            }
+        } catch (final AccountRequiredException ar) {
+            if (isDownload) {
+                throw ar;
             } else {
-                throw new AccountRequiredException("Item blocked for reasons: " + blockReasons);
+                return AvailableStatus.TRUE;
             }
         }
         if (downloadHTML) {
@@ -752,7 +754,8 @@ public class DeviantArtCom extends PluginForHost {
                 }
             } else if (isBlurredImageLink(dllink)) {
                 /**
-                 * Last resort errorhandling for "probably premium-only items". </br> This should usually be catched before.
+                 * Last resort errorhandling for "probably premium-only items". </br>
+                 * This should usually be catched before.
                  */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Avoiding download of blurred image");
             }

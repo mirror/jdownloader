@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,6 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamestar.de" }, urls = { "https?://(www\\.)?gamestar\\.de/videos/.+" })
 public class GamestarDeCrawler extends PluginForDecrypt {
@@ -48,33 +50,50 @@ public class GamestarDeCrawler extends PluginForDecrypt {
         }
         final String title = br.getRegex("og:title\"\\s*content=\"(.*?)\"").getMatch(0);
         int position = 0;
-        for (final String videoURL : videoURLs) {
-            position++;
-            logger.info("Crawling item " + position + "/" + videoURLs.length);
-            br.setFollowRedirects(false);
-            br.getPage(videoURL);
-            final String url = br.getRedirectLocation();
-            if (url != null) {
-                ret.add(createDownloadlink(url));
-            } else {
-                final String contentURL = br.getRegex("content url=\"(https?://.*?)\"\\s*type=\"video").getMatch(0);
-                if (contentURL != null) {
-                    ret.add(createDownloadlink("directhttp://" + contentURL));
+        if (videoURLs != null && videoURLs.length > 0) {
+            final Browser brc = br.cloneBrowser();
+            final HashSet<String> dupes = new HashSet<String>();
+            for (final String videoURL : videoURLs) {
+                if (!dupes.add(videoURL)) {
+                    /* Skip duplicates */
+                    continue;
+                }
+                position++;
+                logger.info("Crawling item " + position + "/" + videoURLs.length);
+                brc.setFollowRedirects(false);
+                brc.getPage(videoURL);
+                final String url = brc.getRedirectLocation();
+                if (url != null) {
+                    ret.add(createDownloadlink(url));
+                } else {
+                    final String contentURL = brc.getRegex("content url=\"(https?://.*?)\"\\s*type=\"video").getMatch(0);
+                    if (contentURL != null) {
+                        ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(contentURL)));
+                    }
+                }
+                if (this.isAbort()) {
+                    break;
                 }
             }
-            if (this.isAbort()) {
-                break;
+        }
+        final String[] dailymotionVideoIDs = br.getRegex("\"dmId\":\"(\\w+)").getColumn(0);
+        if (dailymotionVideoIDs != null && dailymotionVideoIDs.length > 0) {
+            for (final String dailymotionVideoID : dailymotionVideoIDs) {
+                ret.add(this.createDownloadlink("https://www.dailymotion.com/video/" + dailymotionVideoID));
             }
         }
+        final FilePackage fp = FilePackage.getInstance();
         if (title != null) {
-            final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(title).trim());
-            fp.addLinks(ret);
+        } else {
+            /* Fallback */
+            fp.setName(br._getURL().getPath());
         }
+        fp.addLinks(ret);
         return ret;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
