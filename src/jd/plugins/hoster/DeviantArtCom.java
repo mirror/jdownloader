@@ -30,19 +30,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.text.TextDownloader;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.DeviantArtComConfig;
-import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -66,6 +53,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.text.TextDownloader;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(([\\w\\-]+/)?(art|journal)/[\\w\\-]+-\\d+|([\\w\\-]+/)?status(?:-update)?/\\d+)" })
 public class DeviantArtCom extends PluginForHost {
     private final String               TYPE_DOWNLOADALLOWED_HTML             = "(?i)class=\"text\">HTML download</span>";
@@ -80,7 +79,6 @@ public class DeviantArtCom extends PluginForHost {
     public static final String         PROPERTY_TITLE                        = "title";
     public static final String         PROPERTY_TYPE                         = "type";
     private static final String        PROPERTY_OFFICIAL_DOWNLOADURL         = "official_downloadurl";
-    private static final String        PROPERTY_UNLIMITED_JWT_IMAGE_URL      = "image_unlimitedjwt_url";
     private static final String        PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL = "image_display_or_preview_url";
     private static final String        PROPERTY_VIDEO_DISPLAY_OR_PREVIEW_URL = "video_display_or_preview_url";
     /* Don't touch the following! */
@@ -148,23 +146,6 @@ public class DeviantArtCom extends PluginForHost {
         return requestFileInformation(link, account, false);
     }
 
-    /**
-     * github.com/mikf/gallery-dl/blob/master/gallery_dl/extractor/deviantart.py
-     *
-     * All credit goes to @Ironchest337 </br>
-     * 2023-09-19: Doesn't work anymore(?) Ticket: https://svn.jdownloader.org/issues/90403
-     */
-    public static String buildUnlimitedJWT(final DownloadLink link, final String url) throws UnsupportedEncodingException {
-        final String path = new Regex(url, "(?i)(/f/.+)").getMatch(0);
-        if (path == null) {
-            return null;
-        }
-        final String b64Header = "eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0";
-        final String payload = "{\"sub\":\"urn:app:\",\"iss\":\"urn:app:\",\"obj\":[[{\"path\":\"" + PluginJSonUtils.escape(path) + "\"}]],\"aud\":[\"urn:service:file.download\"]}";
-        final String ret = b64Header + "." + Base64.encodeToString(payload.getBytes("UTF-8")).replaceFirst("(=+$)", "") + ".";
-        return ret;
-    }
-
     public static Map<String, Object> parseDeviationJSON(final Plugin plugin, final DownloadLink link, Map<String, Object> deviation) {
         // author can also be id(number) of author in users map
         final Map<String, Object> author = deviation.get("author") instanceof Map ? (Map<String, Object>) deviation.get("author") : null;
@@ -177,7 +158,6 @@ public class DeviantArtCom extends PluginForHost {
         final Map<String, Object> media = (Map<String, Object>) deviation.get("media");
         if (media != null) {
             String displayedImageURL = null;
-            String unlimitedImageURL = null;
             Number unlimitedImageSize = null;
             String displayedVideoURL = null;
             Number displayedVideoSize = null;
@@ -227,17 +207,6 @@ public class DeviantArtCom extends PluginForHost {
                                 }
                             }
                             if (c != null) {
-                                if (c.isEmpty() || c.matches("(?i).*/v1/.+")) {
-                                    try {
-                                        final String jwt = buildUnlimitedJWT(link, baseUri);
-                                        if (jwt != null) {
-                                            unlimitedImageURL = baseUri + "?token=" + jwt;
-                                            unlimitedImageSize = (Number) bestType.get("f");
-                                        }
-                                    } catch (Exception e) {
-                                        plugin.getLogger().log(e);
-                                    }
-                                }
                                 c = c.replaceFirst(",q_\\d+(,strp)?", "");
                                 final List<String> tokens = (List<String>) media.get("token");
                                 displayedImageURL = baseUri + c.replaceFirst("<prettyName>", Matcher.quoteReplacement(prettyName));
@@ -250,22 +219,10 @@ public class DeviantArtCom extends PluginForHost {
                             displayedVideoSize = (Number) bestType.get("f");
                         }
                     }
-                    if (isImage && StringUtils.isEmpty(displayedImageURL)) {
-                        try {
-                            final String jwt = buildUnlimitedJWT(link, baseUri);
-                            if (jwt != null) {
-                                unlimitedImageURL = baseUri + "?token=" + jwt;
-                            }
-                        } catch (Exception e) {
-                            plugin.getLogger().log(e);
-                        }
-                    }
+
                 }
             } catch (Exception e) {
                 plugin.getLogger().log(e);
-            }
-            if (unlimitedImageURL != null && isImage) {
-                link.setProperty(PROPERTY_UNLIMITED_JWT_IMAGE_URL, unlimitedImageURL);
             }
             if (displayedImageURL != null && isImage) {
                 link.setProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL, displayedImageURL);
@@ -274,7 +231,6 @@ public class DeviantArtCom extends PluginForHost {
                 link.setProperty(PROPERTY_VIDEO_DISPLAY_OR_PREVIEW_URL, displayedVideoURL);
             }
             ret.put("displayedImageURL", displayedImageURL);
-            ret.put("unlimitedImageURL", unlimitedImageURL);
             ret.put("unlimitedImageSize", unlimitedImageSize);
             ret.put("displayedVideoURL", displayedVideoURL);
             ret.put("displayedVideoSize", displayedVideoSize);
@@ -437,8 +393,8 @@ public class DeviantArtCom extends PluginForHost {
             dllink = getDirecturl(br, link, account);
         } catch (final PluginException e) {
             /**
-             * This will happen if the item is not downloadable. </br>
-             * We're ignoring this during linkcheck as by now we know the file is online.
+             * This will happen if the item is not downloadable. </br> We're ignoring this during linkcheck as by now we know the file is
+             * online.
              */
         }
         String extByMimeType = null;
@@ -712,18 +668,11 @@ public class DeviantArtCom extends PluginForHost {
             } else if (account != null && officialDownloadurl != null) {
                 dllink = officialDownloadurl;
             } else {
-                final boolean devAllowUnlimitedJwtImageURL = false; // 2023-09-19: Doesn't work anymore
-                final String unlimitedURL = link.getStringProperty(PROPERTY_UNLIMITED_JWT_IMAGE_URL);
-                final String imageURL = link.getStringProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL);
-                String ret = imageURL;
-                if (devAllowUnlimitedJwtImageURL && (imageURL == null || imageURL.matches("(?i).+/v1/.+")) && unlimitedURL != null) {
-                    ret = unlimitedURL;
-                }
-                dllink = ret;
+                dllink = link.getStringProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL);
             }
         } else if (isVideo(link)) {
             /* officialDownloadurl can be given while account is not given -> Will lead to error 404 then! */
-            return link.getStringProperty(PROPERTY_VIDEO_DISPLAY_OR_PREVIEW_URL);
+            dllink = link.getStringProperty(PROPERTY_VIDEO_DISPLAY_OR_PREVIEW_URL);
         }
         return dllink;
     }
@@ -754,8 +703,7 @@ public class DeviantArtCom extends PluginForHost {
                 }
             } else if (isBlurredImageLink(dllink)) {
                 /**
-                 * Last resort errorhandling for "probably premium-only items". </br>
-                 * This should usually be catched before.
+                 * Last resort errorhandling for "probably premium-only items". </br> This should usually be catched before.
                  */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Avoiding download of blurred image");
             }
