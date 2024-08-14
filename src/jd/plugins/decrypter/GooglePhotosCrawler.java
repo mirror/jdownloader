@@ -20,10 +20,13 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -31,18 +34,22 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photos.google.com" }, urls = { "https?://photos\\.google\\.com/share/[A-Za-z0-9\\-_]+\\?key=[A-Za-z0-9\\-_]+|https?://photos\\.app\\.goo\\.gl/[A-Za-z0-9]+" })
-public class GooglePhotos extends PluginForDecrypt {
-    public GooglePhotos(PluginWrapper wrapper) {
+public class GooglePhotosCrawler extends PluginForDecrypt {
+    public GooglePhotosCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final boolean fastlinkcheck = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.GooglePhotos.FAST_LINKCHECK, true);
-        // use english not german!
+        /* use english not german! */
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Album is empty<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -54,16 +61,23 @@ public class GooglePhotos extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String[] ids = br.getRegex("\\[\"([A-Za-z0-9\\-_]{22,})\",\\[\"https").getColumn(0);
-        String fpName = br.getRegex("(?i)<title>(?:Shared album\\s*-\\s*)?[A-Za-z0-9 ]+ – ([^<>\"]+)\\s*-\\s*Google (?:Ph|F)otos</title>").getMatch(0);
-        if (fpName == null) {
-            fpName = br.getRegex("property=\"og:title\" content=\"([^\"]+)").getMatch(0);
-        }
-        if (fpName == null) {
-            fpName = idMAIN;
-        }
         if (ids == null || ids.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("data-disable-idom=\"true\"")) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
+        String title = br.getRegex("(?i)<title>(?:Shared album\\s*-\\s*)?[A-Za-z0-9 ]+ – ([^<>\"]+)\\s*-\\s*Google (?:Ph|F)otos</title>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("property=\"og:title\" content=\"([^\"]+)").getMatch(0);
+        }
+        if (title == null) {
+            /* Fallback */
+            title = idMAIN;
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final boolean fastlinkcheck = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.GooglePhotos.FAST_LINKCHECK, true);
         for (final String idSINGLE : ids) {
             final String finallink = "https://photos.google.com/share/" + idMAIN + "/photo/" + idSINGLE + "?key=" + key;
             final DownloadLink dl = createDownloadlink(finallink);
@@ -76,7 +90,7 @@ public class GooglePhotos extends PluginForDecrypt {
             ret.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName).trim());
+        fp.setName(Encoding.htmlDecode(title).trim());
         fp.addLinks(ret);
         return ret;
     }
