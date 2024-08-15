@@ -169,6 +169,7 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "uplod.net" });
         ret.add(new String[] { "abload.de" });
         ret.add(new String[] { "saikoanimes.net" });
+        ret.add(new String[] { "streamhub.to", "streamhub.gg" });
         if (cache != null) {
             cache.put(cacheID, ret);
         }

@@ -56,17 +56,15 @@ public class HentaiDude extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String parameter = param.toString();
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         getPage(parameter);
         String page = br.toString();
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(">\\s*404 - Sorry, nothing found")) {
             /* 2020-11-10: Without http response 404 */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String nextpage = br.getRegex("<a href=\"([^\"]+)\" class=\"styled-button\">Next").getMatch(0);
         /* Grab all pages if possible and enabled by user. */
@@ -96,7 +94,7 @@ public class HentaiDude extends antiDDoSForDecrypt {
                         String fpName = br.getRegex("title=\"([^\"]+)\" href=\"" + result + "\"").getMatch(0);
                         if (fpName != null) {
                             if (fpName.length() > 4) {
-                                decryptedLinks.add(this.createDownloadlink(Encoding.htmlOnlyDecode(result), Encoding.htmlOnlyDecode(fpName)));
+                                ret.add(this.createDownloadlink(Encoding.htmlOnlyDecode(result), Encoding.htmlOnlyDecode(fpName)));
                             }
                         }
                     }
@@ -110,16 +108,16 @@ public class HentaiDude extends antiDDoSForDecrypt {
                     String fpName = br.getRegex("title=\"([^\"]+)\" href=\"" + result + "\"").getMatch(0);
                     if (fpName != null) {
                         if (fpName.length() > 4) {
-                            decryptedLinks.add(this.createDownloadlink(Encoding.htmlOnlyDecode(result), Encoding.htmlOnlyDecode(fpName)));
+                            ret.add(this.createDownloadlink(Encoding.htmlOnlyDecode(result), Encoding.htmlOnlyDecode(fpName)));
                         }
                     }
                 }
             }
         }
-        if (decryptedLinks.size() == 0) {
+        if (ret.size() == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private void setConfigElements() {
