@@ -237,11 +237,12 @@ public abstract class PluginsC {
         final String tmp = Application.getTempResource("").getAbsolutePath();
         final String rel = Files.getRelativePath(tmp, file.getAbsolutePath());
         if (rel == null) {
-            final LinkOriginDetails origin = link.getOrigin();
-            if (origin != null) {
-                switch (origin.getOrigin()) {
+            final LinkOriginDetails originDetails = link.getOrigin();
+            if (originDetails != null) {
+                switch (originDetails.getOrigin()) {
                 case DRAG_DROP_ACTION:
                 case PASTE_LINKS_ACTION:
+                case ADD_CONTAINER_ACTION:
                 case EXTENSION:
                     return false;
                 default:
@@ -250,11 +251,28 @@ public abstract class PluginsC {
             }
             return true;
         } else {
-            final CrawledLink origin = link.getOriginLink();
-            logger.fine("Do not ask - just delete: " + origin.getURL());
+            logger.fine("Do not ask - just delete(isDeleteContainer,1): " + getDebugString(link, file));
             askFileDeletion = false;
             return true;
         }
+    }
+
+    protected String getDebugString(final CrawledLink link, File file) {
+        final StringBuilder sb = new StringBuilder();
+        sb.append(file);
+        sb.append("|");
+        sb.append(link.getURL());
+        final CrawledLink originLink = link.getOriginLink();
+        if (originLink != link) {
+            sb.append("|");
+            sb.append(originLink.getURL());
+        }
+        final LinkOriginDetails originDetails = link.getOrigin();
+        if (originDetails != null) {
+            sb.append("|");
+            sb.append(originDetails.getOrigin());
+        }
+        return sb.toString();
     }
 
     private CrawledLink currentLink = null;
@@ -294,6 +312,7 @@ public abstract class PluginsC {
         ArrayList<CrawledLink> retLinks = null;
         boolean showException = true;
         try {
+            askFileDeletion = true;
             setCurrentLink(source);
             /* extract filename from url */
             final String sourceURL = new Regex(source.getURL(), "(file:/.+)").getMatch(0);
@@ -306,11 +325,12 @@ public abstract class PluginsC {
             if (file != null && file.exists() && file.isFile()) {
                 final CrawledLink origin = source.getOriginLink();
                 if (origin != null && !StringUtils.containsIgnoreCase(origin.getURL(), "file:/")) {
+                    logger.fine("Do not ask - just delete(decryptContainer,1): " + getDebugString(source, file));
                     askFileDeletion = false;
                 } else if (origin != null) {
                     final String originURL = new Regex(origin.getURL(), "(file:/.+)").getMatch(0);
                     if (originURL != null && !sourceURL.equalsIgnoreCase(originURL)) {
-                        logger.fine("Do not ask - just delete: " + origin.getURL());
+                        logger.fine("Do not ask - just delete(decryptContainer,2): " + getDebugString(source, file));
                         askFileDeletion = false;
                     }
                 }
