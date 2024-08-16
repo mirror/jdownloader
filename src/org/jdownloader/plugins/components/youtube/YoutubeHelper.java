@@ -37,24 +37,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Request;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
@@ -121,6 +103,24 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
+
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Request;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 public class YoutubeHelper {
     static {
@@ -228,11 +228,14 @@ public class YoutubeHelper {
                         break replacerLookup;
                     }
                 }
+                final String quotedReplacement;
                 if (replacement == null) {
                     // keep tags with no assigned REPLACER
-                    replacement = Matcher.quoteReplacement(tagsMatcher.group(0));
+                    quotedReplacement = Matcher.quoteReplacement(tagsMatcher.group(0));
+                } else {
+                    quotedReplacement = Matcher.quoteReplacement(replacement);
                 }
-                tagsMatcher.appendReplacement(sb, replacement);
+                tagsMatcher.appendReplacement(sb, quotedReplacement);
             } while (tagsMatcher.find());
             tagsMatcher.appendTail(sb);
             return sb.toString();
