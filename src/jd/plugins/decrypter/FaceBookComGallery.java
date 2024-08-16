@@ -197,18 +197,18 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
         /* Do some minor corrections of added link. */
         /* Remove m.facebook.com as our crawler can't cope with those (old?) facebook website versions for mobile devices. */
-        String url = param.getCryptedUrl().replaceFirst("(?i)http://", "https://").replace("https://m.", "https://www.");
-        final String videoIDFRomEmbedURL = new Regex(url, "(?i)https?://[^/]+/video/embed\\?video_id=(\\d+)").getMatch(0);
+        String addedurl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://").replace("https://m.", "https://www.");
+        final String videoIDFRomEmbedURL = new Regex(addedurl, "(?i)https?://[^/]+/video/embed\\?video_id=(\\d+)").getMatch(0);
         // final String mobileSubdomain = new Regex(url, "(?i)https?:/(m\\.[^/]+)/.+").getMatch(0);
         if (videoIDFRomEmbedURL != null) {
             /* Small workaround for embedded videourls */
-            url = "https://www." + this.getHost() + "/watch/?v=" + videoIDFRomEmbedURL;
+            addedurl = "https://www." + this.getHost() + "/watch/?v=" + videoIDFRomEmbedURL;
         }
         // if (mobileSubdomain != null) {
         // /* Remove mobile sobdomain */
         // url = url.replaceFirst(Pattern.quote(mobileSubdomain), this.getHost());
         // }
-        br.getPage(url);
+        br.getPage(addedurl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -291,11 +291,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
             }
             if (FaceBookComVideos.isVideo(result)) {
                 videoPackages.put(contentID, contentIDPackages.get(contentID));
-                if (url.contains(contentID)) {
+                if (addedurl.contains(contentID) || br.getURL().contains(contentID)) {
                     contentIDOfSingleDesiredVideo = contentID;
                 }
             } else if (FaceBookComVideos.isPhoto(result)) {
-                if (url.contains(contentID)) {
+                if (addedurl.contains(contentID) || br.getURL().contains(contentID)) {
                     contentIDOfSingleDesiredPhoto = contentID;
                     singleDesiredPhoto = result;
                 }
@@ -362,6 +362,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             }
             ret.clear();
             ret.addAll(resultsForOneDesiredVideo);
+            /* Do not return here since filenames will be set down below! */
         }
         if (singleDesiredPhoto != null) {
             /* User wants single photo -> Try to find more metadata e.g. name of the uploader */
@@ -393,30 +394,32 @@ public class FaceBookComGallery extends PluginForDecrypt {
         for (final DownloadLink result : ret) {
             FaceBookComVideos.setFilename(result);
             final String videoID = result.getStringProperty(FaceBookComVideos.PROPERTY_CONTENT_ID);
-            if (videoID != null) {
-                final String description = result.getStringProperty(FaceBookComVideos.PROPERTY_DESCRIPTION);
-                FilePackage fp = packages.get(videoID);
-                if (fp == null) {
-                    fp = FilePackage.getInstance();
-                    final String title = result.getStringProperty(FaceBookComVideos.PROPERTY_TITLE);
-                    final String uploaderNameForPackage = FaceBookComVideos.getUploaderNameAny(result);
-                    if (uploaderNameForPackage != null && title != null) {
-                        fp.setName(uploaderNameForPackage + " - " + title + " - " + videoID);
-                    } else if (uploaderNameForPackage != null) {
-                        fp.setName(uploaderNameForPackage + " - " + videoID);
-                    } else if (title != null) {
-                        fp.setName(title + " - " + videoID);
-                    } else {
-                        fp.setName(videoID);
-                    }
-                    if (!StringUtils.isEmpty(description)) {
-                        fp.setComment(description);
-                    }
-                    packages.put(videoID, fp);
-                }
-                result._setFilePackage(fp);
-                result.setContainerUrl(br.getURL());
+            if (videoID == null) {
+                /* Other/external item */
+                continue;
             }
+            final String description = result.getStringProperty(FaceBookComVideos.PROPERTY_DESCRIPTION);
+            FilePackage fp = packages.get(videoID);
+            if (fp == null) {
+                fp = FilePackage.getInstance();
+                final String title = result.getStringProperty(FaceBookComVideos.PROPERTY_TITLE);
+                final String uploaderNameForPackage = FaceBookComVideos.getUploaderNameAny(result);
+                if (uploaderNameForPackage != null && title != null) {
+                    fp.setName(uploaderNameForPackage + " - " + title + " - " + videoID);
+                } else if (uploaderNameForPackage != null) {
+                    fp.setName(uploaderNameForPackage + " - " + videoID);
+                } else if (title != null) {
+                    fp.setName(title + " - " + videoID);
+                } else {
+                    fp.setName(videoID);
+                }
+                if (!StringUtils.isEmpty(description)) {
+                    fp.setComment(description);
+                }
+                packages.put(videoID, fp);
+            }
+            result._setFilePackage(fp);
+            result.setContainerUrl(br.getURL());
         }
         if (ret.isEmpty()) {
             /*

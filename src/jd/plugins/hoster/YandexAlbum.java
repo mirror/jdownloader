@@ -84,7 +84,7 @@ public class YandexAlbum extends PluginForHost {
         }
         /* Find json object for current link ... */
         final List<Object> modelObjects = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(jd.plugins.decrypter.DiskYandexNetFolder.regExJSON(this.br));
-        Map<String, Object> entries = jd.plugins.decrypter.DiskYandexNetFolder.findModel(modelObjects, "resources");
+        Map<String, Object> entries = findModel(modelObjects, "resources");
         if (entries == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -106,6 +106,23 @@ public class YandexAlbum extends PluginForHost {
             /* We failed to find the details but a download should be possible nontheless! */
             return AvailableStatus.TRUE;
         }
+    }
+
+    public static Map<String, Object> findModel(final List<Object> modelObjects, final String targetModelName) {
+        Map<String, Object> entries = null;
+        boolean foundResourceModel = false;
+        for (final Object modelo : modelObjects) {
+            entries = (Map<String, Object>) modelo;
+            final String model = (String) entries.get("model");
+            if (targetModelName.equalsIgnoreCase(model)) {
+                foundResourceModel = true;
+                break;
+            }
+        }
+        if (!foundResourceModel) {
+            return null;
+        }
+        return entries;
     }
 
     /** Parses file info for photo/video (ALBUM) urls e.g. /album/blabla:5fffffce1939c0c46ffffffe */
