@@ -1345,6 +1345,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (!onDetach) {
                 printDownloadLinkCandidateHistory(candidate);
                 currentSession.removeHistory(link);
+                if (value.getMessage() != null) {
+                    /* Set custom message if one is available */
+                    candidate.getLink().setProperty(DownloadLink.PROPERTY_CUSTOM_MESSAGE, value.getMessage());
+                }
                 candidate.getLink().setSkipReason(SkipReason.NO_ACCOUNT);
             }
             return;
@@ -2912,6 +2916,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             case LinkStatus.ERROR_PREMIUM:
                 if (pluginException.getValue() == PluginException.VALUE_ID_PREMIUM_ONLY) {
                     ret = new DownloadLinkCandidateResult(RESULT.ACCOUNT_REQUIRED, throwable, pluginHost);
+                    message = pluginException.getLocalizedMessage();
                 } else if (pluginException.getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
                     ret = new DownloadLinkCandidateResult(RESULT.ACCOUNT_INVALID, throwable, pluginHost);
                 } else if (pluginException.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {

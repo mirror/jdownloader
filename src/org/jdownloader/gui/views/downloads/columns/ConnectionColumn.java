@@ -311,7 +311,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 }
                 final SkipReason skipReason = link.getSkipReason();
                 if (skipReason != null) {
-                    add(new JLabel(skipReason.getExplanation(ConnectionColumn.this), skipped, JLabel.LEADING));
+                    add(new JLabel(skipReason.getExplanation(ConnectionColumn.this, link), skipped, JLabel.LEADING));
                 }
                 if (link.isResumeable() && link.getFinalLinkState() == null) {
                     add(new JLabel(_GUI.T.ConnectionColumn_DownloadIsResumeable(), resumeIndicator, JLabel.LEADING));

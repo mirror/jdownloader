@@ -5,19 +5,18 @@ import java.io.IOException;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
+import org.jdownloader.extensions.extraction.ExtractionStatus;
+import org.jdownloader.plugins.ConditionalSkipReason;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.SkipReason;
+
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginProgress;
 
-import org.jdownloader.extensions.extraction.ExtractionStatus;
-import org.jdownloader.plugins.ConditionalSkipReason;
-import org.jdownloader.plugins.FinalLinkState;
-import org.jdownloader.plugins.SkipReason;
-
 public class Helper {
-
     public static DownloadLink getDownloadLinkFromID(long ID) {
         DownloadController dlc = DownloadController.getInstance();
         boolean b = dlc.readLock();
@@ -104,7 +103,7 @@ public class Helper {
         }
         SkipReason skipReason = link.getSkipReason();
         if (skipReason != null) {
-            return skipReason.getExplanation(null);
+            return skipReason.getExplanation(null, link);
         }
         FinalLinkState finalLinkState = link.getFinalLinkState();
         if (finalLinkState != null) {

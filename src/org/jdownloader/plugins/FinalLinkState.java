@@ -2,12 +2,12 @@ package org.jdownloader.plugins;
 
 import javax.swing.Icon;
 
-import jd.plugins.DownloadLink;
-
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.translate._JDT;
+
+import jd.plugins.DownloadLink;
 
 public enum FinalLinkState {
     FINISHED(_GUI.T.TaskColumn_getStringValue_finished_(), IconKey.ICON_TRUE),
@@ -33,6 +33,7 @@ public enum FinalLinkState {
     OFFLINE(_JDT.T.downloadlink_status_error_file_not_found(), IconKey.ICON_FALSE),
     FAILED_FATAL(_JDT.T.downloadlink_status_error_fatal(), IconKey.ICON_FALSE),
     PLUGIN_DEFECT(_JDT.T.downloadlink_status_error_defect(), IconKey.ICON_FALSE);
+
     private final String       exp;
     private final String       iconKey;
     private final AbstractIcon icon16;
@@ -56,11 +57,12 @@ public enum FinalLinkState {
     }
 
     public final String getExplanation(Object requestor, DownloadLink link) {
-        if (this == FAILED_FATAL && link != null) {
-            String ret = link.getStringProperty(DownloadLink.PROPERTY_CUSTOM_MESSAGE, null);
-            if (ret != null) {
-                return ret;
-            }
+        if (link == null) {
+            return exp;
+        }
+        final String msg;
+        if (this == FAILED_FATAL && (msg = link.getCustomMessage()) != null) {
+            return msg;
         }
         return exp;
     }

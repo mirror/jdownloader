@@ -288,7 +288,7 @@ public class CivitaiCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (con.getURL().toExternalForm().matches("https?://[^/]+/login.*")) {
-            throw new AccountRequiredException();
+            throw new AccountRequiredException("Free account required to download this file");
         }
         throwConnectionExceptions(br, con);
         throwFinalConnectionException(br, con);

@@ -4,15 +4,6 @@ import java.lang.ref.WeakReference;
 
 import javax.swing.Icon;
 
-import jd.controlling.downloadcontroller.AccountCache.ACCOUNTTYPE;
-import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.proxy.NoProxySelector;
-import jd.controlling.proxy.SingleDirectGatewaySelector;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
-
 import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -25,6 +16,15 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.WaitingSkipReason;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 
+import jd.controlling.downloadcontroller.AccountCache.ACCOUNTTYPE;
+import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.proxy.NoProxySelector;
+import jd.controlling.proxy.SingleDirectGatewaySelector;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
+
 public class HistoryEntry {
     private ACCOUNTTYPE accountType;
     private String      resultIconKey;
@@ -35,7 +35,7 @@ public class HistoryEntry {
         if (StringUtils.isNotEmpty(ret)) {
             return ret;
         } else if (resultSkipReason != null) {
-            ret = resultSkipReason.getExplanation(this);
+            ret = resultSkipReason.getExplanation(this, link);
         } else if (resultFinalStatus != null) {
             ret = resultFinalStatus.getExplanation(this, link);
         } else if (resultConditionalSkipReason != null) {

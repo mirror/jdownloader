@@ -10,16 +10,6 @@ import javax.swing.Icon;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
-import jd.plugins.FilePackageView.PluginState;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.PluginStateCollection;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.components.tooltips.ExtTooltip;
@@ -44,6 +34,16 @@ import org.jdownloader.plugins.WaitWhileWaitingSkipReasonIsSet;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 import org.jdownloader.premium.PremiumInfoDialog;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
+import jd.plugins.FilePackageView.PluginState;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.PluginStateCollection;
 
 public class TaskColumn extends ExtTextColumn<AbstractNode> {
     public static class ColumnHelper {
@@ -251,7 +251,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             SkipReason skipReason = link.getSkipReason();
             if (skipReason != null) {
                 columnHelper.icon = skipReason.getIcon(this, 18);
-                columnHelper.string = skipReason.getExplanation(this);
+                columnHelper.string = skipReason.getExplanation(this, link);
                 columnHelper.tooltip = null;
                 return;
             }

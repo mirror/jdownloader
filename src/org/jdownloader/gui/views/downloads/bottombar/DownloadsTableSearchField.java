@@ -7,10 +7,6 @@ import java.util.List;
 import java.util.WeakHashMap;
 import java.util.regex.Pattern;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginProgress;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.DomainInfo;
@@ -26,6 +22,10 @@ import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginProgress;
 
 public final class DownloadsTableSearchField extends SearchField<LinktablesSearchCategory, FilePackage, DownloadLink> {
     protected static DownloadsTableSearchField INSTANCE;
@@ -243,12 +243,12 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                     if (ret != null) {
                         return ret.booleanValue();
                     } else if (isMatching(pattern, host)) {
-                            fastCheck.put(domainInfo, Boolean.FALSE);
-                            return false;
-                        } else {
-                            fastCheck.put(domainInfo, Boolean.TRUE);
-                            return true;
-                        }
+                        fastCheck.put(domainInfo, Boolean.FALSE);
+                        return false;
+                    } else {
+                        fastCheck.put(domainInfo, Boolean.TRUE);
+                        return true;
+                    }
                 }
 
                 @Override
@@ -297,7 +297,7 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                     }
                     SkipReason skipReason = link.getSkipReason();
                     if (skipReason != null) {
-                        String txt = skipReason.getExplanation(DownloadsTableModel.getInstance().getTaskColumn());
+                        final String txt = skipReason.getExplanation(DownloadsTableModel.getInstance().getTaskColumn(), link);
                         for (Pattern filterPattern : pattern) {
                             if (filterPattern.matcher(txt).find()) {
                                 return false;
@@ -308,7 +308,7 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                     final FinalLinkState finalLinkState = link.getFinalLinkState();
                     if (finalLinkState != null) {
                         if (FinalLinkState.CheckFailed(finalLinkState)) {
-                            String txt = finalLinkState.getExplanation(DownloadsTableModel.getInstance().getTaskColumn(), link);
+                            final String txt = finalLinkState.getExplanation(DownloadsTableModel.getInstance().getTaskColumn(), link);
                             for (Pattern filterPattern : pattern) {
                                 if (filterPattern.matcher(txt).find()) {
                                     return false;
@@ -349,7 +349,7 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                                 return true;
                             }
                         }
-                        String txt = finalLinkState.getExplanation(this, link);
+                        final String txt = finalLinkState.getExplanation(this, link);
                         for (Pattern filterPattern : pattern) {
                             if (filterPattern.matcher(txt).find()) {
                                 return false;
@@ -358,7 +358,7 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                         return true;
                     }
                     if (link.getDownloadLinkController() != null) {
-                        String txt = _GUI.T.TaskColumn_fillColumnHelper_starting();
+                        final String txt = _GUI.T.TaskColumn_fillColumnHelper_starting();
                         for (Pattern filterPattern : pattern) {
                             if (filterPattern.matcher(txt).find()) {
                                 return false;

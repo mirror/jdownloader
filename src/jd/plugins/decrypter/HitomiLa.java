@@ -76,7 +76,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
             engine = null;
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.getCryptedUrl();
         String gallery_id = new Regex(parameter, "/(?:galleries|reader)/(\\d+)").getMatch(0);
         if (gallery_id == null) {
             gallery_id = new Regex(parameter, "/[^/]+/.*?-(\\d+)\\.html").getMatch(0);
@@ -86,8 +86,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
-        String fpName = null;
-        int i = 0;
+        String title = null;
         String imghost = getImageHost(gallery_id) + "a";
         int numberOfPages;
         final boolean use_Thumbnails = false;
@@ -99,8 +98,9 @@ public class HitomiLa extends antiDDoSForDecrypt {
             final String[] thumbnails = br.getRegex("<img src=\"//tn\\.hitomi\\.la/bigtn/(./\\d+/[a-f0-9]+)\\.jpg\">").getColumn(0);
             numberOfPages = thumbnails.length;
             final DecimalFormat df = numberOfPages > 999 ? new DecimalFormat("0000") : numberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
+            int i = 0;
             for (final String thumbnail : thumbnails) {
-                final DownloadLink dl = createDownloadlink("directhttp://https://" + imghost + ".hitomi.la/webp/" + thumbnail + ".webp");
+                final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin("https://" + imghost + ".hitomi.la/webp/" + thumbnail + ".webp"));
                 dl.setReferrerUrl(br.getURL());
                 dl.setProperty("requestType", "GET");
                 dl.setAvailable(true);
@@ -131,12 +131,12 @@ public class HitomiLa extends antiDDoSForDecrypt {
             final Browser brc = br.cloneBrowser();
             getPage(brc, js);
             Map<String, Object> entries = null;
-            final Object map = JavaScriptEngineFactory.jsonToJavaObject(brc.toString().replaceFirst("(var\\s*galleryinfo\\s*=\\s*)", ""));
-            fpName = (String) JavaScriptEngineFactory.walkJson(map, "title");
-            if (fpName == null) {
+            final Object map = JavaScriptEngineFactory.jsonToJavaObject(brc.getRequest().getHtmlCode().replaceFirst("(var\\s*galleryinfo\\s*=\\s*)", ""));
+            title = (String) JavaScriptEngineFactory.walkJson(map, "title");
+            if (title == null) {
                 /* fallback from URL */
-                fpName = URLEncode.decodeURIComponent(url_name);
-                fpName = fpName != null ? fpName.replaceFirst("^([^/]+/)", "") : null;
+                title = URLEncode.decodeURIComponent(url_name);
+                title = title != null ? title.replaceFirst("^([^/]+/)", "") : null;
             }
             final List<Object> ressourcelist;
             if (map instanceof List) {
@@ -147,24 +147,25 @@ public class HitomiLa extends antiDDoSForDecrypt {
             }
             numberOfPages = ressourcelist.size();
             final DecimalFormat df = numberOfPages > 999 ? new DecimalFormat("0000") : numberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
-            // boolean checked = false;
-            final Map<String, Integer> dupCheck = new HashMap<String, Integer>();
+            final Map<String, Integer> dupeCheck = new HashMap<String, Integer>();
+            int i = 0;
             for (final Object picO : ressourcelist) {
                 ++i;
                 final Map<String, String> picInfo = (Map<String, String>) picO;
-                final DownloadLink dl = getImage(df, dupCheck, gallery_id, picInfo, i);
+                final DownloadLink dl = getImage(df, dupeCheck, gallery_id, picInfo, i);
+                dl.setContentUrl("https://" + br.getHost() + "/reader/" + gallery_id + ".html#" + i);
                 ret.add(dl);
             }
         }
-        if (fpName != null) {
+        if (title != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(Encoding.htmlDecode(title).trim());
             fp.addLinks(ret);
         }
         return ret;
     }
 
-    protected DownloadLink getImage(DecimalFormat df, Map<String, Integer> dupCheck, final String gallery_id, Map<String, String> picInfo, int i) throws Exception {
+    protected DownloadLink getImage(DecimalFormat df, Map<String, Integer> dupeCheck, final String gallery_id, Map<String, String> picInfo, int i) throws Exception {
         final String ext;
         final String url;
         final long haswebp = JavaScriptEngineFactory.toLong(picInfo.get("haswebp"), 0);
@@ -197,11 +198,11 @@ public class HitomiLa extends antiDDoSForDecrypt {
             }
         }
         ext = Plugin.getFileNameExtensionFromURL(url);
-        final Integer existing = dupCheck.put(url, i);
+        final Integer existing = dupeCheck.put(url, i);
         if (existing != null) {
             logger.info("Dupe URL:" + url + "|" + existing + "," + i);
         }
-        final DownloadLink dl = createDownloadlink("directhttp://" + url);
+        final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
         dl.setLinkID("hitomi.la://" + gallery_id + "/" + i);
         dl.setReferrerUrl(br.getURL());
         dl.setProperty("requestType", "GET");

@@ -1324,10 +1324,15 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return skipReason != null;
     }
 
+    /** Returns custom error/status message set on this item if there is any. */
+    public String getCustomMessage() {
+        return this.getStringProperty(PROPERTY_CUSTOM_MESSAGE);
+    }
+
     /**
      * changes the enabled status of this DownloadLink, aborts download if its currently running
      */
-    public SkipReason setSkipReason(SkipReason skipReason) {
+    public SkipReason setSkipReason(final SkipReason skipReason) {
         final SkipReason old;
         synchronized (this) {
             old = this.skipReason;

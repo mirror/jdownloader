@@ -8,6 +8,8 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
+import jd.plugins.DownloadLink;
+
 public enum SkipReason {
     CONNECTION_UNAVAILABLE(_JDT.T.DownloadLink_setSkipped_statusmessage_noconnectionavailable(), IconKey.ICON_ERROR),
     TOO_MANY_RETRIES(_JDT.T.DownloadLink_setSkipped_statusmessage_toomanyretries(), IconKey.ICON_ERROR),
@@ -56,6 +58,17 @@ public enum SkipReason {
     }
 
     public String getExplanation(Object requestor) {
+        return exp;
+    }
+
+    public final String getExplanation(Object requestor, DownloadLink link) {
+        if (link == null) {
+            return exp;
+        }
+        final String msg;
+        if (this == NO_ACCOUNT && (msg = link.getCustomMessage()) != null) {
+            return msg;
+        }
         return exp;
     }
 }

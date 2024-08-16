@@ -12,12 +12,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.Icon;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.packagecontroller.ChildrenView;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
@@ -38,6 +32,12 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.TimeOutCondition;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.packagecontroller.ChildrenView;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
 
 public class FilePackageView extends ChildrenView<FilePackage, DownloadLink> {
     private static class LinkInfo {
@@ -473,7 +473,7 @@ public class FilePackageView extends ChildrenView<FilePackage, DownloadLink> {
                 ps = new PluginState<SkipReason>(skipReason, null, null) {
                     @Override
                     public String getDescription() {
-                        return skipReason.getExplanation(this);
+                        return skipReason.getExplanation(this, link);
                     };
 
                     @Override

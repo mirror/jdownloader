@@ -7,18 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DecrypterRetryException.RetryReason;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
-import jd.plugins.PluginProgress;
-import jd.plugins.PluginStateCollection;
-
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.api.RemoteAPIController;
@@ -43,6 +31,18 @@ import org.jdownloader.plugins.WaitForAccountSkipReason;
 import org.jdownloader.plugins.WaitForAccountTrafficSkipReason;
 import org.jdownloader.plugins.WaitWhileWaitingSkipReasonIsSet;
 import org.jdownloader.plugins.WaitingSkipReason;
+
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DecrypterRetryException.RetryReason;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
+import jd.plugins.PluginProgress;
+import jd.plugins.PluginStateCollection;
 
 public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     private final PackageControllerUtils<FilePackage, DownloadLink> packageControllerUtils;
@@ -364,7 +364,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         final SkipReason skipReason = link.getSkipReason();
         if (skipReason != null) {
             final String iconKey = RemoteAPIController.getInstance().getContentAPI().getIconKey(skipReason.getIcon(caller, 18));
-            final String label = skipReason.getExplanation(caller);
+            final String label = skipReason.getExplanation(caller, link);
             if (!oldStatusSet) {
                 oldStatusSet = true;
                 dls.setStatusIconKey(iconKey);

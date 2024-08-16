@@ -23,6 +23,10 @@ import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.decrypter.CamwhoresTvCrawler;
 
@@ -127,6 +131,23 @@ public class CamwhoresTv extends KernelVideoSharingComV2 {
             urltitle = urltitle.trim();
         }
         return urltitle;
+    }
+
+    @Override
+    protected void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        try {
+            super.handleDownload(link, account);
+        } catch (final AccountRequiredException ar) {
+            /* This simple catch blocks' only purpose is to display a more detailed error message to the user. */
+            final String friendsWith = br.getRegex("This video is a private video uploaded by ([\\w-]+)\\.").getMatch(0);
+            if (br.containsHTML("Only active members can watch private videos")) {
+                throw new AccountRequiredException("Only active members can download private videos like this one");
+            } else if (friendsWith != null) {
+                throw new AccountRequiredException("Only friends of user " + Encoding.htmlDecode(friendsWith).trim() + " can download this video");
+            } else {
+                throw ar;
+            }
+        }
     }
 
     @Override
