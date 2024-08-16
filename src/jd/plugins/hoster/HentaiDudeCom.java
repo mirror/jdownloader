@@ -15,6 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -27,12 +30,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hentaidude.com" }, urls = { "https?://(?:www\\.)?hentaidude\\.com/.*(-episode-[0-9]+|ova)/" })
 public class HentaiDudeCom extends antiDDoSForHost {
     public HentaiDudeCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     private String dllink = null;
@@ -43,19 +49,26 @@ public class HentaiDudeCom extends antiDDoSForHost {
     }
 
     /** 2020-11-09: They got a public oembed API: https://hentaidude.com/wp-json/oembed/1.0/embed?url= */
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
-        getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 - Sorry, nothing found. But feel free to jerk off to one of these videos:")) {
+        getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("404 - Sorry, nothing found. But feel free to jerk off to one of these videos:")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<meta (?:name|property)=\"og:(?:title|description)\" content=[\"']([^<>\"]*?)(?:\\s*(\\||-)\\s*Hentaidude.com)").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>\\s*([^<>\"]*?)(?:\\s*(\\||-)\\s*Hentaidude.com)\\s*</title").getMatch(0);
+        final String extDefault = ".mp4";
+        String title = br.getRegex("<meta (?:name|property)=\"og:(?:title|description)\" content=[\"']([^<>\"]*?)(?:\\s*(\\||-)\\s*Hentaidude.com)").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<title>\\s*([^<>\"]*?)(?:\\s*(\\||-)\\s*Hentaidude.com)\\s*</title").getMatch(0);
         }
-        link.setName(Encoding.htmlOnlyDecode(filename) + ".mp4");
+        if (title != null) {
+            link.setFinalFileName(Encoding.htmlOnlyDecode(title).trim() + extDefault);
+        } else {
+            /* Fallback */
+            link.setFinalFileName(br._getURL().getPath().indexOf("/") + extDefault);
+        }
         String[][] source = br.getRegex("action:[\r\n\t ]+'msv-get-sources',[\r\n\t ]+id:[\r\n\t ]+'([0-9]+)',[\r\n\t ]+nonce:[\r\n\t ]+'([0-9a-fA-F]+)'").getMatches();
         final PostRequest post = new PostRequest(br.getURL("/wp-admin/admin-ajax.php"));
         post.addVariable("action", "msv-get-sources");
@@ -120,7 +133,7 @@ public class HentaiDudeCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
         dl.startDownload();
     }
 

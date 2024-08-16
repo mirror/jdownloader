@@ -369,6 +369,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 distribute(link);
                 offset += 1;
             }
+            /* Determine if we've reached the end / crawled all items. */
             if (page > 1) {
                 completed = Boolean.TRUE.equals(resources_map.get("completed"));
             } else {
@@ -414,7 +415,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     }
 
     public static void setFolderPasswordTokenCookie(final Browser br, final String domain, final String token) {
-        br.setCookie(domain, "passToken", token);
+        br.setCookie(domain, DiskYandexNet.COOKIE_KEY_PASSWORD_TOKEN, token);
     }
 
     private void prepareJsonRequest(final PostRequest request, final Browser originbr) {

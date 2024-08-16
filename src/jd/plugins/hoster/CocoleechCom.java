@@ -236,9 +236,6 @@ public class CocoleechCom extends PluginForHost {
     private Map<String, Object> login(final Account account) throws Exception {
         synchronized (account) {
             account.setPass(correctPassword(account.getPass()));
-            if (!isAPIKey(account.getPass())) {
-                throw new AccountInvalidException("Invalid API key format");
-            }
             br.getPage(API_ENDPOINT + "/info?key=" + Encoding.urlEncode(account.getPass()));
             /* No error here = account is valid. */
             return handleAPIErrors(this.br, account, null);
@@ -301,16 +298,6 @@ public class CocoleechCom extends PluginForHost {
             return Integer.MAX_VALUE;
         } else {
             return 0;
-        }
-    }
-
-    private static boolean isAPIKey(final String str) {
-        if (str == null) {
-            return false;
-        } else if (str.matches("[a-f0-9]{24}")) {
-            return true;
-        } else {
-            return false;
         }
     }
 

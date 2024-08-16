@@ -3,7 +3,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
@@ -21,7 +23,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -88,16 +89,14 @@ public class PorncomixinfoNet extends PluginForDecrypt {
                 title = br._getURL().getPath();
             }
             /* Similar to hentairead.com */
-            String imagesText = br.getRegex("chapter_preloaded_images = \\[(.*?)\\]").getMatch(0);
-            if (imagesText != null) {
+            final String imagesJsonArrayText = br.getRegex("chapter_preloaded_images = (\\[[^\\]]+\\])").getMatch(0);
+            if (imagesJsonArrayText != null) {
                 /* Old */
-                imagesText = PluginJSonUtils.unescape(imagesText);
-                imagesText = imagesText.replace("\"", "");
-                String[] images = imagesText.split(",");
-                for (final String imageurl : images) {
-                    /* 2020-11-13: Not needed anymore */
-                    // imageurl = Encoding.htmlDecode(imageurl).replaceFirst("(-\\d+x\\d+)\\.(jpe?g|gif|png)$", ".$2");
+                final List<Map<String, Object>> imagesmaps = (List<Map<String, Object>>) restoreFromString(imagesJsonArrayText, TypeRef.OBJECT);
+                for (final Map<String, Object> imagesmap : imagesmaps) {
+                    final String imageurl = imagesmap.get("src").toString();
                     final DownloadLink link = createDownloadlink(DirectHTTP.createURLForThisPlugin(imageurl));
+                    link.setAvailable(true);
                     ret.add(link);
                 }
             } else {

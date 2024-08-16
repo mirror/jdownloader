@@ -34,11 +34,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentaidude.com" }, urls = { "https?://(?:www\\.)?hentaidude\\.com/page/.*|https?://(?:www\\.)?hentaidude.com/\\?tid=.*|^https?://(?:www\\.)?hentaidude\\.com/$" })
-public class HentaiDude extends antiDDoSForDecrypt {
+public class HentaiDudeComCrawler extends antiDDoSForDecrypt {
     private final String FASTER_NODLSIZE = "1";
     private final String SLOW_ALLPAGES   = "1";
 
-    public HentaiDude(PluginWrapper wrapper) {
+    public HentaiDudeComCrawler(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
     }

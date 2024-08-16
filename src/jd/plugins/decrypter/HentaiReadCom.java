@@ -16,11 +16,15 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -30,7 +34,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentairead.com" }, urls = { "https?://(?:www\\.)?hentairead.com/hentai/([^/?]+)/?" })
 public class HentaiReadCom extends PluginForDecrypt {
@@ -38,10 +42,28 @@ public class HentaiReadCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final String url = param.getCryptedUrl().replaceFirst("http:", "https:");
-        br.getPage(url + "/1/");
-        br.getPage(br.getRegex("<a[^>]+href\\s*=\\s*\"([^\"]+)\"[^>]+class\\s*=\\s*\"[^\"]*btn-read-now").getMatch(0));
+        String url = param.getCryptedUrl().replaceFirst("(?i)^http://", "https://");
+        if (!url.endsWith("/")) {
+            url += "/";
+        }
+        url += "1/";
+        br.getPage(url);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String readNowURL = br.getRegex("<a[^>]+href\\s*=\\s*\"([^\"]+)\"[^>]+class\\s*=\\s*\"[^\"]*btn-read-now").getMatch(0);
+        if (readNowURL == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(readNowURL);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -64,21 +86,22 @@ public class HentaiReadCom extends PluginForDecrypt {
         }
         fp.setName(title);
         /* Similar to porncomixinfo.net */
-        String imagesText = br.getRegex("chapter_preloaded_images = \\[(.*?)\\]").getMatch(0);
-        imagesText = PluginJSonUtils.unescape(imagesText);
-        imagesText = imagesText.replace("\"", "");
+        final String imagesJsonArrayText = br.getRegex("chapter_preloaded_images = (\\[[^\\]]+\\])").getMatch(0);
+        if (imagesJsonArrayText == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final List<Map<String, Object>> imagesmaps = (List<Map<String, Object>>) restoreFromString(imagesJsonArrayText, TypeRef.OBJECT);
         int pageNumber = 1;
-        final String[] images = imagesText.split(",");
-        final int padLength = StringUtils.getPadLength(images.length);
-        for (final String imageurl : images) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + imageurl);
+        final int padLength = imagesmaps.size();
+        for (final Map<String, Object> imagesmap : imagesmaps) {
+            final String imageurl = imagesmap.get("src").toString();
+            final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(imageurl));
             final String extension = getFileNameExtensionFromURL(imageurl);
             String filename = title + "_" + StringUtils.formatByPadLength(padLength, pageNumber) + extension;
             dl.setFinalFileName(filename);
             dl.setAvailable(true);
             dl._setFilePackage(fp);
-            distribute(dl);
             ret.add(dl);
             pageNumber++;
         }

@@ -49,7 +49,6 @@ import jd.http.Cookies;
 import jd.http.requests.PostRequest;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
-import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -132,6 +131,7 @@ public class DiskYandexNet extends PluginForHost {
     public static final String   PROPERTY_ACCOUNT_ENFORCE_COOKIE_LOGIN                               = "enforce_cookie_login";
     private final String         PROPERTY_ACCOUNT_USERID                                             = "account_userid";
     private static final String  PROPERTY_NORESUME                                                   = "NORESUME";
+    public static final String   COOKIE_KEY_PASSWORD_TOKEN                                           = "passToken";
     public static final String   APIV1_BASE                                                          = "https://cloud-api.yandex.com/v1";
     /*
      * https://tech.yandex.com/disk/api/reference/public-docpage/ 2018-08-09: API(s) seem to work fine again - in case of failure, please
@@ -244,8 +244,10 @@ public class DiskYandexNet extends PluginForHost {
         final DiskYandexNetFolder crawler = (DiskYandexNetFolder) this.getNewPluginForDecryptInstance(this.getHost());
         final ArrayList<DownloadLink> results = crawler.decryptIt(cryptedlink, account, false);
         DownloadLink fresh = null;
+        final String thislinkid = this.getLinkID(link);
         for (final DownloadLink result : results) {
-            if (StringUtils.equals(this.getLinkID(result), this.getLinkID(link))) {
+            final String otherlinkid = this.getLinkID(result);
+            if (StringUtils.equals(otherlinkid, thislinkid)) {
                 fresh = result;
                 break;
             }
@@ -290,7 +292,7 @@ public class DiskYandexNet extends PluginForHost {
         if (error != null) {
             return AvailableStatus.FALSE;
         }
-        final String resource_id = (String) entries.get("resource_id");
+        // final String resource_id = (String) entries.get("resource_id");
         final Number filesize = (Number) entries.get("size");
         final String hash = (String) entries.get("public_key");
         final String filename = (String) entries.get("name");
@@ -304,7 +306,13 @@ public class DiskYandexNet extends PluginForHost {
             // sha256 might be invalid
             link.setMD5Hash(md5);
         }
-        link.setProperty(PROPERTY_HASH, hash + ":" + path);
+        final String fullHash;
+        if (path != null && !path.equals("/")) {
+            fullHash = hash + ":" + path;
+        } else {
+            fullHash = hash;
+        }
+        link.setProperty(PROPERTY_HASH, fullHash);
         link.setFinalFileName(filename);
         link.setProperty(PROPERTY_CRAWLED_FILENAME, filename);
         if (filesize != null) {
@@ -507,24 +515,8 @@ public class DiskYandexNet extends PluginForHost {
                     final Map<String, Object> entries = this.checkErrorsWebAPI(br, link, account);
                     dllink = (String) entries.get("href");
                 } else {
-                    /* Website download */
-                    final String sk = link.getStringProperty(PROPERTY_LAST_AUTH_SK);
-                    if (StringUtils.isEmpty(sk)) {
-                        logger.warning("sk in website download handling is null");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    this.prepWebapiBrowser(br, link);
-                    br.postPageRaw("/public-api-desktop/download-url", String.format("{\"hash\":\"%s\",\"sk\":\"%s\"}", getRawHash(link), sk));
-                    checkErrorsWebsite(br, link, account);
-                    // TODO: 2023-11-03: Update this and use json parser
-                    dllink = PluginJSonUtils.getJsonValue(br, "url");
-                    if (StringUtils.isEmpty(dllink)) {
-                        logger.warning("Failed to find final downloadurl");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    /* Don't do htmldecode because the link will become invalid then */
-                    /* sure json will return url with htmlentities? */
-                    dllink = HTMLEntities.unhtmlentities(dllink);
+                    /* Official download */
+                    dllink = this.getDllinkOfficialDownload(br, link, account);
                 }
                 if (StringUtils.isEmpty(dllink)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -532,40 +524,34 @@ public class DiskYandexNet extends PluginForHost {
             }
             freshDirecturlHasJustBeenGenerated = true;
         }
-        if (isHLS(dllink)) {
-            // TODO: Remove this, it shouldn't be needed here anymore
-            checkFFmpeg(link, "Download a HLS Stream");
-            dl = new HLSDownloader(link, br, dllink);
-        } else {
-            try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
-                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                    br.followConnection(true);
-                    if (dl.getConnection().getResponseCode() == 403) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
-                    } else if (dl.getConnection().getResponseCode() == 404) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
-                    } else if (dl.getConnection().getResponseCode() == 416) {
-                        logger.info("Resume impossible, disabling it for the next try");
-                        link.setChunksProgress(null);
-                        link.setProperty(DiskYandexNet.PROPERTY_NORESUME, true);
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    } else {
-                        /* This will most likely happen for 0 byte filesize files / serverside broken files. */
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
-                    }
-                }
-            } catch (final Exception e) {
-                if (storedPreviouslyGeneratedDirecturl != null) {
-                    link.removeProperty(directurlproperty);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 416) {
+                    logger.info("Resume impossible, disabling it for the next try");
+                    link.setChunksProgress(null);
+                    link.setProperty(DiskYandexNet.PROPERTY_NORESUME, true);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else {
-                    throw e;
+                    /* This will most likely happen for 0 byte filesize files / serverside broken files. */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
                 }
             }
-            if (freshDirecturlHasJustBeenGenerated) {
-                link.setProperty(directurlproperty, dl.getConnection().getURL().toExternalForm());
+        } catch (final Exception e) {
+            if (storedPreviouslyGeneratedDirecturl != null) {
+                link.removeProperty(directurlproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
+            } else {
+                throw e;
             }
+        }
+        if (freshDirecturlHasJustBeenGenerated) {
+            link.setProperty(directurlproperty, dl.getConnection().getURL().toExternalForm());
         }
         dl.startDownload();
     }
@@ -627,6 +613,22 @@ public class DiskYandexNet extends PluginForHost {
         br3.getHeaders().put("X-Retpath-Y", this.getMainLink(link));
     }
 
+    private void prepWebapiRequest(final Browser br3, final PostRequest req) throws Exception {
+        final String host;
+        if (br3.getRequest() != null) {
+            host = br3.getHost(true);
+        } else {
+            /* Fallback */
+            host = getCurrentDomain();
+        }
+        req.getHeaders().put("Accept", "*/*");
+        req.getHeaders().put("Origin", "https://" + host);
+        // req.getHeaders().put("Referer", this.getMainLink(link));
+        req.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        // req.getHeaders().put("X-Retpath-Y", this.getMainLink(link));
+        req.setContentType("text/plain"); // Important header else we will get error 400
+    }
+
     private String generateFreshDirecturlAccountMode(final DownloadLink link, final Account account) throws Exception {
         this.login(account, false);
         final String userID = getUserID(account);
@@ -677,7 +679,7 @@ public class DiskYandexNet extends PluginForHost {
                     query.add("withParent.0", "1");
                     br2.postPage("/models/?_m=resources", query);
                     checkErrorsWebsite(br2, link, account);
-                    final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
+                    final Map<String, Object> entries = this.checkErrorsWebAPI(br2, link, account);
                     final List<Map<String, Object>> resourcelist = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "models/{0}/data/resources");
                     for (final Map<String, Object> fileObject : resourcelist) {
                         if (fileObject.get("path").toString().equals(internal_file_path)) {
@@ -784,7 +786,7 @@ public class DiskYandexNet extends PluginForHost {
             query.add("idResource.0", Encoding.urlEncode(internal_file_path));
             br2.postPage("/models/?_m=do-get-resource-url", query);
             checkErrorsWebsite(br2, link, account);
-            final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> entries = this.checkErrorsWebAPI(br2, link, account);
             final Map<String, Object> downloadMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "models/{0}/data");
             dllink = downloadMap.get("file").toString();
             if (StringUtils.isEmpty(dllink)) {
@@ -800,7 +802,7 @@ public class DiskYandexNet extends PluginForHost {
                 logger.info("Trying to move previously copied file to trash: " + internal_file_path);
                 try {
                     br2.postPage("/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=" + Encoding.urlEncode(internal_file_path) + "&idClient=" + CLIENT_ID + "&sk=" + authSk);
-                    final Map<String, Object> resp = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
+                    final Map<String, Object> resp = this.checkErrorsWebAPI(br2, link, account);
                     final Object errorO = resp.get("error");
                     if (errorO != null) {
                         logger.info("Possible failure on moving file into trash: " + errorO);
@@ -827,7 +829,7 @@ public class DiskYandexNet extends PluginForHost {
                                 queryTrash.add("offset.0", "0");
                                 queryTrash.add("withParent.0", "1");
                                 br2.postPage("/models/?_m=resources", queryTrash);
-                                final Map<String, Object> entriesTrash = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
+                                final Map<String, Object> entriesTrash = this.checkErrorsWebAPI(br2, link, account);
                                 final List<Map<String, Object>> resourcelist = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entriesTrash, "models/{0}/data/resources");
                                 for (final Map<String, Object> fileObject : resourcelist) {
                                     final String thisPath = fileObject.get("path").toString();
@@ -892,30 +894,8 @@ public class DiskYandexNet extends PluginForHost {
             return dllink;
         } else {
             /* Normal download */
-            logger.info("Performing normal account download handling");
-            final String postdata = String.format("{\"hash\":\"%s\",\"sk\":\"%s\",\"uid\":\"%s\",\"options\":{\"hasExperimentVideoWithoutPreview\":true}}", this.getRawHash(link), authSk, userID);
-            prepWebapiBrowser(br3, link);
-            br3.postPageRaw("/public/api/download-url", URLEncode.encodeURIComponent(postdata));
-            checkErrorsWebsite(br3, link, account);
-            final Map<String, Object> entries = this.checkErrorsWebAPI(br3, link, account);
-            final Object errorO = entries.get("error");
-            if (errorO == null || Boolean.TRUE.equals(errorO)) {
-                return null;
-            }
-            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
-            dllink = (String) data.get("url");
-            if (!StringUtils.isEmpty(dllink)) {
-                return dllink;
-            }
-            /**
-             * Example response when file can only be viewed but not downloaded: </br>
-             * {"error":false,"statusCode":200,"code":"","data":{"read_only":true}}
-             */
-            if (Boolean.TRUE.equals(data.get("read_only"))) {
-                link.setProperty(PROPERTY_META_READ_ONLY, true);
-            }
+            return getDllinkOfficialDownload(br3, link, account);
         }
-        return null;
     }
 
     /**
@@ -957,9 +937,8 @@ public class DiskYandexNet extends PluginForHost {
                     postData.put("passToken", passToken);
                 }
                 final PostRequest request = br.createJSonPostRequest("https://" + getCurrentDomain() + "/public/api/get-video-streams", postData);
-                request.setContentType("text/plain");
+                this.prepWebapiRequest(br, request);
                 br.getPage(request);
-                checkErrorsWebsite(br, link, account);
                 entries = this.checkErrorsWebAPI(br, link, account);
                 final String skNew = (String) entries.get("newSk");
                 if (StringUtils.isEmpty(skNew)) {
@@ -1088,6 +1067,57 @@ public class DiskYandexNet extends PluginForHost {
         }
     }
 
+    private String getDllinkOfficialDownload(final Browser br3, final DownloadLink link, final Account account) throws Exception {
+        logger.info("Performing official download handling");
+        final String userID = account != null ? getUserID(account) : null;
+        final String sk = link.getStringProperty(PROPERTY_LAST_AUTH_SK);
+        final String passToken = link.getStringProperty(PROPERTY_PASSWORD_TOKEN);
+        if (StringUtils.isEmpty(sk) || (account != null && userID == null)) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String host;
+        if (br3.getRequest() != null) {
+            host = br3.getHost(true);
+        } else {
+            /* Fallback */
+            host = getCurrentDomain();
+        }
+        final Map<String, Object> postData = new HashMap<String, Object>();
+        postData.put("hash", this.getRawHash(link));
+        postData.put("sk", sk);
+        if (passToken != null) {
+            postData.put("passToken", passToken);
+        }
+        if (userID != null) {
+            postData.put("uid", userID);
+        }
+        final PostRequest request = br.createJSonPostRequest("https://" + host + "/public/api/download-url", postData);
+        this.prepWebapiBrowser(br3, link);
+        this.prepWebapiRequest(br3, request);
+        br3.getPage(request);
+        final Map<String, Object> entries = this.checkErrorsWebAPI(br3, link, account);
+        final Object errorO = entries.get("error");
+        if (errorO == null || Boolean.TRUE.equals(errorO)) {
+            return null;
+        }
+        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+        final String dllink = (String) data.get("url");
+        if (!StringUtils.isEmpty(dllink)) {
+            return dllink;
+        }
+        /**
+         * Example response when file can only be viewed but not downloaded: </br>
+         * {"error":false,"statusCode":200,"code":"","data":{"read_only":true}}
+         */
+        if (Boolean.TRUE.equals(data.get("read_only"))) {
+            /* This should never happen as we should know the read-only status before already. */
+            link.setProperty(PROPERTY_META_READ_ONLY, true);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Uploader has disabled download of this file");
+        }
+        return null;
+    }
+
     private static String generateRandomSK() {
         return "u" + generateRandomString("0123456789abcdef", 32);
     }
@@ -1098,14 +1128,6 @@ public class DiskYandexNet extends PluginForHost {
             sb.append(chars.charAt(new Random().nextInt(chars.length())));
         }
         return sb.toString();
-    }
-
-    private boolean isHLS(final String url) {
-        if (StringUtils.containsIgnoreCase(url, ".m3u8") || StringUtils.containsIgnoreCase(url, "/hls/")) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     public Map<String, Object> checkErrorsWebAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
@@ -1372,7 +1394,7 @@ public class DiskYandexNet extends PluginForHost {
 
     private void setCookies(final Browser br, final Cookies cookies) {
         final HashSet<String> blacklistedCookies = new HashSet<String>();
-        blacklistedCookies.add("passToken");
+        blacklistedCookies.add(COOKIE_KEY_PASSWORD_TOKEN);
         /**
          * Explanation for blacklisted cookie values: </br>
          * passToken: Token which authorizes user to access password protected folder. While providing it via cookie login will technically
