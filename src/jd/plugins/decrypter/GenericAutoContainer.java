@@ -43,15 +43,18 @@ public class GenericAutoContainer extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String url = param.getCryptedUrl();
         if (!JsonConfig.create(LinkCrawlerConfig.class).isAutoImportContainer()) {
+            // forward to next supporting plugin
             ret.add(createDownloadlink(url));
         } else {
             final List<LazyCrawlerPlugin> nextLazyCrawlerPlugins = findNextLazyCrawlerPlugins(url);
             if (nextLazyCrawlerPlugins.size() > 0) {
+                // forward to next supporting plugin
                 ret.add(createDownloadlink(url));
                 return ret;
             }
             final List<LazyHostPlugin> nextLazyHostPlugins = findNextLazyHostPlugins(url);
             if (nextLazyHostPlugins.size() > 0) {
+                // forward to next supporting plugin
                 ret.add(createDownloadlink(url));
                 return ret;
             }
