@@ -15,6 +15,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
 
+import org.appwork.utils.JVMVersion;
+import org.appwork.utils.JavaVersion;
 import org.jdownloader.gui.translate._GUI;
 
 public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
@@ -53,6 +55,16 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
     @Override
     public JComponent customizeLayoutWrapTitledPanels(JComponent c) {
         return c;
+    }
+
+    @Override
+    public boolean isFontRespectsSystemDPI() {
+        if (JVMVersion.getVersion().isMinimum(JavaVersion.JVM_9_0)) {
+            // Java9, 11, 17 have HighDPI Support
+            return false;
+        } else {
+            return true;
+        }
     }
 
     @Override
@@ -356,11 +368,6 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
 
     @Override
     public boolean isAnimationEnabled() {
-        return true;
-    }
-
-    @Override
-    public boolean isFontRespectsSystemDPI() {
         return true;
     }
 
