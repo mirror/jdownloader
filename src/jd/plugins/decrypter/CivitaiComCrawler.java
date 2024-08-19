@@ -200,6 +200,7 @@ public class CivitaiComCrawler extends PluginForDecrypt {
                 } else {
                     /* Continue to next page */
                     page++;
+                    this.sleep(1000, param);
                     continue pagination;
                 }
             }
