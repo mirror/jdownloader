@@ -30,6 +30,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.validators.DefaultSimpleDateValidator;
 import org.appwork.utils.Application;
 import org.appwork.utils.JVMVersion;
+import org.appwork.utils.locale._AWU;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.View;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
@@ -471,48 +472,49 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
             return formatValue(maxSizeUnit, (NumberFormat) formatter, fileSize);
         }
 
-        public static final String formatValue(SIZEUNIT maxSizeUnit, final NumberFormat formatter, final long fileSize) {
+        public static final String formatValue(final SIZEUNIT maxSizeUnit, final NumberFormat formatter, final long fileSize) {
             final boolean isIECPrefix = maxSizeUnit.isIECPrefix();
             switch (maxSizeUnit) {
             case TiB:
-                if (fileSize >= 1024 * 1024 * 1024 * 1024l) {
-                    return formatter.format(fileSize / (1024 * 1024 * 1024 * 1024.0)).concat(" TiB");
+                if (fileSize >= TiB.getDivider()) {
+                    return _AWU.T.literally_tebibyte(formatter.format(fileSize / (double) TiB.getDivider()));
                 }
             case TB:
-                if (!isIECPrefix && fileSize >= 1000 * 1000 * 1000 * 1000l) {
-                    return formatter.format(fileSize / (1000 * 1000 * 1000 * 1000.0)).concat(" TB");
+                if (!isIECPrefix && fileSize >= TB.getDivider()) {
+                    return formatter.format(fileSize / (double) TB.getDivider()).concat(" TB");
                 }
             case GiB:
-                if (isIECPrefix && fileSize >= 1024 * 1024 * 1024l) {
-                    return formatter.format(fileSize / (1024 * 1024 * 1024.0)).concat(" GiB");
+                if (isIECPrefix && fileSize >= GiB.getDivider()) {
+                    return _AWU.T.literally_gibibyte(formatter.format(fileSize / (double) GiB.getDivider()));
                 }
             case GB:
-                if (!isIECPrefix && fileSize >= 1000 * 1000 * 1000l) {
-                    return formatter.format(fileSize / (1000 * 1000 * 1000.0)).concat(" GB");
+                if (!isIECPrefix && fileSize >= GB.getDivider()) {
+                    return formatter.format(fileSize / (double) GB.getDivider()).concat(" GB");
                 }
             case MiB:
-                if (isIECPrefix && fileSize >= 1024 * 1024l) {
-                    return formatter.format(fileSize / (1024 * 1024.0)).concat(" MiB");
+                if (isIECPrefix && fileSize >= MiB.getDivider()) {
+                    return _AWU.T.literally_mebibyte(formatter.format(fileSize / (double) MiB.getDivider()));
                 }
             case MB:
-                if (!isIECPrefix && fileSize >= 1000 * 1000l) {
-                    return formatter.format(fileSize / (1000 * 1000.0)).concat(" MB");
+                if (!isIECPrefix && fileSize >= MB.getDivider()) {
+                    return formatter.format(fileSize / (double) MB.getDivider()).concat(" MB");
                 }
             case KiB:
-                if (isIECPrefix && fileSize >= 1024l) {
-                    return formatter.format(fileSize / 1024.0).concat(" KiB");
+                if (isIECPrefix && fileSize >= KiB.getDivider()) {
+                    return _AWU.T.literally_kibibyte(formatter.format(fileSize / (double) KiB.getDivider()));
                 }
             case KB:
-                if (!isIECPrefix && fileSize >= 1000l) {
-                    return formatter.format(fileSize / 1000.0).concat(" KB");
+                if (!isIECPrefix && fileSize >= KB.getDivider()) {
+                    return formatter.format(fileSize / (double) KB.getDivider()).concat(" KB");
                 }
             default:
                 if (fileSize == 0) {
-                    return "0 B";
+                    return _AWU.T.literally_byte(0);
                 } else if (fileSize < 0) {
                     return "~";
                 } else {
-                    return formatter.format(fileSize) + " B";
+                    // TODO: _AWU.T.literally_byte(formatter.format(fileSize)
+                    return _AWU.T.literally_byte(fileSize);
                 }
             }
         }

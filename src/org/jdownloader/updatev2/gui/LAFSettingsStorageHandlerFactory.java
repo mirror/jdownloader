@@ -1,7 +1,6 @@
 package org.jdownloader.updatev2.gui;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Locale;
 
 import org.appwork.exceptions.WTFException;
@@ -11,7 +10,6 @@ import org.appwork.storage.config.StorageHandlerFactory;
 import org.appwork.storage.config.handler.DefaultFactoryInterface;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
-import org.appwork.swing.synthetica.SyntheticaHelper;
 import org.appwork.swing.synthetica.SyntheticaSettings;
 import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
@@ -21,11 +19,6 @@ import org.appwork.utils.swing.dialog.Dialog;
 public class LAFSettingsStorageHandlerFactory implements StorageHandlerFactory<LAFSettings> {
     private static boolean equals(Object a, Object b) {
         return (a == b) || (a != null && a.equals(b));
-    }
-
-    public static void main(String[] args) throws IOException {
-        Application.setApplication(".jd_home");
-        SyntheticaHelper.init();
     }
 
     @Override

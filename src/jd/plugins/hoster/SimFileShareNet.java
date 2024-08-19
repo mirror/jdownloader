@@ -3,9 +3,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -16,6 +15,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SimFileShareNet extends PluginForHost {
@@ -28,6 +29,13 @@ public class SimFileShareNet extends PluginForHost {
         final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
         return br;
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        // try to avoid 503 with too fast requests
+        Browser.setRequestIntervalLimitGlobal(getHost(), 750);
     }
 
     public static List<String[]> getPluginDomains() {
@@ -79,15 +87,49 @@ public class SimFileShareNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        dl = null;
         br.setCookiesExclusive(true);
+        if (Thread.currentThread() instanceof SingleDownloadController) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 1);
+            final URLConnectionAdapter con = dl.getConnection();
+            if (looksLikeDownloadableContent(dl.getConnection())) {
+                if (con.getCompleteContentLength() > 0) {
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                }
+                final String filenameFromHeader = getFileNameFromDispositionHeader(con);
+                if (link.getFinalFileName() == null) {
+                    link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader));
+                }
+                return AvailableStatus.TRUE;
+            } else {
+                con.disconnect();
+                dl.close();
+                dl = null;
+                if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            }
+        }
         final URLConnectionAdapter con = br.openGetConnection(link.getPluginPatternMatcher());
         if (con.getResponseCode() == 404) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (con.isContentDisposition()) {
-            link.setVerifiedFileSize(con.getCompleteContentLength());
+        } else if (looksLikeDownloadableContent(con)) {
+            if (con.getCompleteContentLength() > 0) {
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+            }
             final String filenameFromHeader = getFileNameFromDispositionHeader(con);
-            link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader));
+            if (link.getFinalFileName() == null) {
+                link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader));
+            }
             con.disconnect();
             return AvailableStatus.TRUE;
         } else {
@@ -106,7 +148,9 @@ public class SimFileShareNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 1);
+        if (dl == null) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 1);
+        }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             checkErrors(br);

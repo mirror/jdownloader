@@ -161,7 +161,7 @@ public class ImagebamCom extends PluginForDecrypt {
         } else {
             /* Single image - very similar to "crawlSingleImage". */
             final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            final String finallink = br.getRegex("class=\"image-loader\">\\s*<img src=\"(https?://[^\"]+)\"").getMatch(0);
+            final String finallink = br.getRegex("class=\"image-loader\"[^>]*>\\s*<img src=\"(https?://[^\"]+)\"").getMatch(0);
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
