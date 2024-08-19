@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -95,17 +94,21 @@ public class HentaiReadCom extends PluginForDecrypt {
         final List<Map<String, Object>> imagesmaps = (List<Map<String, Object>>) restoreFromString(imagesJsonArrayText, TypeRef.OBJECT);
         int page = 1;
         final int padLength = imagesmaps.size();
+        final String contenturlBase = br._getURL().getPath().replaceFirst("/[a-z]+/p/\\d+", "");
         for (final Map<String, Object> imagesmap : imagesmaps) {
             final String imageurl = imagesmap.get("src").toString();
             final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(imageurl));
-            String assumedContenturl = br._getURL().getPath().replaceFirst("/english/p/\\d+", "");
-            if (!assumedContenturl.endsWith("/")) {
-                assumedContenturl += "/";
-            }
-            assumedContenturl += "english/p/" + page;
-            if (br.containsHTML(Pattern.quote(assumedContenturl))) {
+            final String thisItemPageURLPart = br.getRegex("(/[a-z]+/p/" + page + ")").getMatch(0);
+            if (thisItemPageURLPart != null) {
+                String assumedContenturl = contenturlBase;
+                if (assumedContenturl.endsWith("/")) {
+                    assumedContenturl = assumedContenturl.substring(0, assumedContenturl.length() - 1);
+                }
+                assumedContenturl += thisItemPageURLPart;
                 /* St nice URL for user when he uses "open in browser" action. */
                 dl.setContentUrl(br.getURL(assumedContenturl).toExternalForm());
+            } else {
+                logger.warning("Failed to find URL to page: " + page);
             }
             final String extension = getFileNameExtensionFromURL(imageurl);
             String filename = title + "_" + StringUtils.formatByPadLength(padLength, page) + extension;

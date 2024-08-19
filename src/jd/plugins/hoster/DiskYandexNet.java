@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
-import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
@@ -483,6 +482,7 @@ public class DiskYandexNet extends PluginForHost {
         final String storedPreviouslyGeneratedDirecturl = link.getStringProperty(directurlproperty);
         boolean freshDirecturlHasJustBeenGenerated = false;
         String dllink = null;
+        Browser brc = null;
         if (directurlresultmap != null) {
             /* Re-use cached directurl */
             dllink = directurlresultmap.get("url").toString();
@@ -499,7 +499,8 @@ public class DiskYandexNet extends PluginForHost {
                 this.downloadReadonlyFile(br.cloneBrowser(), link, account);
                 return;
             } else if (isFileDownloadQuotaReached(link)) {
-                dllink = generateDirecturlQuotaLimitedFile(link, account);
+                brc = br.cloneBrowser();
+                dllink = generateDirecturlQuotaLimitedFile(brc, link, account);
             } else {
                 /* Download without account or at least without "Move file into account" handling. */
                 if (exceptionDuringAPILinkcheck != null) {
@@ -548,9 +549,10 @@ public class DiskYandexNet extends PluginForHost {
         }
         final String internal_file_path = getInternalFilePath(link, account);
         InternalFileTrashHandlingThread thread = null;
-        if (internal_file_path != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            // TODO: Fix this
-            thread = new InternalFileTrashHandlingThread(this, br, link, account);
+        final boolean deleteMovedFile = getPluginConfig().getBooleanProperty(DELETE_MOVED_FILE_FROM_ACCOUNT_AFTER_QUOTA_LIMITED_DOWNLOAD, DELETE_MOVED_FILE_FROM_ACCOUNT_AFTER_QUOTA_LIMITED_DOWNLOAD_default);
+        final boolean emptyWholeTrashCan = getPluginConfig().getBooleanProperty(EMPTY_TRASH_AFTER_QUOTA_LIMITED_DOWNLOAD, EMPTY_TRASH_AFTER_DOWNLOAD_default);
+        if (internal_file_path != null && brc != null && (deleteMovedFile || emptyWholeTrashCan)) {
+            thread = new InternalFileTrashHandlingThread(this, brc, link, account);
             thread.start();
         }
         try {
@@ -584,135 +586,106 @@ public class DiskYandexNet extends PluginForHost {
              * We have a direct downloadable link to that file which will work even after deleting it so let's move it into the trash right
              * now [before even downloading].
              */
-            try {
-                final String userID = getUserID(account);
-                final String authSk = link.getStringProperty(PROPERTY_LAST_AUTH_SK);
-                final String longSK = link.getStringProperty(PROPERTY_LAST_LONG_SK);
-                String internal_file_path = plg.getInternalFilePath(link, account);
-                if (StringUtils.isEmpty(authSk) || StringUtils.isEmpty(longSK) || internal_file_path == null || userID == null) {
-                    /* This should never happen */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String userID = getUserID(account);
+            final String authSk = link.getStringProperty(PROPERTY_LAST_AUTH_SK);
+            final String longSK = link.getStringProperty(PROPERTY_LAST_LONG_SK);
+            final String internal_file_path = plg.getInternalFilePath(link, account);
+            if (StringUtils.isEmpty(authSk) || StringUtils.isEmpty(longSK) || internal_file_path == null || userID == null) {
+                /* This should never happen */
+                logger.warning("Important value is missing! authSk=" + authSk + " | longSK=" + longSK + " | internal_file_path=" + internal_file_path + " | userID=" + userID);
+                return;
+            }
+            final boolean emptyWholeTrashCan = this.plg.getPluginConfig().getBooleanProperty(EMPTY_TRASH_AFTER_QUOTA_LIMITED_DOWNLOAD, EMPTY_TRASH_AFTER_DOWNLOAD_default);
+            plg.logger.info("Trying to move previously copied file to trash: " + internal_file_path);
+            final String connection_id = CLIENT_ID;
+            String pathToFileInTrash = null;
+            final String bulkAsyncDeleteURL = "/models-v2?m=mpfs/bulk-async-delete";
+            final String bulkAsyncDeleteFormatString = "{\"sk\":\"%s\",\"connection_id\":\"%s\",\"apiMethod\":\"mpfs/bulk-async-delete\",\"requestParams\":{\"operations\":[{\"src\":\"%s\"}]}}";
+            deleteSingleFileHandling: try {
+                /* Trigger serverside operation which moves file to trash can. */
+                final String postdata = String.format(bulkAsyncDeleteFormatString, longSK, connection_id, PluginJSonUtils.escape(internal_file_path));
+                final PostRequest request = br2.createJSonPostRequest(bulkAsyncDeleteURL, postdata);
+                br2.getPage(request);
+                final Map<String, Object> resp = this.plg.checkErrorsWebAPI(br2, link, account);
+                /* Get operation ID if the async operation we just triggered. */
+                final String oid = resp.get("oid").toString();
+                int waitedSeconds = 0;
+                final int maxWaitSeconds = 10;
+                final String postdata2 = String.format("{\"sk\":\"%s\",\"connection_id\":\"%s\",\"apiMethod\":\"mpfs/bulk-operation-status\",\"requestParams\":{\"oids\":[\"%s\"]}}", longSK, connection_id, oid);
+                /* Wait some time until file is moved to trash. */
+                boolean moveFileToTrashSuccess = false;
+                do {
+                    sleep(1000);
+                    waitedSeconds++;
+                    plg.logger.info("Successfully moved file into trash --> Looking for deleted file in trash | Seconds waited: " + waitedSeconds + "/" + maxWaitSeconds);
+                    final PostRequest request2 = br2.createJSonPostRequest("/models-v2?m=mpfs/bulk-operation-status", postdata2);
+                    br2.getPage(request2);
+                    final Map<String, Object> resp2 = this.plg.checkErrorsWebAPI(br2, link, account);
+                    final Map<String, Object> operation = (Map<String, Object>) resp2.get(oid);
+                    if (StringUtils.equalsIgnoreCase(operation.get("status").toString(), "DONE") || StringUtils.equalsIgnoreCase(operation.get("state").toString(), "COMPLETED")) {
+                        /* Success */
+                        plg.logger.info("Successfully moved file into trash");
+                        moveFileToTrashSuccess = true;
+                        final Map<String, Object> resource = (Map<String, Object>) operation.get("resource");
+                        pathToFileInTrash = resource.get("path").toString();
+                        break;
+                    } else if (waitedSeconds >= maxWaitSeconds) {
+                        /* Fail */
+                        plg.logger.info("Giving up - failed to find target-file in trash after " + maxWaitSeconds + " seconds");
+                        break;
+                    } else {
+                        /* Continue */
+                        plg.logger.info("Failed to find file in trash");
+                        continue;
+                    }
+                } while (true);
+                if (!moveFileToTrashSuccess) {
+                    plg.logger.warning("Serverside operation to move file to trash has failed or took too long");
+                    break deleteSingleFileHandling;
                 }
-                plg.logger.info("Trying to move previously copied file to trash: " + internal_file_path);
-                final String connection_id = CLIENT_ID;
+            } catch (final Exception e) {
+                plg.logger.log(e);
+                plg.logger.warning("Exception in move file to trash handling");
+            }
+            /*
+             * Remove internal path property so next time the user is downloading this file we will not unnecessarily check if that file
+             * still exists.
+             */
+            link.removeProperty(PROPERTY_PATH_INTERNAL);
+            if (emptyWholeTrashCan) {
+                /**
+                 * Empty whole trash can.</br>
+                 * This is not a necessary step but can be useful when downloading a lot of quota limited files so that files which we
+                 * failed to delete from trash will be deleted as well.
+                 */
                 try {
-                    final Map<String, Object> postmap = new HashMap<String, Object>();
-                    final Map<String, Object> postmap_requestParams = new HashMap<String, Object>();
-                    final Map<String, Object> operation = new HashMap<String, Object>();
-                    operation.put("src", internal_file_path);
-                    final List<Map<String, Object>> operationsList = new ArrayList<Map<String, Object>>();
-                    operationsList.add(operation);
-                    postmap_requestParams.put("operations", operationsList);
-                    postmap.put("sk", longSK);
-                    postmap.put("connection_id", connection_id);
-                    postmap.put("apiMethod", "mpfs/bulk-async-delete");
-                    postmap.put("requestParams", postmap_requestParams);
-                    final PostRequest request = br2.createJSonPostRequest("/models-v2?m=mpfs/bulk-async-delete", postmap);
-                    // this.plg.prepWebapiRequest(br2, request);
-                    br2.getPage(request);
-                    final Map<String, Object> resp = this.plg.checkErrorsWebAPI(br2, link, account);
-                    final Object errorO = resp.get("error");
-                    if (errorO != null) {
-                        plg.logger.info("Possible failure on moving file into trash: " + errorO);
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    postmap_requestParams.clear();
-                    final String oid = resp.get("oid").toString();
-                    final List<String> postmap_requestParams_oids = new ArrayList<String>();
-                    postmap_requestParams_oids.add(oid);
-                    postmap_requestParams.put("oids", postmap_requestParams_oids);
-                    postmap.put("apiMethod", "mpfs/bulk-operation-status");
-                    postmap.put("requestParams", postmap_requestParams);
-                    try {
-                        /* Access trash bin and look for the file we've just deleted */
-                        int waitedSeconds = 0;
-                        final int maxWaitSeconds = 10;
-                        do {
-                            /* Wait some seconds until file was moved to trash */
-                            sleep(1000);
-                            waitedSeconds++;
-                            plg.logger.info("Successfully moved file into trash --> Looking for deleted file in trash | Seconds waited: " + waitedSeconds + "/" + maxWaitSeconds);
-                            final PostRequest request2 = br2.createJSonPostRequest("/models-v2?m=mpfs/bulk-operation-status", postmap);
-                            final Map<String, Object> resp2 = this.plg.checkErrorsWebAPI(br2, link, account);
-                            final Map<String, Object> oidmap = (Map<String, Object>) resp2.get(oid);
-                            // this.plg.prepWebapiRequest(br2, request);
-                            br2.getPage(request);
-                            if (StringUtils.equalsIgnoreCase(oidmap.get("status").toString(), "DONE") || StringUtils.equalsIgnoreCase(oidmap.get("state").toString(), "COMPLETED")) {
-                                plg.logger.info("Successfully moved file into trash");
-                                break;
-                            } else if (waitedSeconds >= maxWaitSeconds) {
-                                plg.logger.info("Giving up - failed to find target-file in trash after " + maxWaitSeconds + " seconds");
-                                break;
-                            } else {
-                                /* Continue */
-                                plg.logger.info("Failed to find file in trash");
-                            }
-                        } while (true);
-                        String pathToFileInTrash = null;
-                        final Pattern patternPathToFileInTrash = Pattern.compile("/trash/" + Pattern.quote(link.getName()) + "_[a-f0-9]{40}");
-                        final UrlQuery queryTrash = new UrlQuery();
-                        queryTrash.add("idClient", Encoding.urlEncode(CLIENT_ID));
-                        queryTrash.add("sk", Encoding.urlEncode(longSK));
-                        queryTrash.add("_model.0", "resources");
-                        queryTrash.add("sort.0", "append_time");
-                        queryTrash.add("order.0", "0");
-                        queryTrash.add("idContext.0", Encoding.urlEncode("/trash"));
-                        queryTrash.add("amount.0", "40");
-                        queryTrash.add("offset.0", "0");
-                        queryTrash.add("withParent.0", "1");
-                        br2.postPage("/models/?_m=resources", queryTrash);
-                        final Map<String, Object> entriesTrash = this.plg.checkErrorsWebAPI(br2, link, account);
-                        final List<Map<String, Object>> resourcelist = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entriesTrash, "models/{0}/data/resources");
-                        for (final Map<String, Object> fileObject : resourcelist) {
-                            final String thisPath = fileObject.get("path").toString();
-                            if (new Regex(thisPath, patternPathToFileInTrash).patternFind()) {
-                                pathToFileInTrash = thisPath;
-                                break;
-                            }
-                        }
-                        if (pathToFileInTrash != null) {
-                            /* Permanently delete file from trash which we've moved to trash before */
-                            plg.logger.info("Found file in trash -> Permanently deleting file from trash: " + pathToFileInTrash);
-                            try {
-                                final String postData = "{\"sk\":\"" + longSK + "\",\"connection_id\":\"" + CLIENT_ID + "\",\"apiMethod\":\"mpfs/bulk-async-delete\",\"requestParams\":{\"operations\":[{\"src\":\"" + pathToFileInTrash + "\"}]}}";
-                                br2.postPageRaw("/models-v2?m=mpfs/bulk-async-delete", postData);
-                                plg.logger.info("Successfully deleted file from trash");
-                            } catch (final Exception e) {
-                                plg.logger.log(e);
-                                plg.logger.warning("Failed to permanently delete file from trash - Exception!");
-                            }
-                        } else {
-                            plg.logger.warning("Failed to find file in trash. Either it hasn't been moved to trash yet or it has already been deleted from trash.");
-                        }
-                    } catch (final Exception e) {
-                        plg.logger.log(e);
-                        plg.logger.warning("Failed to find deleted file in trash - Exception!");
-                    }
+                    plg.logger.info("Trying to empty trash");
+                    br2.postPage("/models/?_m=do-clean-trash", "_model.0=do-clean-trash&idClient=" + CLIENT_ID + "&sk=" + authSk);
+                    /*
+                     * This just triggers an async serverside action but we'll just assume success at this point to avoid the need to do
+                     * further http requests.
+                     */
+                    plg.logger.info("Successfully emptied trash");
+                } catch (final Throwable e) {
+                    plg.logger.warning("Failed to empty trash");
+                }
+            } else {
+                /* Permanently delete file from trash which we've moved to trash before */
+                if (StringUtils.isEmpty(pathToFileInTrash)) {
+                    /* This should never happen! */
+                    plg.logger.warning("Failed to find file in trash. Either it hasn't been moved to trash yet or it has already been deleted from trash.");
+                    return;
+                }
+                plg.logger.info("Permanently deleting file from trash: " + pathToFileInTrash);
+                try {
+                    final String postdata3 = String.format(bulkAsyncDeleteFormatString, longSK, connection_id, PluginJSonUtils.escape(pathToFileInTrash));
+                    final PostRequest request3 = br2.createJSonPostRequest(bulkAsyncDeleteURL, postdata3);
+                    br2.getPage(request3);
+                    plg.logger.info("Successfully deleted file from trash");
                 } catch (final Exception e) {
                     plg.logger.log(e);
-                    plg.logger.warning("Failed to move file to trash - Exception!");
+                    plg.logger.warning("Failed to permanently delete file from trash - Exception!");
                 }
-                /*
-                 * Remove internal path property so next time the user is downloading this file we will not unnecessarily check if that file
-                 * still exists.
-                 */
-                link.removeProperty(PROPERTY_PATH_INTERNAL);
-                if (getPluginConfig().getBooleanProperty(EMPTY_TRASH_AFTER_QUOTA_LIMITED_DOWNLOAD, EMPTY_TRASH_AFTER_DOWNLOAD_default)) {
-                    /**
-                     * Empty trash is user wants this. </br>
-                     * This is not a necessary step but can be useful when downloading a lot of quota limited files so that files which we
-                     * failed to delete from trash will be deleted as well.
-                     */
-                    try {
-                        plg.logger.info("Trying to empty trash");
-                        br2.postPage("/models/?_m=do-clean-trash", "_model.0=do-clean-trash&idClient=" + CLIENT_ID + "&sk=" + authSk);
-                        plg.logger.info("Successfully emptied trash");
-                    } catch (final Throwable e) {
-                        plg.logger.warning("Failed to empty trash");
-                    }
-                }
-            } catch (final Throwable ignore) {
-                plg.logger.log(ignore);
             }
         }
 
@@ -800,9 +773,10 @@ public class DiskYandexNet extends PluginForHost {
      * Generates a direct-URL for quota limited files. </br>
      * If no account is given or if the user does not allow us to move such files into his account, this handling will throw an exception.
      */
-    private String generateDirecturlQuotaLimitedFile(final DownloadLink link, final Account account) throws Exception {
+    private String generateDirecturlQuotaLimitedFile(final Browser br3, final DownloadLink link, final Account account) throws Exception {
         String dllink = null;
-        if (!isFileDownloadQuotaReached(link)) {
+        final boolean fileDownloadQuotaReached = isFileDownloadQuotaReached(link);
+        if (!fileDownloadQuotaReached) {
             logger.warning("!Developer mistake! Only call this function for quota reached items!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (account == null) {
@@ -818,7 +792,6 @@ public class DiskYandexNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* For requests to "/public/api" */
-        final Browser br3 = br.cloneBrowser();
         prepWebapiBrowser(br3, link);
         /* Move file into users' account as it is quote limited and without doing this it's impossible to download this file. */
         /* Obtain special token */
@@ -831,7 +804,7 @@ public class DiskYandexNet extends PluginForHost {
         link.setProperty(PROPERTY_LAST_LONG_SK, longSK);
         final Browser br2 = prepClientapiBrowser(br);
         String internal_file_path = getInternalFilePath(link, account);
-        boolean foundInternalPath = false;
+        boolean foundStoredInternalPath = false;
         if (internal_file_path != null) {
             logger.info("Checking if stored internal path/file still exists on account | file-path: " + internal_file_path);
             try {
@@ -851,24 +824,23 @@ public class DiskYandexNet extends PluginForHost {
                 final List<Map<String, Object>> resourcelist = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "models/{0}/data/resources");
                 for (final Map<String, Object> fileObject : resourcelist) {
                     if (fileObject.get("path").toString().equals(internal_file_path)) {
-                        foundInternalPath = true;
+                        foundStoredInternalPath = true;
                         break;
                     }
                 }
-                if (foundInternalPath) {
+                if (foundStoredInternalPath) {
                     logger.info("Re-using stored internal file-path: " + internal_file_path);
                 } else {
                     /* Remove stored path so we will not try again with this one. */
                     logger.info("Failed to find stored internal filepath: " + internal_file_path);
                     this.saveInternalFilePath(link, account, null);
-                    internal_file_path = null;
                 }
             } catch (final Exception e) {
                 logger.log(e);
                 logger.warning("Failed to find existing file via given internal file path - Exception!");
             }
         }
-        if (!foundInternalPath) {
+        if (!foundStoredInternalPath) {
             logger.info("MoveFileIntoAccount: No internal filepath available --> Trying to move file into account");
             /**
              * 2021-02-10: Possible values for "source": public_web_copy, public_web_copy_limit </br>
@@ -877,7 +849,7 @@ public class DiskYandexNet extends PluginForHost {
              * Both will work but we'll try to choose the one which would also be used via browser.
              */
             final String copySource;
-            if (this.isFileDownloadQuotaReached(link)) {
+            if (fileDownloadQuotaReached) {
                 copySource = "public_web_copy_limit";
             } else {
                 copySource = "public_web_copy";
@@ -1210,7 +1182,16 @@ public class DiskYandexNet extends PluginForHost {
     public Map<String, Object> checkErrorsWebAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         Map<String, Object> entries = null;
         try {
-            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Object respO = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
+            if (respO instanceof List) {
+                /*
+                 * 2024-08-19: Yes I know it's sketchy to assume that in this case we would want just the first element of the array (and
+                 * also that it has at least one element) but that's how we do it for now.
+                 */
+                entries = (Map<String, Object>) ((List) respO).get(0);
+            } else {
+                entries = (Map<String, Object>) respO;
+            }
         } catch (final JSonMapperException e) {
             /* Check for html based errors */
             this.checkErrorsWebsite(br, link, account);
@@ -1252,13 +1233,20 @@ public class DiskYandexNet extends PluginForHost {
         String errormessage = null;
         if (errorO instanceof Map) {
             final Map<String, Object> errormap = (Map<String, Object>) errorO;
-            errormessage = errormap.get("errormessage").toString();
+            errormessage = (String) errormap.get("errormessage");
+            if (errormessage == null) {
+                errormessage = (String) errormap.get("message");
+            }
         } else if (errorO instanceof String) {
             errormessage = errorO.toString();
         }
-        if (errormessage == null) {
+        if (StringUtils.isEmpty(errormessage)) {
             /* No error */
             return entries;
+        }
+        String accountUser = null;
+        if (account != null) {
+            accountUser = account.getUser();
         }
         /**
          * Description of fields: </br>
@@ -1279,7 +1267,7 @@ public class DiskYandexNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File has reached quota limit! Try again later.", 5 * 60 * 1000l);
             }
         } else if (errormessage.equalsIgnoreCase("NoFreeSpaceCopyToDisk")) {
-            throw new AccountUnavailableException("Not enough free space available to move quota limited file " + link.getName() + " to account", 5 * 60 * 1000l);
+            throw new AccountUnavailableException("Not enough free space available to move quota limited file " + link.getName() + " to account " + accountUser, 5 * 60 * 1000l);
         } else if (errormessage.equalsIgnoreCase("DiskSymlinkTokenExpiredError")) {
             /* Password token (cookie) expired. */
             link.removeProperty(PROPERTY_PASSWORD_TOKEN);
@@ -1572,7 +1560,7 @@ public class DiskYandexNet extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Account settings:"));
         final ConfigEntry moveFilesToAcc = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MOVE_QUOTA_LIMITED_FILES_TO_ACCOUNT, "<html>Account mode: Move </b>quota limited</b> files to account before downloading them to get higher download speeds?</html>").setDefaultValue(MOVE_QUOTA_LIMITED_FILES_TO_ACCOUNT_default);
         getConfig().addEntry(moveFilesToAcc);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DELETE_MOVED_FILE_FROM_ACCOUNT_AFTER_QUOTA_LIMITED_DOWNLOAD, "Account mode: Delete moved files after downloadlink-generation?").setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(DELETE_MOVED_FILE_FROM_ACCOUNT_AFTER_QUOTA_LIMITED_DOWNLOAD_default));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DELETE_MOVED_FILE_FROM_ACCOUNT_AFTER_QUOTA_LIMITED_DOWNLOAD, "Account mode: Delete moved files from account?").setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(DELETE_MOVED_FILE_FROM_ACCOUNT_AFTER_QUOTA_LIMITED_DOWNLOAD_default));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EMPTY_TRASH_AFTER_QUOTA_LIMITED_DOWNLOAD, "Account mode: Empty trash after each quota limited download?").setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(EMPTY_TRASH_AFTER_DOWNLOAD_default));
     }
 
