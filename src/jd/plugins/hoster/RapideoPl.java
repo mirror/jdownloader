@@ -24,6 +24,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -42,12 +47,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RapideoPl extends PluginForHost {
@@ -83,12 +82,12 @@ public class RapideoPl extends PluginForHost {
 
     public RapideoPl(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.rapideo.net/");
+        this.enablePremium("https://www." + getHost() + "/");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://www.rapideo.net/";
+        return "https://www." + getHost() + "/";
     }
 
     @Override
@@ -129,7 +128,7 @@ public class RapideoPl extends PluginForHost {
         final String[] crippledHosts = br.getRegex("<li>([A-Za-z0-9\\-\\.]+)</li>").getColumn(0);
         for (String crippledHost : crippledHosts) {
             crippledHost = crippledHost.toLowerCase();
-            if (crippledHost.equals("mega")) {
+            if (crippledHost.equalsIgnoreCase("mega")) {
                 supportedHosts.add("mega.nz");
             } else {
                 supportedHosts.add(crippledHost);

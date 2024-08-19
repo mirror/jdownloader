@@ -27,7 +27,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homemade-voyeur.com" }, urls = { "https?://(?:www\\.)?(homemade\\-voyeur|yourvoyeurvideos)\\.com/(?:(?:tube/)?video/|tube/gallery/|\\d+/)[^/]+\\.html" })
 public class HomemadeVoyeurCom extends PluginForDecrypt {
@@ -43,97 +46,98 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
     /* DEV NOTES */
     /* Porn_plugin */
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
-        br.getPage(param.getCryptedUrl());
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)^http://", "https://");
+        br.getPage(contenturl);
         String tempID = br.getRedirectLocation();
         // Invalid link
-        if ("http://www.homemade-voyeur.com/".equals(tempID) || br.containsHTML(">404 Not Found<") || br.containsHTML("<title>Homemade Voyeur - Hosted Voyeur Videos - Biggest Voyeur Vids Archive on the Net</title>") || this.br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return decryptedLinks;
+        if ("http://www.homemade-voyeur.com/".equals(tempID) || br.containsHTML(">\\s*404 Not Found\\s*<") || br.containsHTML("<title>\\s*Homemade Voyeur - Hosted Voyeur Videos - Biggest Voyeur Vids Archive on the Net</title>") || this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("This video does not exist\\!< | >\\s+Video Not Found\\s+<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // Offline link
-        if (br.containsHTML("This video does not exist\\!< | >\\s+Video Not Found\\s+<")) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return decryptedLinks;
-        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (tempID != null) {
-            decryptedLinks.add(createDownloadlink(tempID));
-            return decryptedLinks;
+            ret.add(createDownloadlink(tempID));
+            return ret;
         }
-        String filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>Your Voyeur (Videos|Pics) \\-\\s*(.*?)\\s*</title>").getMatch(1);
-            if (filename == null) {
-                filename = br.getRegex("<title>(.+) \\- Voyeur (Videos|Pics) \\- .+</title>").getMatch(0);
+        String title = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<title>Your Voyeur (Videos|Pics) \\-\\s*(.*?)\\s*</title>").getMatch(1);
+            if (title == null) {
+                title = br.getRegex("<title>(.+) \\- Voyeur (Videos|Pics) \\- .+</title>").getMatch(0);
             }
-            if (filename == null) {
-                filename = br.getRegex("<div class=\"titlerr\"[^>]+>([^\r\n]+)</div>").getMatch(0);
+            if (title == null) {
+                title = br.getRegex("<div class=\"titlerr\"[^>]+>([^\r\n]+)</div>").getMatch(0);
             }
         }
-        if (filename == null) {
+        if (title == null) {
             /* Fallback to url-filename */
-            filename = new Regex(param.getCryptedUrl(), "([A-Za-z0-9\\-]+)\\.html$").getMatch(0);
+            title = new Regex(param.getCryptedUrl(), "([A-Za-z0-9\\-]+)\\.html$").getMatch(0);
         }
         if (param.getCryptedUrl().contains("/tube/gallery/")) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(filename.trim());
+            fp.setName(title.trim());
             final DecimalFormat df = new DecimalFormat("0000");
             String[] images = br.getRegex("(https?://(www\\.)?homemade\\-voyeur\\.com/tube/images/galleries/\\d+/\\d+/[a-z0-9]{32}\\.jpg)").getColumn(0);
             for (String image : images) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + image);
-                dl.setFinalFileName(filename + " - " + df.format(decryptedLinks.size() + 1) + image.substring(image.lastIndexOf(".")));
+                final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(image));
+                dl.setFinalFileName(title + " - " + df.format(ret.size() + 1) + image.substring(image.lastIndexOf(".")));
                 fp.add(dl);
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
-            return decryptedLinks;
-        } else {
-            tempID = br.getRegex("\"(http://api\\.slutdrive\\.com/homemadevoyeur\\.php\\?id=\\d+\\&type=v)\"").getMatch(0);
-            if (tempID != null) {
-                br.getPage(tempID);
-                if (br.containsHTML(">404 Not Found<")) {
-                    logger.info("Link offline: " + param.getCryptedUrl());
-                    return decryptedLinks;
-                }
-                logger.warning("Cannot handle link: " + tempID);
-                logger.warning("Mainlink: " + param.getCryptedUrl());
-                return null;
-            }
-            tempID = br.getRegex("var playlist = \\[ \\{ url: escape\\(\\'(http://[^<>\"]*?)\\'\\) \\} \\]").getMatch(0);
-            if (tempID == null) {
-                tempID = br.getRegex("var playlist = \\[ [^\\]]+(http://[^<>\"\\]\\}]+)").getMatch(0);
-            }
-            if (tempID == null) {
-                tempID = br.getRegex("(\\'|\")(http://(hosted\\.yourvoyeurvideos\\.com/videos/\\d+\\.flv|[a-z0-9]+\\.yourvoyeurvideos\\.com/mp4/\\d+\\.mp4))(\\'|\")").getMatch(1);
-            }
-            if (tempID == null) {
-                tempID = br.getRegex("file=(http[^&\"]+)").getMatch(0);
-            }
-            if (tempID != null && tempID.contains(".jpg")) {
-                logger.info("This url is only advertising --> Offline");
-                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-                return decryptedLinks;
-            }
-            /* Last chance - directurl */
-            if (tempID == null) {
-                tempID = br.getRegex("<source type=\"video/mp4\" src=\"([^\"]+)\"").getMatch(0);
-            }
-            if (tempID == null) {
-                tempID = br.getRegex("<source src=(?:\"|')([^\"]+)(?:\"|') type=(?:\"|')video/mp4(?:\"|')").getMatch(0);
-            }
-            if (tempID == null || filename == null) {
-                logger.info("filename: " + filename + ", tempID: " + tempID);
-                logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
-                return null;
-            }
-            final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
-            dl.setFinalFileName(filename.trim() + tempID.substring(tempID.lastIndexOf(".")));
-            decryptedLinks.add(dl);
+            return ret;
         }
-        return decryptedLinks;
+        tempID = br.getRegex("\"(http://api\\.slutdrive\\.com/homemadevoyeur\\.php\\?id=\\d+\\&type=v)\"").getMatch(0);
+        if (tempID != null) {
+            br.getPage(tempID);
+            if (br.containsHTML(">404 Not Found<")) {
+                logger.info("Link offline: " + param.getCryptedUrl());
+                return ret;
+            }
+            logger.warning("Cannot handle link: " + tempID);
+            logger.warning("Mainlink: " + param.getCryptedUrl());
+            return null;
+        }
+        tempID = br.getRegex("var playlist = \\[ \\{ url: escape\\(\\'(http://[^<>\"]*?)\\'\\) \\} \\]").getMatch(0);
+        if (tempID == null) {
+            tempID = br.getRegex("var playlist = \\[ [^\\]]+(http://[^<>\"\\]\\}]+)").getMatch(0);
+        }
+        if (tempID == null) {
+            tempID = br.getRegex("(\\'|\")(http://(hosted\\.yourvoyeurvideos\\.com/videos/\\d+\\.flv|[a-z0-9]+\\.yourvoyeurvideos\\.com/mp4/\\d+\\.mp4))(\\'|\")").getMatch(1);
+        }
+        if (tempID == null) {
+            tempID = br.getRegex("file=(http[^&\"]+)").getMatch(0);
+        }
+        if (tempID != null && tempID.contains(".jpg")) {
+            logger.info("This url is only advertising --> Offline");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* Last chance - video directurl */
+        if (tempID == null) {
+            tempID = br.getRegex("<source type=\"video/mp4\" src=\"([^\"]+)\"").getMatch(0);
+        }
+        if (tempID == null) {
+            tempID = br.getRegex("<source src=(?:\"|')([^\"]+)(?:\"|') type=(?:\"|')video/mp4(?:\"|')").getMatch(0);
+        }
+        if (tempID == null || title == null) {
+            logger.info("filename: " + title + ", tempID: " + tempID);
+            logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(tempID));
+        dl.setReferrerUrl(br.getURL()); // Important
+        dl.setFinalFileName(title.trim() + tempID.substring(tempID.lastIndexOf(".")));
+        /*
+         * Direct-URL may not be valid without correct referer thus let's set the upper URL as contentURL so this is used when user uses
+         * "open in browser".
+         */
+        dl.setContentUrl(br.getURL());
+        ret.add(dl);
+        return ret;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

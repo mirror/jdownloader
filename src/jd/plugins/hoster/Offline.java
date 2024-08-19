@@ -170,6 +170,7 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "abload.de" });
         ret.add(new String[] { "saikoanimes.net" });
         ret.add(new String[] { "streamhub.to", "streamhub.gg" });
+        ret.add(new String[] { "gounlimited.to" });
         if (cache != null) {
             cache.put(cacheID, ret);
         }

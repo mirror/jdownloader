@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -92,18 +93,27 @@ public class HentaiReadCom extends PluginForDecrypt {
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final List<Map<String, Object>> imagesmaps = (List<Map<String, Object>>) restoreFromString(imagesJsonArrayText, TypeRef.OBJECT);
-        int pageNumber = 1;
+        int page = 1;
         final int padLength = imagesmaps.size();
         for (final Map<String, Object> imagesmap : imagesmaps) {
             final String imageurl = imagesmap.get("src").toString();
             final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(imageurl));
+            String assumedContenturl = br._getURL().getPath().replaceFirst("/english/p/\\d+", "");
+            if (!assumedContenturl.endsWith("/")) {
+                assumedContenturl += "/";
+            }
+            assumedContenturl += "english/p/" + page;
+            if (br.containsHTML(Pattern.quote(assumedContenturl))) {
+                /* St nice URL for user when he uses "open in browser" action. */
+                dl.setContentUrl(br.getURL(assumedContenturl).toExternalForm());
+            }
             final String extension = getFileNameExtensionFromURL(imageurl);
-            String filename = title + "_" + StringUtils.formatByPadLength(padLength, pageNumber) + extension;
+            String filename = title + "_" + StringUtils.formatByPadLength(padLength, page) + extension;
             dl.setFinalFileName(filename);
             dl.setAvailable(true);
             dl._setFilePackage(fp);
             ret.add(dl);
-            pageNumber++;
+            page++;
         }
         return ret;
     }

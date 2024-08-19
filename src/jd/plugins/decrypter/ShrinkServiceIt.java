@@ -21,10 +21,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -99,7 +99,7 @@ public class ShrinkServiceIt extends PluginForDecrypt {
         final String forcedDomain = "adshnk.com";
         final String uri;
         final Regex exclude = new Regex(param.getCryptedUrl(), "(?i)https?://[^/]+/btn/(.+)");
-        if (exclude.matches()) {
+        if (exclude.patternFind()) {
             uri = "https://" + forcedDomain + "/" + exclude.getMatch(0);
         } else {
             uri = param.getCryptedUrl().replaceFirst(Browser.getHost(param.getCryptedUrl()), forcedDomain);
@@ -114,15 +114,20 @@ public class ShrinkServiceIt extends PluginForDecrypt {
         brc.getHeaders().put("Origin", "https://" + forcedDomain);
         brc.getHeaders().put("Referer", "https://" + forcedDomain + "/");
         brc.postPage(API_BASE + "/prototype/init", query);
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.getRequest().getHtmlCode());
+        final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> response0 = (Map<String, Object>) entries.get("0");
+        final Object response0_userid = response0.get("userid");
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (response0 != null) {
             logger.info("Successfully skipped captcha");
             finallink = (String) response0.get("destination");
             if (finallink == null) {
-                /* 2022-11-02: Unsure about that */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (response0_userid == null) {
+                    /* E.g. https://adshnk.com/xxxyyy */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             ret.add(this.createDownloadlink(finallink));
             return ret;
@@ -141,7 +146,11 @@ public class ShrinkServiceIt extends PluginForDecrypt {
         }
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (response0_userid == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         } else if (finallink.equals("")) {
             /* Empty field --> Offline/invalid url */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

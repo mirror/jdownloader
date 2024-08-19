@@ -648,13 +648,17 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final int media_count = ((Number) user.get("media_count")).intValue();
         final int favorite_count = ((Number) user.get("favourites_count")).intValue();
         final String userID = user.get("id_str").toString();
+        final String bubbleNotifyTitle = "Twitter profile " + username + " | ID: " + userID;
+        if (statuses_count == 0 && media_count == 0 && favorite_count == 0) {
+            displayBubbleNotification(bubbleNotifyTitle, "Warning!\nYou are trying to crawl all items of this profile but it has no items.");
+            throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE, "PROFILE_HAS_NO_ITEMS_" + username, "You are trying to crawl all items of this profile but it has no items.");
+        }
         if (this.preGivenPageNumber != null && this.preGivenNumberOfTotalWalkedThroughTweetsCount != null && this.preGivenNextCursor != null) {
             // TODO: Review this
             /* Resume from last state */
             // profileCrawlerTotalCrawledTweetsCount = this.preGivenNumberOfTotalWalkedThroughTweetsCount.intValue();
             globalProfileCrawlerNextCursor = this.preGivenNextCursor;
         }
-        final String bubbleNotifyTitle = "Twitter profile " + username + " | ID: " + userID;
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final FilePackage fp = FilePackage.getInstance();
         fp.setAllowInheritance(true);
