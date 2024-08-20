@@ -118,6 +118,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME = "VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME";
     public static final String  VKWALL_USE_API                                                              = "VKWALL_USE_API_2019_07";
     public static final String  VKWALL_STORE_PICTURE_DIRECTURLS                                             = "VKWALL_STORE_PICTURE_DIRECTURLS";
+    public static final String  VKPHOTOS_DOWNLOAD_ORIGINAL_IMAGE_VIA_MAGIC_TRICK                            = "VKPHOTOS_DOWNLOAD_ORIGINAL_IMAGE_VIA_MAGIC_TRICK";
     /* Dummy default value for user agent setting */
     public static final String  default_VKADVANCED_USER_AGENT                                               = "JDDEFAULT";
     public static final String  VKADVANCED_USER_AGENT                                                       = "VKADVANCED_USER_AGENT_NEW_06_2023";
@@ -570,7 +571,7 @@ public class VKontakteRuHoster extends PluginForHost {
         if (this.isDRMProtected(link)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "DRM protected");
         }
-        final String finalurl;
+        String finalurl;
         if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
             finalurl = link.getPluginPatternMatcher();
         } else {
@@ -595,6 +596,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
+                finalurl = modifyFinalDownloadurl(finalurl);
                 // most if not all components already opened connection via either linkOk or photolinkOk
                 br.getHeaders().put("Accept-Encoding", "identity");
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalurl, isResumeSupported(link, finalurl), getMaxChunks(link, finalurl));
@@ -616,6 +618,30 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
             }
             dl.startDownload();
+        }
+    }
+
+    /**
+     * Modifies final download-URL. </br>
+     * This can be used to e.g. download original images via 'magic trick'.
+     */
+    private String modifyFinalDownloadurl(final String input) {
+        final Regex photo_url_regex;
+        if (this.getPluginConfig().getBooleanProperty(VKPHOTOS_DOWNLOAD_ORIGINAL_IMAGE_VIA_MAGIC_TRICK, default_VKPHOTOS_DOWNLOAD_ORIGINAL_IMAGE_VIA_MAGIC_TRICK) && (photo_url_regex = new Regex(input, Pattern.compile("(https?://[^/]+)/imp(?:f|g)/([^\\?]+)\\?.+", Pattern.CASE_INSENSITIVE))).patternFind()) {
+            /* Modify URL according to: https://board.jdownloader.org/showpost.php?p=538448&postcount=3490 */
+            final String new_url = photo_url_regex.getMatch(0) + "/" + photo_url_regex.getMatch(1);
+            return new_url;
+        } else {
+            final Regex urlregex = new Regex(input, "(https?://cs(\\d+)\\.vk\\.me/)");
+            if (!urlregex.patternFind()) {
+                /* Return unmodified url */
+                return input;
+            }
+            /* 2024-08-20: This is very old. I'm unsure whether this is still needed and working. */
+            final String oldserver = urlregex.getMatch(0);
+            final String serv_id = urlregex.getMatch(1);
+            final String newserver = "https://pp.vk.me/c" + serv_id + "/";
+            return input.replace(oldserver, newserver);
         }
     }
 
@@ -911,7 +937,7 @@ public class VKontakteRuHoster extends PluginForHost {
      * @return <b>1</b>: Link is valid and can be downloaded, <b>0</b>: Link leads to HTML, times out or other problems occured, <b>404</b>:
      *         Server 404 response
      */
-    private int linkOk(final DownloadLink link, final String finalUrl, final boolean isDownload) throws Exception {
+    private int linkOk(final DownloadLink link, String finalUrl, final boolean isDownload) throws Exception {
         if (StringUtils.isEmpty(finalUrl)) {
             return 0;
         }
@@ -926,6 +952,7 @@ public class VKontakteRuHoster extends PluginForHost {
         boolean closeConnection = true;
         try {
             if (isDownload && !isHLS(link, finalUrl)) {
+                finalUrl = modifyFinalDownloadurl(finalUrl);
                 dl = new jd.plugins.BrowserAdapter().openDownload(br2, link, finalUrl, isResumeSupported(link, finalUrl), getMaxChunks(link, finalUrl));
                 con = dl.getConnection();
             } else {
@@ -997,12 +1024,7 @@ public class VKontakteRuHoster extends PluginForHost {
             return false;
         }
         final Browser br2 = this.br.cloneBrowser();
-        /* Correct final URLs according to users' plugin settings. */
-        directurl = photo_correctLink(directurl);
-        /* Ignore invalid urls. Usually if we have such an url the picture is serverside temporarily unavailable. */
-        if (directurl.contains("_null_")) {
-            return false;
-        }
+        directurl = modifyFinalDownloadurl(directurl);
         br2.getHeaders().put("Accept-Encoding", "identity");
         final PluginForHost orginalPlugin = link.getLivePlugin();
         if (!isDownload) {
@@ -1545,35 +1567,6 @@ public class VKontakteRuHoster extends PluginForHost {
         return dllink;
     }
 
-    /**
-     * Changes server of picture links if wished by user - if not it will change them back to their "original" format. On error (server does
-     * not match expected) it won't touch the current finallink at all! Only use this for photo links!
-     */
-    private String photo_correctLink(String downloadurl) {
-        if (downloadurl == null) {
-            return null;
-        }
-        if (downloadurl.matches("https://pp\\.vk\\.me/c\\d+/.+")) {
-            logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> final link is already in desired format ::: " + downloadurl);
-        } else {
-            /*
-             * Correct server to get files that are otherwise inaccessible - note that this can also make the finallinks unusable (e.g.
-             * server returns errorcode 500 instead of the file) but this is a very rare problem.
-             */
-            final String was = downloadurl;
-            final String oldserver = new Regex(downloadurl, "(https?://cs\\d+\\.vk\\.me/)").getMatch(0);
-            final String serv_id = new Regex(downloadurl, "cs(\\d+)\\.vk\\.me/").getMatch(0);
-            if (oldserver != null && serv_id != null) {
-                final String newserver = "https://pp.vk.me/c" + serv_id + "/";
-                downloadurl = downloadurl.replace(oldserver, newserver);
-                logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> SUCCEEDED to correct finallink ::: Was = " + was + " Now = " + downloadurl);
-            } else {
-                logger.warning("VKPHOTO_CORRECT_FINAL_LINKS enabled --> FAILED to correct finallink ::: " + downloadurl);
-            }
-        }
-        return downloadurl;
-    }
-
     /** Returns photoID in url-form: oid_id (userID_pictureID). */
     private String getPhotoID(final DownloadLink dl) {
         return new Regex(dl.getPluginPatternMatcher(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?[\\d\\-]+_[\\d\\-]+)").getMatch(0);
@@ -1745,6 +1738,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final boolean default_VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME = false;
     public static final boolean  default_VKWALL_USE_API                                                              = false;
     public static final boolean  default_VKWALL_STORE_PICTURE_DIRECTURLS                                             = false;
+    public static final boolean  default_VKPHOTOS_DOWNLOAD_ORIGINAL_IMAGE_VIA_MAGIC_TRICK                            = false;
     public static final long     defaultSLEEP_PAGINATION_GENERAL                                                     = 1000;
     public static final long     defaultSLEEP_TOO_MANY_REQUESTS                                                      = 3000;
 
@@ -1923,8 +1917,8 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/photo' links:"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME, "Use (temporary) server filename as final filename instead of e.g. 'oid_id.jpg'?\r\nNew filenames will look like this: '<server_filename>.jpg'").setDefaultValue(default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME, "Use oid_id AND (temporary) server filename as final filename instead of e.g. 'oid_id.jpg'?\r\nNew filenames will look like this: 'oid_id - <server_filename>.jpg'").setDefaultValue(default_VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME));
-        final ConfigEntry cfg_store_directurls = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKWALL_STORE_PICTURE_DIRECTURLS, "Store picture-directlinks?\r\nThis helps to download images which can only be viewed inside comments but not separately.\r\nThis may also speedup the download process.\r\n WARNING: This may use a lot of RAM if you add big amounts of URLs!").setDefaultValue(default_VKWALL_STORE_PICTURE_DIRECTURLS);
-        this.getConfig().addEntry(cfg_store_directurls);
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKWALL_STORE_PICTURE_DIRECTURLS, "Store picture-directlinks?\r\nThis helps to download images which can only be viewed inside comments but not separately.\r\nThis may also speedup the download process.\r\n WARNING: This may use a lot of RAM if you add big amounts of URLs!").setDefaultValue(default_VKWALL_STORE_PICTURE_DIRECTURLS));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKPHOTOS_DOWNLOAD_ORIGINAL_IMAGE_VIA_MAGIC_TRICK, "Modify image URLs in an attempt to download original image?").setDefaultValue(default_VKPHOTOS_DOWNLOAD_ORIGINAL_IMAGE_VIA_MAGIC_TRICK));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Advanced settings:\r\n<html><p style=\"color:#F62817\">WARNING: Only change these settings if you really know what you're doing!</p></html>"));
         /* 2019-08-06: Disabled API setting for now as API requires authorization which we do not (yet) support! */

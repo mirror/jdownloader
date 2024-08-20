@@ -82,7 +82,7 @@ public class IPFS extends PluginForDecrypt {
             final String files[][] = br.getRegex("/ipfs/(" + base58Pattern + ")\\?filename=(.*?)\"").getMatches();
             DownloadLink foundMatch = null;
             for (final String[] file : files) {
-                final DownloadLink link = createDownloadlink(DirectHTTP.createURLForThisPlugin("http://https://" + ipfsGateWay + "/ipfs/" + file[0] + "/"));
+                final DownloadLink link = createDownloadlink(DirectHTTP.createURLForThisPlugin("https://" + ipfsGateWay + "/ipfs/" + file[0] + "/"));
                 final String name = URLEncode.decodeURIComponent(file[1]);
                 link.setFinalFileName(Encoding.htmlDecode(name));
                 link.setProperty(DirectHTTP.FIXNAME, name);

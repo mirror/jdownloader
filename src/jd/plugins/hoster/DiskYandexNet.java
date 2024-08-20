@@ -1539,6 +1539,9 @@ public class DiskYandexNet extends PluginForHost {
      * account e.g. after importing a public file into an account.
      */
     private String getInternalFilePath(final DownloadLink link, final Account account) {
+        if (account == null) {
+            return null;
+        }
         return link.getStringProperty(PROPERTY_PATH_INTERNAL + ":" + JDHash.getMD5(account.getUser()));
     }
 

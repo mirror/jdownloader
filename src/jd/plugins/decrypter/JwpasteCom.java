@@ -37,6 +37,13 @@ public class JwpasteCom extends AbstractPastebinCrawler {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     String getFID(final String url) {
         return new Regex(url, this.getSupportedLinks()).getMatch(0);
     }
@@ -71,9 +78,10 @@ public class JwpasteCom extends AbstractPastebinCrawler {
 
     @Override
     public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) throws Exception {
-        br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
-        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"paste\\-error\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("class=\"paste\\-error\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Form pwform = this.getPasswordProtectedForm(br);

@@ -1591,12 +1591,17 @@ public class RapidGatorNet extends PluginForHost {
         /* Check for offline file */
         checkOfflineWebsite(br, link, doExtendedOfflineCheck);
         /* Check if item is only downloadable for premium users. */
-        final String freedlsizelimit = br.getRegex("(?i)'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode\\s*<").getMatch(0);
-        if (freedlsizelimit != null) {
+        final String subscribersOnlyDownload = br.getRegex("(The files of this publisher \"[^\"]+\" can be downloaded only by subscribers)").getMatch(0);
+        if (subscribersOnlyDownload != null) {
+            /* This can even happen for premium account owners since an extra subscription is needed to download such files. */
+            throw new AccountRequiredException(subscribersOnlyDownload);
+        }
+        final String errormsgFreeFilesizeLimit = br.getRegex("'(You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode)\\s*<").getMatch(0);
+        if (errormsgFreeFilesizeLimit != null) {
             if (isPremiumAccount(account)) {
                 throw new AccountUnavailableException("Expired premium account!?", 30 * 60 * 1000);
             } else {
-                throw new AccountRequiredException("File too large for free account");
+                throw new AccountRequiredException(errormsgFreeFilesizeLimit);
             }
         } else if (br.containsHTML("(?is)This file can be downloaded by premium only\\s*</div>")) {
             if (isPremiumAccount(account)) {
