@@ -25,7 +25,7 @@ public interface CivitaiComConfig extends PluginConfigInterface {
 
     @AboutConfig
     @SpinnerValidator(min = 10, max = 200, step = 1)
-    @DefaultIntValue(10)
+    @DefaultIntValue(50)
     @DescriptionForConfigEntry("Internal value to limit max number of items per page. Lower value = More requests needed to crawl a profile. See: https://github.com/civitai/civitai/wiki/REST-API-Reference#get-apiv1images")
     @Order(10)
     int getProfileCrawlerMaxPaginationItems();
