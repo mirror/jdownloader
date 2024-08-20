@@ -20,24 +20,27 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -53,6 +56,17 @@ public class RapideoPl extends PluginForHost {
     private static final String          NOCHUNKS           = "NOCHUNKS";
     private static final String          PROPERTY_DIRECTURL = "rapideopldirectlink";
     private static MultiHosterManagement mhm                = new MultiHosterManagement("rapideo.net");
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        br.setConnectTimeout(60 * 1000);
+        br.setReadTimeout(60 * 1000);
+        /* Prefer English language */
+        br.setCookie(br.getHost(), "lang2", "EN");
+        return br;
+    }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -95,22 +109,23 @@ public class RapideoPl extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
     }
 
-    private Browser prepBR(final Browser br) {
-        br.setConnectTimeout(60 * 1000);
-        br.setReadTimeout(60 * 1000);
-        return br;
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
-        prepBR(this.br);
         login(account, true);
         final boolean obtainTrafficViaOldAPI = true;
         if (obtainTrafficViaOldAPI) {
             /* API used in their browser addons */
-            br.postPage("https://enc.rapideo.pl/", "site=newrd&output=json&loc=1&info=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + md5HEX(account.getPass()));
-            final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
+            final Browser brc = br.cloneBrowser();
+            final UrlQuery query = new UrlQuery();
+            query.add("site", "newrd");
+            query.add("output", "json");
+            query.add("loc", "1");
+            query.add("info", "1");
+            query.add("username", Encoding.urlEncode(account.getUser()));
+            query.add("password", md5HEX(account.getPass()));
+            brc.postPage("https://enc.rapideo.pl/", query);
+            final Map<String, Object> root = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             final String trafficLeftStr = root.get("balance").toString();
             if (trafficLeftStr != null && trafficLeftStr.matches("\\d+")) {
                 ac.setTrafficLeft(Long.parseLong(trafficLeftStr) * 1024);
@@ -123,15 +138,44 @@ public class RapideoPl extends PluginForHost {
             }
         }
         // now let's get a list of all supported hosts:
-        br.getPage("https://www." + account.getHoster() + "/twoje_pliki");
+        br.getPage("/twoje_pliki");
+        final HashSet<String> crippledhosts = new HashSet<String>();
         final ArrayList<String> supportedHosts = new ArrayList<String>();
+        /*
+         * This will not catch stuff like <li><strong>nitroflare (beta) </strong></li> ... but we are lazy and ignore this. Such hosts will
+         * be found too by the 2nd regex down below.
+         */
         final String[] crippledHosts = br.getRegex("<li>([A-Za-z0-9\\-\\.]+)</li>").getColumn(0);
-        for (String crippledHost : crippledHosts) {
-            crippledHost = crippledHost.toLowerCase();
-            if (crippledHost.equalsIgnoreCase("mega")) {
+        if (crippledHosts != null && crippledHosts.length > 0) {
+            for (final String crippledhost : crippledHosts) {
+                crippledhosts.add(crippledhost);
+            }
+        }
+        /* Alternative place to obtain supported hosts from */
+        final String[] crippledhosts2 = br.getRegex("class=\"active\"[^<]*>([^<]+)</a>").getColumn(0);
+        if (crippledhosts2 != null && crippledhosts2.length > 0) {
+            for (final String crippledhost : crippledhosts2) {
+                crippledhosts.add(crippledhost);
+            }
+        }
+        /* Alternative place to obtain supported hosts from */
+        String htmlMetadataStr = br.getRegex("name=\"keywords\" content=\"([\\w, ]+)").getMatch(0);
+        if (htmlMetadataStr != null) {
+            htmlMetadataStr = htmlMetadataStr.replace(" ", "");
+            final String[] crippledhosts3 = htmlMetadataStr.split(",");
+            if (crippledhosts3 != null && crippledhosts3.length > 0) {
+                for (final String crippledhost : crippledhosts3) {
+                    crippledhosts.add(crippledhost);
+                }
+            }
+        }
+        /* Sanitize data and add to final list */
+        for (String crippledhost : crippledhosts) {
+            crippledhost = crippledhost.toLowerCase(Locale.ENGLISH);
+            if (crippledhost.equalsIgnoreCase("mega")) {
                 supportedHosts.add("mega.nz");
             } else {
-                supportedHosts.add(crippledHost);
+                supportedHosts.add(crippledhost);
             }
         }
         /*
@@ -149,6 +193,10 @@ public class RapideoPl extends PluginForHost {
         }
         account.setConcurrentUsePossible(true);
         ac.setMultiHostSupport(this, supportedHosts);
+        if (ac.getTrafficLeft() == 0 && AccountType.FREE.equals(account.getType()) && br.containsHTML("Check your email and")) {
+            /* Un-activated free account without traffic -> Not usable at all. */
+            throw new AccountUnavailableException("Check your email and click the confirmation link to activate your account", 5 * 60 * 1000l);
+        }
         return ac;
     }
 
@@ -175,7 +223,7 @@ public class RapideoPl extends PluginForHost {
     }
 
     public static String toHex(byte[] a) {
-        StringBuilder sb = new StringBuilder(a.length * 2);
+        final StringBuilder sb = new StringBuilder(a.length * 2);
         for (int i = 0; i < a.length; i++) {
             sb.append(Character.forDigit((a[i] & 0xf0) >> 4, 16));
             sb.append(Character.forDigit(a[i] & 0x0f, 16));
@@ -326,57 +374,47 @@ public class RapideoPl extends PluginForHost {
 
     private void login(final Account account, final boolean verifyCookies) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                br.setFollowRedirects(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    br.setCookies(this.getHost(), cookies);
-                    if (!verifyCookies) {
-                        logger.info("Trust cookies without check");
-                        return;
-                    }
-                    logger.info("Checking login cookies");
-                    br.getPage("https://www." + this.getHost() + "/");
-                    if (loggedIN(this.br)) {
-                        logger.info("Successfully loggedin via cookies");
-                        account.saveCookies(br.getCookies(this.getHost()), "");
-                        return;
-                    } else {
-                        logger.info("Failed to login via cookies");
-                        br.clearAll();
-                    }
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                br.setCookies(this.getHost(), cookies);
+                if (!verifyCookies) {
+                    /* Don't verify */
+                    return;
                 }
-                logger.info("Attempting full login");
+                logger.info("Checking login cookies");
                 br.getPage("https://www." + this.getHost() + "/");
-                /*
-                 * 2020-11-02: There are two Forms matching this but the first one is the one we want - the 2nd one is the
-                 * "register new account" Form.
-                 */
-                final Form loginform = br.getFormbyKey("remember");
-                if (loginform == null) {
-                    logger.warning("Failed to find loginform");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (loggedIN(this.br)) {
+                    logger.info("Successfully loggedin via cookies");
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return;
+                } else {
+                    logger.info("Failed to login via cookies");
                 }
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("remember", "on");
-                br.submitForm(loginform);
-                final String geoLoginFailure = br.getRegex(">\\s*(You login from a different location than usual[^<]*)<").getMatch(0);
-                if (geoLoginFailure != null) {
-                    /* 2020-11-02: Login from unusual location -> User has to confirm via URL send by mail and then try again in JD (?!). */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, geoLoginFailure + "\r\nOnce done, refresh your account in JDownloader.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                } else if (!loggedIN(this.br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(br.getCookies(this.getHost()), "");
-                return;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
             }
+            logger.info("Attempting full login");
+            br.getPage("https://www." + this.getHost() + "/");
+            /*
+             * 2020-11-02: There are two Forms matching this but the first one is the one we want - the 2nd one is the
+             * "register new account" Form.
+             */
+            final Form loginform = br.getFormbyKey("remember");
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find loginform");
+            }
+            loginform.put("login", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            loginform.put("remember", "on");
+            br.submitForm(loginform);
+            final String geoLoginFailure = br.getRegex(">\\s*(You login from a different location than usual[^<]*)<").getMatch(0);
+            if (geoLoginFailure != null) {
+                /* 2020-11-02: Login from unusual location -> User has to confirm via URL send by mail and then try again in JD (?!). */
+                throw new AccountUnavailableException(geoLoginFailure + "\r\nOnce done, refresh your account in JDownloader.", 5 * 60 * 1000l);
+            } else if (!loggedIN(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            return;
         }
     }
 
@@ -386,24 +424,6 @@ public class RapideoPl extends PluginForHost {
         } else {
             return false;
         }
-    }
-
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                final URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    return dllink;
-                }
-                con.disconnect();
-            } catch (final Exception e) {
-                return null;
-            }
-        }
-        return null;
     }
 
     @Override
