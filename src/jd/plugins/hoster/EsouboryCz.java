@@ -289,7 +289,7 @@ public class EsouboryCz extends PluginForHost {
         account.saveCookies(br.getCookies(account.getHoster()), "");
     }
 
-    /** no override to keep plugin compatible to old stable */
+    @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         handleDL(link, account);
     }

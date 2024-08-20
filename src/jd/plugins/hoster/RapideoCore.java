@@ -34,6 +34,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -51,9 +52,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class RapideoPl extends PluginForHost {
-    private static final String          PROPERTY_DIRECTURL = "rapideopldirectlink";
-    private static MultiHosterManagement mhm                = new MultiHosterManagement("rapideo.net");
+public abstract class RapideoCore extends PluginForHost {
+    private static final String PROPERTY_DIRECTURL = "rapideopldirectlink";
 
     @Override
     public Browser createNewBrowserInstance() {
@@ -75,34 +75,14 @@ public class RapideoPl extends PluginForHost {
         return 0;
     }
 
-    public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "rapideo.net", "rapideo.pl" });
-        return ret;
-    }
-
-    public static String[] getAnnotationNames() {
-        return buildAnnotationNames(getPluginDomains());
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return buildSupportedNames(getPluginDomains());
-    }
-
-    public static String[] getAnnotationUrls() {
-        return new String[] { "" };
-    }
-
-    public RapideoPl(PluginWrapper wrapper) {
+    public RapideoCore(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www." + getHost() + "/rejestracja");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://www." + getHost() + "/";
+        return "https://www." + getHost() + "/legal";
     }
 
     @Override
@@ -110,14 +90,18 @@ public class RapideoPl extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
     }
 
-    protected String getAPIDomain() {
-        // return getHost();
-        return "rapideo.pl";
-    }
+    protected abstract MultiHosterManagement getMultiHosterManagement();
 
-    protected String getAPISiteParam() {
-        return "newrd";
-    }
+    /* Domain used for "enc.domain.tld" requests. */
+    protected abstract String getAPIDomain();
+
+    /**
+     * rapideo.net: newrd </br>
+     * nopremium.pl: nopremium
+     */
+    protected abstract String getAPISiteParam();
+
+    protected abstract boolean useAPIInDownloadMode();
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -268,6 +252,7 @@ public class RapideoPl extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         final String storedDirecturl = link.getStringProperty(PROPERTY_DIRECTURL);
+        final MultiHosterManagement mhm = getMultiHosterManagement();
         String dllink = null;
         if (storedDirecturl != null) {
             logger.info("Re-using stored directurl: " + storedDirecturl);
@@ -276,19 +261,21 @@ public class RapideoPl extends PluginForHost {
             mhm.runCheck(account, link);
             login(account, false);
             final String url_urlencoded = Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
-            final boolean useAPI = false;
-            if (useAPI) {
-                // TODO: Test this
+            if (this.useAPIInDownloadMode()) {
+                // TODO: Test this and change it to work with json response and json parser
                 final Browser brc = br.cloneBrowser();
-                final UrlQuery query = new UrlQuery();
-                query.add("site", getAPISiteParam());
-                query.add("output", "json");
-                // query.add("loc", "1");
-                query.add("info", "0");
-                query.add("username", Encoding.urlEncode(account.getUser()));
-                query.add("password", md5HEX(account.getPass()));
-                query.add("url", url_urlencoded);
-                brc.postPage("https://enc." + getAPIDomain() + "/", query);
+                // final UrlQuery query = new UrlQuery();
+                // query.add("site", getAPISiteParam());
+                // query.add("output", "json");
+                // // query.add("loc", "1");
+                // query.add("info", "0");
+                // query.add("username", Encoding.urlEncode(account.getUser()));
+                // query.add("password", md5HEX(account.getPass()));
+                // query.add("url", url_urlencoded);
+                // brc.postPage("https://enc." + getAPIDomain() + "/", query);
+                // dllink = brc.getRequest().getHtmlCode();
+                final String postData = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + JDHash.getSHA1(JDHash.getMD5(account.getPass())) + "&info=0&url=" + Encoding.urlEncode(link.getDownloadURL()) + "&site=nopremium";
+                brc.postPage("http://crypt." + getAPIDomain(), postData);
                 dllink = brc.getRequest().getHtmlCode();
             } else {
                 /* Website */
@@ -432,7 +419,7 @@ public class RapideoPl extends PluginForHost {
         if (account == null) {
             return false;
         } else {
-            mhm.runCheck(account, link);
+            getMultiHosterManagement().runCheck(account, link);
             return true;
         }
     }
