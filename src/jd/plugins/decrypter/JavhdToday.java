@@ -24,6 +24,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -78,22 +79,30 @@ public class JavhdToday extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.getCryptedUrl();
+        final String contenturl = param.getCryptedUrl();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)404 Not Found<|Page not found")) {
+        br.getPage(contenturl);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)404 Not Found\\s*<|Page not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String urlSlug = new Regex(br.getURL(), "/([\\w-]+)/?$").getMatch(0);
+        final String fptitle;
+        if (urlSlug != null) {
+            fptitle = urlSlug.replace("-", " ").trim();
+        } else {
+            /* Fallback */
+            fptitle = br._getURL().getPath();
+        }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(br._getURL().getPath().replace("-", " "));
+        fp.setName(fptitle);
         final ArrayList<DownloadLink> mainResults = findLinks(br);
         for (final DownloadLink result : mainResults) {
             result._setFilePackage(fp);
             distribute(result);
+            ret.add(result);
         }
-        ret.addAll(findLinks(br));
         final ArrayList<String> mirrorsNoDupes = new ArrayList<String>();
-        final String[] mirrorurls = br.getRegex("(/[\\w\\-]+/\\?link=\\d+)").getColumn(0);
+        final String[] mirrorurls = br.getRegex("(?i)(/[\\w\\-]+/\\?link=\\d+)").getColumn(0);
         /* Remove duplicates */
         for (final String mirrorurl : mirrorurls) {
             if (!mirrorsNoDupes.contains(mirrorurl)) {
@@ -109,10 +118,10 @@ public class JavhdToday extends PluginForDecrypt {
                 logger.warning("Failed to find any results in link: " + br.getURL());
                 continue;
             }
-            ret.addAll(thisResults);
             for (final DownloadLink result : thisResults) {
                 result._setFilePackage(fp);
                 distribute(result);
+                ret.add(result);
             }
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
@@ -154,7 +163,6 @@ public class JavhdToday extends PluginForDecrypt {
         }
         fembed = PluginJSonUtils.unescape(fembed);
         ret.add(this.createDownloadlink(fembed));
-        // fp.addLinks(decryptedLinks);
         return ret;
     }
 }

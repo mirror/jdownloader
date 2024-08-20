@@ -40,7 +40,7 @@ public class VKontakteRuShorturls extends PluginForDecrypt {
     @Override
     public Browser createNewBrowserInstance() {
         final Browser br = super.createNewBrowserInstance();
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         return br;
     }
 
@@ -92,8 +92,12 @@ public class VKontakteRuShorturls extends PluginForDecrypt {
             if (paramTO != null) {
                 finallink = Encoding.htmlDecode(paramTO);
                 break;
+            } else if (this.isAbort()) {
+                throw new InterruptedException();
+            } else {
+                /* Continue to next round */
+                round++;
             }
-            round++;
         } while (!this.isAbort());
         logger.info("Final result = " + finallink);
         if (finallink == null) {

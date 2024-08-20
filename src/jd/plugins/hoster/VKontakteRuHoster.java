@@ -80,7 +80,7 @@ import jd.utils.locale.JDL;
 public class VKontakteRuHoster extends PluginForHost {
     /* Current main domain */
     private static final String DOMAIN                                                                      = "vk.com";
-    private static final String TYPE_AUDIOLINK                                                              = "https?://vkontaktedecrypted\\.ru/audiolink/((?:\\-)?\\d+)_(\\d+)";
+    private static final String TYPE_AUDIOLINK                                                              = "(?i)https?://vkontaktedecrypted\\.ru/audiolink/((?:\\-)?\\d+)_(\\d+)";
     /* TODO: Remove this */
     private static final String TYPE_VIDEOLINK_LEGACY                                                       = "(?i)https?://vkontaktedecrypted\\.ru/videolink/.+";
     private static final String TYPE_VIDEOLINK                                                              = "(?i)https?://[^/]+/video([\\d\\-]+)_([\\d\\-]+)(#quality=(\\d+p|hls))?";
@@ -159,6 +159,38 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        prepBrowser(br);
+        return br;
+    }
+
+    public static Browser prepBrowser(final Browser br) {
+        final String useragent = SubConfiguration.getConfig("vk.com").getStringProperty(VKADVANCED_USER_AGENT, default_VKADVANCED_USER_AGENT);
+        if (!StringUtils.isEmpty(useragent) && !StringUtils.equals(useragent, default_VKADVANCED_USER_AGENT)) {
+            br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, useragent);
+        } else {
+            br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, default_user_agent);
+        }
+        /* Set prefer English language */
+        br.setCookie(DOMAIN, "remixlang", "3");
+        br.setReadTimeout(1 * 60 * 1000);
+        br.setConnectTimeout(2 * 60 * 1000);
+        /* Loads can be very high. Site sometimes returns more than 10 000 entries with 1 request. */
+        br.setLoadLimit(br.getLoadLimit() * 4);
+        synchronized (LOCK_429) {
+            final String hash = LOCK_429.get("hash");
+            final String solution = LOCK_429.get("solution");
+            if (StringUtils.isAllNotEmpty(hash, solution)) {
+                br.setCookie(DOMAIN, "hash429", hash);
+                br.setCookie(DOMAIN, "solution429", solution);
+            }
+        }
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public void init() {
         setRequestIntervalLimits();
     }
@@ -211,7 +243,6 @@ public class VKontakteRuHoster extends PluginForHost {
     @SuppressWarnings("deprecation")
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         String finalurl = null;
-        prepBrowser(br);
         if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
             finalurl = link.getPluginPatternMatcher();
             /* Prefer filename inside url */
@@ -1153,7 +1184,6 @@ public class VKontakteRuHoster extends PluginForHost {
     public void login(final Browser br, final Account account, final boolean forceCookieCheck) throws Exception {
         synchronized (account) {
             br.setCookiesExclusive(true);
-            prepBrowser(br);
             try {
                 final Cookies userCookies = account.loadUserCookies();
                 if (userCookies != null) {
@@ -1258,8 +1288,6 @@ public class VKontakteRuHoster extends PluginForHost {
         } else {
             /* Delete cookies / Headers to perform a full login */
             logger.info("Cookie login failed");
-            br.clearAll();
-            prepBrowser(br);
             return false;
         }
     }
@@ -1329,31 +1357,6 @@ public class VKontakteRuHoster extends PluginForHost {
             br.postPage(page, postData);
         }
         generalErrorhandling(br);
-    }
-
-    public static Browser prepBrowser(final Browser br) {
-        final String useragent = SubConfiguration.getConfig("vk.com").getStringProperty(VKADVANCED_USER_AGENT, default_VKADVANCED_USER_AGENT);
-        if (!StringUtils.isEmpty(useragent) && !StringUtils.equals(useragent, default_VKADVANCED_USER_AGENT)) {
-            br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, useragent);
-        } else {
-            br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, default_user_agent);
-        }
-        /* Set prefer English language */
-        br.setCookie(DOMAIN, "remixlang", "3");
-        br.setReadTimeout(1 * 60 * 1000);
-        br.setConnectTimeout(2 * 60 * 1000);
-        /* Loads can be very high. Site sometimes returns more than 10 000 entries with 1 request. */
-        br.setLoadLimit(br.getLoadLimit() * 4);
-        synchronized (LOCK_429) {
-            final String hash = LOCK_429.get("hash");
-            final String solution = LOCK_429.get("solution");
-            if (StringUtils.isAllNotEmpty(hash, solution)) {
-                br.setCookie(DOMAIN, "hash429", hash);
-                br.setCookie(DOMAIN, "solution429", solution);
-            }
-        }
-        br.setFollowRedirects(true);
-        return br;
     }
 
     @Override
@@ -1690,7 +1693,6 @@ public class VKontakteRuHoster extends PluginForHost {
     public Object getFavIcon(String host) throws IOException {
         if (getHost().equals(host)) {
             final Browser br = this.createNewBrowserInstance();
-            prepBrowser(br);
             br.getPage("https://" + getHost());
             try {
                 handleTooManyRequests(this, br);

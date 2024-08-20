@@ -29,6 +29,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -61,21 +72,17 @@ import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.Quality;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%@:\\!]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class VKontakteRu extends PluginForDecrypt {
     public VKontakteRu(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        VKontakteRuHoster.prepBrowser(br);
+        return br;
     }
 
     @Override
@@ -94,6 +101,33 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private static String getProtocol() {
         return VKontakteRuHoster.getProtocol();
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        ret.add(new String[] { "vk.com", "vk.ru", "vkontakte.com", "vkontakte.ru" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.|m\\.|new\\.)?" + buildHostsPatternPart(domains) + "/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%@:\\!]+");
+        }
+        return ret.toArray(new String[0]);
     }
 
     private static final String EXCEPTION_API_UNKNOWN                     = "EXCEPTION_API_UNKNOWN";
@@ -237,7 +271,6 @@ public class VKontakteRu extends PluginForDecrypt {
         vkwall_comment_grablink = cfg.getBooleanProperty(VKontakteRuHoster.VKWALL_GRAB_COMMENTS_URLS, VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_URLS);
         vkwall_comments_grab_comments = vkwall_comment_grabphotos || vkwall_comment_grabaudio || vkwall_comment_grabvideo || vkwall_comment_grablink;
         photos_store_picture_directurls = cfg.getBooleanProperty(VKontakteRuHoster.VKWALL_STORE_PICTURE_DIRECTURLS, VKontakteRuHoster.default_VKWALL_STORE_PICTURE_DIRECTURLS);
-        prepBrowser(br);
         /* First handle URLs that can be processed without requiring any http request */
         final String ownerIDFromSlashPublicLink = new Regex(param.getCryptedUrl(), PATTERN_PUBLIC_LINK).getMatch(0);
         final String ownerIDFromSlashEventLink = new Regex(param.getCryptedUrl(), PATTERN_EVENT_LINK).getMatch(0);
@@ -414,9 +447,10 @@ public class VKontakteRu extends PluginForDecrypt {
         final QualitySelectionMode qualitySelectionMode = getQualitySelectionMode();
         final boolean userWantsMultipleQualities = qualitySelectionMode == QualitySelectionMode.ALL;
         final boolean linkCanBeFastCrawled;
+        String titleFromProperty = null;
         if (param.getDownloadLink() == null) {
             linkCanBeFastCrawled = false;
-        } else if (!param.getDownloadLink().hasProperty(VIDEO_PROHIBIT_FASTCRAWL) && param.getDownloadLink().hasProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN)) {
+        } else if (!param.getDownloadLink().hasProperty(VIDEO_PROHIBIT_FASTCRAWL) && (titleFromProperty = param.getDownloadLink().getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN)) != null) {
             linkCanBeFastCrawled = true;
         } else {
             linkCanBeFastCrawled = false;
@@ -428,7 +462,14 @@ public class VKontakteRu extends PluginForDecrypt {
             final DownloadLink dl = this.createDownloadlink(url);
             /* Inherit all previously set properties */
             dl.setProperties(param.getDownloadLink().getProperties());
-            dl.setFinalFileName(param.getDownloadLink().getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN) + "_fastcrawl.mp4");
+            final String title;
+            if (!StringUtils.isEmpty(titleFromProperty)) {
+                title = titleFromProperty;
+            } else {
+                /* Fallback */
+                title = oid_and_id;
+            }
+            dl.setFinalFileName(title + "_fastcrawl.mp4");
             dl.setAvailable(true);
             ret.add(dl);
             return ret;
@@ -2260,7 +2301,8 @@ public class VKontakteRu extends PluginForDecrypt {
                             }
                         }
                         if (source_html != null) {
-                            String clipTitle = new Regex(source_html, "aria-label=\"([^\"]+)").getMatch(0);
+                            /* Empty title is allowed!! */
+                            String clipTitle = new Regex(source_html, "aria-label=\"([^\"]*)\"").getMatch(0);
                             if (clipTitle != null) {
                                 clipTitle = Encoding.htmlDecode(clipTitle).trim();
                                 video.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN, clipTitle);
@@ -3082,7 +3124,7 @@ public class VKontakteRu extends PluginForDecrypt {
         } else if (br.containsHTML("(?i)>\\s*Unknown error")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)>\\s*Only logged in users can see this profile\\.<")) {
-            throw new AccountRequiredException();
+            throw new AccountRequiredException("Only logged in users can see this profile");
         } else if (br.containsHTML("(?i)>\\s*Access denied|>\\s*You do not have permission to do this")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("vk.com/blank.php")) {
@@ -3100,22 +3142,18 @@ public class VKontakteRu extends PluginForDecrypt {
         } else if (br.containsHTML("class=\"groups_blocked_spamfight_img\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getURL().matches("https?://[^/]+/login\\?.*")) {
+            /* Generic "you need to be logged in to view this link" thing. */
             throw new AccountRequiredException();
         }
         final String htmlrefresh = br.getRequest().getHTMLRefresh();
         if (StringUtils.containsIgnoreCase(htmlrefresh, "badbrowser.php")) {
             /**
-             * If this happens user needs to change User-Agent of this plugin to continue using it. </br> vk.com does not necessarily simply
-             * block a User-Agent value. They may as well just block it for specific users/IPs.
+             * If this happens user needs to change User-Agent of this plugin to continue using it. </br>
+             * vk.com does not necessarily simply block a User-Agent value. They may as well just block it for specific users/IPs.
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Blocked User-Agent");
         }
         /* General errorhandling end */
-    }
-
-    /** Sets basic values/cookies */
-    private void prepBrowser(final Browser br) {
-        VKontakteRuHoster.prepBrowser(br);
     }
 
     public static String generateContentURLVideo(final String oid, final String id) {

@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class TurbovidCo extends XFileSharingProBasic {
-    public TurbovidCo(final PluginWrapper wrapper) {
+public class TurbovidMe extends XFileSharingProBasic {
+    public TurbovidMe(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -37,13 +37,13 @@ public class TurbovidCo extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null 4dignum reCaptchaV2, hcaptcha<br />
+     * captchatype-info: null 4dignum solvemedia reCaptchaV2, hcaptcha<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "turbovid.co", "turbovid.org" });
+        ret.add(new String[] { "turbovid.me" });
         return ret;
     }
 
@@ -103,5 +103,10 @@ public class TurbovidCo extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected boolean websiteSupportsHTTPS() {
+        return false;
     }
 }
