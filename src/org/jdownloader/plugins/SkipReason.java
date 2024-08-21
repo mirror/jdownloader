@@ -2,13 +2,13 @@ package org.jdownloader.plugins;
 
 import javax.swing.Icon;
 
+import jd.plugins.DownloadLink;
+
 import org.appwork.swing.components.ExtMergedIcon;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
-
-import jd.plugins.DownloadLink;
 
 public enum SkipReason {
     CONNECTION_UNAVAILABLE(_JDT.T.DownloadLink_setSkipped_statusmessage_noconnectionavailable(), IconKey.ICON_ERROR),
@@ -63,7 +63,7 @@ public enum SkipReason {
 
     public final String getExplanation(Object requestor, DownloadLink link) {
         if (link == null) {
-            return exp;
+            return getExplanation(requestor);
         }
         final String msg;
         if (this == NO_ACCOUNT && (msg = link.getCustomMessage()) != null) {
