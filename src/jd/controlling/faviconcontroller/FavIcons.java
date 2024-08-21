@@ -651,6 +651,7 @@ public class FavIcons {
     public static BufferedImage download_FavIconTag(Browser favBr, String host) throws IOException {
         final Set<String> favIconURLs = getFavIconURLs(favBr, host);
         final LogInterface logger = favBr.getLogger();
+        final List<BufferedImage> images = new ArrayList<BufferedImage>();
         for (final String favIconURL : favIconURLs) {
             boolean retryFlag = true;
             int retryCount = 0;
@@ -660,14 +661,12 @@ public class FavIcons {
                     final Browser brc = favBr.cloneBrowser();
                     final BufferedImage ret = download_FavIconTag(brc, favIconURL, host);
                     if (ret != null) {
-                        return ret;
-                    } else {
-                        break;
+                        images.add(ret);
                     }
                 } catch (final BrowserException e) {
                     logger.log(e);
                     final Request reg = e.getRequest();
-                    if (reg != null && reg.getHttpConnection() != null && reg.getHttpConnection().getResponseCode() == 429 && retryCount == 0) {
+                    if (reg != null && reg.getHttpConnection() != null && reg.getHttpConnection().getResponseCode() == 429 && retryCount < 1) {
                         try {
                             int timeout = 2000;// minimum wait timeout
                             final String retryAfter = reg.getHttpConnection().getHeaderField(HTTPConstants.HEADER_RESPONSE_RETRY_AFTER);
@@ -676,7 +675,7 @@ public class FavIcons {
                             }
                             Thread.sleep(timeout);
                             retryFlag = true;
-                            retryCount = 1;
+                            retryCount++;
                         } catch (InterruptedException ignore) {
                         }
                     }
@@ -685,7 +684,8 @@ public class FavIcons {
                 }
             }
         }
-        return null;
+        final BufferedImage best = returnBestImage(images);
+        return best;
     }
 
     public static Set<String> getFavIconURLs(final Browser favBr, final String host) throws IOException {
@@ -694,24 +694,26 @@ public class FavIcons {
             ret.add(host);
         } else {
             final String requestHtml = favBr.toString().replaceAll("(?s)<!--.*?-->", "");
-            String urls[] = new Regex(requestHtml, "rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*href\\s*=\\s*('|\")([^>'\"]*\\.(ico|png|svg|jpg)[^>'\"]*)('|\")").getColumn(4);
-            if (urls != null && urls.length > 0) {
-                ret.addAll(Arrays.asList(urls));
-            }
-            urls = new Regex(requestHtml, "href\\s*=\\s*('|\")([^>'\"]*\\.(ico|png|svg|jpg)[^>'\"]*)('|\")[^>]*rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")").getColumn(1);
-            if (urls != null && urls.length > 0) {
-                ret.addAll(Arrays.asList(urls));
-            }
-            if (ret.size() == 0) {
-                /*
-                 * workaround for hoster with not complete url, eg rapidshare.com
-                 */
-                String url = new Regex(requestHtml, "rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*href\\s*=\\s*[^>]*//([^>'\"]*\\.(ico|png|svg|jpg)[^>'\"]*)('|\")").getMatch(3);
-                if (!StringUtils.isEmpty(url)) {
-                    if (!url.equalsIgnoreCase(host)) {
-                        url = "http://" + url;
+            for (final String rel : new String[] { "icon", "shortcut icon", "apple-touch-icon" }) {
+                String urls[] = new Regex(requestHtml, "(?i)rel\\s*=\\s*('|\")" + rel + "('|\")[^>]*href\\s*=\\s*('|\")([^>'\"]*\\.(ico|png|svg|jpg)[^>'\"]*)('|\")").getColumn(3);
+                if (urls != null && urls.length > 0) {
+                    ret.addAll(Arrays.asList(urls));
+                }
+                urls = new Regex(requestHtml, "(?i)href\\s*=\\s*('|\")([^>'\"]*\\.(ico|png|svg|jpg)[^>'\"]*)('|\")[^>]*rel\\s*=\\s*('|\")" + rel + "('|\")").getColumn(1);
+                if (urls != null && urls.length > 0) {
+                    ret.addAll(Arrays.asList(urls));
+                }
+                if (ret.size() == 0) {
+                    /*
+                     * workaround for hoster with not complete url, eg rapidshare.com
+                     */
+                    String url = new Regex(requestHtml, "(?i)rel\\s*=\\s*('|\")" + rel + "('|\")[^>]*href\\s*=\\s*[^>]*//([^>'\"]*\\.(ico|png|svg|jpg)[^>'\"]*)('|\")").getMatch(2);
+                    if (!StringUtils.isEmpty(url)) {
+                        if (!url.equalsIgnoreCase(host)) {
+                            url = "http://" + url;
+                        }
+                        ret.add(url);
                     }
-                    ret.add(url);
                 }
             }
             ret.add("/favicon.ico");
