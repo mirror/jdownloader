@@ -2,12 +2,12 @@ package org.jdownloader.plugins;
 
 import javax.swing.Icon;
 
+import jd.plugins.DownloadLink;
+
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.translate._JDT;
-
-import jd.plugins.DownloadLink;
 
 public enum FinalLinkState {
     FINISHED(_GUI.T.TaskColumn_getStringValue_finished_(), IconKey.ICON_TRUE),
@@ -61,7 +61,7 @@ public enum FinalLinkState {
             return exp;
         }
         final String msg;
-        if (this == FAILED_FATAL && (msg = link.getCustomMessage()) != null) {
+        if (this == FAILED_FATAL && (msg = link.getCustomMessage(this)) != null) {
             return msg;
         }
         return exp;

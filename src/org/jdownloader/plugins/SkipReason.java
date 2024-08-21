@@ -66,7 +66,7 @@ public enum SkipReason {
             return getExplanation(requestor);
         }
         final String msg;
-        if (this == NO_ACCOUNT && (msg = link.getCustomMessage()) != null) {
+        if (this == NO_ACCOUNT && (msg = link.getCustomMessage(this)) != null) {
             return msg;
         }
         return exp;
