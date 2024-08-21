@@ -38,6 +38,7 @@ import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler.BrowserCrawledLink;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -86,10 +87,19 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                 preSetTitle = downloadLink.getStringProperty(GenericM3u8.PRESET_NAME_PROPERTY);
             }
             if (!StringUtils.equals(source.getURL(), param.getCryptedUrl())) {
-                if (source.getCryptedLink() != null) {
+                if (source instanceof BrowserCrawledLink) {
                     refererURL = source.getURL();
-                    br.getPage(source.getURL());
+                    br = ((BrowserCrawledLink) source).getBrowser().cloneBrowser();
+                    logger.info("Reuse BrowserCrawledLink browser: " + br.getURL());
+                } else if (source.getCryptedLink() != null) {
+                    try {
+                        refererURL = source.getURL();
+                        br.getPage(source.getURL());
+                    } catch (final IOException ignore) {
+                        logger.log(ignore);
+                    }
                 }
+                // stop here as param(CryptedLink) is result of this source(CrawledLink)
                 break;
             } else {
                 source = source.getSourceLink();

@@ -1293,7 +1293,7 @@ public class LinkCrawler {
         public CrawledLinkModifier getSourceCrawledLinkModifier();
     }
 
-    protected class BrowserCrawledLink extends CrawledLink {
+    public static class BrowserCrawledLink extends CrawledLink {
         private final Browser       br;
         private final Request       next;
         private final Request       last;
@@ -1325,7 +1325,7 @@ public class LinkCrawler {
             return true;
         }
 
-        protected Browser getBrowser() {
+        public Browser getBrowser() {
             return br;
         }
 
