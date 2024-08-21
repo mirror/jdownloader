@@ -392,6 +392,7 @@ DownloadOverview_DownloadOverview_loaded=Bytes carregados:
 DownloadOverview_DownloadOverview_offline=Offline:
 DownloadOverview_DownloadOverview_online=Online:
 DownloadOverview_DownloadOverview_packages=Pacote(s):
+DownloadOverview_DownloadOverview_remaining=Bytes restantes:
 DownloadOverview_DownloadOverview_running_downloads=Downloads em Andamento
 DownloadOverview_DownloadOverview_size=Total bytes:
 DownloadOverview_DownloadOverview_skipped_downloads=Link(s) ignorado(s):
