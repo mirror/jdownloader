@@ -4065,9 +4065,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             String filesizelimit = new Regex(html, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
-                throw new AccountRequiredException("As free user you can download files up to " + filesizelimit + " only");
+                throw new AccountRequiredException("(Premium) account required  to download files bigger than" + filesizelimit);
             } else {
-                logger.info("Only downloadable via premium");
                 throw new AccountRequiredException();
             }
         } else if (new Regex(html, "(?i)>\\s*Expired download session").patternFind()) {

@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -366,6 +367,9 @@ public class CamvaultXyz extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String fid = dlform.getInputFieldByName("videoToken").getValue();
+            if (StringUtils.isEmpty(fid)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             link.setProperty(PROPERTY_INTERNAL_FILE_ID, fid);
             /* 2023-11-28: They've added a captcha for premium downloads. */
             String recaptchaV2Response = null;
@@ -396,17 +400,11 @@ public class CamvaultXyz extends PluginForHost {
             final String token = entries.get("token").toString();
             dlform.setAction(br._getURL().getProtocol() + "://" + cdn + "/");
             dlform.put("downloadToken", Encoding.urlEncode(token));
+            /* The following headers are not mandatory. */
+            br.getHeaders().put("Origin", "https://" + br2.getHost(true));
+            br.getHeaders().put("Referer", "https://" + br2.getHost(true) + "/");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, false, 1);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
+            handleConnectionErrors(br, dl.getConnection());
             dl.startDownload();
         }
     }

@@ -15,8 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -25,6 +26,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -34,7 +36,6 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -53,8 +54,6 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public abstract class RapideoCore extends PluginForHost {
-    private static final String PROPERTY_DIRECTURL = "rapideopldirectlink";
-
     @Override
     public Browser createNewBrowserInstance() {
         final Browser br = super.createNewBrowserInstance();
@@ -92,8 +91,11 @@ public abstract class RapideoCore extends PluginForHost {
 
     protected abstract MultiHosterManagement getMultiHosterManagement();
 
-    /* Domain used for "enc.domain.tld" requests. */
-    protected abstract String getAPIDomain();
+    /**
+     * rapideo.net: enc.rapideo.pl </br>
+     * nopremium.pl: crypt.nopremium.pl
+     */
+    protected abstract String getAPIBase();
 
     /**
      * rapideo.net: newrd </br>
@@ -101,126 +103,259 @@ public abstract class RapideoCore extends PluginForHost {
      */
     protected abstract String getAPISiteParam();
 
-    protected abstract boolean useAPIInDownloadMode();
+    /** If this returns true, only API will be used, otherwise only website. */
+    protected abstract boolean useAPI();
+
+    /** Returns value used as password for API requests. */
+    protected abstract String getPasswordAPI(final Account account);
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ac = new AccountInfo();
-        login(account, true);
-        final boolean obtainTrafficViaOldAPI = true;
-        if (obtainTrafficViaOldAPI) {
-            /* API used in their browser addons */
-            final Browser brc = br.cloneBrowser();
-            final UrlQuery query = new UrlQuery();
-            query.add("site", getAPISiteParam());
-            query.add("output", "json");
-            query.add("loc", "1");
-            query.add("info", "1");
-            query.add("username", Encoding.urlEncode(account.getUser()));
-            query.add("password", md5HEX(account.getPass()));
-            brc.postPage("https://enc." + getAPIDomain() + "/", query);
-            final Map<String, Object> root = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
-            final String trafficLeftStr = root.get("balance").toString();
-            if (trafficLeftStr != null && trafficLeftStr.matches("\\d+")) {
-                ac.setTrafficLeft(Long.parseLong(trafficLeftStr) * 1024);
-            }
+        if (this.useAPI()) {
+            return this.fetchAccountInfoAPI(account);
         } else {
-            /* Obtain "Traffic left" value from website */
-            final String trafficLeftStr = br.getRegex("(?i)\">\\s*(?:Account balance|Stan Twojego konta)\\s*:\\s*(\\d+(\\.\\d{1,2})? [A-Za-z]{1,5})").getMatch(0);
-            if (trafficLeftStr != null) {
-                ac.setTrafficLeft(SizeFormatter.getSize(trafficLeftStr));
+            return this.fetchAccountInfoWebsite(account);
+        }
+    }
+
+    private AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        loginWebsite(account, true);
+        final AccountInfo ac = new AccountInfo();
+        /* Obtain "Traffic left" value from website */
+        String trafficLeftStr = br.getRegex("\">\\s*(?:Account balance|Stan Twojego konta)\\s*:\\s*(\\d+(\\.\\d{1,2})? [A-Za-z]{1,5})").getMatch(0);
+        if (trafficLeftStr == null) {
+            /* nopremium.pl */
+            trafficLeftStr = br.getRegex("Pozostały transfer:\\s*<span[^>]*>([^<]+)</span>").getMatch(0);
+        }
+        if (trafficLeftStr != null) {
+            ac.setTrafficLeft(SizeFormatter.getSize(trafficLeftStr));
+        } else {
+            logger.warning("Failed to find trafficleft value");
+        }
+        /* Get a list of all supported hosts */
+        br.getPage("/twoje_pliki");
+        checkErrorsWebsite(br, null, account);
+        final HashSet<String> crippledhosts = new HashSet<String>();
+        /*
+         * This will not catch stuff like <li><strong>nitroflare (beta) </strong></li> ... but we are lazy and ignore this. Such hosts will
+         * be found too by the 2nd regex down below.
+         */
+        final String[] crippledHosts = br.getRegex("<li>([A-Za-z0-9\\-\\.]+)</li>").getColumn(0);
+        if (crippledHosts != null && crippledHosts.length > 0) {
+            for (final String crippledhost : crippledHosts) {
+                crippledhosts.add(crippledhost);
             }
         }
-        final boolean obtainSupportedHostsListViaAPI = true;
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
-        boolean accountEmailActivationNeeded = false;
-        if (obtainSupportedHostsListViaAPI) {
-            /* API */
-            br.getPage("https://www." + getHost() + "/clipboard.php?json=3");
-            final List<Map<String, Object>> hosterlist = (List<Map<String, Object>>) restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
-            final boolean skipNonZeroSdownloadItems = false;
-            for (final Map<String, Object> hosterinfo : hosterlist) {
-                final List<String> domains = (List<String>) hosterinfo.get("domains");
-                final Object sdownload = hosterinfo.get("sdownload");
-                if (sdownload == null || domains == null) {
-                    /* Skip invalid items (yes they exist, tested 2024-08-20) */
-                    continue;
-                }
-                if (sdownload.toString().equals("0") || skipNonZeroSdownloadItems == false) {
-                    supportedHosts.addAll(domains);
-                } else {
-                    logger.info("Skipping serverside disabled domains: " + domains);
-                }
+        /* Alternative place to obtain supported hosts from */
+        final String[] crippledhosts2 = br.getRegex("class=\"active\"[^<]*>([^<]+)</a>").getColumn(0);
+        if (crippledhosts2 != null && crippledhosts2.length > 0) {
+            for (final String crippledhost : crippledhosts2) {
+                crippledhosts.add(crippledhost);
             }
-        } else {
-            /* Website */
-            /* Get a list of all supported hosts */
-            br.getPage("/twoje_pliki");
-            final HashSet<String> crippledhosts = new HashSet<String>();
-            /*
-             * This will not catch stuff like <li><strong>nitroflare (beta) </strong></li> ... but we are lazy and ignore this. Such hosts
-             * will be found too by the 2nd regex down below.
-             */
-            final String[] crippledHosts = br.getRegex("<li>([A-Za-z0-9\\-\\.]+)</li>").getColumn(0);
-            if (crippledHosts != null && crippledHosts.length > 0) {
-                for (final String crippledhost : crippledHosts) {
+        }
+        /* Alternative place to obtain supported hosts from */
+        String htmlMetadataStr = br.getRegex("name=\"keywords\" content=\"([\\w, ]+)").getMatch(0);
+        if (htmlMetadataStr != null) {
+            htmlMetadataStr = htmlMetadataStr.replace(" ", "");
+            final String[] crippledhosts3 = htmlMetadataStr.split(",");
+            if (crippledhosts3 != null && crippledhosts3.length > 0) {
+                for (final String crippledhost : crippledhosts3) {
                     crippledhosts.add(crippledhost);
                 }
             }
-            /* Alternative place to obtain supported hosts from */
-            final String[] crippledhosts2 = br.getRegex("class=\"active\"[^<]*>([^<]+)</a>").getColumn(0);
-            if (crippledhosts2 != null && crippledhosts2.length > 0) {
-                for (final String crippledhost : crippledhosts2) {
-                    crippledhosts.add(crippledhost);
-                }
+        }
+        final List<String> supportedHosts = new ArrayList<String>();
+        /* Sanitize data and add to final list */
+        for (String crippledhost : crippledhosts) {
+            crippledhost = crippledhost.toLowerCase(Locale.ENGLISH);
+            if (crippledhost.equalsIgnoreCase("mega")) {
+                supportedHosts.add("mega.nz");
+            } else {
+                supportedHosts.add(crippledhost);
             }
-            /* Alternative place to obtain supported hosts from */
-            String htmlMetadataStr = br.getRegex("name=\"keywords\" content=\"([\\w, ]+)").getMatch(0);
-            if (htmlMetadataStr != null) {
-                htmlMetadataStr = htmlMetadataStr.replace(" ", "");
-                final String[] crippledhosts3 = htmlMetadataStr.split(",");
-                if (crippledhosts3 != null && crippledhosts3.length > 0) {
-                    for (final String crippledhost : crippledhosts3) {
-                        crippledhosts.add(crippledhost);
-                    }
-                }
-            }
-            /* Sanitize data and add to final list */
-            for (String crippledhost : crippledhosts) {
-                crippledhost = crippledhost.toLowerCase(Locale.ENGLISH);
-                if (crippledhost.equalsIgnoreCase("mega")) {
-                    supportedHosts.add("mega.nz");
-                } else {
-                    supportedHosts.add(crippledhost);
-                }
-            }
-            accountEmailActivationNeeded = br.containsHTML("Check your email and");
         }
         /*
          * They only have accounts with traffic, no free/premium difference (other than no traffic) - we treat no-traffic as FREE --> Cannot
          * download anything
          */
-        if (ac.getTrafficLeft() > 0) {
+        if (trafficLeftStr != null && ac.getTrafficLeft() > 0) {
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(-1);
-            ac.setStatus("Premium account");
         } else {
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(-1);
-            ac.setStatus("Free account (no traffic left)");
         }
         account.setConcurrentUsePossible(true);
         ac.setMultiHostSupport(this, supportedHosts);
-        if (ac.getTrafficLeft() == 0 && AccountType.FREE.equals(account.getType()) && accountEmailActivationNeeded) {
+        if ((ac.getTrafficLeft() == 0 || trafficLeftStr == null) && AccountType.FREE.equals(account.getType()) && br.containsHTML("Check your email and")) {
             /* Un-activated free account without traffic -> Not usable at all. */
             throw new AccountUnavailableException("Check your email and click the confirmation link to activate your account", 5 * 60 * 1000l);
         }
         return ac;
     }
 
+    private AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        final Map<String, Object> root = loginAPI(br.cloneBrowser(), account);
+        final AccountInfo ac = new AccountInfo();
+        final Object trafficLeftO = root.get("balance");
+        if (trafficLeftO != null && trafficLeftO.toString().matches("\\d+")) {
+            ac.setTrafficLeft(Long.parseLong(trafficLeftO.toString()) * 1024 * 1024);
+        } else {
+            ac.setTrafficLeft(0);
+        }
+        /* API */
+        br.getPage("https://www." + getHost() + "/clipboard.php?json=3");
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        final List<Map<String, Object>> hosterlist = (List<Map<String, Object>>) restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
+        final boolean skipNonZeroSdownloadItems = false;
+        for (final Map<String, Object> hosterinfo : hosterlist) {
+            final List<String> domains = (List<String>) hosterinfo.get("domains");
+            final Object sdownload = hosterinfo.get("sdownload");
+            if (sdownload == null || domains == null) {
+                /* Skip invalid items (yes they exist, tested 2024-08-20) */
+                continue;
+            }
+            if (sdownload.toString().equals("0") || skipNonZeroSdownloadItems == false) {
+                supportedHosts.addAll(domains);
+            } else {
+                logger.info("Skipping serverside disabled domains: " + domains);
+            }
+        }
+        /*
+         * They only have accounts with traffic, no free/premium difference (other than no traffic) - we treat no-traffic as FREE --> Cannot
+         * download anything
+         */
+        if (trafficLeftO != null && ac.getTrafficLeft() > 0) {
+            account.setType(AccountType.PREMIUM);
+        } else {
+            account.setType(AccountType.FREE);
+        }
+        account.setConcurrentUsePossible(true);
+        ac.setMultiHostSupport(this, supportedHosts);
+        return ac;
+    }
+
+    private void loginWebsite(final Account account, final boolean verifyCookies) throws Exception {
+        synchronized (account) {
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                br.setCookies(this.getHost(), cookies);
+                if (!verifyCookies) {
+                    /* Don't verify */
+                    return;
+                }
+                logger.info("Checking login cookies");
+                br.getPage("https://www." + getHost() + "/");
+                if (loggedINWebsite(this.br)) {
+                    logger.info("Successfully loggedin via cookies");
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return;
+                } else {
+                    logger.info("Failed to login via cookies");
+                }
+            }
+            logger.info("Attempting full login");
+            br.getPage("https://www." + getHost() + "/login");
+            checkErrorsWebsite(br, null, account);
+            /*
+             * 2020-11-02: There are two Forms matching this but the first one is the one we want - the 2nd one is the
+             * "register new account" Form.
+             */
+            final Form loginform = br.getFormbyKey("remember");
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find loginform");
+            }
+            loginform.put("login", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            loginform.put("remember", "on");
+            br.submitForm(loginform);
+            checkErrorsWebsite(br, null, account);
+            if (!loggedINWebsite(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            return;
+        }
+    }
+
+    private boolean loggedINWebsite(final Browser br) {
+        if (br.containsHTML("Logged in as\\s*:|Zalogowany jako\\s*:")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private Map<String, Object> loginAPI(final Browser br, final Account account) throws IOException, PluginException {
+        final UrlQuery query = new UrlQuery();
+        query.add("site", getAPISiteParam());
+        query.add("output", "json");
+        query.add("loc", "1");
+        query.add("info", "1");
+        query.add("username", Encoding.urlEncode(account.getUser()));
+        query.add("password", getPasswordAPI(account));
+        br.postPage(getAPIBase(), query);
+        final Map<String, Object> root = this.checkErrorsAPI(br, null, account);
+        return root;
+    }
+
+    private void checkErrorsWebsite(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        final String geoLoginFailure = br.getRegex(">\\s*(You login from a different location than usual[^<]*)<").getMatch(0);
+        if (geoLoginFailure != null) {
+            /* 2020-11-02: Login from unusual location -> User has to confirm via URL send by mail and then try again in JD (?!). */
+            throw new AccountUnavailableException(geoLoginFailure + "\r\nOnce done, refresh your account in JDownloader.", 5 * 60 * 1000l);
+        } else if (br.containsHTML("<title>\\s*Dostęp zabroniony\\s*</title>")) {
+            errorBannedIP(account);
+        }
+    }
+
+    private Map<String, Object> checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        Map<String, Object> entries = null;
+        try {
+            entries = (Map<String, Object>) restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
+        } catch (final JSonMapperException e) {
+            /* Check for html based errors */
+            this.checkErrorsWebsite(br, link, account);
+            /* Check misc API responses */
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                errorBannedIP(account);
+            }
+            /* Dead end */
+            final String errortext = "Invalid API response";
+            if (link == null) {
+                throw new AccountUnavailableException(errortext, 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errortext);
+            }
+        }
+        return checkErrorsAPI(entries, link, account);
+    }
+
+    private final void errorBannedIP(final Account account) throws AccountUnavailableException {
+        throw new AccountUnavailableException("Your IP has been banned", 5 * 60 * 1000l);
+    }
+
+    private Map<String, Object> checkErrorsAPI(final Map<String, Object> entries, final DownloadLink link, final Account account) throws PluginException {
+        final Number errno = (Number) entries.get("errno");
+        final String error = (String) entries.get("errstring");
+        if (error == null || errno == null) {
+            /* No error */
+            return entries;
+        }
+        /* 2024-08-21: At this moment, we only handle account related error messages here. */
+        if (errno.intValue() == 80) {
+            /* Too many login attempts - access is temporarily blocked */
+            /* {"errno":80,"errstring":"Zbyt wiele pr\u00f3b logowania - dost\u0119p zosta\u0142 tymczasowo zablokowany"} */
+            throw new AccountUnavailableException(error, 5 * 60 * 1000l);
+        } else {
+            /* Permanent account error such as login/password invalid */
+            /* Example: {"errno":0,"errstring":"Nieprawid\u0142owa nazwa u\u017cytkownika\/has\u0142o"} */
+            throw new AccountInvalidException(error);
+        }
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 0;
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -228,30 +363,10 @@ public abstract class RapideoCore extends PluginForHost {
         throw new AccountRequiredException();
     }
 
-    public static String md5HEX(String s) {
-        String result = null;
-        try {
-            MessageDigest md5 = MessageDigest.getInstance("MD5");
-            byte[] digest = md5.digest(s.getBytes());
-            result = toHex(digest);
-        } catch (NoSuchAlgorithmException e) {
-            // this won't happen, we know Java has MD5!
-        }
-        return result;
-    }
-
-    public static String toHex(byte[] a) {
-        final StringBuilder sb = new StringBuilder(a.length * 2);
-        for (int i = 0; i < a.length; i++) {
-            sb.append(Character.forDigit((a[i] & 0xf0) >> 4, 16));
-            sb.append(Character.forDigit(a[i] & 0x0f, 16));
-        }
-        return sb.toString();
-    }
-
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        final String storedDirecturl = link.getStringProperty(PROPERTY_DIRECTURL);
+        final String directurlproperty = "directurl_" + this.getHost();
+        final String storedDirecturl = link.getStringProperty("directurl_" + this.getHost());
         final MultiHosterManagement mhm = getMultiHosterManagement();
         String dllink = null;
         if (storedDirecturl != null) {
@@ -259,24 +374,28 @@ public abstract class RapideoCore extends PluginForHost {
             dllink = storedDirecturl;
         } else {
             mhm.runCheck(account, link);
-            login(account, false);
+            loginWebsite(account, false);
             final String url_urlencoded = Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
-            if (this.useAPIInDownloadMode()) {
-                // TODO: Test this and change it to work with json response and json parser
+            if (this.useAPI()) {
                 final Browser brc = br.cloneBrowser();
-                // final UrlQuery query = new UrlQuery();
-                // query.add("site", getAPISiteParam());
-                // query.add("output", "json");
-                // // query.add("loc", "1");
-                // query.add("info", "0");
-                // query.add("username", Encoding.urlEncode(account.getUser()));
-                // query.add("password", md5HEX(account.getPass()));
-                // query.add("url", url_urlencoded);
-                // brc.postPage("https://enc." + getAPIDomain() + "/", query);
-                // dllink = brc.getRequest().getHtmlCode();
-                final String postData = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + JDHash.getSHA1(JDHash.getMD5(account.getPass())) + "&info=0&url=" + Encoding.urlEncode(link.getDownloadURL()) + "&site=nopremium";
-                brc.postPage("http://crypt." + getAPIDomain(), postData);
+                final UrlQuery query = new UrlQuery();
+                query.add("site", getAPISiteParam());
+                query.add("output", "json");
+                // query.add("loc", "1");
+                query.add("info", "0");
+                query.add("username", Encoding.urlEncode(account.getUser()));
+                query.add("password", getPasswordAPI(account));
+                query.add("url", url_urlencoded);
+                brc.postPage(getAPIBase(), query);
+                /* We expect the whole response to be an URL. */
                 dllink = brc.getRequest().getHtmlCode();
+                try {
+                    new URL(dllink);
+                } catch (final MalformedURLException e) {
+                    /* This should never happen */
+                    this.checkErrorsAPI(brc, link, account);
+                    mhm.handleErrorGeneric(account, link, "API returned invalid downloadlink", 50);
+                }
             } else {
                 /* Website */
                 final int random = new Random().nextInt(1000000);
@@ -284,11 +403,12 @@ public abstract class RapideoCore extends PluginForHost {
                 final String random_session = df.format(random);
                 final String filename = link.getName();
                 br.getPage("https://www." + getHost() + "/twoje_pliki");
+                checkErrorsWebsite(br, link, account);
                 br.postPage("/twoje_pliki", "loadfiles=1");
                 br.postPage("/twoje_pliki", "loadfiles=2");
                 br.postPage("/twoje_pliki", "loadfiles=3");
                 br.postPage("/twoje_pliki", "session=" + random_session + "&links=" + url_urlencoded);
-                if (br.containsHTML("(?i)strong>Brak transferu</strong>")) {
+                if (br.containsHTML("strong>\\s*Brak transferu\\s*</strong>")) {
                     throw new AccountUnavailableException("Out of traffic", 1 * 60 * 1000l);
                 }
                 final String id = br.getRegex("data\\-id=\"([a-z0-9]+)\"").getMatch(0);
@@ -304,6 +424,7 @@ public abstract class RapideoCore extends PluginForHost {
                 /* Sometimes it takes over 10 minutes until the file has been downloaded to the remote server. */
                 for (int i = 1; i <= 280; i++) {
                     br.postPage("/twoje_pliki", "downloadprogress=1");
+                    checkErrorsWebsite(br, link, account);
                     final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                     final List<Map<String, Object>> standardFiles = (List<Map<String, Object>>) entries.get("StandardFiles");
                     Map<String, Object> activeDownloadingFileInfo = null;
@@ -334,7 +455,7 @@ public abstract class RapideoCore extends PluginForHost {
                 }
             }
             if (StringUtils.isEmpty(dllink)) {
-                mhm.handleErrorGeneric(account, link, "dllink_null", 20);
+                mhm.handleErrorGeneric(account, link, "Failed to generate downloadurl", 20);
             }
         }
         try {
@@ -345,73 +466,19 @@ public abstract class RapideoCore extends PluginForHost {
             }
         } catch (final Exception e) {
             if (storedDirecturl != null) {
-                link.removeProperty(PROPERTY_DIRECTURL);
+                link.removeProperty(directurlproperty);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired?", e);
             } else {
                 throw e;
             }
         }
-        link.setProperty(PROPERTY_DIRECTURL, dllink);
+        link.setProperty(directurlproperty, dllink);
         dl.startDownload();
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
-    }
-
-    private void login(final Account account, final boolean verifyCookies) throws Exception {
-        synchronized (account) {
-            br.setCookiesExclusive(true);
-            final Cookies cookies = account.loadCookies("");
-            if (cookies != null) {
-                br.setCookies(this.getHost(), cookies);
-                if (!verifyCookies) {
-                    /* Don't verify */
-                    return;
-                }
-                logger.info("Checking login cookies");
-                br.getPage("https://www." + getHost() + "/");
-                if (loggedINWebsite(this.br)) {
-                    logger.info("Successfully loggedin via cookies");
-                    account.saveCookies(br.getCookies(br.getHost()), "");
-                    return;
-                } else {
-                    logger.info("Failed to login via cookies");
-                }
-            }
-            logger.info("Attempting full login");
-            br.getPage("https://www." + getHost() + "/");
-            /*
-             * 2020-11-02: There are two Forms matching this but the first one is the one we want - the 2nd one is the
-             * "register new account" Form.
-             */
-            final Form loginform = br.getFormbyKey("remember");
-            if (loginform == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find loginform");
-            }
-            loginform.put("login", Encoding.urlEncode(account.getUser()));
-            loginform.put("password", Encoding.urlEncode(account.getPass()));
-            loginform.put("remember", "on");
-            br.submitForm(loginform);
-            final String geoLoginFailure = br.getRegex(">\\s*(You login from a different location than usual[^<]*)<").getMatch(0);
-            if (geoLoginFailure != null) {
-                /* 2020-11-02: Login from unusual location -> User has to confirm via URL send by mail and then try again in JD (?!). */
-                throw new AccountUnavailableException(geoLoginFailure + "\r\nOnce done, refresh your account in JDownloader.", 5 * 60 * 1000l);
-            } else if (!loggedINWebsite(br)) {
-                throw new AccountInvalidException();
-            }
-            account.saveCookies(br.getCookies(br.getHost()), "");
-            return;
-        }
-    }
-
-    private boolean loggedINWebsite(final Browser br) {
-        if (br.containsHTML("(?i)Logged in as:|Zalogowany jako:")) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     @Override

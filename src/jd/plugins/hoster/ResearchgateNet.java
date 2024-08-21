@@ -42,6 +42,14 @@ public class ResearchgateNet extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(429);
+        return br;
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://www.researchgate.net/application.TermsAndConditions.html";
     }
@@ -56,16 +64,22 @@ public class ResearchgateNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        final String urlTitle = new Regex(link.getPluginPatternMatcher(), "(?i)(?:publication|figure)/(.+)").getMatch(0);
+        dllink = null;
+        final String contenturl = link.getPluginPatternMatcher().replaceFirst("(?i)http://", "https://");
+        final boolean isTypeFigure = StringUtils.containsIgnoreCase(contenturl, "/figure/");
+        final String extDefault;
+        if (isTypeFigure) {
+            extDefault = ".jpg";
+        } else {
+            extDefault = ".zip";
+        }
         if (!link.isNameSet()) {
             /* Set fallback filename */
-            link.setName(urlTitle + ".zip");
+            final String urlTitle = new Regex(contenturl, "(?i)(?:publication|figure)/(.+)").getMatch(0);
+            link.setName(urlTitle.replace("-", " ").trim() + extDefault);
         }
-        dllink = null;
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setAllowedResponseCodes(429);
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 429) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Server error 429", 10 * 60 * 1000l);
         } else if (br.getHttpConnection().getResponseCode() == 404) {
@@ -73,28 +87,26 @@ public class ResearchgateNet extends PluginForHost {
         } else if (this.br.getURL().length() <= 60) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String json_source = this.br.getRegex("createInitialWidget\\((.*?\\})\\s+").getMatch(0);
-        dllink = PluginJSonUtils.getJsonValue(json_source, "downloadLink");
+        final String json_source = br.getRegex("createInitialWidget\\((.*?\\})\\s+").getMatch(0);
         String filename = PluginJSonUtils.getJsonValue(json_source, "fileName");
         String filesize = PluginJSonUtils.getJsonValue(json_source, "fileSize");
         if (filesize == null) {
             /* 2021-12-01 */
             filesize = br.getRegex("ile-list-item__meta-data-item\"><span class=\"\">(\\d+[^<]+)</span>").getMatch(0);
         }
-        if (dllink == null) {
-            dllink = br.getRegex("full-text\" href=\"([^\"]+)\"").getMatch(0);
+        if (isTypeFigure) {
+            dllink = br.getRegex("property\\s*=\\s*\"og:image\"\\s*content\\s*=\\s*\"(https?://.*?\\.(png|jpe?g))\"").getMatch(0);
+        } else {
+            dllink = PluginJSonUtils.getJsonValue(json_source, "downloadLink");
             if (dllink == null) {
                 dllink = br.getRegex("\"citation_pdf_url\"\\s*content\\s*=\\s*\"(https?://[^\"]*?\\.pdf)\"").getMatch(0);
             }
+            if (dllink == null) {
+                /* 2021-12-01 */
+                dllink = br.getRegex("js-lite-click\" href=\"(https?://[^\"]+)\"").getMatch(0);
+            }
         }
-        if (dllink == null) {
-            /* 2021-12-01 */
-            dllink = br.getRegex("js-lite-click\" href=\"(https?://[^\"]+)\"").getMatch(0);
-        }
-        if (dllink == null && StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "/figure/")) {
-            dllink = br.getRegex("property\\s*=\\s*\"og:image\"\\s*content\\s*=\\s*\"(https?://.*?\\.(png|jpe?g))\"").getMatch(0);
-        }
-        if (filename == null || filename.equals("")) {
+        if (StringUtils.isEmpty(filename)) {
             filename = br.getRegex("<title>\\s*([^<>\"].*?)\\s*((\\(PDF Download Available\\))|(\\|\\s*Download Scientific Diagram))?\\s*</title>").getMatch(0);
         }
         if (!StringUtils.isEmpty(filename)) {
@@ -102,14 +114,12 @@ public class ResearchgateNet extends PluginForHost {
             if (dllink != null) {
                 correctFileExtension = Plugin.getFileNameExtensionFromURL(dllink);
             }
-            if (StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "/figure/")) {
-                final String ext = getFileNameExtensionFromURL(dllink, ".jpg");
-                filename = this.applyFilenameExtension(filename, ext);
-            } else if (correctFileExtension != null) {
+            if (correctFileExtension != null) {
                 filename = Encoding.htmlDecode(filename.trim());
                 filename = this.applyFilenameExtension(filename, correctFileExtension);
             } else {
-                filename = this.applyFilenameExtension(filename, ".zip");
+                final String ext = getFileNameExtensionFromURL(dllink, extDefault);
+                filename = this.applyFilenameExtension(filename, ext);
             }
             link.setName(filename);
         }
@@ -118,9 +128,8 @@ public class ResearchgateNet extends PluginForHost {
         }
         if (StringUtils.isEmpty(dllink) && br.containsHTML("=su_requestFulltext")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Request full-text PDF");
-        } else {
-            return AvailableStatus.TRUE;
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override

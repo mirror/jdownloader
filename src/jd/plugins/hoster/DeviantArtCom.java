@@ -30,6 +30,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.text.TextDownloader;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -52,18 +64,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.text.TextDownloader;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.DeviantArtComConfig;
-import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(([\\w\\-]+/)?(art|journal)/[\\w\\-]+-\\d+|([\\w\\-]+/)?status(?:-update)?/\\d+)" })
 public class DeviantArtCom extends PluginForHost {
@@ -219,7 +219,6 @@ public class DeviantArtCom extends PluginForHost {
                             displayedVideoSize = (Number) bestType.get("f");
                         }
                     }
-
                 }
             } catch (Exception e) {
                 plugin.getLogger().log(e);
@@ -278,6 +277,7 @@ public class DeviantArtCom extends PluginForHost {
         Number originalFileSizeBytes = null;
         String tierAccess = null;
         List<String> blockReasons = new ArrayList<String>();
+        Map<String, Object> premiumFolderData = null;
         String deviationHTML = null;
         if (json != null) {
             json = PluginJSonUtils.unescape(json);
@@ -323,6 +323,7 @@ public class DeviantArtCom extends PluginForHost {
                 /* A status typically doesn't have a title so we goota create our own. */
                 title = fid + " by " + username;
             }
+            premiumFolderData = (Map<String, Object>) thisArt.get("premiumFolderData");
             if (StringUtils.isEmpty(officialDownloadurl)) {
                 final Map<String, Object> deviationExtended = (Map<String, Object>) entities.get("deviationExtended");
                 if (deviationExtended != null) {
@@ -393,8 +394,8 @@ public class DeviantArtCom extends PluginForHost {
             dllink = getDirecturl(br, link, account);
         } catch (final PluginException e) {
             /**
-             * This will happen if the item is not downloadable. </br> We're ignoring this during linkcheck as by now we know the file is
-             * online.
+             * This will happen if the item is not downloadable. </br>
+             * We're ignoring this during linkcheck as by now we know the file is online.
              */
         }
         String extByMimeType = null;
@@ -468,6 +469,13 @@ public class DeviantArtCom extends PluginForHost {
                     link.setDownloadSize(originalFileSizeBytes.longValue());
                 }
                 throw new AccountRequiredException("Paid content");
+            } else if (premiumFolderData != null && Boolean.FALSE.equals(premiumFolderData.get("hasAccess"))) {
+                final String premiumType = (String) premiumFolderData.get("type");
+                if (StringUtils.equalsIgnoreCase(premiumType, "watchers")) {
+                    throw new AccountRequiredException("Item is only accessible for followers of this artist");
+                } else {
+                    throw new AccountRequiredException("Item blocked for reasons: " + blockReasons);
+                }
             } else if (blockReasons != null && !blockReasons.isEmpty()) {
                 /* Mature content (account required) or blocked for other reasons. */
                 /* Examples for block reasons we can always circumvent: mature_filter */
@@ -703,7 +711,8 @@ public class DeviantArtCom extends PluginForHost {
                 }
             } else if (isBlurredImageLink(dllink)) {
                 /**
-                 * Last resort errorhandling for "probably premium-only items". </br> This should usually be catched before.
+                 * Last resort errorhandling for "probably premium-only items". </br>
+                 * This should usually be catched before.
                  */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Avoiding download of blurred image");
             }

@@ -22,6 +22,7 @@ import org.appwork.utils.StringUtils;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -48,19 +49,20 @@ public class KatholischDe extends PluginForDecrypt {
             /* Fallback */
             title = br._getURL().getPath().replace("-", " ");
         }
+        title = Encoding.htmlDecode(title).trim();
         final String m3u8 = br.getRegex("file\\s*:\\s*'(https?://[^']*\\.m3u8)'").getMatch(0);
         if (StringUtils.isEmpty(title) || StringUtils.isEmpty(m3u8)) {
-            return new ArrayList<DownloadLink>();
-        } else {
-            final Browser brc = br.cloneBrowser();
-            brc.getPage(m3u8);
-            final ArrayList<DownloadLink> ret = GenericM3u8Decrypter.parseM3U8(this, m3u8, brc, null, null, title);
-            if (ret.size() > 1) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(title);
-                fp.addLinks(ret);
-            }
-            return ret;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final Browser brc = br.cloneBrowser();
+        brc.getPage(m3u8);
+        final ArrayList<DownloadLink> ret = GenericM3u8Decrypter.parseM3U8(this, m3u8, brc, null, null, title);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(title);
+        for (final DownloadLink result : ret) {
+            // result.setContainerUrl(br.getURL());
+            result._setFilePackage(fp);
+        }
+        return ret;
     }
 }

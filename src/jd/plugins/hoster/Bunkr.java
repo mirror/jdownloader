@@ -9,6 +9,11 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.BunkrConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -25,11 +30,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.BunkrAlbum;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.BunkrConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { BunkrAlbum.class })
@@ -288,10 +288,10 @@ public class Bunkr extends PluginForHost {
         }
         String directurl;
         if (new Regex(link.getPluginPatternMatcher(), BunkrAlbum.PATTERN_SINGLE_FILE).patternFind()) {
-            directurl = getDirecturlFromSingleFileAvailablecheck(link, contenturl, true);
+            directurl = getDirecturlFromSingleFileAvailablecheck(link, contenturl, true, isDownload);
             if (!isDownload) {
                 return AvailableStatus.TRUE;
-            } else {
+            } else if (!StringUtils.isEmpty(directurl)) {
                 this.sleep(1000, link);
             }
         } else {
@@ -303,6 +303,10 @@ public class Bunkr extends PluginForHost {
             } else {
                 br.getHeaders().put("Referer", "https://" + Browser.getHost(directurl, false) + "/");
             }
+        }
+        if (StringUtils.isEmpty(directurl)) {
+            handleHTMLErrors(link, br);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         URLConnectionAdapter con = null;
         try {
@@ -334,7 +338,7 @@ public class Bunkr extends PluginForHost {
                             /* E.g. resume of download which does not work at this stage -> Access URL to get HTML code. */
                             br.getPage(singleFileURL);
                         }
-                        final String freshDirecturl = getDirecturlFromSingleFileAvailablecheck(link, br.getURL(), false);
+                        final String freshDirecturl = getDirecturlFromSingleFileAvailablecheck(link, br.getURL(), false, isDownload);
                         /* Avoid trying again with the same directurl if we already know the result. */
                         if (StringUtils.equals(freshDirecturl, lastCachedDirecturl) && exceptionFromDirecturlCheck != null) {
                             throw exceptionFromDirecturlCheck;
@@ -376,7 +380,7 @@ public class Bunkr extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String getDirecturlFromSingleFileAvailablecheck(final DownloadLink link, final String singleFileURL, final boolean accessURL) throws PluginException, IOException {
+    private String getDirecturlFromSingleFileAvailablecheck(final DownloadLink link, final String singleFileURL, final boolean accessURL, final boolean isDownload) throws PluginException, IOException {
         link.setProperty(PROPERTY_LAST_GRABBED_DIRECTURL, null);
         if (accessURL) {
             br.getPage(singleFileURL);
@@ -455,18 +459,16 @@ public class Bunkr extends PluginForHost {
                 }
             }
         }
-        if (directurl == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (directurl != null) {
+            directurl = Encoding.htmlOnlyDecode(directurl);
+            final String filename = getFilenameFromURL(directurl);
+            if (filename != null) {
+                setFilename(link, filename, true, true);
+            }
+            link.setProperty(PROPERTY_LAST_GRABBED_DIRECTURL, directurl);
+        } else {
+            logger.warning("Failed to find directurl");
         }
-        directurl = Encoding.htmlOnlyDecode(directurl);
-        final String filename = getFilenameFromURL(directurl);
-        if (filename != null) {
-            setFilename(link, filename, true, true);
-        } else if (!link.isNameSet()) {
-            /* Unsafe name */
-            setFilename(link, filename, true, false);
-        }
-        link.setProperty(PROPERTY_LAST_GRABBED_DIRECTURL, directurl);
         link.setProperty(PROPERTY_LAST_USED_SINGLE_FILE_URL, singleFileURL);
         return directurl;
     }
@@ -549,6 +551,7 @@ public class Bunkr extends PluginForHost {
         if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
             handleResponsecodeErrors(con);
+            handleHTMLErrors(link, br);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File broken or temporarily unavailable", 2 * 60 * 60 * 1000l);
         } else if (con.getURL().getPath().equalsIgnoreCase("/maintenance-vid.mp4") || con.getURL().getPath().equalsIgnoreCase("/v/maintenance-kek-bunkr.webm") || con.getURL().getPath().equalsIgnoreCase("/maintenance.mp4")) {
             con.disconnect();
@@ -556,6 +559,17 @@ public class Bunkr extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Media temporarily not available due to ongoing server maintenance.", 2 * 60 * 60 * 1000l);
         } else if (parsedExpectedFilesize > 0 && con.getCompleteContentLength() > 0 && con.getCompleteContentLength() < (parsedExpectedFilesize * 0.5)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is too small: File under maintenance?", 1 * 60 * 60 * 1000l);
+        }
+    }
+
+    private void handleHTMLErrors(final DownloadLink link, final Browser br) throws PluginException {
+        final String downloadDisabledError = br.getRegex("class=\"down_disabled\"[^>]*>([^<]+)</div>").getMatch(0);
+        if (downloadDisabledError != null) {
+            /*
+             * E.g. <div class="down_disabled">The server hosting this file is currently overloaded. We've limited the download of this file
+             * for now until the server is no longer overloaded. Apologies.</div>
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, Encoding.htmlDecode(downloadDisabledError).trim(), 2 * 60 * 60 * 1000l);
         }
     }
 
