@@ -88,8 +88,9 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             }
             if (!StringUtils.equals(source.getURL(), param.getCryptedUrl())) {
                 if (source instanceof BrowserCrawledLink) {
+                    final BrowserCrawledLink bcl = (BrowserCrawledLink) source;
                     refererURL = source.getURL();
-                    br = ((BrowserCrawledLink) source).cloneBrowser();
+                    br = bcl.cloneBrowser();
                     logger.info("Reuse BrowserCrawledLink browser: " + br.getURL());
                 } else if (source.getCryptedLink() != null) {
                     try {
