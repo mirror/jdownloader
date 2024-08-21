@@ -1,5 +1,8 @@
 package org.jdownloader.gui.views.downloads.contextmenumanager;
 
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ActionData;
@@ -33,6 +36,7 @@ import org.jdownloader.gui.views.downloads.action.GenericDeleteFromDownloadlistA
 import org.jdownloader.gui.views.downloads.action.GenericDeleteFromDownloadlistContextAction;
 import org.jdownloader.gui.views.downloads.action.MarkDownloadFinishedAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
+import org.jdownloader.gui.views.downloads.action.MergeSameNamedPackagesAction;
 import org.jdownloader.gui.views.downloads.action.MergeToPackageAction;
 import org.jdownloader.gui.views.downloads.action.OpenDirectoryAction;
 import org.jdownloader.gui.views.downloads.action.OpenFileAction;
@@ -53,15 +57,11 @@ import org.jdownloader.gui.views.downloads.context.submenu.PriorityMenuContainer
 import org.jdownloader.gui.views.downloads.context.submenu.SettingsMenuContainer;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
-import org.jdownloader.gui.views.linkgrabber.actions.MergeSameNamedPackagesAction;
 import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.AddContainerContextMenuAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.AddLinksContextMenuAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SortAction;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
-
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePackage, DownloadLink> {
     private static final MenuManagerDownloadTableContext INSTANCE = new MenuManagerDownloadTableContext();
