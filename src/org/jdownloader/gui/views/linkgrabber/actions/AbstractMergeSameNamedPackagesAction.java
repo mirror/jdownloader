@@ -7,11 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.PackageController;
-import jd.controlling.packagecontroller.PackageController.MergePackageSettings;
-
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
@@ -20,6 +15,11 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
+
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.PackageController;
+import jd.controlling.packagecontroller.PackageController.MergePackageSettings;
 
 public abstract class AbstractMergeSameNamedPackagesAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableTableContextAppAction<PackageType, ChildrenType> implements ActionContext {
     private boolean caseInsensitive = true;
@@ -106,13 +106,13 @@ public abstract class AbstractMergeSameNamedPackagesAction<PackageType extends A
     @Override
     public boolean isEnabled() {
         final SelectionInfo<PackageType, ChildrenType> sel = getSelection();
-        if (sel == null) {
+        if (sel == null || sel.isEmpty()) {
             /* This shall never happen. */
             return false;
         }
         final PackageController<PackageType, ChildrenType> controller = sel.getController();
         if (controller == null || controller.getPackages() == null || controller.getPackages().size() == 0) {
-            /* Zero items in linkgrabberlist/downloadlist. */
+            /* Zero items in linkgrabberlist/downloadlist -> No duplicates that can be merged. */
             return false;
         } else {
             return super.isEnabled();
