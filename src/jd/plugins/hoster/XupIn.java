@@ -166,7 +166,7 @@ public class XupIn extends PluginForHost {
             if (page.contains("richtige Passwort erneut ein")) {
                 link.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.xupin.errors.passwrong", "Password wrong"));
-            } else if (br.containsHTML(">Die Sicherheitsfrage wurde falsch eingegeben|/captcha\\.php\"")) {
+            } else if (br.containsHTML(">\\s*Die Sicherheitsfrage wurde falsch eingegeben|/captcha\\.php\"")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
                 logger.warning("Unexpected error occured");

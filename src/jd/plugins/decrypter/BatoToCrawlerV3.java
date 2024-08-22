@@ -21,6 +21,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -39,10 +43,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.BatoTo;
 import jd.plugins.hoster.DirectHTTP;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { BatoTo.class })
@@ -79,7 +79,7 @@ public class BatoToCrawlerV3 extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/title/\\d+-[a-z0-9\\-]+(/\\d+-ch_\\d+)?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/title/\\d+-[a-z0-9\\-]+(/\\d+-(vol_\\d+-)?ch_\\d+)?");
         }
         return ret.toArray(new String[0]);
     }
@@ -153,7 +153,7 @@ public class BatoToCrawlerV3 extends PluginForDecrypt {
         }
         logger.info("Failed to find images of a single chapter");
         /* No results were found so check if we got a series of which we want to find the URLs to all chapters */
-        final String[] chapterurls = br.getRegex("(" + Pattern.quote(urlpath) + "/\\d+-ch_\\d+)").getColumn(0);
+        final String[] chapterurls = br.getRegex("(" + Pattern.quote(urlpath) + "/\\d+-(vol_\\d+-)?ch_\\d+)").getColumn(0);
         if (chapterurls == null || chapterurls.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

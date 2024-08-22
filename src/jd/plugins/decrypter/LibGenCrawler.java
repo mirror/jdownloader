@@ -110,7 +110,8 @@ public class LibGenCrawler extends PluginForDecrypt {
         }
         String md5 = null;
         try {
-            md5 = UrlQuery.parse(url).get("md5");
+            final UrlQuery query = UrlQuery.parse(url);
+            md5 = query.get("md5");
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -208,10 +209,26 @@ public class LibGenCrawler extends PluginForDecrypt {
             final Map<String, Object> bookmap = (Map<String, Object>) entries.get(fileID);
             ret.addAll(processBookJson(bookmap, domainToUse));
         } else {
-            final String md5 = findMd5hashInURL(contenturl);
+            /* Other type of link. It could be anything so we need to take a deeper look. */
+            String md5 = findMd5hashInURL(contenturl);
+            boolean accessedContenturl = false;
             if (md5 == null) {
-                /* Unsupported link */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                logger.info("Maybe unsupported link -> Open it and check if we find an md5 value somewhere in html code.");
+                br.getPage(contenturl);
+                accessedContenturl = true;
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+                for (final String url : urls) {
+                    md5 = new Regex(url, "md5=([a-f0-9]{32})").getMatch(0);
+                    if (md5 != null) {
+                        break;
+                    }
+                }
+                if (md5 == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid/unsupported URL");
+                }
             }
             final String orgContentURL = contenturl;
             contenturl = this.generateSingleFileDownloadurl(domainToUse, md5);
@@ -220,6 +237,7 @@ public class LibGenCrawler extends PluginForDecrypt {
             book.setDefaultPlugin(this.hostPlugin);
             if (bookMD5Regex.patternFind()) {
                 br.getPage(orgContentURL);
+                accessedContenturl = true;
                 final String bookID = br.getRegex(">\\s*ID:\\s*</font>\\s*</nobr>\\s*</td>\\s*<td>\\s*(\\d+)\\s*<").getMatch(0);
                 if (bookID != null) {
                     book.setProperty(LibGenInfo.PROPERTY_BOOK_ID, bookID);
@@ -247,7 +265,9 @@ public class LibGenCrawler extends PluginForDecrypt {
             } else {
                 /* Website mode */
                 /* TODO: Decide if this is still needed. If so: Add settings for API/mirrors/cover_url */
-                br.getPage(contenturl);
+                if (!accessedContenturl) {
+                    br.getPage(contenturl);
+                }
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (br.containsHTML("(?i)entry not found in the database")) {

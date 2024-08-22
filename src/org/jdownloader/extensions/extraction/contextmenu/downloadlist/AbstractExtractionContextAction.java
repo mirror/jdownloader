@@ -2,9 +2,6 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist;
 
 import java.util.List;
 
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.gui.swing.jdgui.interfaces.View;
-
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtensionAction;
 import org.jdownloader.extensions.extraction.Archive;
@@ -15,6 +12,9 @@ import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
+
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.interfaces.View;
 
 public abstract class AbstractExtractionContextAction extends AbstractExtensionAction<ExtractionExtension> {
     private volatile List<Archive> archives = null;
@@ -70,7 +70,7 @@ public abstract class AbstractExtractionContextAction extends AbstractExtensionA
         super.setEnabled(newValue);
     }
 
-    private SelectionInfo<?, ?> getSelection() {
+    protected SelectionInfo<?, ?> getSelection() {
         final View view = MainTabbedPane.getInstance().getSelectedView();
         if (view instanceof DownloadsView) {
             return DownloadsTable.getInstance().getSelectionInfo();

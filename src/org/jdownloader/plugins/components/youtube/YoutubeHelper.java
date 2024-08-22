@@ -1379,20 +1379,19 @@ public class YoutubeHelper {
         private String src;
     }
 
-    private HashMap<String, String>  jsCache             = new HashMap<String, String>();
+    private HashMap<String, String>  jsCache                 = new HashMap<String, String>();
     private HashSet<String>          subtitleUrls;
     private HashSet<StreamMap>       fmtMaps;
     private LinkedHashSet<StreamMap> mpdUrls;
-    private HashMap<String, String>  videoInfo;
     private Account                  account;
-    private final boolean            hlsEnabled          = true;
-    private final boolean            dashMpdEnabled      = true;
-    private final boolean            adaptiveFmtsEnabled = true;
-    private final boolean            fmtMapEnabled       = true;
+    private final boolean            hlsEnabled              = true;
+    private final boolean            dashMpdEnabled          = true;
+    private final boolean            adaptiveFmtsEnabled     = true;
+    private final boolean            fmtMapEnabled           = true;
     private String                   html5PlayerJs;
     private YoutubeClipData          vid;
     private Map<String, Object>      ytInitialData;
-    private Map<String, Object>      ytInitialPlayerResponse;
+    private Map<String, Object>      ytInitialPlayerResponse = null;
     private Map<String, Object>      ytPlayerConfig;
     private Map<String, Object>      ytCfgSet;
 
@@ -2364,7 +2363,6 @@ public class YoutubeHelper {
         fmtMaps = new LinkedHashSet<StreamMap>();
         subtitleUrls = new LinkedHashSet<String>();
         mpdUrls = new LinkedHashSet<StreamMap>();
-        videoInfo = new LinkedHashMap<String, String>();
         final String unavailableStatus = map != null ? (String) JavaScriptEngineFactory.walkJson(map, "playabilityStatus/status") : null;
         final String unavailableReason = getUnavailableReason(unavailableStatus);
         vid.ageCheck = br.containsHTML("\"status\"\\s*:\\s*\"LOGIN_REQUIRED\"");
@@ -2593,7 +2591,7 @@ public class YoutubeHelper {
                 logger.warning("Ignore Error:" + unavailableReason);
             }
         }
-        for (YoutubeStreamData match : loadThumbnails()) {
+        for (YoutubeStreamData match : loadThumbnails(vid.videoID, true)) {
             addYoutubeStreamData(ret, match);
         }
         for (Entry<YoutubeITAG, StreamCollection> es : ret.entrySet()) {
@@ -3389,20 +3387,33 @@ public class YoutubeHelper {
         return false;
     }
 
-    private List<YoutubeStreamData> loadThumbnails() {
+    /**
+     * Loads thumbnail data from HTML and returns all possible qualities. </br>
+     * Returns null if nothing is found. </br>
+     * 2024-08-22: Thumbnail presentation inside html code is the same for playlists and single videos.
+     */
+    public List<YoutubeStreamData> loadThumbnails(String itemID, final boolean grabFilesize) {
+        final Regex thumbregex = br.getRegex("<meta property=\"og:image\" content=\"https?://i\\.ytimg.com/vi/([\\w-]+)/(.+\\.jpg)[^\"]*\">");
+        if (!thumbregex.patternFind()) {
+            return null;
+        }
+        final String itemIDFromURL = thumbregex.getMatch(0);
+        if (itemID == null) {
+            itemID = itemIDFromURL;
+        }
+        final String bestFname = thumbregex.getMatch(1);
         final StreamCollection ret = new StreamCollection();
-        final String best = br.getRegex("<meta property=\"og\\:image\" content=\".*?/(\\w+\\.jpg)\">").getMatch(0);
-        final LinkedHashMap<String, YoutubeITAG> thumbnails = new LinkedHashMap<String, YoutubeITAG>();
+        final Map<String, YoutubeITAG> thumbnails = new LinkedHashMap<String, YoutubeITAG>();
         thumbnails.put("maxresdefault.jpg", YoutubeITAG.IMAGE_MAX);
         thumbnails.put("hqdefault.jpg", YoutubeITAG.IMAGE_HQ);
         thumbnails.put("mqdefault.jpg", YoutubeITAG.IMAGE_MQ);
         thumbnails.put("default.jpg", YoutubeITAG.IMAGE_LQ);
         for (Entry<String, YoutubeITAG> thumbnail : thumbnails.entrySet()) {
-            final YoutubeStreamData match = (new YoutubeStreamData(null, vid, "https://i.ytimg.com/vi/" + vid.videoID + "/" + thumbnail.getKey(), thumbnail.getValue(), null));
-            if (getThumbnailSize(br.cloneBrowser(), match)) {
+            final YoutubeStreamData match = (new YoutubeStreamData(null, vid, "https://i.ytimg.com/vi/" + itemID + "/" + thumbnail.getKey(), thumbnail.getValue(), null));
+            if (!grabFilesize || getThumbnailSize(br.cloneBrowser(), match)) {
                 ret.add(match);
             }
-            if (ret.size() > 0 && StringUtils.equalsIgnoreCase(thumbnail.getKey(), best)) {
+            if (ret.size() > 0 && StringUtils.equalsIgnoreCase(thumbnail.getKey(), bestFname)) {
                 return ret;
             }
         }
@@ -3413,7 +3424,7 @@ public class YoutubeHelper {
         synchronized (account) {
             br.setDebug(true);
             br.setCookiesExclusive(true);
-            // delete all cookies
+            /* delete all cookies */
             br.clearCookies(null);
             final GoogleHelper googlehelper = new GoogleHelper(br);
             googlehelper.setLogger(br.getLogger());
@@ -4073,66 +4084,69 @@ public class YoutubeHelper {
     }
 
     protected void extendedDataLoadingDemuxAudioBitrate(VariantInfo v, List<VariantInfo> variants) {
-        if (CFG_YOUTUBE.CFG.isDoExtendedAudioBitrateLookupEnabled()) {
-            final YoutubeITAG itagVideo = v.getVariant().getiTagVideo();
-            if (itagVideo != null) {
-                switch (itagVideo.getITAG()) {
-                case 22:
-                case 18:
-                case 82:
-                case 84:
-                    int bitrate = v.getVideoStreams().getAudioBitrate();
-                    if (bitrate <= 0) {
-                        logger.info("Load Stream Probe for " + itagVideo + " - " + itagVideo.getITAG());
-                        main: for (YoutubeStreamData vStream : v.getVideoStreams()) {
-                            try {
-                                if (vStream.getSegments() != null && vStream.getSegments().length > 0) {
-                                    System.out.println("HLS");
-                                } else {
-                                    final Browser clone = br.cloneBrowser();
-                                    final List<HTTPProxy> proxies = br.selectProxies(new URL("https://youtube.com"));
-                                    if (proxies != null && proxies.size() > 0) {
-                                        clone.setProxySelector(new StaticProxySelector(proxies.get(0)));
-                                    }
-                                    final FFprobe ffmpeg = new FFprobe(clone) {
-                                        @Override
-                                        public LogInterface getLogger() {
-                                            return YoutubeHelper.this.logger;
-                                        }
-                                    };
-                                    // probe.isAvailable()
-                                    checkFFProbe(ffmpeg, "Detect the actual Audio Bitrate");
-                                    StreamInfo streamInfo = ffmpeg.getStreamInfo(vStream.getUrl());
-                                    if (streamInfo != null) {
-                                        for (Stream stream : streamInfo.getStreams()) {
-                                            if ("audio".equals(stream.getCodec_type())) {
-                                                int aBitrate = (int) (Double.parseDouble(stream.getBit_rate()) / 1000);
-                                                if (aBitrate > 0) {
-                                                    bitrate = aBitrate;
-                                                    v.getVideoStreams().setAudioBitrate(aBitrate);
-                                                    break main;
-                                                }
-                                            }
+        if (!CFG_YOUTUBE.CFG.isDoExtendedAudioBitrateLookupEnabled()) {
+            /* Do nothing */
+            return;
+        }
+        final YoutubeITAG itagVideo = v.getVariant().getiTagVideo();
+        if (itagVideo == null) {
+            return;
+        }
+        switch (itagVideo.getITAG()) {
+        case 22:
+        case 18:
+        case 82:
+        case 84:
+            int bitrate = v.getVideoStreams().getAudioBitrate();
+            if (bitrate <= 0) {
+                logger.info("Load Stream Probe for " + itagVideo + " - " + itagVideo.getITAG());
+                main: for (YoutubeStreamData vStream : v.getVideoStreams()) {
+                    try {
+                        if (vStream.getSegments() != null && vStream.getSegments().length > 0) {
+                            System.out.println("HLS");
+                        } else {
+                            final Browser clone = br.cloneBrowser();
+                            final List<HTTPProxy> proxies = br.selectProxies(new URL("https://youtube.com"));
+                            if (proxies != null && proxies.size() > 0) {
+                                clone.setProxySelector(new StaticProxySelector(proxies.get(0)));
+                            }
+                            final FFprobe ffmpeg = new FFprobe(clone) {
+                                @Override
+                                public LogInterface getLogger() {
+                                    return YoutubeHelper.this.logger;
+                                }
+                            };
+                            // probe.isAvailable()
+                            checkFFProbe(ffmpeg, "Detect the actual Audio Bitrate");
+                            StreamInfo streamInfo = ffmpeg.getStreamInfo(vStream.getUrl());
+                            if (streamInfo != null) {
+                                for (Stream stream : streamInfo.getStreams()) {
+                                    if ("audio".equals(stream.getCodec_type())) {
+                                        int aBitrate = (int) (Double.parseDouble(stream.getBit_rate()) / 1000);
+                                        if (aBitrate > 0) {
+                                            bitrate = aBitrate;
+                                            v.getVideoStreams().setAudioBitrate(aBitrate);
+                                            break main;
                                         }
                                     }
                                 }
-                            } catch (Throwable e) {
-                                e.printStackTrace();
                             }
                         }
+                    } catch (Throwable e) {
+                        e.printStackTrace();
                     }
-                    if (bitrate > 0) {
-                        for (VariantInfo av : variants) {
-                            if (av.getVariant().getiTagVideo() == itagVideo) {
-                                if (av.getVariant().getGenericInfo() instanceof GenericAudioInfo) {
-                                    ((GenericAudioInfo) av.getVariant().getGenericInfo()).setaBitrate(bitrate);
-                                }
-                            }
-                        }
-                    }
-                    break;
                 }
             }
+            if (bitrate > 0) {
+                for (VariantInfo av : variants) {
+                    if (av.getVariant().getiTagVideo() == itagVideo) {
+                        if (av.getVariant().getGenericInfo() instanceof GenericAudioInfo) {
+                            ((GenericAudioInfo) av.getVariant().getGenericInfo()).setaBitrate(bitrate);
+                        }
+                    }
+                }
+            }
+            break;
         }
     }
 
@@ -4186,8 +4200,6 @@ public class YoutubeHelper {
             }
             if (ytInitialPlayerResponse != null) {
                 this.ytInitialPlayerResponse = jsonToJavaMap(ytInitialPlayerResponse, true);
-            } else {
-                this.ytInitialPlayerResponse = null;
             }
         }
         {

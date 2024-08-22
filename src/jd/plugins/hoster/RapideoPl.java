@@ -55,7 +55,7 @@ public class RapideoPl extends RapideoCore {
     }
 
     @Override
-    protected String getPasswordAPI(Account account) {
+    protected String getPasswordAPI(final Account account) {
         return md5HEX(account.getPass());
     }
 
@@ -64,7 +64,7 @@ public class RapideoPl extends RapideoCore {
         return true;
     }
 
-    private static String md5HEX(String s) {
+    private static String md5HEX(final String s) {
         String result = null;
         try {
             final MessageDigest md5 = MessageDigest.getInstance("MD5");
@@ -76,7 +76,7 @@ public class RapideoPl extends RapideoCore {
         return result;
     }
 
-    private static String toHex(byte[] a) {
+    private static String toHex(final byte[] a) {
         final StringBuilder sb = new StringBuilder(a.length * 2);
         for (int i = 0; i < a.length; i++) {
             sb.append(Character.forDigit((a[i] & 0xf0) >> 4, 16));

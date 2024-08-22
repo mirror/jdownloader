@@ -1217,7 +1217,6 @@ public class TbCmV2 extends PluginForDecrypt {
         List<Map<String, Object>> alerts = null;
         String errorOrWarningMessage = null;
         URL originalURL = null;
-        final ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         Map<String, Object> ytConfigData = null;
         final Set<String> playListDupes = new HashSet<String>();
         Integer totalNumberofItems = null;
@@ -1448,6 +1447,19 @@ public class TbCmV2 extends PluginForDecrypt {
         if (!StringUtils.equals(originalURL.toString(), br.getURL())) {
             logger.info("Channel/playlist URL used differs from URL that was initially added: Original: " + originalURL.toString() + " | Actually used: " + br.getURL());
             helper.setChannelPlaylistCrawlerContainerUrlOverride(br.getURL());
+        }
+        final ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
+        List<YoutubeStreamData> playlistThumbnails = null;
+        // TODO: Add setting, see: https://svn.jdownloader.org/issues/90496
+        boolean crawlPlaylistThumbnails = true;
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && crawlPlaylistThumbnails && playlistID != null && run == 0) {
+            playlistThumbnails = helper.loadThumbnails(null, false);
+            if (playlistThumbnails != null) {
+                // TODO: Add to list of download-results
+                final YoutubeStreamData thumb0 = playlistThumbnails.get(0);
+            } else {
+                logger.warning("Failed to crawl playlist thumbnails");
+            }
         }
         humanReadableTitle += " sorted by " + activeSort;
         int videoPositionCounter = 0;
