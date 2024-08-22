@@ -24,9 +24,12 @@ import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import jd.config.Property;
@@ -1893,6 +1896,44 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public void setSha1Hash(final String sha1) {
         setHashInfo(HashInfo.newInstanceSafe(sha1, HashInfo.TYPE.SHA1));
+    }
+
+    private final static String[] DEFAULT_DO_NOT_CHANGE_EXISTING_KEYS = new String[] { PROPERTY_COMMENT, PROPERTY_MIRRORID, PROPERTY_PASS, PROPERTY_PRIORITY, PROPERTY_LINKDUPEID, PROPERTY_SPEEDLIMIT, PROPERTY_ARCHIVE_ID, URL_ORIGIN, URL_REFERRER, URL_CONTAINER, URL_CONTENT, URL_CUSTOM, PROPERTY_JOB_ID };
+
+    public static String[] getDefaultDoNotChangeExistingKeys() {
+        return DEFAULT_DO_NOT_CHANGE_EXISTING_KEYS.clone();
+    }
+
+    @Override
+    public void setProperties(final Map<String, Object> properties) {
+        this.setProperties(properties, (String[]) null);
+    }
+
+    public void setProperties(final Map<String, Object> properties, String... doNotChangeExistingKeys) {
+        if (doNotChangeExistingKeys == null) {
+            doNotChangeExistingKeys = DEFAULT_DO_NOT_CHANGE_EXISTING_KEYS;
+        }
+        if (doNotChangeExistingKeys == null || doNotChangeExistingKeys.length == 0 || getPropertiesSize() == 0) {
+            super.setProperties(properties);
+        } else {
+            final Map<String, Object> newProperties = new HashMap<String, Object>();
+            for (String doNotChangeExistingKey : doNotChangeExistingKeys) {
+                final Object value = getProperty(doNotChangeExistingKey);
+                if (value != null) {
+                    newProperties.put(doNotChangeExistingKey, value);
+                }
+            }
+            if (newProperties.size() == 0) {
+                super.setProperties(properties);
+            } else {
+                for (final Entry<String, Object> entry : properties.entrySet()) {
+                    if (!newProperties.containsKey(entry.getKey())) {
+                        newProperties.put(entry.getKey(), entry.getValue());
+                    }
+                }
+                super.setProperties(newProperties);
+            }
+        }
     }
 
     /**
