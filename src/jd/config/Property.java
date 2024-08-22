@@ -28,6 +28,7 @@ import java.util.WeakHashMap;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.MinimalMemoryMap;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.ReflectionUtils;
 
@@ -342,13 +343,7 @@ public class Property implements Serializable {
     }
 
     public static Map<String, Object> newMapInstance(int size) {
-        try {
-            // 25.08.2022 - avoid upgrade issues, remove me after some months
-            final Class<?> minimalMap = Class.forName("org.appwork.storage.simplejson.MinimalMemoryMap");
-            return (Map<String, Object>) minimalMap.getConstructor(int.class).newInstance(size);
-        } catch (Throwable e) {
-            return new HashMap<String, Object>(size);
-        }
+        return new MinimalMemoryMap<String, Object>(size);
     }
 
     /**

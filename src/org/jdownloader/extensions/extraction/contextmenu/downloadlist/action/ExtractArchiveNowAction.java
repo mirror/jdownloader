@@ -3,13 +3,14 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 import java.awt.event.ActionEvent;
 import java.util.List;
 
+import jd.plugins.DownloadLink;
+
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionContextAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.SelectionInfo;
-
-import jd.plugins.DownloadLink;
+import org.jdownloader.plugins.FinalLinkState;
 
 public class ExtractArchiveNowAction extends AbstractExtractionContextAction {
     /**
@@ -54,11 +55,15 @@ public class ExtractArchiveNowAction extends AbstractExtractionContextAction {
             return false;
         }
         /**
-         * Check if at least one selected item is a finished download. </br>
-         * This is just a very simple check to provide visual feedback (grey-out action on non allowed items).
+         * Check if at least one selected item is a finished download. </br> This is just a very simple check to provide visual feedback
+         * (grey-out action on non allowed items).
          */
         for (final Object o : selection.getChildren()) {
-            if ((o instanceof DownloadLink) && ((DownloadLink) o).getFinishedDate() != -1) {
+            if (!(o instanceof DownloadLink)) {
+                continue;
+            }
+            final DownloadLink dl = (DownloadLink) o;
+            if (FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
                 return true;
             }
         }
