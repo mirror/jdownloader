@@ -23,11 +23,18 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -40,12 +47,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.OrfAt;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "" })
 public class ORFMediathek extends PluginForHost {
@@ -187,13 +188,19 @@ public class ORFMediathek extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             try {
-                con = br.openGetConnection(dllink);
+                GetRequest request = br.createGetRequest(dllink);
+                request.getHeaders().put("Accept-Encoding", "identity");
+                con = br.openRequestConnection(request);
                 this.handleConnectionErrors(br, link, con);
                 if (!looksLikeDownloadableContent(con, link)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
                 link.setProperty(PROPERTY_DIRECTURL, dllink);
                 return AvailableStatus.TRUE;
@@ -269,7 +276,8 @@ public class ORFMediathek extends PluginForHost {
         if (isAgeRestricted(url)) {
             if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_AGE_RESTRICTED_LAST_RECRAWL_TIMESTAMP, 0) < 30 * 60 * 1000) {
                 /**
-                 * Recrawl has just happened and we were still unable to download the item :( </br> This should never happen!
+                 * Recrawl has just happened and we were still unable to download the item :( </br>
+                 * This should never happen!
                  */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Jugendschutz-Recrawl fehlgeschlagen Grund 1", 10 * 60 * 1000l);
             }
@@ -407,6 +415,7 @@ public class ORFMediathek extends PluginForHost {
             /* 2023-11-27: This should never happen */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol rtmp(e)");
         } else {
+            br.getHeaders().put("Accept-Encoding", "identity");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(link, null));
             this.handleConnectionErrors(br, link, dl.getConnection());
             dl.startDownload();
