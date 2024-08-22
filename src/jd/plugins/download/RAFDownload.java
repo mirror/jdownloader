@@ -32,7 +32,4 @@ public class RAFDownload extends OldRAFDownload {
         super(BrowserAdapter.getDownloadable(downloadLink, null), request);
     }
 
-    @Deprecated
-    public void addChunksDownloading(int i) {
-    }
 }
