@@ -669,7 +669,16 @@ public class RAFChunk extends Thread {
                 }
                 endByte = ContentRange[1];
             }
-            if (endByte <= 0) {
+            if (connection.isContentDecoded()) {
+                final String encoding = connection.getHeaderField("Content-Encoding");
+                if (startByte == 0) {
+                    logger.severe("reset endByte(-1) because connection is content decoded:" + encoding);
+                    endByte = -1;
+                } else {
+                    dl.error(new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unsupported resume with content-encoding:" + encoding));
+                    return;
+                }
+            } else if (endByte <= 0) {
                 /* endByte not yet set!, use Content-Length */
                 if (contentLength > 0) {
                     final long end = contentLength - 1;

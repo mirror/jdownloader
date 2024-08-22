@@ -15,7 +15,9 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.settings.GeneralSettings;
 
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -30,6 +32,11 @@ public class BrowserAdapter {
     public static final int ERROR_REDIRECTED = -1;
 
     private static DownloadInterface getDownloadInterface(Downloadable downloadable, Request request, boolean resumeEnabled, int pluginConnections) throws Exception {
+        if (false) {
+            // was fine all the years, so better optimize handling in download system to better support edge cases with downloading
+            // content-encoding connections
+            request.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity", false));
+        }
         final jd.plugins.download.raf.OldRAFDownload dl = new jd.plugins.download.raf.OldRAFDownload(downloadable, request);
         final int customizedConnections = downloadable.getChunks();
         final int setConnections;
