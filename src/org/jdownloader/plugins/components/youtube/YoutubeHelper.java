@@ -165,7 +165,7 @@ public class YoutubeHelper {
         return br;
     }
 
-    public void setBr(Browser br) {
+    public void setBr(final Browser br) {
         this.br = prepareBrowser(br);
     }
 
@@ -205,41 +205,40 @@ public class YoutubeHelper {
         final Matcher tagsMatcher = Pattern.compile("\\*([^\\*]*)\\*").matcher(name);
         if (!tagsMatcher.find()) {
             return name;
-        } else {
-            final StringBuffer sb = new StringBuffer();
-            do {
-                final String tagSection = tagsMatcher.group(1);
-                String replacement = null;
-                tagMatcher.reset(tagSection);
-                replacerLookup: while (tagMatcher.find()) {
-                    final String tagID = tagMatcher.group(1);
-                    YoutubeReplacer replacer = REPLACER_MAP.get(tagID);
-                    if (replacer == null) {
-                        replacer = REPLACER_MAP.get(tagID.toUpperCase(Locale.ENGLISH));
-                    }
-                    if (replacer != null) {
-                        final String completeTag = tagMatcher.group(0);
-                        final String replaced = replacer.replace("*" + completeTag + "*", helper, link);
-                        if (StringUtils.isNotEmpty(replaced)) {
-                            replacement = tagSection.replace(completeTag, replaced);
-                        } else {
-                            replacement = "";
-                        }
-                        break replacerLookup;
-                    }
-                }
-                final String quotedReplacement;
-                if (replacement == null) {
-                    // keep tags with no assigned REPLACER
-                    quotedReplacement = Matcher.quoteReplacement(tagsMatcher.group(0));
-                } else {
-                    quotedReplacement = Matcher.quoteReplacement(replacement);
-                }
-                tagsMatcher.appendReplacement(sb, quotedReplacement);
-            } while (tagsMatcher.find());
-            tagsMatcher.appendTail(sb);
-            return sb.toString();
         }
+        final StringBuffer sb = new StringBuffer();
+        do {
+            final String tagSection = tagsMatcher.group(1);
+            String replacement = null;
+            tagMatcher.reset(tagSection);
+            replacerLookup: while (tagMatcher.find()) {
+                final String tagID = tagMatcher.group(1);
+                YoutubeReplacer replacer = REPLACER_MAP.get(tagID);
+                if (replacer == null) {
+                    replacer = REPLACER_MAP.get(tagID.toUpperCase(Locale.ENGLISH));
+                }
+                if (replacer != null) {
+                    final String completeTag = tagMatcher.group(0);
+                    final String replaced = replacer.replace("*" + completeTag + "*", helper, link);
+                    if (StringUtils.isNotEmpty(replaced)) {
+                        replacement = tagSection.replace(completeTag, replaced);
+                    } else {
+                        replacement = "";
+                    }
+                    break replacerLookup;
+                }
+            }
+            final String quotedReplacement;
+            if (replacement == null) {
+                // keep tags with no assigned REPLACER
+                quotedReplacement = Matcher.quoteReplacement(tagsMatcher.group(0));
+            } else {
+                quotedReplacement = Matcher.quoteReplacement(replacement);
+            }
+            tagsMatcher.appendReplacement(sb, quotedReplacement);
+        } while (tagsMatcher.find());
+        tagsMatcher.appendTail(sb);
+        return sb.toString();
     }
 
     static {
@@ -1314,12 +1313,10 @@ public class YoutubeHelper {
     }
 
     protected Browser prepareBrowser(Browser br) {
-        if (br != null) {
-            // br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, "com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1
-            // like Mac OS X;)");
-            br.setCookie("youtube.com", "PREF", "f1=50000000&hl=en");
-            br.setCookie("youtube.com", "hideBrowserUpgradeBox", "true");
-        }
+        // br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, "com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1
+        // like Mac OS X;)");
+        br.setCookie("youtube.com", "PREF", "f1=50000000&hl=en");
+        br.setCookie("youtube.com", "hideBrowserUpgradeBox", "true");
         return br;
     }
 
@@ -1442,83 +1439,84 @@ public class YoutubeHelper {
     }
 
     String descrambleThrottle(final String value) throws IOException, PluginException {
-        String input = value;
+        if (value == null) {
+            return null;
+        }
+        final String input = value;
         String output = input;
         final String playerID = getPlayerID(html5PlayerJs);
         final String resultCacheKey = value + "/" + playerID;
-        if (output != null) {
-            String function = null;
-            final String cachedResult;
-            synchronized (jsCache) {
-                cachedResult = jsCache.get(resultCacheKey);
-            }
-            if (cachedResult == null) {
-                final String functionCacheKey = "descrambleThrottle/" + playerID;
-                synchronized (jsCache) {
-                    function = jsCache.get(functionCacheKey);
-                    if (function == null) {
-                        final String html5PlayerSource = ensurePlayerSource();
-                        // String[][] func = new Regex(html5PlayerSource,
-                        // "(?x)(?:\\.get\\(\"n\"\\)\\)&&\\(b=|b=String\\.fromCharCode\\(110\\),c=a\\.get\\(b\\)\\)&&\\(c=)([a-zA-Z0-9$]+)(?:\\[(\\d+)\\])?\\([a-zA-Z0-9]\\)").getMatches();
-                        // since 2024-08-06
-                        function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=a\\.split\\(a\\.slice\\(0,0\\)\\),c=\\[.*?\\};)\n").getMatch(0);
-                        if (function == null) {
-                            // since 2024-07-31
-                            function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=String\\.prototype\\.split\\.call\\(a,\\(\"\"\\,\"\"\\)\\),c=\\[.*?\\};)\n").getMatch(0);
-                            if (function == null) {
-                                // since 2024-07
-                                function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=String\\.prototype\\.split\\.call\\(a,\"\"\\),c=\\[.*?\\};)\n").getMatch(0);
-                                if (function == null) {
-                                    // before 2024-07
-                                    function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=a\\.split\\(\"\"\\),c=\\[.*?\\};)\n").getMatch(0);
-                                }
-                            }
-                        }
-                        if (function != null) {
-                            jsCache.put(functionCacheKey, function);
-                        }
-                    }
-                }
-            }
-            if (cachedResult != null) {
-                output = cachedResult;
-            } else if (function != null) {
-                final JSShutterDelegate jsShutter = new JSShutterDelegate() {
-                    @Override
-                    public boolean isClassVisibleToScript(boolean trusted, String className) {
-                        if ("org.mozilla.javascript.JavaScriptException".equals(className)) {
-                            return true;
-                        }
-                        return trusted;
-                    }
-                };
-                try {
-                    JSRhinoPermissionRestricter.THREAD_JSSHUTTER.put(Thread.currentThread(), jsShutter);
-                    final ScriptEngineManager manager = org.jdownloader.scripting.JavaScriptEngineFactory.getScriptEngineManager(this);
-                    final ScriptEngine engine = manager.getEngineByName("javascript");
-                    final String js = "var calculate" + function + " var result=calculate(\"" + input + "\")";
-                    engine.eval(js);
-                    final String result = StringUtils.valueOfOrNull(engine.get("result"));
-                    if (result != null) {
-                        output = result;
-                        if (result.startsWith("enhanced_except")) {
-                            throw new Exception("Invalid result:" + result);
-                        } else {
-                            synchronized (jsCache) {
-                                jsCache.put(resultCacheKey, output);
-                            }
-                        }
-                    } else {
-                        throw new Exception();
-                    }
-                } catch (Exception e) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
-                } finally {
-                    JSRhinoPermissionRestricter.THREAD_JSSHUTTER.remove(Thread.currentThread());
-                }
-            }
-            logger.info("nsig(" + vid.videoID + "," + playerID + "):" + input + "->" + output + "(cached:" + (cachedResult != null) + ")");
+        String function = null;
+        final String cachedResult;
+        synchronized (jsCache) {
+            cachedResult = jsCache.get(resultCacheKey);
         }
+        if (cachedResult == null) {
+            final String functionCacheKey = "descrambleThrottle/" + playerID;
+            synchronized (jsCache) {
+                function = jsCache.get(functionCacheKey);
+                if (function == null) {
+                    final String html5PlayerSource = ensurePlayerSource();
+                    // String[][] func = new Regex(html5PlayerSource,
+                    // "(?x)(?:\\.get\\(\"n\"\\)\\)&&\\(b=|b=String\\.fromCharCode\\(110\\),c=a\\.get\\(b\\)\\)&&\\(c=)([a-zA-Z0-9$]+)(?:\\[(\\d+)\\])?\\([a-zA-Z0-9]\\)").getMatches();
+                    // since 2024-08-06
+                    function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=a\\.split\\(a\\.slice\\(0,0\\)\\),c=\\[.*?\\};)\n").getMatch(0);
+                    if (function == null) {
+                        // since 2024-07-31
+                        function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=String\\.prototype\\.split\\.call\\(a,\\(\"\"\\,\"\"\\)\\),c=\\[.*?\\};)\n").getMatch(0);
+                        if (function == null) {
+                            // since 2024-07
+                            function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=String\\.prototype\\.split\\.call\\(a,\"\"\\),c=\\[.*?\\};)\n").getMatch(0);
+                            if (function == null) {
+                                // before 2024-07
+                                function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=a\\.split\\(\"\"\\),c=\\[.*?\\};)\n").getMatch(0);
+                            }
+                        }
+                    }
+                    if (function != null) {
+                        jsCache.put(functionCacheKey, function);
+                    }
+                }
+            }
+        }
+        if (cachedResult != null) {
+            output = cachedResult;
+        } else if (function != null) {
+            final JSShutterDelegate jsShutter = new JSShutterDelegate() {
+                @Override
+                public boolean isClassVisibleToScript(boolean trusted, String className) {
+                    if ("org.mozilla.javascript.JavaScriptException".equals(className)) {
+                        return true;
+                    }
+                    return trusted;
+                }
+            };
+            try {
+                JSRhinoPermissionRestricter.THREAD_JSSHUTTER.put(Thread.currentThread(), jsShutter);
+                final ScriptEngineManager manager = org.jdownloader.scripting.JavaScriptEngineFactory.getScriptEngineManager(this);
+                final ScriptEngine engine = manager.getEngineByName("javascript");
+                final String js = "var calculate" + function + " var result=calculate(\"" + input + "\")";
+                engine.eval(js);
+                final String result = StringUtils.valueOfOrNull(engine.get("result"));
+                if (result != null) {
+                    output = result;
+                    if (result.startsWith("enhanced_except")) {
+                        throw new Exception("Invalid result:" + result);
+                    } else {
+                        synchronized (jsCache) {
+                            jsCache.put(resultCacheKey, output);
+                        }
+                    }
+                } else {
+                    throw new Exception();
+                }
+            } catch (Exception e) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
+            } finally {
+                JSRhinoPermissionRestricter.THREAD_JSSHUTTER.remove(Thread.currentThread());
+            }
+        }
+        logger.info("nsig(" + vid.videoID + "," + playerID + "):" + input + "->" + output + "(cached:" + (cachedResult != null) + ")");
         return output;
     }
 
@@ -2921,190 +2919,191 @@ public class YoutubeHelper {
     }
 
     public YoutubeStreamData convert(Map<String, Object> entry, final String src) {
-        if (entry != null) {
-            if (entry.containsKey("drm_families") || entry.containsKey("drmFamilies")) {
-                logger.info("DRM?:" + JSonStorage.toString(entry));
-                return null;
-            }
-            String url = (String) entry.get("url");
-            int throttle = -1;
-            try {
-                if (StringUtils.isEmpty(url)) {
-                    String cipher = (String) entry.get("cipher");
-                    if (cipher == null) {
-                        // 28.05.2020
-                        cipher = (String) entry.get("signatureCipher");
-                    }
-                    final UrlQuery query = UrlQuery.parse(cipher);
-                    String queryURL = query.get("url");
-                    if (StringUtils.isEmpty(queryURL)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    queryURL = URLDecoder.decode(queryURL, "UTF-8");
-                    if (queryURL.contains("&n=")) {
-                        throttle = 0;
-                        final String value = new Regex(queryURL, "&n=(.*?)(&|$)").getMatch(0);
-                        final String result = descrambleThrottle(value);
-                        if (result != null && !result.equals(value)) {
-                            queryURL = queryURL.replaceFirst("(&n=" + value + ")", "&n=" + result);
-                            throttle = 1;
-                        }
-                    }
-                    if (query.containsKey("signature")) {
-                        url = queryURL + "&signature=" + query.get("signature");
-                    } else if (query.containsKey("sig")) {
-                        url = queryURL + "&signature=" + query.get("sig");
-                    } else if (query.containsKey("s")) {
-                        String encrypted_sig = query.get("s");
-                        encrypted_sig = URLDecoder.decode(encrypted_sig, "UTF-8");
-                        final String signature = this.descrambleSignature(encrypted_sig);
-                        if (query.containsKey("sp")) {
-                            url = queryURL + "&" + query.get("sp") + "=" + Encoding.urlEncode(signature);
-                        } else {
-                            url = queryURL + "&signature=" + Encoding.urlEncode(signature);
-                        }
-                    }
-                } else if (url.contains("&n=")) {
+        if (entry == null) {
+            return null;
+        }
+        if (entry.containsKey("drm_families") || entry.containsKey("drmFamilies")) {
+            logger.info("DRM?:" + JSonStorage.toString(entry));
+            return null;
+        }
+        String url = (String) entry.get("url");
+        int throttle = -1;
+        try {
+            if (StringUtils.isEmpty(url)) {
+                String cipher = (String) entry.get("cipher");
+                if (cipher == null) {
+                    // 28.05.2020
+                    cipher = (String) entry.get("signatureCipher");
+                }
+                final UrlQuery query = UrlQuery.parse(cipher);
+                String queryURL = query.get("url");
+                if (StringUtils.isEmpty(queryURL)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                queryURL = URLDecoder.decode(queryURL, "UTF-8");
+                if (queryURL.contains("&n=")) {
                     throttle = 0;
-                    final String value = new Regex(url, "&n=(.*?)(&|$)").getMatch(0);
+                    final String value = new Regex(queryURL, "&n=(.*?)(&|$)").getMatch(0);
                     final String result = descrambleThrottle(value);
                     if (result != null && !result.equals(value)) {
-                        url = url.replaceFirst("(&n=" + value + ")", "&n=" + result);
+                        queryURL = queryURL.replaceFirst("(&n=" + value + ")", "&n=" + result);
                         throttle = 1;
                     }
                 }
-            } catch (PluginException e) {
-                logger.log(e);
-                return null;
-            } catch (IOException e) {
-                logger.log(e);
-                return null;
-            }
-            if (StringUtils.isEmpty(url)) {
-                logger.info("URL?:" + JSonStorage.toString(entry));
-                return null;
-            }
-            final String type = (String) entry.get("type");
-            if (StringUtils.equalsIgnoreCase("FORMAT_STREAM_TYPE_OTF", type)) {
-                logger.info("UNSUPPORTED OTF:" + JSonStorage.toString(entry));
-                return null;
-            }
-            final Long width = JavaScriptEngineFactory.toLong(entry.get("width"), -1);
-            final Long height = JavaScriptEngineFactory.toLong(entry.get("height"), -1);
-            final Long contentLength = JavaScriptEngineFactory.toLong(entry.get("contentLength"), -1);
-            final Long bitrate = JavaScriptEngineFactory.toLong(entry.get("bitrate"), -1);
-            final Long averageBitrate = JavaScriptEngineFactory.toLong(entry.get("averageBitrate"), -1);
-            final Long approxDurationMs = JavaScriptEngineFactory.toLong(entry.get("approxDurationMs"), -1);
-            final Long itagID = JavaScriptEngineFactory.toLong(entry.get("itag"), -1);
-            final Long fps = JavaScriptEngineFactory.toLong(entry.get("fps"), -1);
-            final String stereoLayout = (String) entry.get("stereoLayout");
-            final String projectionType = (String) entry.get("projectionType");
-            long datePublished = -1;
-            if (this.vid != null) {
-                datePublished = vid.datePublished;
-            }
-            final YoutubeITAG itag = YoutubeITAG.get(itagID.intValue(), width.intValue(), height.intValue(), fps.intValue(), null, null, datePublished);
-            if (itag == null) {
-                logger.info("UNSUPPORTED/UNKNOWN?:" + JSonStorage.toString(entry));
-                try {
-                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !Application.isJared(null)) {
-                        Dialog.getInstance().showMessageDialog("Unknown ITag found: " + itagID + "\r\nAsk Coalado to Update the ItagHelper for Video ID: " + vid.videoID);
+                if (query.containsKey("signature")) {
+                    url = queryURL + "&signature=" + query.get("signature");
+                } else if (query.containsKey("sig")) {
+                    url = queryURL + "&signature=" + query.get("sig");
+                } else if (query.containsKey("s")) {
+                    String encrypted_sig = query.get("s");
+                    encrypted_sig = URLDecoder.decode(encrypted_sig, "UTF-8");
+                    final String signature = this.descrambleSignature(encrypted_sig);
+                    if (query.containsKey("sp")) {
+                        url = queryURL + "&" + query.get("sp") + "=" + Encoding.urlEncode(signature);
+                    } else {
+                        url = queryURL + "&signature=" + Encoding.urlEncode(signature);
                     }
-                } catch (Exception e) {
-                    logger.log(e);
                 }
-                return null;
-            } else if (Boolean.FALSE.equals(isSupported(itag))) {
-                this.logger.info("FFmpeg support for Itag'" + itag + "' is missing");
-                return null;
+            } else if (url.contains("&n=")) {
+                throttle = 0;
+                final String value = new Regex(url, "&n=(.*?)(&|$)").getMatch(0);
+                final String result = descrambleThrottle(value);
+                if (result != null && !result.equals(value)) {
+                    url = url.replaceFirst("(&n=" + value + ")", "&n=" + result);
+                    throttle = 1;
+                }
             }
-            final YoutubeStreamData ret = new YoutubeStreamData(src, vid, url, itag, null);
-            ret.setThrottle(throttle);
-            if (height > 0) {
-                ret.setHeight(height.intValue());
-            }
-            if (width > 0) {
-                ret.setWidth(width.intValue());
-            }
-            if (fps > 0) {
-                ret.setFps(fps.toString());
-            }
-            if (contentLength > 0) {
-                ret.setContentLength(contentLength.longValue());
-            }
-            if (bitrate > 0) {
-                ret.setBitrate(bitrate.intValue());
-            }
-            if (averageBitrate > 0) {
-                ret.setAverageBitrate(averageBitrate.intValue());
-            }
-            if (approxDurationMs > 0) {
-                ret.setApproxDurationMs(approxDurationMs.longValue());
-            }
-            // stereoLayout:STEREO_LAYOUT_LEFT_RIGHT
-            // projectionType:RECTANGULAR,MESH,EQUIRECTANGULAR
-            if (StringUtils.equalsIgnoreCase(projectionType, "RECTANGULAR")) {
-                ret.setProjectionType(0);
-            } else if (StringUtils.equalsIgnoreCase(projectionType, "MESH")) {
-                ret.setProjectionType(2);
-            } else if (StringUtils.equalsIgnoreCase(projectionType, "EQUIRECTANGULAR")) {
-                ret.setProjectionType(2);
-            }
-            return ret;
+        } catch (PluginException e) {
+            logger.log(e);
+            return null;
+        } catch (IOException e) {
+            logger.log(e);
+            return null;
         }
-        return null;
+        if (StringUtils.isEmpty(url)) {
+            logger.info("URL?:" + JSonStorage.toString(entry));
+            return null;
+        }
+        final String type = (String) entry.get("type");
+        if (StringUtils.equalsIgnoreCase("FORMAT_STREAM_TYPE_OTF", type)) {
+            logger.info("UNSUPPORTED OTF:" + JSonStorage.toString(entry));
+            return null;
+        }
+        final Long width = JavaScriptEngineFactory.toLong(entry.get("width"), -1);
+        final Long height = JavaScriptEngineFactory.toLong(entry.get("height"), -1);
+        final Long contentLength = JavaScriptEngineFactory.toLong(entry.get("contentLength"), -1);
+        final Long bitrate = JavaScriptEngineFactory.toLong(entry.get("bitrate"), -1);
+        final Long averageBitrate = JavaScriptEngineFactory.toLong(entry.get("averageBitrate"), -1);
+        final Long approxDurationMs = JavaScriptEngineFactory.toLong(entry.get("approxDurationMs"), -1);
+        final Long itagID = JavaScriptEngineFactory.toLong(entry.get("itag"), -1);
+        final Long fps = JavaScriptEngineFactory.toLong(entry.get("fps"), -1);
+        final String stereoLayout = (String) entry.get("stereoLayout");
+        final String projectionType = (String) entry.get("projectionType");
+        long datePublished = -1;
+        if (this.vid != null) {
+            datePublished = vid.datePublished;
+        }
+        final YoutubeITAG itag = YoutubeITAG.get(itagID.intValue(), width.intValue(), height.intValue(), fps.intValue(), null, null, datePublished);
+        if (itag == null) {
+            logger.info("UNSUPPORTED/UNKNOWN?:" + JSonStorage.toString(entry));
+            try {
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !Application.isJared(null)) {
+                    Dialog.getInstance().showMessageDialog("Unknown ITag found: " + itagID + "\r\nAsk Coalado to Update the ItagHelper for Video ID: " + vid.videoID);
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            }
+            return null;
+        } else if (Boolean.FALSE.equals(isSupported(itag))) {
+            this.logger.info("FFmpeg support for Itag'" + itag + "' is missing");
+            return null;
+        }
+        final YoutubeStreamData ret = new YoutubeStreamData(src, vid, url, itag, null);
+        ret.setThrottle(throttle);
+        if (height > 0) {
+            ret.setHeight(height.intValue());
+        }
+        if (width > 0) {
+            ret.setWidth(width.intValue());
+        }
+        if (fps > 0) {
+            ret.setFps(fps.toString());
+        }
+        if (contentLength > 0) {
+            ret.setContentLength(contentLength.longValue());
+        }
+        if (bitrate > 0) {
+            ret.setBitrate(bitrate.intValue());
+        }
+        if (averageBitrate > 0) {
+            ret.setAverageBitrate(averageBitrate.intValue());
+        }
+        if (approxDurationMs > 0) {
+            ret.setApproxDurationMs(approxDurationMs.longValue());
+        }
+        // stereoLayout:STEREO_LAYOUT_LEFT_RIGHT
+        // projectionType:RECTANGULAR,MESH,EQUIRECTANGULAR
+        if (StringUtils.equalsIgnoreCase(projectionType, "RECTANGULAR")) {
+            ret.setProjectionType(0);
+        } else if (StringUtils.equalsIgnoreCase(projectionType, "MESH")) {
+            ret.setProjectionType(2);
+        } else if (StringUtils.equalsIgnoreCase(projectionType, "EQUIRECTANGULAR")) {
+            ret.setProjectionType(2);
+        }
+        return ret;
     }
 
     private int collectMapsFromPlayerResponse(Map<String, Object> map, String src) {
+        if (map == null) {
+            return 0;
+        }
         int ret = 0;
-        if (map != null) {
-            final List<Map<String, Object>> captionTracks = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(map, "captions/playerCaptionsTracklistRenderer/captionTracks");
-            if (captionTracks != null) {
-                subtitleUrls.add(JSonStorage.toString(captionTracks));
-            }
-            final Map<String, Object> streamingData = (Map<String, Object>) map.get("streamingData");
-            if (adaptiveFmtsEnabled && streamingData != null && streamingData.containsKey("adaptiveFormats")) {
-                final List<Map<String, Object>> adaptiveFormats = (List<Map<String, Object>>) streamingData.get("adaptiveFormats");
-                if (adaptiveFormats != null && adaptiveFormats.size() > 0) {
-                    final String dataSrc = "new_adaptive_fmts_map." + src;
-                    for (final Map<String, Object> format : adaptiveFormats) {
-                        final YoutubeStreamData data = convert(format, dataSrc);
-                        if (data != null) {
-                            if (fmtMaps.add(new StreamMap(data, dataSrc))) {
-                                ret++;
-                            }
+        final List<Map<String, Object>> captionTracks = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(map, "captions/playerCaptionsTracklistRenderer/captionTracks");
+        if (captionTracks != null) {
+            subtitleUrls.add(JSonStorage.toString(captionTracks));
+        }
+        final Map<String, Object> streamingData = (Map<String, Object>) map.get("streamingData");
+        if (adaptiveFmtsEnabled && streamingData != null && streamingData.containsKey("adaptiveFormats")) {
+            final List<Map<String, Object>> adaptiveFormats = (List<Map<String, Object>>) streamingData.get("adaptiveFormats");
+            if (adaptiveFormats != null && adaptiveFormats.size() > 0) {
+                final String dataSrc = "new_adaptive_fmts_map." + src;
+                for (final Map<String, Object> format : adaptiveFormats) {
+                    final YoutubeStreamData data = convert(format, dataSrc);
+                    if (data != null) {
+                        if (fmtMaps.add(new StreamMap(data, dataSrc))) {
+                            ret++;
                         }
                     }
                 }
             }
-            if (fmtMapEnabled && streamingData != null && streamingData.containsKey("formats")) {
-                final List<Map<String, Object>> formats = (List<Map<String, Object>>) streamingData.get("formats");
-                if (formats != null && formats.size() > 0) {
-                    final String dataSrc = "new_fmt_stream_map." + src;
-                    for (final Map<String, Object> format : formats) {
-                        final YoutubeStreamData data = convert(format, dataSrc);
-                        if (data != null) {
-                            if (fmtMaps.add(new StreamMap(data, dataSrc))) {
-                                ret++;
-                            }
+        }
+        if (fmtMapEnabled && streamingData != null && streamingData.containsKey("formats")) {
+            final List<Map<String, Object>> formats = (List<Map<String, Object>>) streamingData.get("formats");
+            if (formats != null && formats.size() > 0) {
+                final String dataSrc = "new_fmt_stream_map." + src;
+                for (final Map<String, Object> format : formats) {
+                    final YoutubeStreamData data = convert(format, dataSrc);
+                    if (data != null) {
+                        if (fmtMaps.add(new StreamMap(data, dataSrc))) {
+                            ret++;
                         }
                     }
                 }
             }
-            if (dashMpdEnabled && streamingData != null && streamingData.containsKey("dashManifestUrl")) {
-                final String url = (String) streamingData.get("dashManifestUrl");
-                if (StringUtils.isNotEmpty(url)) {
-                    try {
-                        final String dataSrc = "new_dashManifestUrl." + src;
-                        final List<YoutubeStreamData> datas = parseDashManifest(dataSrc, br, br.getURL(url).toString());
-                        for (YoutubeStreamData data : datas) {
-                            if (fmtMaps.add(new StreamMap(data, dataSrc))) {
-                                ret++;
-                            }
+        }
+        if (dashMpdEnabled && streamingData != null && streamingData.containsKey("dashManifestUrl")) {
+            final String url = (String) streamingData.get("dashManifestUrl");
+            if (StringUtils.isNotEmpty(url)) {
+                try {
+                    final String dataSrc = "new_dashManifestUrl." + src;
+                    final List<YoutubeStreamData> datas = parseDashManifest(dataSrc, br, br.getURL(url).toString());
+                    for (YoutubeStreamData data : datas) {
+                        if (fmtMaps.add(new StreamMap(data, dataSrc))) {
+                            ret++;
                         }
-                    } catch (Exception e) {
-                        logger.log(e);
                     }
+                } catch (Exception e) {
+                    logger.log(e);
                 }
             }
         }
@@ -3215,37 +3214,38 @@ public class YoutubeHelper {
 
     private long parseMPDDuration(final String url) {
         final String[] duration = new Regex(url, "dur/(\\d+)(\\.(\\d+))?").getRow(0);
-        if (duration != null) {
-            final String secs = duration[0];
-            final String msns = duration[2];
-            if (duration.length == 1 || msns == null) {
-                return Long.parseLong(secs) * 1000;
-            } else {
-                long ret = Long.parseLong(secs) * 1000;
-                if (msns.length() == 1) {
-                    ret += Long.parseLong(msns) * 100;
-                } else if (msns.length() == 2) {
-                    ret += Long.parseLong(msns) * 10;
-                } else if (msns.length() == 3) {
-                    ret += Long.parseLong(msns);
-                } else {
-                    ret += Long.parseLong(msns.substring(0, 3));
-                }
-                return ret;
-            }
+        if (duration == null) {
+            return -1;
         }
-        return -1;
+        final String secs = duration[0];
+        final String msns = duration[2];
+        if (duration.length == 1 || msns == null) {
+            return Long.parseLong(secs) * 1000;
+        } else {
+            long ret = Long.parseLong(secs) * 1000;
+            if (msns.length() == 1) {
+                ret += Long.parseLong(msns) * 100;
+            } else if (msns.length() == 2) {
+                ret += Long.parseLong(msns) * 10;
+            } else if (msns.length() == 3) {
+                ret += Long.parseLong(msns);
+            } else {
+                ret += Long.parseLong(msns.substring(0, 3));
+            }
+            return ret;
+        }
     }
 
     private void collectMpdMap(String htmlCode, String regex, String src) {
         String map = new Regex(htmlCode, regex).getMatch(0);
-        if (map != null) {
-            map = JSonStorage.restoreFromString(map, TypeRef.STRING);
-            if (StringUtils.isNotEmpty(map)) {
-                final String url = map;
-                if (url != null) {
-                    mpdUrls.add(new StreamMap(url, src));
-                }
+        if (map == null) {
+            return;
+        }
+        map = JSonStorage.restoreFromString(map, TypeRef.STRING);
+        if (StringUtils.isNotEmpty(map)) {
+            final String url = map;
+            if (url != null) {
+                mpdUrls.add(new StreamMap(url, src));
             }
         }
     }
@@ -3255,12 +3255,10 @@ public class YoutubeHelper {
         if (StringUtils.isNotEmpty(rentalText)) {
             logger.warning("Download not possible: " + rentalText);
             throw new Exception(PAID_VIDEO + rentalText);
-        }
-        if (br.containsHTML("<meta itemprop=\"paid\" content=\"True\">")) {
+        } else if (br.containsHTML("<meta itemprop=\"paid\" content=\"True\">")) {
             logger.warning("Download not possible: You have to pay to watch this video");
             throw new Exception(PAID_VIDEO + " Download not possible");
-        }
-        if (br.containsHTML("watch-checkout-offers") && !br.containsHTML("The Polymer Project Authors. All rights reserved")) {
+        } else if (br.containsHTML("watch-checkout-offers") && !br.containsHTML("The Polymer Project Authors. All rights reserved")) {
             logger.warning("Download not possible: You have to pay to watch this video");
             throw new Exception(PAID_VIDEO + "Download not possible");
         }
@@ -3589,35 +3587,36 @@ public class YoutubeHelper {
     private final static Object                   FFMPEG_LOCK            = new Object();
 
     private Boolean isSupported(final YoutubeITAG itag) {
-        if (itag != null) {
-            synchronized (FFMPEG_LOCK) {
-                if (FFMPEG_SUPPORTED_FLAGS == null) {
-                    final FFmpeg ffmpeg = new FFmpeg(null) {
-                        @Override
-                        public LogInterface getLogger() {
-                            return logger;
-                        }
-                    };
-                    if (ffmpeg.isAvailable() && ffmpeg.isCompatible()) {
-                        FFMPEG_SUPPORTED_FLAGS = ffmpeg.getSupportedFlags();
+        if (itag == null) {
+            return null;
+        }
+        synchronized (FFMPEG_LOCK) {
+            if (FFMPEG_SUPPORTED_FLAGS == null) {
+                final FFmpeg ffmpeg = new FFmpeg(null) {
+                    @Override
+                    public LogInterface getLogger() {
+                        return logger;
+                    }
+                };
+                if (ffmpeg.isAvailable() && ffmpeg.isCompatible()) {
+                    FFMPEG_SUPPORTED_FLAGS = ffmpeg.getSupportedFlags();
+                }
+            }
+            if (FFMPEG_SUPPORTED_FLAGS != null) {
+                if (itag.getVideoCodec() != null) {
+                    switch (itag.getVideoCodec()) {
+                    case AV1:
+                        return FFMPEG_SUPPORTED_FLAGS.contains(AbstractFFmpegBinary.FLAG.AV1);
                     }
                 }
-                if (FFMPEG_SUPPORTED_FLAGS != null) {
-                    if (itag.getVideoCodec() != null) {
-                        switch (itag.getVideoCodec()) {
-                        case AV1:
-                            return FFMPEG_SUPPORTED_FLAGS.contains(AbstractFFmpegBinary.FLAG.AV1);
-                        }
-                    }
-                    if (itag.getAudioCodec() != null) {
-                        switch (itag.getAudioCodec()) {
-                        case OPUS:
-                        case OPUS_SPATIAL:
-                            return FFMPEG_SUPPORTED_FLAGS.contains(AbstractFFmpegBinary.FLAG.OPUS);
-                        case VORBIS:
-                        case VORBIS_SPATIAL:
-                            return FFMPEG_SUPPORTED_FLAGS.contains(AbstractFFmpegBinary.FLAG.VORBIS);
-                        }
+                if (itag.getAudioCodec() != null) {
+                    switch (itag.getAudioCodec()) {
+                    case OPUS:
+                    case OPUS_SPATIAL:
+                        return FFMPEG_SUPPORTED_FLAGS.contains(AbstractFFmpegBinary.FLAG.OPUS);
+                    case VORBIS:
+                    case VORBIS_SPATIAL:
+                        return FFMPEG_SUPPORTED_FLAGS.contains(AbstractFFmpegBinary.FLAG.VORBIS);
                     }
                 }
             }
@@ -3630,8 +3629,7 @@ public class YoutubeHelper {
             logger.info("Stream is not supported: " + query);
             vid.error = "RTMP(E) Stream not supported";
             return null;
-        }
-        if (StringUtils.equals(query.get("stream_type"), "3")) {
+        } else if (StringUtils.equals(query.get("stream_type"), "3")) {
             logger.info("UNSUPPORTED OTF:" + query);
             return null;
         }
@@ -3993,8 +3991,7 @@ public class YoutubeHelper {
     }
 
     public static List<VariantIDStorable> readExtraList() {
-        YoutubeConfig cf = PluginJsonConfig.get(YoutubeConfig.class);
-        List<VariantIDStorable> list = new ArrayList<VariantIDStorable>();
+        final List<VariantIDStorable> list = new ArrayList<VariantIDStorable>();
         // List<VariantIDStorable> configList = cf.getExtra();
         // if (configList != null) {
         // for (VariantIDStorable obj : configList) {
@@ -4016,8 +4013,7 @@ public class YoutubeHelper {
     }
 
     public static List<VariantIDStorable> readBlacklist() {
-        YoutubeConfig cf = PluginJsonConfig.get(YoutubeConfig.class);
-        List<VariantIDStorable> list = new ArrayList<VariantIDStorable>();
+        final List<VariantIDStorable> list = new ArrayList<VariantIDStorable>();
         // List<VariantIDStorable> configList = cf.getDisabledVariants();
         // if (configList != null) {
         // for (VariantIDStorable obj : configList) {
