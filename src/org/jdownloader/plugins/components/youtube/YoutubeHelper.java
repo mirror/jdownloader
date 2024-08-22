@@ -1387,10 +1387,12 @@ public class YoutubeHelper {
     private final boolean            fmtMapEnabled           = true;
     private String                   html5PlayerJs;
     private YoutubeClipData          vid;
+    private String                   playlistID              = null;
     private Map<String, Object>      ytInitialData;
     private Map<String, Object>      ytInitialPlayerResponse = null;
     private Map<String, Object>      ytPlayerConfig;
     private Map<String, Object>      ytCfgSet;
+    private List<YoutubeStreamData>  playlistThumbnails      = null;
 
     /**
      * @return the ytInitialData
@@ -4248,6 +4250,12 @@ public class YoutubeHelper {
                 this.ytCfgSet = null;
             }
         }
+        if (this.playlistID != null) {
+            playlistThumbnails = this.loadThumbnails(null, false);
+            if (playlistThumbnails == null) {
+                logger.warning("Failed to crawl playlist thumbnails");
+            }
+        }
     }
 
     public String getChannelPlaylistCrawlerContainerUrlOverride(final String fallback) {
@@ -4264,5 +4272,21 @@ public class YoutubeHelper {
      */
     public void setChannelPlaylistCrawlerContainerUrlOverride(String channelPlaylistCrawlerContainerUrlOverride) {
         this.channelPlaylistCrawlerContainerUrlOverride = channelPlaylistCrawlerContainerUrlOverride;
+    }
+
+    public String getPlaylistID() {
+        return playlistID;
+    }
+
+    public void setPlaylistID(String playlistID) {
+        this.playlistID = playlistID;
+    }
+
+    public List<YoutubeStreamData> getPlaylistThumbnails() {
+        return playlistThumbnails;
+    }
+
+    public void setPlaylistThumbnails(List<YoutubeStreamData> playlistThumbnails) {
+        this.playlistThumbnails = playlistThumbnails;
     }
 }

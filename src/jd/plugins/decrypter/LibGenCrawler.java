@@ -267,11 +267,11 @@ public class LibGenCrawler extends PluginForDecrypt {
                 /* TODO: Decide if this is still needed. If so: Add settings for API/mirrors/cover_url */
                 if (!accessedContenturl) {
                     br.getPage(contenturl);
-                }
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (br.containsHTML("(?i)entry not found in the database")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    if (br.getHttpConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else if (br.containsHTML("(?i)entry not found in the database")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                 }
                 String title = br.getRegex(md5 + "[^>]*>([^<>\"]+)<").getMatch(0);
                 if (title != null) {

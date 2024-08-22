@@ -3,18 +3,20 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Map;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
-
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveme.com" }, urls = { "https?://(?:www\\.)?liveme\\.com/(?:media/play/\\?videoid=\\d+|media/liveshort/dist/\\?videoid=\\d+&.*?|live\\.html\\?videoid=\\d+.*?|.*?/\\d+/index.html)" })
 public class LiveMeCom extends PluginForDecrypt {
@@ -23,13 +25,22 @@ public class LiveMeCom extends PluginForDecrypt {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.getCryptedUrl();
         final String videoid = getVideoID(parameter);
-        br.setFollowRedirects(true);
         final String vali = vali(4) + "l" + vali(4) + "m" + vali(5);
         br.postPage("https://live.ksmobile.net/live/queryinfo", "userid=1&videoid=" + videoid + "&area=&h5=1&vali=" + vali);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) response.get("data");
         final Map<String, Object> video_info = (Map<String, Object>) data.get("video_info");
@@ -44,8 +55,7 @@ public class LiveMeCom extends PluginForDecrypt {
         } else if (StringUtils.isNotEmpty(url)) {
             link = createDownloadlink(url);
         } else {
-            ret.add(createOfflinelink(parameter));
-            return ret;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (videosize != null) {
             link.setDownloadSize(JavaScriptEngineFactory.toLong(videosize, -1));
@@ -78,10 +88,10 @@ public class LiveMeCom extends PluginForDecrypt {
         return A;
     }
 
-    private String getVideoID(String parameter) {
-        String result = new Regex(parameter, "[&?]videoid=(\\d+)").getMatch(0);
+    private String getVideoID(final String url) {
+        String result = new Regex(url, "(?i)[&?]videoid=(\\d+)").getMatch(0);
         if (result == null) {
-            result = new Regex(parameter, "/(\\d+)/index\\.html").getMatch(0);
+            result = new Regex(url, "(?i)/(\\d+)/index\\.html").getMatch(0);
         }
         return result;
     }

@@ -8,8 +8,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.plugins.DownloadLink;
-
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
@@ -21,6 +19,8 @@ import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
+
+import jd.plugins.DownloadLink;
 
 public class YoutubeClipData {
     /**
@@ -73,32 +73,35 @@ public class YoutubeClipData {
      * @return
      */
     public boolean guessSBSorHOU3D() {
-        if (keywords != null) {
-            final StringBuilder sb = new StringBuilder();
-            for (String s : keywords) {
-                sb.append(" ").append(s.toLowerCase(Locale.ENGLISH));
-            }
-            if (title != null) {
-                sb.append(" ").append(title.toLowerCase(Locale.ENGLISH));
-            }
-            if (description != null) {
-                sb.append(" ").append(description.toLowerCase(Locale.ENGLISH));
-            }
-            final String str = sb.toString();
-            // should we be using sb instead of title here?
-            if (title != null && title.contains("3d")) {
-                if (str.contains("sbs")) {
-                    return true;
-                } else if (str.contains("side") && str.contains("by")) {
-                    return true;
-                } else if (str.contains("hou")) {
-                    return true;
-                } else if (str.contains("cardboard")) {
-                    return true;
-                }
-            }
+        if (keywords == null) {
+            return false;
         }
-        return false;
+        final StringBuilder sb = new StringBuilder();
+        for (String s : keywords) {
+            sb.append(" ").append(s.toLowerCase(Locale.ENGLISH));
+        }
+        if (title != null) {
+            sb.append(" ").append(title.toLowerCase(Locale.ENGLISH));
+        }
+        if (description != null) {
+            sb.append(" ").append(description.toLowerCase(Locale.ENGLISH));
+        }
+        final String str = sb.toString();
+        // should we be using sb instead of title here?
+        if (title == null || !title.contains("3d")) {
+            return false;
+        }
+        if (str.contains("sbs")) {
+            return true;
+        } else if (str.contains("side") && str.contains("by")) {
+            return true;
+        } else if (str.contains("hou")) {
+            return true;
+        } else if (str.contains("cardboard")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public Projection getProjection() {
