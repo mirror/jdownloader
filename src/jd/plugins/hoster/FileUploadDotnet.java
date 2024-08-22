@@ -134,7 +134,7 @@ public class FileUploadDotnet extends antiDDoSForHost {
                 }.getToken();
                 download.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, download);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, download, false, 1);
         } else if (new Regex(link.getDownloadURL(), PAT_VIEW).matches()) {
             /* DownloadFiles */
             String downloadurl = br.getRegex("<center>\n<a href=\"(.*?)\" rel=\"lightbox\"").getMatch(0);

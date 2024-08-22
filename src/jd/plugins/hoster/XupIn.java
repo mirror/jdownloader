@@ -19,9 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
@@ -34,6 +31,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class XupIn extends PluginForHost {
@@ -160,7 +160,7 @@ public class XupIn extends PluginForHost {
             dlform.put(captchafieldid, code);
         }
         dlform.remove(null);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, false, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             String page = br.followConnection(true);
             if (page.contains("richtige Passwort erneut ein")) {
