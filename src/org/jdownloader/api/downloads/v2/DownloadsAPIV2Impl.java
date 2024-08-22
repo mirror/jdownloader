@@ -7,6 +7,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DecrypterRetryException.RetryReason;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
+import jd.plugins.PluginProgress;
+import jd.plugins.PluginStateCollection;
+
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.api.RemoteAPIController;
@@ -31,18 +43,6 @@ import org.jdownloader.plugins.WaitForAccountSkipReason;
 import org.jdownloader.plugins.WaitForAccountTrafficSkipReason;
 import org.jdownloader.plugins.WaitWhileWaitingSkipReasonIsSet;
 import org.jdownloader.plugins.WaitingSkipReason;
-
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DecrypterRetryException.RetryReason;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
-import jd.plugins.PluginProgress;
-import jd.plugins.PluginStateCollection;
 
 public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     private final PackageControllerUtils<FilePackage, DownloadLink> packageControllerUtils;
@@ -110,40 +110,44 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     @Override
     public List<DownloadLinkAPIStorableV2> queryLinks(LinkQueryStorable queryParams) {
-        List<DownloadLinkAPIStorableV2> result = new ArrayList<DownloadLinkAPIStorableV2>();
-        DownloadController dlc = DownloadController.getInstance();
-        final List<FilePackage> packages;
-        if (queryParams.getPackageUUIDs() != null && queryParams.getPackageUUIDs().length > 0) {
-            packages = packageControllerUtils.getPackages(queryParams.getPackageUUIDs());
-        } else {
-            packages = dlc.getPackagesCopy();
-        }
+        final List<DownloadLinkAPIStorableV2> result = new ArrayList<DownloadLinkAPIStorableV2>();
+        final DownloadController dlc = DownloadController.getInstance();
         final List<DownloadLink> links = new ArrayList<DownloadLink>();
-        if (queryParams.getJobUUIDs() != null && queryParams.getJobUUIDs().length > 0) {
-            final Set<Long> jobUUIDs = new HashSet<Long>();
-            for (final long id : queryParams.getJobUUIDs()) {
-                jobUUIDs.add(id);
-            }
-            for (FilePackage pkg : packages) {
-                final boolean readL = pkg.getModifyLock().readLock();
-                try {
-                    for (DownloadLink link : pkg.getChildren()) {
-                        if (jobUUIDs.contains(link.getJobID())) {
-                            links.add(link);
-                        }
-                    }
-                } finally {
-                    pkg.getModifyLock().readUnlock(readL);
-                }
-            }
+        if (queryParams.getLinkUUIDs() != null && queryParams.getLinkUUIDs().length > 0) {
+            links.addAll(packageControllerUtils.getChildren(queryParams.getLinkUUIDs()));
         } else {
-            // collect children of the selected packages and convert to storables for response
-            for (FilePackage pkg : packages) {
-                final boolean b = pkg.getModifyLock().readLock();
-                try {
-                    links.addAll(pkg.getChildren());
-                } finally {
-                    pkg.getModifyLock().readUnlock(b);
+            final List<FilePackage> packages;
+            if (queryParams.getPackageUUIDs() != null && queryParams.getPackageUUIDs().length > 0) {
+                packages = packageControllerUtils.getPackages(queryParams.getPackageUUIDs());
+            } else {
+                packages = dlc.getPackagesCopy();
+            }
+            if (queryParams.getJobUUIDs() != null && queryParams.getJobUUIDs().length > 0) {
+                final Set<Long> jobUUIDs = new HashSet<Long>();
+                for (final long id : queryParams.getJobUUIDs()) {
+                    jobUUIDs.add(id);
+                }
+                for (FilePackage pkg : packages) {
+                    final boolean readL = pkg.getModifyLock().readLock();
+                    try {
+                        for (DownloadLink link : pkg.getChildren()) {
+                            if (jobUUIDs.contains(link.getJobID())) {
+                                links.add(link);
+                            }
+                        }
+                    } finally {
+                        pkg.getModifyLock().readUnlock(readL);
+                    }
+                }
+            } else {
+                // collect children of the selected packages and convert to storables for response
+                for (FilePackage pkg : packages) {
+                    final boolean b = pkg.getModifyLock().readLock();
+                    try {
+                        links.addAll(pkg.getChildren());
+                    } finally {
+                        pkg.getModifyLock().readUnlock(b);
+                    }
                 }
             }
         }
@@ -417,7 +421,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                         dls.setStatus(label);
                     }
                 }
-                    break;
+                break;
                 case SUCCESSFUL: {
                     entry.put("iconKey", IconKey.ICON_EXTRACT_OK);
                     final String label = extractionStatus.getExplanation();
@@ -427,7 +431,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                         dls.setStatus(label);
                     }
                 }
-                    break;
+                break;
                 case RUNNING: {
                     entry.put("iconKey", IconKey.ICON_EXTRACT);
                     final String label = extractionStatus.getExplanation();
@@ -437,7 +441,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                         dls.setStatus(label);
                     }
                 }
-                    break;
+                break;
                 default:
                     break;
                 }

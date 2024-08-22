@@ -19,6 +19,26 @@ import java.util.zip.ZipInputStream;
 
 import javax.swing.Icon;
 
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.ConfirmLinksSettings;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledLinkModifiers;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackageView;
+import jd.controlling.linkcrawler.modifier.CommentModifier;
+import jd.controlling.linkcrawler.modifier.DownloadFolderModifier;
+import jd.controlling.linkcrawler.modifier.PackageNameModifier;
+import jd.plugins.DecrypterRetryException.RetryReason;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -49,26 +69,6 @@ import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.LinkgrabberInterface;
 import org.jdownloader.myjdownloader.client.json.JsonMap;
 import org.jdownloader.settings.GeneralSettings;
-
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.ConfirmLinksSettings;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.CrawledLinkModifiers;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackageView;
-import jd.controlling.linkcrawler.modifier.CommentModifier;
-import jd.controlling.linkcrawler.modifier.DownloadFolderModifier;
-import jd.controlling.linkcrawler.modifier.PackageNameModifier;
-import jd.plugins.DecrypterRetryException.RetryReason;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     private LogSource                                                 logger;
@@ -197,40 +197,45 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     @SuppressWarnings("rawtypes")
     @Override
     public ArrayList<CrawledLinkAPIStorableV2> queryLinks(CrawledLinkQueryStorable queryParams) throws BadParameterException {
-        ArrayList<CrawledLinkAPIStorableV2> result = new ArrayList<CrawledLinkAPIStorableV2>();
-        LinkCollector lc = LinkCollector.getInstance();
-        final List<CrawledPackage> matched;
-        if (queryParams.getPackageUUIDs() != null && queryParams.getPackageUUIDs().length > 0) {
-            matched = packageControllerUtils.getPackages(queryParams.getPackageUUIDs());
-        } else {
-            matched = lc.getPackagesCopy();
-        }
+        final ArrayList<CrawledLinkAPIStorableV2> result = new ArrayList<CrawledLinkAPIStorableV2>();
+        final LinkCollector lc = LinkCollector.getInstance();
         final List<CrawledLink> links = new ArrayList<CrawledLink>();
-        if (queryParams.getJobUUIDs() != null && queryParams.getJobUUIDs().length > 0) {
-            final Set<Long> jobUUIDs = new HashSet<Long>();
-            for (final long id : queryParams.getJobUUIDs()) {
-                jobUUIDs.add(id);
-            }
-            for (CrawledPackage pkg : matched) {
-                final boolean readL = pkg.getModifyLock().readLock();
-                try {
-                    for (CrawledLink link : pkg.getChildren()) {
-                        if (jobUUIDs.contains(link.getJobID())) {
-                            links.add(link);
-                        }
-                    }
-                } finally {
-                    pkg.getModifyLock().readUnlock(readL);
-                }
-            }
+        if (queryParams.getLinkUUIDs() != null && queryParams.getLinkUUIDs().length > 0) {
+            links.addAll(packageControllerUtils.getChildren(queryParams.getLinkUUIDs()));
         } else {
-            // collect children of the selected packages and convert to storables for response
-            for (CrawledPackage pkg : matched) {
-                final boolean readL = pkg.getModifyLock().readLock();
-                try {
-                    links.addAll(pkg.getChildren());
-                } finally {
-                    pkg.getModifyLock().readUnlock(readL);
+            final List<CrawledPackage> matched;
+            if (queryParams.getPackageUUIDs() != null && queryParams.getPackageUUIDs().length > 0) {
+                matched = packageControllerUtils.getPackages(queryParams.getPackageUUIDs());
+            } else {
+                matched = lc.getPackagesCopy();
+            }
+
+            if (queryParams.getJobUUIDs() != null && queryParams.getJobUUIDs().length > 0) {
+                final Set<Long> jobUUIDs = new HashSet<Long>();
+                for (final long id : queryParams.getJobUUIDs()) {
+                    jobUUIDs.add(id);
+                }
+                for (CrawledPackage pkg : matched) {
+                    final boolean readL = pkg.getModifyLock().readLock();
+                    try {
+                        for (CrawledLink link : pkg.getChildren()) {
+                            if (jobUUIDs.contains(link.getJobID())) {
+                                links.add(link);
+                            }
+                        }
+                    } finally {
+                        pkg.getModifyLock().readUnlock(readL);
+                    }
+                }
+            } else {
+                // collect children of the selected packages and convert to storables for response
+                for (CrawledPackage pkg : matched) {
+                    final boolean readL = pkg.getModifyLock().readLock();
+                    try {
+                        links.addAll(pkg.getChildren());
+                    } finally {
+                        pkg.getModifyLock().readUnlock(readL);
+                    }
                 }
             }
         }

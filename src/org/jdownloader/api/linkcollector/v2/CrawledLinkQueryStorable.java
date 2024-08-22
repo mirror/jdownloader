@@ -1,18 +1,14 @@
 package org.jdownloader.api.linkcollector.v2;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.StorableDeprecatedSince;
 import org.jdownloader.myjdownloader.client.bindings.linkgrabber.CrawledLinkQuery;
 
 public class CrawledLinkQueryStorable extends CrawledLinkQuery implements Storable {
-    public static void main(String[] args) {
-        System.out.println(CrawledLinkQueryStorable.class.getSimpleName() + "= ");
-        System.out.println(JSonStorage.toString(new CrawledLinkQueryStorable()));
-    }
 
     public static final CrawledLinkQueryStorable FULL = new CrawledLinkQueryStorable();
     static {
+        FULL.setAdvancedStatus(true);
         FULL.setAvailability(true);
         FULL.setBytesTotal(true);
         FULL.setComment(true);
@@ -24,6 +20,7 @@ public class CrawledLinkQueryStorable extends CrawledLinkQuery implements Storab
         FULL.setVariantIcon(true);
         FULL.setVariantID(true);
         FULL.setVariantName(true);
+        FULL.setAddedDate(true);
     }
 
     public CrawledLinkQueryStorable() {

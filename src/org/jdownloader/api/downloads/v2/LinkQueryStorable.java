@@ -1,14 +1,9 @@
 package org.jdownloader.api.downloads.v2;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.jdownloader.myjdownloader.client.bindings.downloadlist.DownloadLinkQuery;
 
 public class LinkQueryStorable extends DownloadLinkQuery implements Storable {
-    public static void main(String[] args) {
-        System.out.println(LinkQueryStorable.class.getSimpleName() + "= ");
-        System.out.println(JSonStorage.toString(new LinkQueryStorable()));
-    }
 
     public static final LinkQueryStorable FULL = new LinkQueryStorable();
     static {
@@ -25,6 +20,7 @@ public class LinkQueryStorable extends DownloadLinkQuery implements Storable {
         FULL.setSkipped(true);
         FULL.setSpeed(true);
         FULL.setStatus(true);
+        FULL.setAdvancedStatus(true);
         FULL.setUrl(true);
         FULL.setPassword(true);
         FULL.setAddedDate(true);
