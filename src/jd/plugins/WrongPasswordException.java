@@ -21,6 +21,7 @@ public class WrongPasswordException extends PluginException {
     }
 
     private Boolean clearExistingPassword = null;
+    private Boolean allowRetry            = null;
 
     public Boolean getClearExistingPassword() {
         return clearExistingPassword;
@@ -28,6 +29,19 @@ public class WrongPasswordException extends PluginException {
 
     public void setClearExistingPassword(Boolean clearExistingPassword) {
         this.clearExistingPassword = clearExistingPassword;
+    }
+
+    /**
+     * Defines whether or not upper system is allowed to retry when this exception is thrown. </br>
+     * Typically if a plugin throws this exception and does not allow a retry this means that the plugin aleady asked the user multiple
+     * times for the password in-place.
+     */
+    public Boolean getAllowRetry() {
+        return allowRetry;
+    }
+
+    public void setAllowRetry(Boolean allowRetry) {
+        this.allowRetry = allowRetry;
     }
 
     /**
