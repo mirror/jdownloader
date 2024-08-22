@@ -688,8 +688,6 @@ public class TbCmV2 extends PluginForDecrypt {
                     break;
                 }
             }
-        } else {
-            logger.warning("Failed to crawl playlist thumbnails");
         }
         Integer indexFromAddedURL = null;
         final String indexFromAddedURLStr = new Regex(cleanedurl, "(?i)index=(\\d+)").getMatch(0);
