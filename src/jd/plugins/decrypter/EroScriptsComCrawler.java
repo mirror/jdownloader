@@ -217,12 +217,12 @@ public class EroScriptsComCrawler extends antiDDoSForDecrypt {
             for (DownloadLink l : links) {
                 for (LazyCrawlerPlugin p : decrypters) {
                     boolean can = false;
-                    if (p.canHandle(l.getDownloadURL())) {
+                    if (p.canHandle(l.getPluginPatternMatcher())) {
                         can = true;
                     } else {
                         // Attempt fix for exmaple issue: spankbang.party -> spankbang.com
                         int ih = p.getDisplayName().lastIndexOf(".");
-                        URL u = new URL(l.getDownloadURL());
+                        URL u = new URL(l.getPluginPatternMatcher());
                         int il = u.getHost().lastIndexOf(".");
                         if (ih > 0 && il > 0) {
                             String hostBase = p.getDisplayName().substring(0, ih);
@@ -230,9 +230,9 @@ public class EroScriptsComCrawler extends antiDDoSForDecrypt {
                             String hostPost = p.getDisplayName().substring(ih + 1);
                             String linkPost = u.getHost().substring(il + 1);
                             if (hostBase.equals(linkBase) && !hostPost.equals(linkPost)) {
-                                String testUrl = l.getDownloadURL().replace(linkBase + "." + linkPost, hostBase + "." + hostPost);
+                                String testUrl = l.getPluginPatternMatcher().replace(linkBase + "." + linkPost, hostBase + "." + hostPost);
                                 if (p.canHandle(testUrl)) {
-                                    l.setUrlDownload(testUrl);
+                                    l.setPluginPatternMatcher(testUrl);
                                     can = true;
                                 }
                             }
@@ -243,14 +243,14 @@ public class EroScriptsComCrawler extends antiDDoSForDecrypt {
                     }
                     try {
                         final PluginForDecrypt dec = getNewPluginInstance(p);
-                        CrawledLink cl = new CrawledLink(new CryptedLink(l.getDownloadURL(), l.getDownloadURL()));
+                        CrawledLink cl = new CrawledLink(new CryptedLink(l.getPluginPatternMatcher(), l.getPluginPatternMatcher()));
                         dec.setCurrentLink(cl);
                         List<DownloadLink> result = dec.decryptIt(cl);
                         if (result.size() > 1) {
                             l.setEnabled(false);
                         } else if (result.size() == 1) {
                             DownloadLink dl = result.get(0).getDownloadLink();
-                            l.setUrlDownload(dl.getDownloadURL());
+                            l.setPluginPatternMatcher(dl.getPluginPatternMatcher());
                             l.setContentUrl(dl.getContentUrl());
                             l.setLinkID(dl.getLinkID());
                             l.setProperties(dl.getProperties());
@@ -294,7 +294,7 @@ public class EroScriptsComCrawler extends antiDDoSForDecrypt {
                 if (l.getName() == null || l.getName().length() == 0) {
                     continue;
                 }
-                String ext = Files.getExtension(l.getName());
+                String ext = Files.getExtension(l.getName(), true);
                 if (ext == null) {
                     continue;
                 }
@@ -330,7 +330,7 @@ public class EroScriptsComCrawler extends antiDDoSForDecrypt {
             if (match.contains("pixiv.net")) {
                 continue;
             }
-            String ext = Files.getExtension(match);
+            String ext = Files.getExtension(match, true);
             boolean useImages = getPluginConfig().getBooleanProperty(jd.plugins.hoster.EroScriptsCom.FETCH_IMAGES, true);
             if (!useImages) {
                 if (ext != null && (ext.equalsIgnoreCase("jpg") || ext.equalsIgnoreCase("jpeg") || ext.equalsIgnoreCase("png") || ext.equalsIgnoreCase("gif") || ext.equalsIgnoreCase("bmp"))) {
@@ -342,7 +342,7 @@ public class EroScriptsComCrawler extends antiDDoSForDecrypt {
             }
             boolean dupe = false;
             for (DownloadLink l : decryptedLinks) {
-                if (l.getDownloadURL().equals(match)) {
+                if (l.getPluginPatternMatcher().equals(match)) {
                     dupe = true;
                     break;
                 }
@@ -389,7 +389,8 @@ public class EroScriptsComCrawler extends antiDDoSForDecrypt {
             return ret;
         }
         String title = Encoding.htmlDecode(titleMatches[0][0]);
-        if (getPluginConfig().getBooleanProperty(jd.plugins.hoster.EroScriptsCom.SMART_FILENAMES, true)) {
+        // SMART_FILENAMES: disabled since it isn't working yet
+        if (getPluginConfig().getBooleanProperty(jd.plugins.hoster.EroScriptsCom.SMART_FILENAMES, false)) {
             // runSmartFileNames(title, decryptedLinks);
             SmartGroup sg = new SmartGroup(this, title, ret);
         } else {

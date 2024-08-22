@@ -2,6 +2,9 @@ package jd.plugins.hoster;
 
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -14,14 +17,12 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.storage.TypeRef;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "discuss.eroscripts.com" }, urls = { "https?://discuss\\.eroscripts\\.com/uploads/([\\w\\-/]+)" })
 public class EroScriptsCom extends antiDDoSForHost {
@@ -42,7 +43,6 @@ public class EroScriptsCom extends antiDDoSForHost {
 
     protected void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FETCH_IMAGES, "Add images?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SMART_FILENAMES, "Attempt to link script and video filenames?").setDefaultValue(true));
     }
 
     public void login(final Browser br, final Account account, boolean validateCookies) throws Exception {
@@ -73,14 +73,14 @@ public class EroScriptsCom extends antiDDoSForHost {
                 Browser csrfBr = br.cloneBrowser();
                 csrfBr.setHeader("accept", "application/json");
                 csrfBr.getPage("https://discuss.eroscripts.com/session/csrf");
-                final Map<String, String> apiResponse = restoreFromString(csrfBr.toString(), TypeRef.HASHMAP_STRING);
+                final Map<String, Object> apiResponse = restoreFromString(csrfBr.toString(), TypeRef.MAP);
                 form.put("login", account.getUser());
                 form.put("password", account.getPass());
                 form.put("second_factor_method", "1");
                 form.setAction("https://discuss.eroscripts.com/session");
                 form.setMethod(MethodType.POST);
                 Browser formBr = br.cloneBrowser();
-                formBr.setHeader("x-csrf-token", apiResponse.get("csrf"));
+                formBr.setHeader("x-csrf-token", String.valueOf(apiResponse.get("csrf")));
                 formBr.setHeader("x-requested-with", "XMLHttpRequest");
                 formBr.submitForm(form);
                 Map<String, Object> loginResponse = restoreFromString(formBr.toString(), TypeRef.MAP);
@@ -127,9 +127,7 @@ public class EroScriptsCom extends antiDDoSForHost {
         }
         // TODO: check if browser instance has cookies set (called by decrypter plugin) so no additional login is required
         login(br, account, false);
-        final Browser brc = br.cloneBrowser();
-        basicLinkCheck(brc.cloneBrowser(), brc.createGetRequest(link.getPluginPatternMatcher()), link, null, null);
-        link.setPluginPatternMatcher(brc.getURL());
+        basicLinkCheck(br.cloneBrowser(), br.createGetRequest(link.getPluginPatternMatcher()), link, null, null);
         return AvailableStatus.TRUE;
     }
 
@@ -137,7 +135,7 @@ public class EroScriptsCom extends antiDDoSForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         // no account required?
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, link.getPluginPatternMatcher());
+        dl = BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher());
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
