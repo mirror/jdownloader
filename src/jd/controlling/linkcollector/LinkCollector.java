@@ -37,6 +37,44 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import jd.config.Property;
+import jd.controlling.TaskQueue;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkchecker.LinkCheckerHandler;
+import jd.controlling.linkcollector.autostart.AutoStartManager;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledLinkProperty;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackage.TYPE;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
+import jd.controlling.linkcrawler.LinkCrawlerFilter;
+import jd.controlling.linkcrawler.LinkCrawlerHandler;
+import jd.controlling.linkcrawler.LinkCrawlerRule;
+import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.packagecontroller.PackageController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
+import jd.plugins.CrawledLinkStorable;
+import jd.plugins.CrawledPackageStorable;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
+
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
@@ -111,44 +149,6 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
-
-import jd.config.Property;
-import jd.controlling.TaskQueue;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkchecker.LinkCheckerHandler;
-import jd.controlling.linkcollector.autostart.AutoStartManager;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.CrawledLinkProperty;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackage.TYPE;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
-import jd.controlling.linkcrawler.LinkCrawlerFilter;
-import jd.controlling.linkcrawler.LinkCrawlerHandler;
-import jd.controlling.linkcrawler.LinkCrawlerRule;
-import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.packagecontroller.PackageController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
-import jd.plugins.CrawledLinkStorable;
-import jd.plugins.CrawledPackageStorable;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink>, LinkCrawlerHandler, ShutdownVetoListener {
     public static final String                        SOURCE_VARIANT_ID = "SOURCE_VARIANT_ID";
@@ -1465,9 +1465,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, List<CrawledLink> plinks) {
@@ -2692,166 +2692,312 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     /**
-     * This class describes, how a "move links to downloadlist" action shall behave. </br>
-     * Examples of what it can influence: </br>
-     * - define specific properties that should be set on the items to move e.g. set highest priority </br>
-     * - define what should happen afterwards such as "force download-start of added items" </br>
-     * - define what happens in linkgrabber afterwards such as "clean all remaining items in linkgrabber"
+     * This class describes, how a "move links to downloadlist" action shall behave. </br> Examples of what it can influence: </br> - define
+     * specific properties that should be set on the items to move e.g. set highest priority </br> - define what should happen afterwards
+     * such as "force download-start of added items" </br> - define what happens in linkgrabber afterwards such as
+     * "clean all remaining items in linkgrabber"
      */
     public final static class ConfirmLinksSettings {
         public final MoveLinksMode getMoveLinksMode() {
             return moveLinksMode;
         }
 
-        public final void setMoveLinksMode(MoveLinksMode moveLinksMode) {
-            if (moveLinksMode == null) {
-                this.moveLinksMode = MoveLinksMode.AUTO;
-            } else {
-                this.moveLinksMode = moveLinksMode;
+        public final boolean getAutoStartDownloads() {
+            final Boolean ret = autoStartDownloads;
+            if (ret != null) {
+                return ret.booleanValue();
             }
+            return defaultAutoStartDownloads;
         }
 
-        public final Boolean getAutoStartDownloads() {
-            return autoStartDownloads;
-        }
-
-        public final void setAutoStartDownloads(Boolean autoStartDownloads) {
-            this.autoStartDownloads = autoStartDownloads;
-        }
-
-        public final AutoStartOptions getAutoStartOptions() {
-            return autoStartOptions;
-        }
-
-        public final void setAutoStartOptions(AutoStartOptions autoStartOptions) {
-            if (autoStartOptions == null) {
-                this.autoStartOptions = AutoStartOptions.AUTO;
+        public final ConfirmLinksSettings setAutoStartDownloads(Boolean autoStartDownloads) {
+            if (autoStartDownloads == null || autoStartDownloads.booleanValue() == defaultAutoStartDownloads) {
+                this.autoStartDownloads = null;
             } else {
-                this.autoStartOptions = autoStartOptions;
+                this.autoStartDownloads = autoStartDownloads;
             }
+            return this;
         }
 
         public final Boolean isForceDownloads() {
-            return forceDownloads;
+            final Boolean ret = forceDownloads;
+            if (ret != null) {
+                return ret;
+            }
+            return defaultForceDownloads;
         }
 
-        public final void setForceDownloads(Boolean forceDownloads) {
-            this.forceDownloads = forceDownloads;
+        public final ConfirmLinksSettings setForceDownloads(Boolean forceDownloads) {
+            if (forceDownloads == null || forceDownloads == defaultForceDownloads) {
+                this.forceDownloads = null;
+            } else {
+                this.forceDownloads = forceDownloads;
+            }
+            return this;
         }
 
         public final OnOfflineLinksAction getHandleOffline() {
-            return handleOffline;
+            final OnOfflineLinksAction ret = handleOffline;
+            if (ret != null) {
+                return ret.getSelectedAction();
+            }
+            return defaultHandleOffline.getSelectedAction();
         }
 
-        public final void setHandleOffline(OnOfflineLinksAction handleOffline) {
-            if (handleOffline == null || handleOffline == OnOfflineLinksAction.GLOBAL) {
-                /* Default */
-                this.handleOffline = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
+        public final ConfirmLinksSettings setHandleOffline(OnOfflineLinksAction handleOffline) {
+            if (handleOffline == null || handleOffline.getSelectedAction() == defaultHandleOffline.getSelectedAction()) {
+                this.handleOffline = null;
             } else {
                 this.handleOffline = handleOffline;
             }
-        }
-
-        public final OnDupesLinksAction getHandleDupes() {
-            return handleDupes;
-        }
-
-        public final void setHandleDupes(OnDupesLinksAction handleDupes) {
-            if (handleDupes == null || handleDupes == OnDupesLinksAction.GLOBAL) {
-                /* Default */
-                this.handleDupes = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
-            } else {
-                this.handleDupes = handleDupes;
-            }
+            return this;
         }
 
         public final Boolean isClearLinkgrabberlistOnConfirm() {
-            return clearLinkgrabberlistOnConfirm;
+            final Boolean ret = clearLinkgrabberlistOnConfirm;
+            if (ret != null) {
+                return ret;
+            }
+            return defaultClearLinkgrabberlistOnConfirm;
         }
 
-        public final void setClearLinkgrabberlistOnConfirm(Boolean clearLinkgrabberlistOnConfirm) {
-            this.clearLinkgrabberlistOnConfirm = clearLinkgrabberlistOnConfirm;
+        public final ConfirmLinksSettings setClearLinkgrabberlistOnConfirm(Boolean clearLinkgrabberlistOnConfirm) {
+            if (clearLinkgrabberlistOnConfirm == defaultClearLinkgrabberlistOnConfirm) {
+                this.clearLinkgrabberlistOnConfirm = null;
+            } else {
+                this.clearLinkgrabberlistOnConfirm = clearLinkgrabberlistOnConfirm;
+            }
+            return this;
         }
 
         public final Boolean isSwitchToDownloadlistOnConfirm() {
-            return switchToDownloadlistOnConfirm;
-        }
-
-        public final void setSwitchToDownloadlistOnConfirm(Boolean switchToDownloadlistOnConfirm) {
-            this.switchToDownloadlistOnConfirm = switchToDownloadlistOnConfirm;
-        }
-
-        public final ConfirmationDialogBehavior getConfirmationDialogBehavior() {
-            return confirmationDialogBehavior;
-        }
-
-        public final void setConfirmationDialogBehavior(ConfirmationDialogBehavior confirmationDialogBehavior) {
-            if (confirmationDialogBehavior == null) {
-                this.confirmationDialogBehavior = ConfirmationDialogBehavior.DISABLED;
-            } else {
-                this.confirmationDialogBehavior = confirmationDialogBehavior;
+            final Boolean ret = switchToDownloadlistOnConfirm;
+            if (ret != null) {
+                return ret;
             }
+            return defaultSwitchToDownloadlistOnConfirm;
         }
 
-        public final int getConfirmationDialogThresholdMinPackages() {
-            return confirmationDialogThresholdMinPackages;
-        }
-
-        public final void setConfirmationDialogThresholdMinPackages(int confirmationDialogThresholdMinPackages) {
-            this.confirmationDialogThresholdMinPackages = confirmationDialogThresholdMinPackages;
-        }
-
-        public final int getConfirmationDialogThresholdMinLinks() {
-            return confirmationDialogThresholdMinLinks;
-        }
-
-        public final void setConfirmationDialogThresholdMinLinks(int confirmationDialogThresholdMinLinks) {
-            this.confirmationDialogThresholdMinLinks = confirmationDialogThresholdMinLinks;
+        public final ConfirmLinksSettings setSwitchToDownloadlistOnConfirm(Boolean switchToDownloadlistOnConfirm) {
+            if (switchToDownloadlistOnConfirm == defaultSwitchToDownloadlistOnConfirm) {
+                this.switchToDownloadlistOnConfirm = null;
+            } else {
+                this.switchToDownloadlistOnConfirm = switchToDownloadlistOnConfirm;
+            }
+            return this;
         }
 
         public final Priority getPriority() {
-            return priority;
+            final Priority ret = priority;
+            if (ret != null) {
+                return ret;
+            }
+            return defaultPriority;
         }
 
-        public final void setPriority(Priority priority) {
-            this.priority = priority;
+        public final ConfirmLinksSettings setPriority(Priority priority) {
+            if (priority == null || priority == defaultPriority) {
+                this.priority = null;
+            } else {
+                this.priority = priority;
+            }
+            return this;
+        }
+
+        public final ConfirmLinksSettings setHandleDupes(OnDupesLinksAction handleDupes) {
+            if (handleDupes == null || handleDupes.getSelectedAction() == defaultHandleDupes.getSelectedAction()) {
+                this.handleDupes = null;
+            } else {
+                this.handleDupes = handleDupes;
+            }
+            return this;
+        }
+
+        public final OnDupesLinksAction getHandleDupes() {
+            final OnDupesLinksAction ret = handleDupes;
+            if (ret != null) {
+                return ret.getSelectedAction();
+            }
+            return defaultHandleDupes.getSelectedAction();
         }
 
         public PackageExpandBehavior getPackageExpandBehavior() {
-            return packageExpandBehavior;
+            final PackageExpandBehavior ret = packageExpandBehavior;
+            if (ret != null) {
+                return ret;
+            }
+            return defaultPackageExpandBehavior;
         }
 
-        public void setPackageExpandBehavior(PackageExpandBehavior packageExpandBehavior) {
-            if (packageExpandBehavior == null) {
-                this.packageExpandBehavior = PackageExpandBehavior.UNCHANGED;
+        public ConfirmLinksSettings setPackageExpandBehavior(PackageExpandBehavior packageExpandBehavior) {
+            if (packageExpandBehavior == null || packageExpandBehavior == defaultPackageExpandBehavior) {
+                this.packageExpandBehavior = null;
             } else {
                 this.packageExpandBehavior = packageExpandBehavior;
             }
+            return this;
         }
 
-        private MoveLinksMode              moveLinksMode                          = MoveLinksMode.AUTO;
-        private Boolean                    autoStartDownloads                     = null;
-        private AutoStartOptions           autoStartOptions                       = CFG_LINKGRABBER.CFG.getAutoConfirmManagerAutoStart();
-        private Priority                   priority                               = null;
-        private Boolean                    forceDownloads                         = CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads();
-        private OnOfflineLinksAction       handleOffline                          = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
-        private OnDupesLinksAction         handleDupes                            = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
-        private Boolean                    clearLinkgrabberlistOnConfirm          = CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm();
-        private Boolean                    switchToDownloadlistOnConfirm          = JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled();
-        private PackageExpandBehavior      packageExpandBehavior                  = PackageExpandBehavior.UNCHANGED;
-        private ConfirmationDialogBehavior confirmationDialogBehavior             = ConfirmationDialogBehavior.DISABLED;
-        private int                        confirmationDialogThresholdMinPackages = 1;
-        private int                        confirmationDialogThresholdMinLinks    = 1;
-
-        public ConfirmLinksSettings() {
+        public final ConfirmationDialogBehavior getConfirmationDialogBehavior() {
+            final ConfirmationDialogBehavior ret = confirmationDialogBehavior;
+            if (ret != null) {
+                return ret;
+            }
+            return defaultConfirmationDialogBehavior;
         }
 
-        public ConfirmLinksSettings(final MoveLinksMode mode, final Boolean autoStartDownloads, final Boolean forceDownloads, final Priority priority) {
-            this.setMoveLinksMode(mode);
-            this.setAutoStartDownloads(autoStartDownloads);
-            this.setForceDownloads(forceDownloads);
-            this.setPriority(priority);
+        public final ConfirmLinksSettings setConfirmationDialogBehavior(ConfirmationDialogBehavior confirmationDialogBehavior) {
+            if (confirmationDialogBehavior == null || confirmationDialogBehavior == defaultConfirmationDialogBehavior) {
+                this.confirmationDialogBehavior = null;
+            } else {
+                this.confirmationDialogBehavior = confirmationDialogBehavior;
+            }
+            return this;
         }
+
+        public final int getConfirmationDialogThresholdMinPackages() {
+            final Integer ret = confirmationDialogThresholdMinPackages;
+            if (ret != null) {
+                return ret.intValue();
+            }
+            return defaultConfirmationDialogThresholdMinPackages;
+        }
+
+        public final ConfirmLinksSettings setConfirmationDialogThresholdMinPackages(Integer confirmationDialogThresholdMinPackages) {
+            if (confirmationDialogThresholdMinPackages == null || confirmationDialogThresholdMinPackages.intValue() < 0 || confirmationDialogThresholdMinPackages.intValue() == defaultConfirmationDialogThresholdMinPackages) {
+                this.confirmationDialogThresholdMinPackages = null;
+            } else {
+                this.confirmationDialogThresholdMinPackages = confirmationDialogThresholdMinPackages;
+            }
+            return this;
+        }
+
+        public final int getConfirmationDialogThresholdMinLinks() {
+            final Integer ret = confirmationDialogThresholdMinLinks;
+            if (ret != null) {
+                return ret.intValue();
+            }
+            return defaultConfirmationDialogThresholdMinLinks;
+        }
+
+        public final ConfirmLinksSettings setConfirmationDialogThresholdMinLinks(Integer confirmationDialogThresholdMinLinks) {
+            if (confirmationDialogThresholdMinLinks == null || confirmationDialogThresholdMinLinks.intValue() < 0 || confirmationDialogThresholdMinLinks.intValue() == defaultConfirmationDialogThresholdMinLinks) {
+                this.confirmationDialogThresholdMinLinks = null;
+            } else {
+                this.confirmationDialogThresholdMinLinks = confirmationDialogThresholdMinLinks;
+            }
+            return this;
+        }
+
+        private final MoveLinksMode              moveLinksMode;
+
+        private final boolean                    defaultAutoStartDownloads                     = getDefaultAutoStartDownloads();
+        private Boolean                          autoStartDownloads                            = null;
+
+        private final Boolean                    defaultForceDownloads                         = getDefaultForceDownloads();
+        private Boolean                          forceDownloads                                = null;
+
+        private final Boolean                    defaultClearLinkgrabberlistOnConfirm          = getDefaultClearLinkgrabberlistOnConfirm();
+        private Boolean                          clearLinkgrabberlistOnConfirm                 = null;
+
+        private final Priority                   defaultPriority                               = getDefaultPriority();
+        private Priority                         priority                                      = null;
+
+        private final Boolean                    defaultSwitchToDownloadlistOnConfirm          = getDefaultSwitchToDownloadlistOnConfirm();
+        private Boolean                          switchToDownloadlistOnConfirm                 = null;
+
+        private final OnOfflineLinksAction       defaultHandleOffline                          = getDefaultHandleOffline();
+        private OnOfflineLinksAction             handleOffline                                 = null;
+
+        private final OnDupesLinksAction         defaultHandleDupes                            = getDefaultHandleDupes();
+        private OnDupesLinksAction               handleDupes                                   = null;
+
+        private final PackageExpandBehavior      defaultPackageExpandBehavior                  = getDefaultPackageExpandBehavior();
+        private PackageExpandBehavior            packageExpandBehavior                         = null;
+
+        private final ConfirmationDialogBehavior defaultConfirmationDialogBehavior             = getDefaultConfirmationDialogBehavior();
+        private ConfirmationDialogBehavior       confirmationDialogBehavior                    = null;
+
+        private final int                        defaultConfirmationDialogThresholdMinPackages = getDefaultcConfirmationDialogThresholdMinPackages();
+        private Integer                          confirmationDialogThresholdMinPackages        = 1;
+
+        private final int                        defaultConfirmationDialogThresholdMinLinks    = getDefaultConfirmationDialogThresholdMinLinks();
+        private Integer                          confirmationDialogThresholdMinLinks           = null;
+
+        public ConfirmLinksSettings(final MoveLinksMode mode) {
+            this.moveLinksMode = mode != null ? mode : MoveLinksMode.AUTO;
+        }
+
+        private int getDefaultConfirmationDialogThresholdMinLinks() {
+            return 1;
+        }
+
+        private int getDefaultcConfirmationDialogThresholdMinPackages() {
+            return 1;
+        }
+
+        private ConfirmationDialogBehavior getDefaultConfirmationDialogBehavior() {
+            return ConfirmationDialogBehavior.DISABLED;
+        }
+
+        private PackageExpandBehavior getDefaultPackageExpandBehavior() {
+            return PackageExpandBehavior.UNCHANGED;
+        }
+
+        private OnDupesLinksAction getDefaultHandleDupes() {
+            final OnDupesLinksAction ret = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
+            if (ret != null) {
+                return ret.getSelectedAction();
+            }
+            return OnDupesLinksAction.ASK;
+        }
+
+        private OnOfflineLinksAction getDefaultHandleOffline() {
+            final OnOfflineLinksAction ret = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
+            if (ret != null) {
+                return ret.getSelectedAction();
+            }
+            return OnOfflineLinksAction.ASK;
+        }
+
+        private Boolean getDefaultSwitchToDownloadlistOnConfirm() {
+            return JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled();
+        }
+
+        private Priority getDefaultPriority() {
+            if (MoveLinksMode.AUTO.equals(getMoveLinksMode()) && CFG_LINKGRABBER.CFG.isAutoConfirmManagerAssignPriorityEnabled()) {
+                final Priority ret = CFG_LINKGRABBER.CFG.getAutoConfirmManagerPriority();
+                if (ret != null) {
+                    return ret;
+                }
+            }
+            return Priority.DEFAULT;
+        }
+
+        private boolean getDefaultAutoStartDownloads() {
+            if (MoveLinksMode.AUTO.equals(getMoveLinksMode())) {
+                final AutoStartOptions ret = CFG_LINKGRABBER.CFG.getAutoConfirmManagerAutoStart();
+                if (ret != null) {
+                    return ret.isEnabled();
+                }
+            }
+            return AutoStartOptions.AUTO.isEnabled();
+        }
+
+        private Boolean getDefaultClearLinkgrabberlistOnConfirm() {
+            if (MoveLinksMode.AUTO.equals(getMoveLinksMode())) {
+                return CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm();
+            }
+            return null;
+        }
+
+        private Boolean getDefaultForceDownloads() {
+            if (MoveLinksMode.AUTO.equals(getMoveLinksMode())) {
+                return CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads();
+            }
+            return null;
+        }
+
     }
 
     public void moveLinksToDownloadList(final SelectionInfo<CrawledPackage, CrawledLink> selection, final ConfirmLinksSettings moveLinksSettings) {
