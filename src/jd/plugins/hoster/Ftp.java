@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.jdownloader.DomainInfo;
@@ -64,11 +65,23 @@ public class Ftp extends PluginForHost {
         super(wrapper);
     }
 
+    public static final String PROPERTY_CUSTOM_HOST = "PROPERTY_CUSTOM_HOST";
+
     @Override
     public String getHost(final DownloadLink link, Account account, boolean includeSubdomain) {
         if (link != null) {
-            // prefer domain via public suffic list
-            return Browser.getHost(link.getDownloadURL(), includeSubdomain);
+            final String customHost = link.getStringProperty(PROPERTY_CUSTOM_HOST, null);
+            if (StringUtils.isNotEmpty(customHost)) {
+                return customHost;
+            } else {
+                // prefer domain via public suffic list
+                String ret = Browser.getHost(link.getPluginPatternMatcher(), includeSubdomain);
+                if (includeSubdomain) {
+                    // we don't want ftp subdomain
+                    ret = ret != null ? ret.replaceFirst("(?i)^ftp\\.", "") : ret;
+                }
+                return ret;
+            }
         } else if (account != null) {
             return account.getHoster();
         } else {
