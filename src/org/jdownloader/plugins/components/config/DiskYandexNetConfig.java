@@ -41,9 +41,9 @@ public interface DiskYandexNetConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("MOVE_INTO_ACCOUNT")
-    @Order(100)
     @DescriptionForConfigEntry("What to do with quota limited files in account download mode?")
     @DefaultOnNull
+    @Order(100)
     ActionForQuotaLimitedFiles getActionForQuotaLimitedFiles();
 
     void setActionForQuotaLimitedFiles(final ActionForQuotaLimitedFiles action);
@@ -71,9 +71,9 @@ public interface DiskYandexNetConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("DELETE_FROM_ACCOUNT")
-    @Order(200)
     @DescriptionForConfigEntry("What to do with files that JDownloader has moved/imported into your Yandex account?")
     @DefaultOnNull
+    @Order(200)
     ActionForMovedFiles getActionForMovedFiles();
 
     void setActionForMovedFiles(final ActionForMovedFiles action);

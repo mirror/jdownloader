@@ -141,7 +141,6 @@ public class InstaGramCom extends PluginForHost {
     private final int            MAXCHUNKS_pictures                          = 1;
     /* 2020-01-21: Multi chunks are possible but it's better not to do this to avoid getting blocked! */
     private final int            MAXCHUNKS_videos                            = 1;
-    private final int            MAXDOWNLOADS                                = -1;
     private static final String  MAINPAGE                                    = "https://www.instagram.com";
     /* DownloadLink/Packagizer properties */
     public static final String   PROPERTY_has_tried_to_crawl_original_url    = "has_tried_to_crawl_original_url";
@@ -669,7 +668,7 @@ public class InstaGramCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     public void login(final Account account, final boolean force) throws Exception {
@@ -1134,7 +1133,7 @@ public class InstaGramCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return MAXDOWNLOADS;
+        return this.getMaxSimultanFreeDownloadNum();
     }
 
     @Override

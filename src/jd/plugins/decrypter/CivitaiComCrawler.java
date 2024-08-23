@@ -24,6 +24,8 @@ import java.util.Map;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.CivitaiComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -139,6 +141,7 @@ public class CivitaiComCrawler extends PluginForDecrypt {
                 ret.add(link);
             }
         } else if (itemType.equals("user")) {
+            final CivitaiComConfig cfg = PluginJsonConfig.get(CivitaiComConfig.class);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(itemID);
             fp.setPackageKey("civitai://user/" + itemID);
@@ -150,7 +153,8 @@ public class CivitaiComCrawler extends PluginForDecrypt {
              * is wrong --> Wrong API docs or bug in API. </br>
              * Only with the nsfw parameter set to "X", all items will be returned.
              */
-            final int maxItemsPerPage = 10;
+            final int maxItemsPerPage = cfg.getProfileCrawlerMaxPaginationItems();
+            final int paginationSleepMillis = cfg.getProfileCrawlerPaginationSleepMillis();
             String nextpage = apiBase + "/images?username=" + itemID + "&limit=" + maxItemsPerPage + "&nsfw=X";
             int page = 1;
             final HashSet<String> dupes = new HashSet<String>();
@@ -182,7 +186,7 @@ public class CivitaiComCrawler extends PluginForDecrypt {
                     ret.add(link);
                     distribute(link);
                 }
-                logger.info("Crawled page " + page + " | Found items so far: " + ret.size() + " | New items on this page: " + numberofNewItems);
+                logger.info("Crawled page " + page + " | Found items so far: " + ret.size() + " | New items on this page: " + numberofNewItems + " | Max items per page: " + maxItemsPerPage + " | Pagination sleep millis: " + paginationSleepMillis);
                 final Map<String, Object> metadata = (Map<String, Object>) entries.get("metadata");
                 if (metadata == null) {
                     logger.info("Stopping because: Metadata map doesnt exist");
@@ -200,7 +204,7 @@ public class CivitaiComCrawler extends PluginForDecrypt {
                 } else {
                     /* Continue to next page */
                     page++;
-                    this.sleep(1000, param);
+                    this.sleep(paginationSleepMillis, param);
                     continue pagination;
                 }
             }
@@ -259,5 +263,10 @@ public class CivitaiComCrawler extends PluginForDecrypt {
     @Override
     public boolean hasCaptcha(CryptedLink link, Account acc) {
         return false;
+    }
+
+    @Override
+    public Class<? extends CivitaiComConfig> getConfigInterface() {
+        return CivitaiComConfig.class;
     }
 }
