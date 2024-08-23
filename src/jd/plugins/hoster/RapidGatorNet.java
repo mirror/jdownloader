@@ -421,13 +421,14 @@ public class RapidGatorNet extends PluginForHost {
                 this.dl = null;
                 logger.info("No direct-URL -> Tring to generate fresh directurl");
                 br.followConnection(true);
+                final String subscribersOnlyDownload = getErrormessageSubscriberOnlyDownload(br);
                 if (isPremiumAccount && isBuyFile(br, link, account)) {
                     /* 2022-11-07: can be *bypassed* for premium users by using API mode */
                     logger.info("File needs to be bought separately -> Trying to work around this limitation");
                     handlePremium_api(link, account);
                     return;
                 }
-                if (isPremiumAccount) {
+                if (isPremiumAccount && subscribersOnlyDownload == null) {
                     /* Premium account */
                     finalDownloadURL = br.getRegex("var premium_download_link\\s*=\\s*'(https?://[^<>\"']+)';").getMatch(0);
                     if (finalDownloadURL == null) {
@@ -437,7 +438,7 @@ public class RapidGatorNet extends PluginForHost {
                         }
                     }
                 } else {
-                    /* Free + free account */
+                    /* Free + free account + free download of subscriber-only file in premium mode */
                     if (cfg.isActivateExperimentalWaittimeHandling()) {
                         currentIP = new BalancedWebIPCheck(br.getProxy()).getExternalIP().getIP();
                         logger.info("currentIP = " + currentIP);
@@ -449,12 +450,6 @@ public class RapidGatorNet extends PluginForHost {
                             }
                         }
                         logger.info("blockedIPsMap: " + blockedIPsMap);
-                    }
-                    handleErrorsWebsite(this.br, link, account, currentIP, true);
-                    if (account != null && !this.isLoggedINWebsite(br)) {
-                        throw new AccountUnavailableException("Session expired?", 1 * 60 * 1000l);
-                    }
-                    if (cfg.isActivateExperimentalWaittimeHandling()) {
                         final long lastdownload_timestamp = getPluginSavedLastDownloadTimestamp(currentIP);
                         final long passedTimeSinceLastFreeDownloadMilliseconds = System.currentTimeMillis() - lastdownload_timestamp;
                         logger.info("Wait between free downloads to prevent your IP from getting blocked for 1 day!");
@@ -463,12 +458,17 @@ public class RapidGatorNet extends PluginForHost {
                         }
                     }
                     final String fid = br.getRegex("var fid = (\\d+);").getMatch(0);
-                    if (fid == null) {
+                    final String waitSecondsStr = br.getRegex("var secs = (\\d+);").getMatch(0);
+                    if (fid == null || waitSecondsStr == null) {
+                        handleErrorsWebsite(this.br, link, account, currentIP, true);
+                        if (account != null && !this.isLoggedINWebsite(br)) {
+                            throw new AccountUnavailableException("Session expired?", 1 * 60 * 1000l);
+                        }
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final String waitSecondsStr = br.getRegex("var secs = (\\d+);").getMatch(0);
-                    if (waitSecondsStr == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (isPremiumAccount && subscribersOnlyDownload != null) {
+                        /* Use owns premium account but can't download this file as premium user. */
+                        logger.info("Attempting free download in premium mode because only premium subscribers can download this file as premium");
                     }
                     logger.info("Pre download wait in seconds: " + waitSecondsStr);
                     long waitMillis = Long.parseLong(waitSecondsStr) * 1000;
@@ -1578,6 +1578,10 @@ public class RapidGatorNet extends PluginForHost {
         handleErrorsWebsite(br, link, account, currentIP, false);
     }
 
+    private String getErrormessageSubscriberOnlyDownload(final Browser br) {
+        return br.getRegex("(The files of this publisher \"[^\"<>]+\" can be downloaded only by subscribers\\.)").getMatch(0);
+    }
+
     private void handleErrorsWebsite(final Browser br, final DownloadLink link, final Account account, final String currentIP, final boolean doExtendedOfflineCheck) throws PluginException {
         if (account != null) {
             /* Errors which should only happen in account mode */
@@ -1591,9 +1595,12 @@ public class RapidGatorNet extends PluginForHost {
         /* Check for offline file */
         checkOfflineWebsite(br, link, doExtendedOfflineCheck);
         /* Check if item is only downloadable for premium users. */
-        final String subscribersOnlyDownload = br.getRegex("(The files of this publisher \"[^\"]+\" can be downloaded only by subscribers)").getMatch(0);
+        final String subscribersOnlyDownload = getErrormessageSubscriberOnlyDownload(br);
         if (subscribersOnlyDownload != null) {
-            /* This can even happen for premium account owners since an extra subscription is needed to download such files. */
+            /**
+             * This can even happen for premium account owners since an extra subscription is needed to download such files. </br>
+             * This is the same as when "isBuyFile()" returns true but with a more detailed error message.
+             */
             throw new AccountRequiredException(subscribersOnlyDownload);
         }
         final String errormsgFreeFilesizeLimit = br.getRegex("'(You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode)\\s*<").getMatch(0);
@@ -1665,11 +1672,7 @@ public class RapidGatorNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You can't download more than one file within a certain time period in free mode", PluginJsonConfig.get(RapidGatorConfig.class).getWaitSecondsOnErrorYouCantDownloadMoreThanOneFile() * 1000l);
         } else if (isBuyFile(br, link, account)) {
             /* 2022-11-07: Files that need to be purchased separately in order to be able to download them. */
-            if (account == null) {
-                throw new AccountRequiredException();
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "You need to buy this file");
-            }
+            throw new AccountRequiredException("The files of this publisher can be downloaded only by subscribers.");
         }
         /* Check for some generic errors */
         if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 403) {

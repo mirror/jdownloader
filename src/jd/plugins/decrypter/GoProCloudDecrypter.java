@@ -128,12 +128,11 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
 
     protected void decryptMedialibrary(final ArrayList<DownloadLink> decryptedLinks, final Account account, CryptedLink cryptedLink) throws Exception {
         final FlexiJSonMapper mapper = new FlexiJSonMapper();
-        String id = new Regex(cryptedLink.getCryptedUrl(), ".*/media-library/([^/]+)").getMatch(0);
-        if (account != null) {
-            login(this.br, account);
-        } else {
+        String id = new Regex(cryptedLink.getCryptedUrl(), "(?i).*/media-library/([^/]+)").getMatch(0);
+        if (account == null) {
             throw new AccountRequiredException();
         }
+        login(this.br, account);
         if (StringUtils.isNotEmpty(id) && !StringUtils.equalsIgnoreCase(id, "links")) {
             scanID(decryptedLinks, account, cryptedLink, mapper, id, null, "premium", null);
         } else {

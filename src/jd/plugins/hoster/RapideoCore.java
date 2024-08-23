@@ -299,7 +299,11 @@ public abstract class RapideoCore extends PluginForHost {
     }
 
     private void checkErrorsWebsite(final Browser br, final DownloadLink link, final Account account) throws PluginException {
-        final String geoLoginFailure = br.getRegex(">\\s*(You login from a different location than usual[^<]*)<").getMatch(0);
+        String geoLoginFailure = br.getRegex(">\\s*(You login from a different location than usual[^<]*)<").getMatch(0);
+        if (geoLoginFailure == null) {
+            /* nopremium.pl, they only have Polish version. */
+            geoLoginFailure = br.getRegex(">\\s*(Logujesz się z innego miejsca niż zazwyczaj[^<]+)").getMatch(0);
+        }
         if (geoLoginFailure != null) {
             /* 2020-11-02: Login from unusual location -> User has to confirm via URL send by mail and then try again in JD (?!). */
             throw new AccountUnavailableException(geoLoginFailure + "\r\nOnce done, refresh your account in JDownloader.", 5 * 60 * 1000l);
@@ -425,22 +429,22 @@ public abstract class RapideoCore extends PluginForHost {
                 }
             } else {
                 /* Website */
-                final int random = new Random().nextInt(1000000);
-                final DecimalFormat df = new DecimalFormat("000000");
-                final String random_session = df.format(random);
-                final String filename = link.getName();
                 br.getPage("https://www." + getHost() + "/twoje_pliki");
                 checkErrorsWebsite(br, link, account);
                 br.postPage("/twoje_pliki", "loadfiles=1");
                 br.postPage("/twoje_pliki", "loadfiles=2");
                 br.postPage("/twoje_pliki", "loadfiles=3");
+                final int random = new Random().nextInt(1000000);
+                final DecimalFormat df = new DecimalFormat("000000");
+                final String random_session = df.format(random);
+                final String filename = link.getName();
                 br.postPage("/twoje_pliki", "session=" + random_session + "&links=" + url_urlencoded);
                 if (br.containsHTML("strong>\\s*Brak transferu\\s*</strong>")) {
                     throw new AccountUnavailableException("Out of traffic", 1 * 60 * 1000l);
                 }
                 final String id = br.getRegex("data\\-id=\"([a-z0-9]+)\"").getMatch(0);
                 if (id == null) {
-                    mhm.handleErrorGeneric(account, link, "Failed to find transferID", 20);
+                    mhm.handleErrorGeneric(account, link, "Failed to find transferID", 50);
                 }
                 br.postPage("/twoje_pliki", "downloadprogress=1");
                 br.postPage("/progress", "session=" + random_session + "&total=1");
