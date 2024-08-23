@@ -189,7 +189,7 @@ public class ORFMediathek extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             try {
-                GetRequest request = br.createGetRequest(dllink);
+                final GetRequest request = br.createGetRequest(dllink);
                 request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
                 con = br.openRequestConnection(request);
                 this.handleConnectionErrors(br, link, con);
