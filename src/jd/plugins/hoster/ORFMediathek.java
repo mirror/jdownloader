@@ -183,7 +183,7 @@ public class ORFMediathek extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getPage("http://bits.orf.at/filehandler/static-api/json/current/data.json?file=" + audioID);
-            dllink = br.getRegex("\"url\":\"(https?[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("\"url\"\\s*:\\s*\"(https?[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
