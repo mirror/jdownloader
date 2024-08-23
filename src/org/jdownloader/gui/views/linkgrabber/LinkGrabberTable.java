@@ -30,6 +30,20 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.ConfirmLinksSettings;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackage.TYPE;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+import jd.plugins.DownloadLink.AvailableStatus;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
@@ -61,7 +75,6 @@ import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.table.HorizontalScrollbarAction;
 import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTabBottombar;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.PackageExpandBehavior;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
@@ -69,20 +82,6 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.controlling.TaskQueue;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.ConfirmLinksSettings;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackage.TYPE;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-import jd.plugins.DownloadLink.AvailableStatus;
-import net.miginfocom.swing.MigLayout;
 
 public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, CrawledLink> {
     private static final long          serialVersionUID   = 8843600834248098174L;
@@ -174,15 +173,10 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
             if (e.getButton() == MouseEvent.BUTTON2) {
                 if ((e.getModifiers() & InputEvent.CTRL_MASK) == 0) {
                     if ((e.getModifiers() & InputEvent.SHIFT_MASK) == 0) {
-                        final ConfirmLinksSettings cls = new ConfirmLinksSettings();
-                        cls.setMoveLinksMode(MoveLinksMode.MANUAL);
-                        cls.setAutoStartDownloads(org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled());
+                        final ConfirmLinksSettings cls = new ConfirmLinksSettings(MoveLinksMode.MANUAL);
                         cls.setClearLinkgrabberlistOnConfirm(false);
                         cls.setSwitchToDownloadlistOnConfirm(false);
-                        // cls.setPriority(null);
-                        cls.setPackageExpandBehavior(PackageExpandBehavior.UNCHANGED);
                         cls.setForceDownloads(Boolean.FALSE);
-                        // middle click
                         final int row = rowAtPoint(e.getPoint());
                         final AbstractNode obj = this.getModel().getObjectbyRow(row);
                         final SelectionInfo<CrawledPackage, CrawledLink> si;
