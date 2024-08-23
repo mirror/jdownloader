@@ -221,7 +221,6 @@ public class ORFMediathek extends PluginForHost {
             }
         }
         if (isSubtitle(link) || isImage(link) || isVideoProgressiveStream(link)) {
-            final Browser br2 = br.cloneBrowser();
             dllink = link.getStringProperty(PROPERTY_DIRECTURL);
             if (dllink == null) {
                 /* Invalid item (this should never happen!). */
@@ -230,6 +229,7 @@ public class ORFMediathek extends PluginForHost {
             checkUrlForAgeProtection(link, dllink);
             URLConnectionAdapter con = null;
             try {
+                final Browser br2 = br.cloneBrowser();
                 con = br2.openHeadConnection(dllink);
                 handleConnectionErrors(br2, link, con);
                 if (con.getCompleteContentLength() > 0) {
