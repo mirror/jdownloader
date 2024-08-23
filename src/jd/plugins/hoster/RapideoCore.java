@@ -285,7 +285,7 @@ public abstract class RapideoCore extends PluginForHost {
         }
     }
 
-    private Map<String, Object> loginAPI(final Browser br, final Account account) throws IOException, PluginException {
+    private Map<String, Object> loginAPI(final Browser br, final Account account) throws IOException, PluginException, InterruptedException {
         final UrlQuery query = new UrlQuery();
         query.add("site", getAPISiteParam());
         query.add("output", "json");
@@ -308,7 +308,7 @@ public abstract class RapideoCore extends PluginForHost {
         }
     }
 
-    private Map<String, Object> checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+    private Map<String, Object> checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
         Map<String, Object> entries = null;
         try {
             entries = (Map<String, Object>) restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
@@ -334,22 +334,49 @@ public abstract class RapideoCore extends PluginForHost {
         throw new AccountUnavailableException("Your IP has been banned", 5 * 60 * 1000l);
     }
 
-    private Map<String, Object> checkErrorsAPI(final Map<String, Object> entries, final DownloadLink link, final Account account) throws PluginException {
-        final Number errno = (Number) entries.get("errno");
-        final String error = (String) entries.get("errstring");
-        if (error == null || errno == null) {
+    private Map<String, Object> checkErrorsAPI(final Map<String, Object> entries, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
+        final Number errnoO = (Number) entries.get("errno");
+        final String errstring = (String) entries.get("errstring");
+        if (errstring == null || errnoO == null) {
             /* No error */
             return entries;
         }
+        final int errorcode = errnoO.intValue();
         /* 2024-08-21: At this moment, we only handle account related error messages here. */
-        if (errno.intValue() == 80) {
-            /* Too many login attempts - access is temporarily blocked */
-            /* {"errno":80,"errstring":"Zbyt wiele pr\u00f3b logowania - dost\u0119p zosta\u0142 tymczasowo zablokowany"} */
-            throw new AccountUnavailableException(error, 5 * 60 * 1000l);
+        final HashSet<Integer> accountInvalidErrors = new HashSet<Integer>();
+        /* {"errno":0,"errstring":"Nieprawid\u0142owa nazwa u\u017cytkownika\/has\u0142o"} */
+        accountInvalidErrors.add(0);
+        final HashSet<Integer> accountUnavailableErrors = new HashSet<Integer>();
+        /* {"errno":80,"errstring":"Zbyt wiele pr\u00f3b logowania - dost\u0119p zosta\u0142 tymczasowo zablokowany"} */
+        accountUnavailableErrors.add(80);
+        final HashSet<Integer> downloadErrors = new HashSet<Integer>();
+        /*
+         * {"errno":1001,
+         * "errstring":"Aby doda\u0107 pliki z tego hostingu nale\u017cy zaznaczy\u0107 opcj\u0119 pobierania plik\u00f3w na serwer"}
+         */
+        downloadErrors.add(1001);
+        if (accountInvalidErrors.contains(errorcode)) {
+            /* Permanent account errors like invalid user/pw */
+            throw new AccountInvalidException(errstring);
+        } else if (accountUnavailableErrors.contains(errorcode)) {
+            /* Temporary account errors */
+            throw new AccountUnavailableException(errstring, 5 * 60 * 1000l);
+        } else if (downloadErrors.contains(errorcode) && link != null) {
+            /* Temporary account errors */
+            this.getMultiHosterManagement().handleErrorGeneric(account, link, errstring, 3);
+            /* This shall never be reached! */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            /* Permanent account error such as login/password invalid */
-            /* Example: {"errno":0,"errstring":"Nieprawid\u0142owa nazwa u\u017cytkownika\/has\u0142o"} */
-            throw new AccountInvalidException(error);
+            /* Unknown errors */
+            if (link != null) {
+                /* Treat as download related error. */
+                this.getMultiHosterManagement().handleErrorGeneric(account, link, errstring, 50);
+                /* This shall never be reached! */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                /* Treat as account related error. */
+                throw new AccountInvalidException(errstring);
+            }
         }
     }
 
@@ -462,6 +489,9 @@ public abstract class RapideoCore extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
+                /* Use API errorhandling here since it will do a fallback to website errorhandling if response is not a json response. */
+                this.checkErrorsAPI(br, link, account);
+                // this.checkErrorsWebsite(br, link, account);
                 mhm.handleErrorGeneric(account, link, "Final downloadlink did not lead to downloadable content", 50);
             }
         } catch (final Exception e) {

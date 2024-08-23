@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -38,7 +37,7 @@ public class MagentamusikDe extends PluginForDecrypt {
         final String playerVersion = "58935";
         String assetdetailsVersion = null;
         String itemID;
-        if (patternIDInsideURL.matches()) {
+        if (patternIDInsideURL.patternFind()) {
             /* Required information is given inside URL */
             itemID = patternIDInsideURL.getMatch(0);
         } else {
