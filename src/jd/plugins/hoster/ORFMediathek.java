@@ -23,12 +23,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,6 +41,13 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.OrfAt;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "" })
 public class ORFMediathek extends PluginForHost {
@@ -189,7 +190,7 @@ public class ORFMediathek extends PluginForHost {
             }
             try {
                 GetRequest request = br.createGetRequest(dllink);
-                request.getHeaders().put("Accept-Encoding", "identity");
+                request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
                 con = br.openRequestConnection(request);
                 this.handleConnectionErrors(br, link, con);
                 if (!looksLikeDownloadableContent(con, link)) {
@@ -276,8 +277,7 @@ public class ORFMediathek extends PluginForHost {
         if (isAgeRestricted(url)) {
             if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_AGE_RESTRICTED_LAST_RECRAWL_TIMESTAMP, 0) < 30 * 60 * 1000) {
                 /**
-                 * Recrawl has just happened and we were still unable to download the item :( </br>
-                 * This should never happen!
+                 * Recrawl has just happened and we were still unable to download the item :( </br> This should never happen!
                  */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Jugendschutz-Recrawl fehlgeschlagen Grund 1", 10 * 60 * 1000l);
             }
@@ -366,7 +366,7 @@ public class ORFMediathek extends PluginForHost {
         }
         if (isSubtitle(link)) {
             /* Workaround for old downloadcore bug that can lead to incomplete files */
-            br.getHeaders().put("Accept-Encoding", "identity");
+            br.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
             handleConnectionErrors(br, link, dl.getConnection());
             dl.startDownload();
@@ -415,7 +415,7 @@ public class ORFMediathek extends PluginForHost {
             /* 2023-11-27: This should never happen */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol rtmp(e)");
         } else {
-            br.getHeaders().put("Accept-Encoding", "identity");
+            br.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(link, null));
             this.handleConnectionErrors(br, link, dl.getConnection());
             dl.startDownload();
