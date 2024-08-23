@@ -7,6 +7,24 @@ import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.Icon;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.controlling.linkcollector.LinkCollector.ConfirmLinksSettings;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.JDGui.Panels;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.interfaces.View;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -27,24 +45,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.StartButtonAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.TaskQueue;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
-import jd.controlling.linkcollector.LinkCollector.ConfirmLinksSettings;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.JDGui.Panels;
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.gui.swing.jdgui.interfaces.View;
 
 public class StartDownloadsAction extends AbstractToolBarAction implements DownloadWatchdogListener, GUIListener, GenericConfigEventListener<Enum>, ActionContext {
     /**
@@ -79,8 +79,7 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
                 protected Void run() throws RuntimeException {
                     switch (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext()) {
                     case ADD_ALL_LINKS_AND_START_DOWNLOADS:
-                        final ConfirmLinksSettings cls = new ConfirmLinksSettings();
-                        cls.setMoveLinksMode(MoveLinksMode.MANUAL);
+                        final ConfirmLinksSettings cls = new ConfirmLinksSettings(MoveLinksMode.MANUAL);
                         cls.setAutoStartDownloads(true);
                         cls.setClearLinkgrabberlistOnConfirm(false);
                         cls.setSwitchToDownloadlistOnConfirm(true);
@@ -89,6 +88,8 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
                         break;
                     case START_DOWNLOADS_ONLY:
                         DownloadWatchDog.getInstance().startDownloads();
+                        break;
+                    case DISABLED:
                         break;
                     }
                     return null;
@@ -216,9 +217,9 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
     }
 
     private final Icon normalSmall = new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 18);
-    private final Icon forcedSmall = new AbstractIcon(IconKey.ICON_PLAY_BREAKUP_FORCED_ONLY, 18);;
+    private final Icon forcedSmall = new AbstractIcon(IconKey.ICON_PLAY_BREAKUP_FORCED_ONLY, 18); ;
     private final Icon normalLarge = new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24);
-    private final Icon forcedLarge = new AbstractIcon(IconKey.ICON_PLAY_BREAKUP_FORCED_ONLY, 24);;
+    private final Icon forcedLarge = new AbstractIcon(IconKey.ICON_PLAY_BREAKUP_FORCED_ONLY, 24); ;
     private Icon       smallIcon   = normalSmall;
     private Icon       largeIcon   = normalLarge;
 
