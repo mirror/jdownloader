@@ -37,24 +37,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Request;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
@@ -122,6 +104,24 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Request;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 public class YoutubeHelper {
     static {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -187,18 +187,18 @@ public class YoutubeHelper {
     // }
     private static final Map<String, YoutubeReplacer> REPLACER_MAP = new HashMap<String, YoutubeReplacer>();
     public static final List<YoutubeReplacer>         REPLACER     = new ArrayList<YoutubeReplacer>() {
-        @Override
-        public boolean add(final YoutubeReplacer e) {
-            for (final String tag : e.getTags()) {
-                if (REPLACER_MAP.put(tag, e) != null) {
-                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                        throw new WTFException("Duplicate error:" + tag);
-                    }
-                }
-            }
-            return super.add(e);
-        };
-    };
+                                                                       @Override
+                                                                       public boolean add(final YoutubeReplacer e) {
+                                                                           for (final String tag : e.getTags()) {
+                                                                               if (REPLACER_MAP.put(tag, e) != null) {
+                                                                                   if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                                                                                       throw new WTFException("Duplicate error:" + tag);
+                                                                                   }
+                                                                               }
+                                                                           }
+                                                                           return super.add(e);
+                                                                       };
+                                                                   };
 
     public static String applyReplacer(String name, YoutubeHelper helper, DownloadLink link) {
         final Matcher tagMatcher = Pattern.compile("(?i)([A-Z0-9\\_]+)(\\[[^\\]]*\\])?").matcher("");
@@ -2618,8 +2618,11 @@ public class YoutubeHelper {
                 logger.warning("Ignore Error:" + unavailableReason);
             }
         }
-        for (YoutubeStreamData match : loadThumbnails(vid.videoID, true)) {
-            addYoutubeStreamData(ret, match);
+        final List<YoutubeStreamData> thumbnails = loadThumbnails(vid.videoID, true);
+        if (thumbnails != null) {
+            for (YoutubeStreamData thumbnail : thumbnails) {
+                addYoutubeStreamData(ret, thumbnail);
+            }
         }
         for (Entry<YoutubeITAG, StreamCollection> es : ret.entrySet()) {
             Collections.sort(es.getValue(), new Comparator<YoutubeStreamData>() {
@@ -3419,8 +3422,9 @@ public class YoutubeHelper {
     }
 
     /**
-     * Loads thumbnail data from HTML and returns all possible qualities. </br> Returns null if nothing is found. </br> 2024-08-22:
-     * Thumbnail presentation inside html code is the same for playlists and single videos.
+     * Loads thumbnail data from HTML and returns all possible qualities. </br>
+     * Returns null if nothing is found. </br>
+     * 2024-08-22: Thumbnail presentation inside html code is the same for playlists and single videos.
      */
     public List<YoutubeStreamData> loadThumbnails(String itemID, final boolean grabFilesize) {
         final Regex thumbregex = br.getRegex("<meta property=\"og:image\" content=\"https?://i\\.ytimg.com/vi/([\\w-]+)/(.+\\.jpg)[^\"]*\">");
@@ -4230,7 +4234,8 @@ public class YoutubeHelper {
                 this.ytInitialPlayerResponse = jsonToJavaMap(ytInitialPlayerResponse, true);
             } else {
                 /**
-                 * Do not remove this! </br> It's important to clean fields because YoutubeHelper might be shared instance!
+                 * Do not remove this! </br>
+                 * It's important to clean fields because YoutubeHelper might be shared instance!
                  */
                 this.ytInitialPlayerResponse = null;
             }
@@ -4263,7 +4268,8 @@ public class YoutubeHelper {
                 }
             } else {
                 /**
-                 * Do not remove this! </br> It's important to clean fields because YoutubeHelper might be shared instance!
+                 * Do not remove this! </br>
+                 * It's important to clean fields because YoutubeHelper might be shared instance!
                  */
                 this.ytPlayerConfig = null;
             }
@@ -4286,7 +4292,8 @@ public class YoutubeHelper {
                 }
             } else {
                 /**
-                 * Do not remove this! </br> It's important to clean fields because YoutubeHelper might be shared instance!
+                 * Do not remove this! </br>
+                 * It's important to clean fields because YoutubeHelper might be shared instance!
                  */
                 this.ytCfgSet = null;
             }
