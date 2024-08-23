@@ -37,6 +37,24 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Request;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
@@ -104,24 +122,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Request;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 public class YoutubeHelper {
     static {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -187,58 +187,73 @@ public class YoutubeHelper {
     // }
     private static final Map<String, YoutubeReplacer> REPLACER_MAP = new HashMap<String, YoutubeReplacer>();
     public static final List<YoutubeReplacer>         REPLACER     = new ArrayList<YoutubeReplacer>() {
-                                                                       @Override
-                                                                       public boolean add(final YoutubeReplacer e) {
-                                                                           for (final String tag : e.getTags()) {
-                                                                               if (REPLACER_MAP.put(tag, e) != null) {
-                                                                                   if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                                                                                       throw new WTFException("Duplicate error:" + tag);
-                                                                                   }
-                                                                               }
-                                                                           }
-                                                                           return super.add(e);
-                                                                       };
-                                                                   };
+        @Override
+        public boolean add(final YoutubeReplacer e) {
+            for (final String tag : e.getTags()) {
+                if (REPLACER_MAP.put(tag, e) != null) {
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        throw new WTFException("Duplicate error:" + tag);
+                    }
+                }
+            }
+            return super.add(e);
+        };
+    };
 
     public static String applyReplacer(String name, YoutubeHelper helper, DownloadLink link) {
         final Matcher tagMatcher = Pattern.compile("(?i)([A-Z0-9\\_]+)(\\[[^\\]]*\\])?").matcher("");
-        final Matcher tagsMatcher = Pattern.compile("\\*([^\\*]*)\\*").matcher(name);
+        String matchOn = name;
+        final Matcher tagsMatcher = Pattern.compile("\\*([^\\*]*)\\*").matcher(matchOn);
         if (!tagsMatcher.find()) {
-            return name;
-        }
-        final StringBuffer sb = new StringBuffer();
-        do {
-            final String tagSection = tagsMatcher.group(1);
-            String replacement = null;
-            tagMatcher.reset(tagSection);
-            replacerLookup: while (tagMatcher.find()) {
-                final String tagID = tagMatcher.group(1);
-                YoutubeReplacer replacer = REPLACER_MAP.get(tagID);
-                if (replacer == null) {
-                    replacer = REPLACER_MAP.get(tagID.toUpperCase(Locale.ENGLISH));
-                }
-                if (replacer != null) {
-                    final String completeTag = tagMatcher.group(0);
-                    final String replaced = replacer.replace("*" + completeTag + "*", helper, link);
-                    if (StringUtils.isNotEmpty(replaced)) {
-                        replacement = tagSection.replace(completeTag, replaced);
-                    } else {
-                        replacement = "";
+            return matchOn;
+        } else {
+            final StringBuffer sb = new StringBuffer();
+            do {
+                final String tagSection = tagsMatcher.group(1);
+                String replacement = null;
+                tagMatcher.reset(tagSection);
+                final int index = tagsMatcher.end();
+                replacerLookup: while (tagMatcher.find()) {
+                    final String tagID = tagMatcher.group(1);
+                    YoutubeReplacer replacer = REPLACER_MAP.get(tagID);
+                    if (replacer == null) {
+                        replacer = REPLACER_MAP.get(tagID.toUpperCase(Locale.ENGLISH));
                     }
-                    break replacerLookup;
+                    if (replacer != null) {
+                        final String completeTag = tagMatcher.group(0);
+                        final String replaced = replacer.replace("*" + completeTag + "*", helper, link);
+                        if (StringUtils.isNotEmpty(replaced)) {
+                            replacement = tagSection.replace(completeTag, replaced);
+                        } else {
+                            replacement = "";
+                        }
+                        break replacerLookup;
+                    }
                 }
-            }
-            final String quotedReplacement;
-            if (replacement == null) {
-                // keep tags with no assigned REPLACER
-                quotedReplacement = Matcher.quoteReplacement(tagsMatcher.group(0));
-            } else {
-                quotedReplacement = Matcher.quoteReplacement(replacement);
-            }
-            tagsMatcher.appendReplacement(sb, quotedReplacement);
-        } while (tagsMatcher.find());
-        tagsMatcher.appendTail(sb);
-        return sb.toString();
+                final String quotedReplacement;
+                if (replacement == null) {
+                    // keep tags with no assigned REPLACER
+                    final String fixOdd = matchOn.substring(index - 1);
+                    if (tagsMatcher.pattern().matcher(fixOdd).find()) {
+                        // try to fix odd number of *
+                        String fixReplacement = tagsMatcher.group(0);
+                        fixReplacement = fixReplacement.substring(0, fixReplacement.length() - 1);
+                        quotedReplacement = Matcher.quoteReplacement(fixReplacement);
+                        tagsMatcher.appendReplacement(sb, quotedReplacement);
+                        matchOn = fixOdd;
+                        tagsMatcher.reset(matchOn);
+                    } else {
+                        quotedReplacement = Matcher.quoteReplacement(tagsMatcher.group(0));
+                        tagsMatcher.appendReplacement(sb, quotedReplacement);
+                    }
+                } else {
+                    quotedReplacement = Matcher.quoteReplacement(replacement);
+                    tagsMatcher.appendReplacement(sb, quotedReplacement);
+                }
+            } while (tagsMatcher.find());
+            tagsMatcher.appendTail(sb);
+            return sb.toString();
+        }
     }
 
     static {
@@ -1181,6 +1196,18 @@ public class YoutubeHelper {
                         } else {
                             return subtitle.getGenericInfo().getLanguage() + asr;
                         }
+                    } else if (variant instanceof AudioInterface) {
+                        final AudioInterface audio = ((AudioInterface) variant);
+                        final Locale locale = audio.getAudioLocale();
+                        if (locale != null) {
+                            if ("code".equalsIgnoreCase(mod)) {
+                                return locale.getLanguage();
+                            } else if ("display".equalsIgnoreCase(mod)) {
+                                return locale.getDisplayLanguage();
+                            } else {
+                                return locale.getDisplayName();
+                            }
+                        }
                     }
                 }
                 return "";
@@ -1345,7 +1372,7 @@ public class YoutubeHelper {
             if (mapData != null) {
                 return mapData.hashCode();
             } else {
-                return streamData.itag.hashCode();
+                return streamData.hashCode();
             }
         }
 
@@ -1360,7 +1387,7 @@ public class YoutubeHelper {
             } else if (mapData != null && ((StreamMap) obj).mapData != null) {
                 return StringUtils.equalsIgnoreCase(mapData, ((StreamMap) obj).mapData);
             } else if (streamData != null && ((StreamMap) obj).streamData != null) {
-                return streamData.itag == ((StreamMap) obj).streamData.itag;
+                return streamData.equals(((StreamMap) obj).streamData);
             } else {
                 return false;
             }
@@ -3021,6 +3048,10 @@ public class YoutubeHelper {
             return null;
         }
         final YoutubeStreamData ret = new YoutubeStreamData(src, vid, url, itag, null);
+        final Map<String, Object> audioTrack = (Map<String, Object>) entry.get("audioTrack");
+        if (audioTrack != null) {
+            ret.setLngId((String) audioTrack.get("id"));
+        }
         ret.setThrottle(throttle);
         if (height > 0) {
             ret.setHeight(height.intValue());
@@ -3388,9 +3419,8 @@ public class YoutubeHelper {
     }
 
     /**
-     * Loads thumbnail data from HTML and returns all possible qualities. </br>
-     * Returns null if nothing is found. </br>
-     * 2024-08-22: Thumbnail presentation inside html code is the same for playlists and single videos.
+     * Loads thumbnail data from HTML and returns all possible qualities. </br> Returns null if nothing is found. </br> 2024-08-22:
+     * Thumbnail presentation inside html code is the same for playlists and single videos.
      */
     public List<YoutubeStreamData> loadThumbnails(String itemID, final boolean grabFilesize) {
         final Regex thumbregex = br.getRegex("<meta property=\"og:image\" content=\"https?://i\\.ytimg.com/vi/([\\w-]+)/(.+\\.jpg)[^\"]*\">");
@@ -4200,8 +4230,7 @@ public class YoutubeHelper {
                 this.ytInitialPlayerResponse = jsonToJavaMap(ytInitialPlayerResponse, true);
             } else {
                 /**
-                 * Do not remove this! </br>
-                 * It's important to clean fields because YoutubeHelper might be shared instance!
+                 * Do not remove this! </br> It's important to clean fields because YoutubeHelper might be shared instance!
                  */
                 this.ytInitialPlayerResponse = null;
             }
@@ -4234,8 +4263,7 @@ public class YoutubeHelper {
                 }
             } else {
                 /**
-                 * Do not remove this! </br>
-                 * It's important to clean fields because YoutubeHelper might be shared instance!
+                 * Do not remove this! </br> It's important to clean fields because YoutubeHelper might be shared instance!
                  */
                 this.ytPlayerConfig = null;
             }
@@ -4258,8 +4286,7 @@ public class YoutubeHelper {
                 }
             } else {
                 /**
-                 * Do not remove this! </br>
-                 * It's important to clean fields because YoutubeHelper might be shared instance!
+                 * Do not remove this! </br> It's important to clean fields because YoutubeHelper might be shared instance!
                  */
                 this.ytCfgSet = null;
             }
