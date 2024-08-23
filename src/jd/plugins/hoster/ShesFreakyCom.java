@@ -15,6 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -31,10 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shesfreaky.com" }, urls = { "https?://(?:www\\.)?shesfreaky\\.com/(?:video/[A-Za-z0-9\\-_]+-\\d+\\.html|embed/\\d+)" })
 public class ShesFreakyCom extends PluginForHost {
@@ -142,23 +142,19 @@ public class ShesFreakyCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        if (this.br.containsHTML("class=\"private\\-video\"")) {
-            /* E.g. 'You must be friends with blabla to video this content' */
-            throw new AccountRequiredException();
-        } else if (StringUtils.isEmpty(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        handleConnectionErrors(br, dl.getConnection());
-        dl.startDownload();
+        handleDownload(link, null);
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account, true);
         if (this.br.containsHTML("class=\"private\\-video\"")) {
             /* E.g. 'You must be friends with blabla to video this content' */
-            throw new AccountRequiredException();
+            String friendsWithUsername = br.getRegex("You must be friends with <a href=\"[^\"]+\">([^<]+)</a>").getMatch(0);
+            if (friendsWithUsername == null) {
+                friendsWithUsername = "the uploader";
+            }
+            friendsWithUsername = Encoding.htmlDecode(friendsWithUsername).trim();
+            throw new AccountRequiredException(String.format("You must be friends with %s to download this video", friendsWithUsername));
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

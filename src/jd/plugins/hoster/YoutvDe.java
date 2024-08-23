@@ -279,6 +279,7 @@ public class YoutvDe extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        /* Account required to download any content of this website. */
         throw new AccountRequiredException();
     }
 

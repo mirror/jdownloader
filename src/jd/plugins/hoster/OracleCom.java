@@ -136,6 +136,7 @@ public class OracleCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
+        /* Download without account is not possible. */
         throw new AccountRequiredException();
     }
 

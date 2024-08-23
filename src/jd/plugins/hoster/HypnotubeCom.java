@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -30,9 +33,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HypnotubeCom extends PluginForHost {
@@ -169,8 +169,9 @@ public class HypnotubeCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, true);
-        if (br.containsHTML(">\\s*We're sorry, You must be friends with")) {
-            throw new AccountRequiredException();
+        final String accountRequiredError = br.getRegex(">\\s*(We're sorry, You must be friends with[^<]+)").getMatch(0);
+        if (accountRequiredError != null) {
+            throw new AccountRequiredException(Encoding.htmlDecode(accountRequiredError).trim());
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

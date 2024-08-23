@@ -1064,7 +1064,7 @@ public class MegaNz extends PluginForHost {
                  * 2024-07-02: Skip files over 5GB as we cannot download them in free mode, see: </br>
                  * https://board.jdownloader.org/showthread.php?t=75268
                  */
-                throw new AccountRequiredException();
+                throw new AccountRequiredException("Free download of files >5GB is disabled in settings");
             }
         }
         return super.canHandle(downloadLink, account);

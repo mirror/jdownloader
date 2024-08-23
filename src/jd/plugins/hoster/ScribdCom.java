@@ -424,7 +424,7 @@ public class ScribdCom extends PluginForHost {
         }
         final String[] downloadInfo = getDllink(parameter, account, is_audiobook);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, downloadInfo[0], this.isResumeable(parameter, account), 1);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection();
             /* Assume that our current account type = free and the file is not downloadable */
             throw new AccountRequiredException();

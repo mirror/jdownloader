@@ -401,7 +401,7 @@ public class IwaraTv extends PluginForHost {
         String directurl = link.getStringProperty(PROPERTY_DIRECTURL);
         if (StringUtils.isEmpty(directurl)) {
             if (link.hasProperty(PROPERTY_IS_PRIVATE)) {
-                throw new AccountRequiredException();
+                throw new AccountRequiredException("Private video");
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

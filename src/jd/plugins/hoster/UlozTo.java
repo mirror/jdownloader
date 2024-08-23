@@ -798,7 +798,7 @@ public class UlozTo extends PluginForHost {
     private void checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         this.checkGeoBlocked(br, account);
         if (this.isPrivateFile(br)) {
-            throw new AccountRequiredException();
+            throw new AccountRequiredException("Private file");
         }
         if (br.containsHTML("Stránka nenalezena")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

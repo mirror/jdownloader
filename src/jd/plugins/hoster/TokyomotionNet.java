@@ -222,7 +222,7 @@ public class TokyomotionNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             if (isPrivateContent(br)) {
-                throw new AccountRequiredException();
+                throw new AccountRequiredException("Private video");
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
