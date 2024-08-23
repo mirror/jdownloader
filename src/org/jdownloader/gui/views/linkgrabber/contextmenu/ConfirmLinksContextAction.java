@@ -13,6 +13,15 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.ConfirmLinksSettings;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.interfaces.View;
+
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.swing.MigPanel;
@@ -57,15 +66,6 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.ConfirmLinksSettings;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.interfaces.View;
-
 public class ConfirmLinksContextAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements GUIListener, ActionContext {
     public static final String SELECTION_ONLY = "selectionOnly";
 
@@ -75,11 +75,21 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
             public String getLabel() {
                 return _JDT.T.ConfirmLinksContextAction_HandleOfflineLinksOptions_INCLUDE_OFFLINE();
             }
+
+            @Override
+            public OnOfflineLinksAction getSelectedAction() {
+                return this;
+            }
         },
         EXCLUDE_OFFLINE {
             @Override
             public String getLabel() {
                 return _JDT.T.ConfirmLinksContextAction_HandleOfflineLinksOptions_EXCLUDE_OFFLINE();
+            }
+
+            @Override
+            public OnOfflineLinksAction getSelectedAction() {
+                return this;
             }
         },
         EXCLUDE_OFFLINE_AND_REMOVE {
@@ -87,23 +97,40 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
             public String getLabel() {
                 return _JDT.T.ConfirmLinksContextAction_HandleOfflineLinksOptions_EXCLUDE_OFFLINE_AND_REMOVE();
             }
+
+            @Override
+            public OnOfflineLinksAction getSelectedAction() {
+                return this;
+            }
         },
         ASK {
             @Override
             public String getLabel() {
                 return _JDT.T.ConfirmLinksContextAction_HandleOfflineLinksOptions_ASK();
             }
+
+            @Override
+            public OnOfflineLinksAction getSelectedAction() {
+                return this;
+            }
         },
         GLOBAL {
             @Override
             public String getLabel() {
-                OnOfflineLinksAction dflt = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
+                return _JDT.T.ConfirmLinksContextAction_HandleOfflineLinksOptions_GLOBAL(getSelectedAction().getLabel());
+            }
+
+            @Override
+            public OnOfflineLinksAction getSelectedAction() {
+                final OnOfflineLinksAction dflt = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
                 if (dflt == this || dflt == null) {
-                    dflt = OnOfflineLinksAction.ASK;
+                    return OnOfflineLinksAction.ASK;
                 }
-                return _JDT.T.ConfirmLinksContextAction_HandleOfflineLinksOptions_GLOBAL(dflt.getLabel());
+                return dflt;
             }
         };
+
+        public abstract OnOfflineLinksAction getSelectedAction();
     }
 
     public static enum OnDupesLinksAction implements LabelInterface {
@@ -112,11 +139,21 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
             public String getLabel() {
                 return _JDT.T.ConfirmLinksContextAction_HandleDupesLinksOptions_INCLUDE();
             }
+
+            @Override
+            public OnDupesLinksAction getSelectedAction() {
+                return this;
+            }
         },
         EXCLUDE {
             @Override
             public String getLabel() {
                 return _JDT.T.ConfirmLinksContextAction_HandleDupesLinksOptions_EXCLUDE();
+            }
+
+            @Override
+            public OnDupesLinksAction getSelectedAction() {
+                return this;
             }
         },
         EXCLUDE_AND_REMOVE {
@@ -124,23 +161,41 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
             public String getLabel() {
                 return _JDT.T.ConfirmLinksContextAction_HandleDupesLinksOptions_EXCLUDE_AND_REMOVE();
             }
+
+            @Override
+            public OnDupesLinksAction getSelectedAction() {
+                return this;
+            }
         },
         ASK {
             @Override
             public String getLabel() {
                 return _JDT.T.ConfirmLinksContextAction_HandleDupesLinksOptions_ASK();
             }
+
+            @Override
+            public OnDupesLinksAction getSelectedAction() {
+                return this;
+            }
         },
         GLOBAL {
             @Override
             public String getLabel() {
-                OnDupesLinksAction dflt = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
+                return _JDT.T.ConfirmLinksContextAction_HandleDupesLinksOptions_GLOBAL(getSelectedAction().getLabel());
+            }
+
+            @Override
+            public OnDupesLinksAction getSelectedAction() {
+                final OnDupesLinksAction dflt = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
                 if (dflt == this || dflt == null) {
-                    dflt = OnDupesLinksAction.ASK;
+                    return OnDupesLinksAction.ASK;
+                } else {
+                    return dflt;
                 }
-                return _JDT.T.ConfirmLinksContextAction_HandleDupesLinksOptions_GLOBAL(dflt.getLabel());
             }
         };
+
+        public abstract OnDupesLinksAction getSelectedAction();
     }
 
     public static enum AutoStartOptions implements LabelInterface {
@@ -149,11 +204,21 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
             public String getLabel() {
                 return _JDT.T.AutoStartOptions_AUTO();
             }
+
+            @Override
+            public boolean isEnabled() {
+                return CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled();
+            }
         },
         DISABLED {
             @Override
             public String getLabel() {
                 return _JDT.T.AutoStartOptions_DISABLED();
+            }
+
+            @Override
+            public boolean isEnabled() {
+                return false;
             }
         },
         ENABLED {
@@ -161,7 +226,14 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
             public String getLabel() {
                 return _JDT.T.AutoStartOptions_ENABLED();
             }
+
+            @Override
+            public boolean isEnabled() {
+                return true;
+            }
         };
+
+        public abstract boolean isEnabled();
     }
 
     public static enum PackageExpandBehavior implements LabelInterface {
@@ -742,29 +814,19 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         if (!isEnabled()) {
             return;
         }
-        OnOfflineLinksAction handleOffline = getHandleOffline();
-        if (handleOffline == OnOfflineLinksAction.GLOBAL) {
-            handleOffline = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
-        }
-        OnDupesLinksAction handleDupes = getHandleDupes();
-        if (handleDupes == OnDupesLinksAction.GLOBAL) {
-            handleDupes = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
-        }
-        final ConfirmLinksSettings cls = new ConfirmLinksSettings();
-        cls.setMoveLinksMode(MoveLinksMode.MANUAL);
+        final ConfirmLinksSettings cls = new ConfirmLinksSettings(MoveLinksMode.MANUAL);
         cls.setAutoStartDownloads(doAutostart());
         cls.setClearLinkgrabberlistOnConfirm(isClearListAfterConfirm());
-        // cls.setSwitchToDownloadlistOnConfirm(CFG_LINKGRABBER.CFG.isAutoSwitchToDownloadTableOnConfirmDefaultEnabled());
         if (isAssignPriorityEnabled()) {
             cls.setPriority(getPriority());
         }
-        cls.setPackageExpandBehavior(this.packageExpandBehavior);
+        cls.setPackageExpandBehavior(this.getPackageExpandBehavior());
         cls.setForceDownloads(isForceDownloads());
-        cls.setHandleOffline(handleOffline);
-        cls.setHandleDupes(handleDupes);
-        cls.setConfirmationDialogBehavior(this.confirmationDialogBehavior);
-        cls.setConfirmationDialogThresholdMinPackages(minNumberofLinksForConfirmMoveToDownloadlistDialog);
-        cls.setConfirmationDialogThresholdMinLinks(minNumberofLinksForConfirmMoveToDownloadlistDialog);
+        cls.setHandleOffline(getHandleOffline());
+        cls.setHandleDupes(getHandleDupes());
+        cls.setConfirmationDialogBehavior(this.getConfirmationDialogBehavior());
+        cls.setConfirmationDialogThresholdMinPackages(getMinNumberofPackagesForMoveToDownloadlistConfirmDialog());
+        cls.setConfirmationDialogThresholdMinLinks(getMinNumberofLinksForMoveToDownloadlistConfirmDialog());
         final SelectionInfo<CrawledPackage, CrawledLink> si;
         if (isSelectionOnly()) {
             si = getSelection();
@@ -779,11 +841,12 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     }
 
     protected boolean doAutostart() {
-        final boolean ret = autoStart == AutoStartOptions.ENABLED || (autoStart == AutoStartOptions.AUTO && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled());
+        final boolean ret = autoStart != null && autoStart.isEnabled();
         if (metaCtrl && isCtrlToggle()) {
             return !ret;
+        } else {
+            return ret;
         }
-        return ret;
     }
 
     @Order(300)

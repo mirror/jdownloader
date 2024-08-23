@@ -1465,9 +1465,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, List<CrawledLink> plinks) {
@@ -2719,16 +2719,16 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             return this;
         }
 
-        public final Boolean isForceDownloads() {
+        public final boolean isForceDownloads() {
             final Boolean ret = forceDownloads;
             if (ret != null) {
-                return ret;
+                return ret.booleanValue();
             }
             return defaultForceDownloads;
         }
 
         public final ConfirmLinksSettings setForceDownloads(Boolean forceDownloads) {
-            if (forceDownloads == null || forceDownloads == defaultForceDownloads) {
+            if (forceDownloads == null || forceDownloads.booleanValue() == defaultForceDownloads) {
                 this.forceDownloads = null;
             } else {
                 this.forceDownloads = forceDownloads;
@@ -2753,16 +2753,16 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             return this;
         }
 
-        public final Boolean isClearLinkgrabberlistOnConfirm() {
+        public final boolean isClearLinkgrabberlistOnConfirm() {
             final Boolean ret = clearLinkgrabberlistOnConfirm;
             if (ret != null) {
-                return ret;
+                return ret.booleanValue();
             }
             return defaultClearLinkgrabberlistOnConfirm;
         }
 
         public final ConfirmLinksSettings setClearLinkgrabberlistOnConfirm(Boolean clearLinkgrabberlistOnConfirm) {
-            if (clearLinkgrabberlistOnConfirm == defaultClearLinkgrabberlistOnConfirm) {
+            if (clearLinkgrabberlistOnConfirm == null || clearLinkgrabberlistOnConfirm.booleanValue() == defaultClearLinkgrabberlistOnConfirm) {
                 this.clearLinkgrabberlistOnConfirm = null;
             } else {
                 this.clearLinkgrabberlistOnConfirm = clearLinkgrabberlistOnConfirm;
@@ -2770,16 +2770,16 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             return this;
         }
 
-        public final Boolean isSwitchToDownloadlistOnConfirm() {
+        public final boolean isSwitchToDownloadlistOnConfirm() {
             final Boolean ret = switchToDownloadlistOnConfirm;
             if (ret != null) {
-                return ret;
+                return ret.booleanValue();
             }
             return defaultSwitchToDownloadlistOnConfirm;
         }
 
         public final ConfirmLinksSettings setSwitchToDownloadlistOnConfirm(Boolean switchToDownloadlistOnConfirm) {
-            if (switchToDownloadlistOnConfirm == defaultSwitchToDownloadlistOnConfirm) {
+            if (switchToDownloadlistOnConfirm == null || switchToDownloadlistOnConfirm.booleanValue() == defaultSwitchToDownloadlistOnConfirm) {
                 this.switchToDownloadlistOnConfirm = null;
             } else {
                 this.switchToDownloadlistOnConfirm = switchToDownloadlistOnConfirm;
@@ -2894,16 +2894,16 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         private final boolean                    defaultAutoStartDownloads                     = getDefaultAutoStartDownloads();
         private Boolean                          autoStartDownloads                            = null;
 
-        private final Boolean                    defaultForceDownloads                         = getDefaultForceDownloads();
+        private final boolean                    defaultForceDownloads                         = getDefaultForceDownloads();
         private Boolean                          forceDownloads                                = null;
 
-        private final Boolean                    defaultClearLinkgrabberlistOnConfirm          = getDefaultClearLinkgrabberlistOnConfirm();
+        private final boolean                    defaultClearLinkgrabberlistOnConfirm          = getDefaultClearLinkgrabberlistOnConfirm();
         private Boolean                          clearLinkgrabberlistOnConfirm                 = null;
 
         private final Priority                   defaultPriority                               = getDefaultPriority();
         private Priority                         priority                                      = null;
 
-        private final Boolean                    defaultSwitchToDownloadlistOnConfirm          = getDefaultSwitchToDownloadlistOnConfirm();
+        private final boolean                    defaultSwitchToDownloadlistOnConfirm          = getDefaultSwitchToDownloadlistOnConfirm();
         private Boolean                          switchToDownloadlistOnConfirm                 = null;
 
         private final OnOfflineLinksAction       defaultHandleOffline                          = getDefaultHandleOffline();
@@ -2960,7 +2960,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             return OnOfflineLinksAction.ASK;
         }
 
-        private Boolean getDefaultSwitchToDownloadlistOnConfirm() {
+        private boolean getDefaultSwitchToDownloadlistOnConfirm() {
             return JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled();
         }
 
@@ -2984,18 +2984,18 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             return AutoStartOptions.AUTO.isEnabled();
         }
 
-        private Boolean getDefaultClearLinkgrabberlistOnConfirm() {
+        private boolean getDefaultClearLinkgrabberlistOnConfirm() {
             if (MoveLinksMode.AUTO.equals(getMoveLinksMode())) {
                 return CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm();
             }
-            return null;
+            return false;
         }
 
-        private Boolean getDefaultForceDownloads() {
+        private boolean getDefaultForceDownloads() {
             if (MoveLinksMode.AUTO.equals(getMoveLinksMode())) {
                 return CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads();
             }
-            return null;
+            return false;
         }
 
     }
