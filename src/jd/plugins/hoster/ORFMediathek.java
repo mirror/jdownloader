@@ -165,7 +165,6 @@ public class ORFMediathek extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
-
         String dllink = null;
         if (link.getPluginPatternMatcher().matches(TYPE_AUDIO)) {
             br.getPage(link.getPluginPatternMatcher());
@@ -190,10 +189,11 @@ public class ORFMediathek extends PluginForHost {
             }
             URLConnectionAdapter con = null;
             try {
-                final GetRequest request = br.createGetRequest(dllink);
+                final Browser br2 = br.cloneBrowser();
+                final GetRequest request = br2.createGetRequest(dllink);
                 request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
-                con = br.openRequestConnection(request);
-                this.handleConnectionErrors(br, link, con);
+                con = br2.openRequestConnection(request);
+                this.handleConnectionErrors(br2, link, con);
                 if (!looksLikeDownloadableContent(con, link)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
