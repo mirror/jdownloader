@@ -41,6 +41,7 @@ import org.appwork.utils.net.URLHelper;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.RapidGatorConfig;
+import org.jdownloader.plugins.components.config.RapidGatorConfig.PremiumDownloadBehaviorForSubscriberOnlyFiles;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
@@ -421,14 +422,18 @@ public class RapidGatorNet extends PluginForHost {
                 this.dl = null;
                 logger.info("No direct-URL -> Tring to generate fresh directurl");
                 br.followConnection(true);
-                final String subscribersOnlyDownload = getErrormessageSubscriberOnlyDownload(br);
+                final String errormessageSubscribersOnlyDownload = getErrormessageSubscriberOnlyDownload(br);
+                final PremiumDownloadBehaviorForSubscriberOnlyFiles premiumDownloadBehaviorForSubscriberOnlyFiles = cfg.getPremiumDownloadBehaviorForSubscriberOnlyFiles();
+                if (errormessageSubscribersOnlyDownload != null && isPremiumAccount && premiumDownloadBehaviorForSubscriberOnlyFiles == PremiumDownloadBehaviorForSubscriberOnlyFiles.SKIP) {
+                    throw new AccountRequiredException(errormessageSubscribersOnlyDownload);
+                }
                 if (isPremiumAccount && isBuyFile(br, link, account)) {
                     /* 2022-11-07: can be *bypassed* for premium users by using API mode */
                     logger.info("File needs to be bought separately -> Trying to work around this limitation");
                     handlePremium_api(link, account);
                     return;
                 }
-                if (isPremiumAccount && subscribersOnlyDownload == null) {
+                if (isPremiumAccount && errormessageSubscribersOnlyDownload == null) {
                     /* Premium account */
                     finalDownloadURL = br.getRegex("var premium_download_link\\s*=\\s*'(https?://[^<>\"']+)';").getMatch(0);
                     if (finalDownloadURL == null) {
@@ -461,14 +466,11 @@ public class RapidGatorNet extends PluginForHost {
                     final String waitSecondsStr = br.getRegex("var secs = (\\d+);").getMatch(0);
                     if (fid == null || waitSecondsStr == null) {
                         handleErrorsWebsite(this.br, link, account, currentIP, true);
-                        if (account != null && !this.isLoggedINWebsite(br)) {
-                            throw new AccountUnavailableException("Session expired?", 1 * 60 * 1000l);
-                        }
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    if (isPremiumAccount && subscribersOnlyDownload != null) {
+                    if (isPremiumAccount && errormessageSubscribersOnlyDownload != null) {
                         /* Use owns premium account but can't download this file as premium user. */
-                        logger.info("Attempting free download in premium mode because only premium subscribers can download this file as premium | subscribersOnlyDownload= " + subscribersOnlyDownload);
+                        logger.info("Attempting free download in premium mode because only premium subscribers can download this file as premium | subscribersOnlyDownload= " + errormessageSubscribersOnlyDownload);
                     }
                     logger.info("Pre download wait in seconds: " + waitSecondsStr);
                     long waitMillis = Long.parseLong(waitSecondsStr) * 1000;
@@ -1704,7 +1706,7 @@ public class RapidGatorNet extends PluginForHost {
             return true;
         } else if (StringUtils.containsIgnoreCase(br.getURL(), "/subscription/create")) {
             return true;
-        } else if (br.containsHTML("(?i)/wallet/BuyFile/id/")) {
+        } else if (br.containsHTML("/wallet/BuyFile/id/")) {
             return true;
         } else {
             return false;

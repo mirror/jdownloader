@@ -2,8 +2,11 @@ package org.jdownloader.plugins.components.config;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultOnNull;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -54,12 +57,17 @@ public interface RapidGatorConfig extends PluginConfigInterface {
         public String getWaitSecondsOnErrorYouCantDownloadMoreThanOneFile_label() {
             return text_WaitSecondsOnErrorYouCantDownloadMoreThanOneFile;
         }
+
+        public String getPremiumDownloadBehaviorForSubscriberOnlyFiles_label() {
+            return "Premium account download: What to do when an additional subscription is required to download a file?";
+        }
     }
 
     @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("EXPERIMENTALHANDLING")
     @DescriptionForConfigEntry(text_ActivateExperimentalWaittimeHandling)
+    @DefaultOnNull()
     @Order(10)
     boolean isActivateExperimentalWaittimeHandling();
 
@@ -69,6 +77,7 @@ public interface RapidGatorConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry(text_EnableAPIPremium)
+    @DefaultOnNull()
     @Order(20)
     boolean isEnableAPIPremium();
 
@@ -81,6 +90,7 @@ public interface RapidGatorConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry(text_EnableResumeFree)
+    @DefaultOnNull()
     @Order(21)
     boolean isEnableResumeFree();
 
@@ -89,6 +99,7 @@ public interface RapidGatorConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("This may save some time for free- and free account downloads.")
+    @DefaultOnNull()
     @Order(22)
     boolean isEnableFreeDownloadModeCaptchaDuringPreDownloadWait();
 
@@ -98,6 +109,7 @@ public interface RapidGatorConfig extends PluginConfigInterface {
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("EXPERIMENTAL_ENFORCE_SSL")
     @DescriptionForConfigEntry(text_ExperimentalEnforceSSL)
+    @DefaultOnNull()
     @Order(30)
     boolean isExperimentalEnforceSSL();
 
@@ -106,6 +118,7 @@ public interface RapidGatorConfig extends PluginConfigInterface {
     @AboutConfig
     @TakeValueFromSubconfig("CUSTOM_REFERER")
     @DescriptionForConfigEntry(text_Referer)
+    @DefaultOnNull()
     @Order(40)
     String getReferer();
 
@@ -114,6 +127,7 @@ public interface RapidGatorConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultIntValue(120)
     @SpinnerValidator(min = 1, max = 300, step = 1)
+    @DefaultOnNull()
     @Order(50)
     @DescriptionForConfigEntry(text_ReadTimeout)
     int getReadTimeout();
@@ -123,9 +137,34 @@ public interface RapidGatorConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultIntValue(300)
     @SpinnerValidator(min = 15, max = 900, step = 1)
+    @DefaultOnNull()
     @Order(60)
     @DescriptionForConfigEntry(text_WaitSecondsOnErrorYouCantDownloadMoreThanOneFile)
     int getWaitSecondsOnErrorYouCantDownloadMoreThanOneFile();
 
     void setWaitSecondsOnErrorYouCantDownloadMoreThanOneFile(int i);
+
+    public static enum PremiumDownloadBehaviorForSubscriberOnlyFiles implements LabelInterface {
+        SKIP {
+            @Override
+            public String getLabel() {
+                return "Skip file";
+            }
+        },
+        DOWNLOAD_AS_FREE_USER {
+            @Override
+            public String getLabel() {
+                return "Download file as free user";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("SKIP")
+    @DefaultOnNull()
+    @Order(70)
+    @DescriptionForConfigEntry("What to do when a file needs a separate (additional) subscription but is also downloadable for free users?")
+    PremiumDownloadBehaviorForSubscriberOnlyFiles getPremiumDownloadBehaviorForSubscriberOnlyFiles();
+
+    void setPremiumDownloadBehaviorForSubscriberOnlyFiles(final PremiumDownloadBehaviorForSubscriberOnlyFiles namingSchemeType);
 }
