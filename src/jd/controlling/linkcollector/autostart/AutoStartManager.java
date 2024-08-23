@@ -4,20 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
 
-import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.storage.config.ValidationException;
-import org.appwork.storage.config.events.GenericConfigEventListener;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.Application;
-import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.swing.EDTHelper;
-import org.jdownloader.controlling.Priority;
-import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
-import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
-import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
-
 import jd.controlling.linkcollector.LinkCollectingInformation;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollector.ConfirmLinksSettings;
@@ -27,6 +13,19 @@ import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.Application;
+import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.swing.EDTHelper;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
+import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
 public class AutoStartManager implements GenericConfigEventListener<Boolean> {
     private final DelayedRunnable             delayer;
@@ -79,19 +78,6 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                             eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.RUN));
                         }
                         final boolean autoConfirm = globalAutoConfirm;
-                        final boolean autoStart;
-                        switch (CFG_LINKGRABBER.CFG.getAutoConfirmManagerAutoStart()) {
-                        case DISABLED:
-                            autoStart = false;
-                            break;
-                        case ENABLED:
-                            autoStart = true;
-                            break;
-                        case AUTO:
-                        default:
-                            autoStart = globalAutoStart;
-                            break;
-                        }
                         final List<AbstractNode> list = new ArrayList<AbstractNode>(selectionInfo.getChildren().size());
                         boolean createNewSelection = false;
                         for (final CrawledLink child : selectionInfo.getChildren()) {
@@ -107,22 +93,13 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                             }
                         }
                         if (list.size() > 0) {
-                            final Priority priority;
-                            if (CFG_LINKGRABBER.CFG.isAutoConfirmManagerAssignPriorityEnabled()) {
-                                priority = CFG_LINKGRABBER.CFG.getAutoConfirmManagerPriority();
-                            } else {
-                                priority = null;
-                            }
                             final SelectionInfo<CrawledPackage, CrawledLink> si;
                             if (createNewSelection) {
                                 si = new SelectionInfo<CrawledPackage, CrawledLink>(null, list);
                             } else {
                                 si = selectionInfo;
                             }
-                            final ConfirmLinksSettings cls = new ConfirmLinksSettings();
-                            cls.setMoveLinksMode(MoveLinksMode.AUTO);
-                            cls.setAutoStartDownloads(autoStart);
-                            cls.setPriority(priority);
+                            final ConfirmLinksSettings cls = new ConfirmLinksSettings(MoveLinksMode.AUTO);
                             ConfirmLinksContextAction.confirmSelection(si, cls);
                         }
                         if (delayer.isDelayerActive() == false && eventSender.hasListener()) {
