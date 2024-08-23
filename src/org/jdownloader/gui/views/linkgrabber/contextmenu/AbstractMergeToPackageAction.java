@@ -118,7 +118,7 @@ public abstract class AbstractMergeToPackageAction<PackageType extends AbstractP
         controller.getQueue().add(new QueueAction<Void, RuntimeException>() {
             @Override
             protected Void run() throws RuntimeException {
-                final PackageType newPackage = createNewPackage(downloadFolder);
+                final PackageType newPackage = createNewPackage(name, downloadFolder);
                 newPackage.setExpanded(isExpandNewPackage());
                 final String packageComment = mergePackageViewListComments(sel.getPackageViews());
                 if (!StringUtils.isEmpty(packageComment)) {
@@ -154,7 +154,7 @@ public abstract class AbstractMergeToPackageAction<PackageType extends AbstractP
         });
     }
 
-    protected abstract PackageType createNewPackage(final String downloadFolder);
+    protected abstract PackageType createNewPackage(final String name, final String downloadFolder);
 
     /** Merges comments of multiple packages into one string. */
     protected String mergePackageViewListComments(final List<PackageView<PackageType, ChildrenType>> packages) {

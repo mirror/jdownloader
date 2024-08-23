@@ -14,9 +14,9 @@ public class MergeToPackageAction extends org.jdownloader.gui.views.linkgrabber.
     }
 
     @Override
-    protected CrawledPackage createNewPackage(String downloadFolder) {
+    protected CrawledPackage createNewPackage(final String name, String downloadFolder) {
         final CrawledPackage newPackage = new CrawledPackage();
-        newPackage.setName(getName());
+        newPackage.setName(name);
         newPackage.setDownloadFolder(downloadFolder);
         return newPackage;
     }

@@ -13,9 +13,9 @@ public class MergeToPackageAction extends org.jdownloader.gui.views.linkgrabber.
     }
 
     @Override
-    protected FilePackage createNewPackage(final String downloadFolder) {
+    protected FilePackage createNewPackage(final String name, final String downloadFolder) {
         final FilePackage newPackage = FilePackage.getInstance();
-        final String name = getName();
+
         newPackage.setName(name);
         newPackage.setDownloadDirectory(PackagizerController.replaceDynamicTags(downloadFolder, name, newPackage));
         return newPackage;
