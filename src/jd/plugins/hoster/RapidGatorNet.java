@@ -462,15 +462,17 @@ public class RapidGatorNet extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait between free downloads to prevent your IP from getting blocked for 1 day!", FREE_RECONNECTWAIT_GENERAL_MILLIS - passedTimeSinceLastFreeDownloadMilliseconds);
                         }
                     }
+                    final String startTimerUrl = br.getRegex("var startTimerUrl = '([^']+)';").getMatch(0);
                     final String fid = br.getRegex("var fid = (\\d+);").getMatch(0);
                     final String waitSecondsStr = br.getRegex("var secs = (\\d+);").getMatch(0);
-                    if (fid == null || waitSecondsStr == null) {
+                    if (startTimerUrl == null || fid == null || waitSecondsStr == null) {
+                        /* Check for reasons why download may be impossible. */
                         handleErrorsWebsite(this.br, link, account, currentIP, true);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     if (isPremiumAccount && errormessageSubscribersOnlyDownload != null) {
                         /* Use owns premium account but can't download this file as premium user. */
-                        logger.info("Attempting free download in premium mode because only premium subscribers can download this file as premium | subscribersOnlyDownload= " + errormessageSubscribersOnlyDownload);
+                        logger.info("Performing free download in premium mode | subscribersOnlyDownload= " + errormessageSubscribersOnlyDownload);
                     }
                     logger.info("Pre download wait in seconds: " + waitSecondsStr);
                     long waitMillis = Long.parseLong(waitSecondsStr) * 1000;
@@ -478,7 +480,7 @@ public class RapidGatorNet extends PluginForHost {
                     br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                     /* Trigger serverside countdown. */
-                    br2.getPage("/download/AjaxStartTimer?fid=" + fid);
+                    br2.getPage(startTimerUrl + "?fid=" + fid);
                     final Map<String, Object> respstarttimer = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
                     String state = (String) respstarttimer.get("state");
                     if (!"started".equalsIgnoreCase(state)) {
