@@ -6,7 +6,7 @@ import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 
 public class YoutubeFinalLinkResource implements Storable {
     public final static TypeRef<YoutubeFinalLinkResource> TYPE_REF = new TypeRef<YoutubeFinalLinkResource>() {
-    };
+                                                                   };
     private YoutubeITAG                                   itag;
     private String                                        videoID;
     private String[]                                      segments;
@@ -67,6 +67,16 @@ public class YoutubeFinalLinkResource implements Storable {
     private long   estimatedContentLength = -1;
     private int    throttle               = -1;
 
+    public String getLngId() {
+        return lngId;
+    }
+
+    public void setLngId(String lngId) {
+        this.lngId = lngId;
+    }
+
+    private String lngId = null;
+
     public int getThrottle() {
         return throttle;
     }
@@ -107,6 +117,7 @@ public class YoutubeFinalLinkResource implements Storable {
         setContentLength(si.getContentLength());
         setEstimatedContentLength(si.getEstimatedContentLength());
         setThrottle(si.getThrottle());
+        setLngId(si.getLngId());
     }
 
     public String getFps() {
@@ -119,12 +130,13 @@ public class YoutubeFinalLinkResource implements Storable {
 
     public YoutubeStreamData toStreamDataObject() {
         final YoutubeStreamData ret = new YoutubeStreamData(null, new YoutubeClipData(getVideoID()), getBaseUrl(), getItag(), null);
-        ret.setHeight(getThrottle());
         ret.setHeight(getHeight());
         ret.setWidth(getWidth());
         ret.setSegments(getSegments());
         ret.setContentLength(getContentLength());
         ret.setEstimatedContentLength(getEstimatedContentLength());
+        ret.setThrottle(getThrottle());
+        ret.setLngId(getLngId());
         return ret;
     }
 }

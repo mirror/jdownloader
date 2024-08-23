@@ -1160,7 +1160,7 @@ public enum VariantBase {
     final private YoutubeITAG  iTagData;
     final private YoutubeITAG  iTagVideo;
     final private DownloadType type;
-    private String             uniqueIDString = null;
+    protected String           uniqueIDString = null;
 
     public synchronized String _getUniqueId() {
         if (uniqueIDString == null) {

@@ -393,6 +393,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
     protected void initColumns() {
         addCheckBoxColumn();
         addTypeColumn();
+        addLanguageColumn();
         addFileTypeColumn();
         addColumn(projectionColumn = new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_PROJECTION()) {
             @Override
@@ -633,6 +634,15 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
         });
     }
 
+    protected void addLanguageColumn() {
+        addColumn(new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_LANGUAGE()) {
+            @Override
+            public String getStringValue(AbstractVariantWrapper value) {
+                return value.getLanguageCode();
+            }
+        });
+    }
+
     protected void addTypeColumn() {
         addColumn(typeColumn = new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_TYPE()) {
             @Override
@@ -696,7 +706,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
             final ExtTextColumn txtCol = (ExtTextColumn) sc;
             Collections.sort(newtableData, txtCol.getRowSorter());
             for (AbstractVariantWrapper e : newtableData) {
-                if (last == null || !txtCol.getStringValue(last).equals(txtCol.getStringValue(e))) {
+                if (last == null || !StringUtils.equals(txtCol.getStringValue(last), txtCol.getStringValue(e))) {
                     i++;
                     last = e;
                 }

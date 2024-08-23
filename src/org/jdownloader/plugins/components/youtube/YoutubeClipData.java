@@ -300,6 +300,26 @@ public class YoutubeClipData {
         return descriptions;
     }
 
+    private List<StreamCollection> splitByLngId(StreamCollection collection) {
+        final ArrayList<StreamCollection> ret = new ArrayList<StreamCollection>();
+        if (collection.size() <= 1) {
+            ret.add(collection);
+        } else {
+            final Map<String, StreamCollection> map = new HashMap<String, StreamCollection>();
+            for (final YoutubeStreamData stream : collection) {
+                final String lng = stream.getLngId();
+                StreamCollection col = map.get(lng);
+                if (col == null) {
+                    col = new StreamCollection();
+                    map.put(lng, col);
+                }
+                col.add(stream);
+            }
+            ret.addAll(map.values());
+        }
+        return ret;
+    }
+
     public List<VariantInfo> findVariants() {
         ArrayList<VariantInfo> ret = new ArrayList<VariantInfo>();
         for (VariantBase v : VariantBase.values()) {
@@ -310,7 +330,7 @@ public class YoutubeClipData {
                 continue;
             }
             // System.out.println("test for " + v);
-            StreamCollection audio = null;
+            StreamCollection audios = null;
             StreamCollection video = null;
             StreamCollection data = null;
             boolean valid = v.getiTagVideo() != null || v.getiTagAudio() != null || v.getiTagData() != null;
@@ -321,8 +341,8 @@ public class YoutubeClipData {
                 }
             }
             if (v.getiTagAudio() != null) {
-                audio = streams.get(v.getiTagAudio());
-                if (audio == null) {
+                audios = streams.get(v.getiTagAudio());
+                if (audios == null) {
                     valid = false;
                 }
             }
@@ -333,10 +353,20 @@ public class YoutubeClipData {
                 }
             }
             if (valid) {
-                final AbstractVariant abstractVariant = AbstractVariant.get(v, this, audio, video, data);
-                if (abstractVariant != null) {
-                    final VariantInfo vi = new VariantInfo(abstractVariant, audio, video, data);
-                    ret.add(vi);
+                if (audios != null) {
+                    for (StreamCollection audio : splitByLngId(audios)) {
+                        final AbstractVariant abstractVariant = AbstractVariant.get(v, this, audio, video, data);
+                        if (abstractVariant != null) {
+                            final VariantInfo vi = new VariantInfo(abstractVariant, audio, video, data);
+                            ret.add(vi);
+                        }
+                    }
+                } else {
+                    final AbstractVariant abstractVariant = AbstractVariant.get(v, this, audios, video, data);
+                    if (abstractVariant != null) {
+                        final VariantInfo vi = new VariantInfo(abstractVariant, audios, video, data);
+                        ret.add(vi);
+                    }
                 }
             }
         }

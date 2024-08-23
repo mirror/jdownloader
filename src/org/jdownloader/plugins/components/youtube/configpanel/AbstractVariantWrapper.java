@@ -5,6 +5,7 @@ import org.jdownloader.plugins.components.youtube.VariantIDStorable;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
 import org.jdownloader.plugins.components.youtube.variants.ImageVariant;
+import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 
 public class AbstractVariantWrapper {
@@ -40,6 +41,19 @@ public class AbstractVariantWrapper {
     }
 
     final public AbstractVariant variant;
+
+    public String getLanguageCode() {
+        String lng = null;
+        if (variant instanceof AudioInterface) {
+            lng = ((AudioInterface) variant).getAudioId();
+        } else if (variant instanceof SubtitleVariant) {
+            lng = ((SubtitleVariant) variant).getLanguageCode();
+        }
+        if (lng != null) {
+            lng = lng.replaceAll("[^a-zA-Z\\-]*", "");
+        }
+        return lng;
+    }
 
     public int getWidth() {
         if (variant instanceof VideoVariant) {

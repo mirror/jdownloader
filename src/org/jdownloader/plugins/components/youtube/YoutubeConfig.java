@@ -192,7 +192,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
     static Object              NOTHING          = YoutubeCompatibility.moveJSonFiles("youtube/Youtube");
 
     @AboutConfig
-    @DefaultStringValue(value = "*VIDEO_NAME* (*AUDIO_BITRATE*kbit_*AUDIO_CODEC*).*EXT*")
+    @DefaultStringValue(value = "*VIDEO_NAME* (*AUDIO_BITRATE*kbit_*AUDIO_CODEC**-LNG[DISPLAY]*).*EXT*")
     @DefaultOnNull
     String getAudioFilenamePattern();
 
@@ -462,29 +462,29 @@ public interface YoutubeConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultOnNull
-    @DefaultStringValue("*VIDEO_NAME* (*LNG[DISPLAY]*).*EXT*")
+    @DefaultStringValue("*VIDEO_NAME** (LNG[DISPLAY])*.*EXT*")
     String getSubtitleFilenamePattern();
 
     @AboutConfig
     ArrayList<String> getSubtitleWhiteList();
 
     @AboutConfig
-    @DescriptionForConfigEntry("ID Pattern for dupe filtering. Tags: *CONTAINER*,*AUDIO_BITRATE*,*AUDIO_CODEC*,*DEMUX*,*SPATIAL*")
+    @DescriptionForConfigEntry("ID Pattern for dupe filtering. Tags: *CONTAINER*,*AUDIO_BITRATE*,*AUDIO_CODEC*,*DEMUX*,*SPATIAL*,*LNG*")
     @DefaultOnNull
-    @DefaultStringValue("*AUDIO_BITRATE* *SPATIAL* kbit/s.*CONTAINER*")
+    @DefaultStringValue("*LNG* *AUDIO_BITRATE* *LNG* *SPATIAL* kbit/s.*CONTAINER*")
     @RequiresRestart("A JDownloader Restart is Required")
     String getVariantNamePatternAudio();
 
     @AboutConfig
-    @DefaultStringValue("*3D* *360* *HEIGHT*p *FPS*fps - *VIDEO_CODEC*-Video & *AUDIO_CODEC*-Audio.*CONTAINER*")
+    @DefaultStringValue("*LNG* *3D* *360* *HEIGHT*p *FPS*fps - *VIDEO_CODEC*-Video & *AUDIO_CODEC*-Audio.*CONTAINER*")
     @RequiresRestart("A JDownloader Restart is Required")
-    @DescriptionForConfigEntry("ID Pattern for dupe filtering. Tags: *CONTAINER*,*HEIGHT*,*FPS*,*AUDIO_CODEC*,*VIDEO_CODEC*,*3D*,*AUDIO_BITRATE*,*SPATIAL*")
+    @DescriptionForConfigEntry("ID Pattern for dupe filtering. Tags: *CONTAINER*,*HEIGHT*,*FPS*,*AUDIO_CODEC*,*VIDEO_CODEC*,*3D*,*AUDIO_BITRATE*,*SPATIAL*,*LNG*")
     @DefaultOnNull
     String getVariantNamePatternVideo();
 
     @AboutConfig
     @DefaultOnNull
-    @DefaultStringValue("*3D* *360* *VIDEO_NAME* (*H*p_*FPS*fps_*VIDEO_CODEC*-*AUDIO_BITRATE*kbit_*AUDIO_CODEC*).*EXT*")
+    @DefaultStringValue("*3D* *360* *VIDEO_NAME* (*H*p_*FPS*fps_*VIDEO_CODEC*-*AUDIO_BITRATE*kbit_*AUDIO_CODEC**-LNG[DISPLAY]*).*EXT*")
     String getVideoFilenamePattern();
 
     @AboutConfig

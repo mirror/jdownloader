@@ -7,7 +7,9 @@ import javax.swing.Icon;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
@@ -50,8 +52,30 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         }));
     }
 
+    protected String uniqueIDString = null;
+
+    public synchronized String _getUniqueId() {
+        if (uniqueIDString == null) {
+            uniqueIDString = super._getUniqueId();
+            final String aId = getGenericInfo().getaId();
+            if (aId != null) {
+                uniqueIDString += ".aid" + aId;
+            }
+        }
+        return uniqueIDString;
+    }
+
     private static final Icon   VIDEO           = new AbstractIcon(IconKey.ICON_VIDEO, 16);
     private static final String TYPE_ID_PATTERN = PluginJsonConfig.get(YoutubeConfig.class).getVariantNamePatternVideo();
+
+    private String getAudioIdForPattern() {
+        final Locale locale = getAudioLocale();
+        if (locale != null) {
+            return locale.getDisplayName();
+        } else {
+            return null;
+        }
+    }
 
     @Override
     public String _getName(Object caller) {
@@ -62,6 +86,7 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         id = id.replace("*AUDIO_CODEC*", getAudioCodec().getLabel() + "");
         id = id.replace("*VIDEO_CODEC*", getVideoCodec() + "");
         id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
+        id = id.replace("*LNG*", StringUtils.valueOrEmpty(getAudioIdForPattern()));
         switch (getProjection()) {
         case SPHERICAL:
             id = id.replace("*360*", "[360°]");
@@ -102,6 +127,7 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         id = id.replace("*AUDIO_CODEC*", getAudioCodec() + "");
         id = id.replace("*VIDEO_CODEC*", getVideoCodec() + "");
         id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
+        id = id.replace("*LNG*", StringUtils.valueOrEmpty(getAudioId()));
         switch (getProjection()) {
         case SPHERICAL:
             id = id.replace("*360*", "360°");
@@ -149,6 +175,11 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         }
         if (video != null) {
             for (YoutubeStreamData stream : video) {
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    if (video.size() > 1) {
+                        DebugMode.debugger();
+                    }
+                }
                 if (stream.getHeight() > 0) {
                     getGenericInfo().setHeight(stream.getHeight());
                 }
@@ -162,6 +193,23 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
                     } catch (Throwable e) {
                         Log.log(e);
                     }
+                }
+            }
+        }
+        if (audio != null && vid != null) {
+            for (final YoutubeStreamData a : audio) {
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    if (audio.size() > 1) {
+                        DebugMode.debugger();
+                    } else if (getGenericInfo().getaId() != null && !StringUtils.equals(getGenericInfo().getaId(), a.getLngId())) {
+                        DebugMode.debugger();
+                    }
+                }
+                getGenericInfo().setaId(a.getLngId());
+                if (a.getBitrate() > 0 && vid.duration > 0 && a.getContentLength() > 0) {
+                    final long abr = (8 * a.getContentLength()) / (1024l * vid.duration / 1000);
+                    getGenericInfo().setaBitrate((int) abr);
+                    break;
                 }
             }
         }
@@ -265,5 +313,15 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
     @Override
     public YoutubeITAG getVideoITAG() {
         return getiTagVideo();
+    }
+
+    @Override
+    public String getAudioId() {
+        return getGenericInfo().getaId();
+    }
+
+    @Override
+    public Locale getAudioLocale() {
+        return getGenericInfo()._getLocale();
     }
 }

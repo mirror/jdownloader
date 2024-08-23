@@ -1,5 +1,6 @@
 package org.jdownloader.plugins.components.youtube;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
@@ -9,6 +10,9 @@ public class YoutubeStreamData {
 
     @Override
     public String toString() {
+        if (lngId != null) {
+            return "Itag" + itag.getITAG() + "(" + itag + ")" + "(" + lngId + ")";
+        }
         return "Itag" + itag.getITAG() + "(" + itag + ")";
     }
 
@@ -82,6 +86,42 @@ public class YoutubeStreamData {
     private long   contentLength          = -1;
     private long   estimatedContentLength = -1;
     private int    throttle               = -1;
+
+    public String getLngId() {
+        return lngId;
+    }
+
+    public void setLngId(String lngId) {
+        this.lngId = lngId;
+    }
+
+    private String lngId = null;
+
+    @Override
+    public int hashCode() {
+        return itag.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        } else if (obj == this) {
+            return true;
+        } else if (!(obj instanceof YoutubeStreamData)) {
+            return false;
+        }
+        final YoutubeStreamData o = (YoutubeStreamData) obj;
+        if (!StringUtils.equals(getClip().videoID, o.getClip().videoID)) {
+            return false;
+        } else if (getItag() != o.getItag()) {
+            return false;
+        } else if (!StringUtils.equals(getLngId(), o.getLngId())) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 
     public int getThrottle() {
         return throttle;

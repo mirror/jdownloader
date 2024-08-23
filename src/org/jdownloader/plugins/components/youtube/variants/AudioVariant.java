@@ -7,6 +7,8 @@ import javax.swing.Icon;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
@@ -34,6 +36,14 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
     protected void fill(YoutubeClipData vid, List<YoutubeStreamData> audio, List<YoutubeStreamData> video, List<YoutubeStreamData> data) {
         if (audio != null && vid != null) {
             for (final YoutubeStreamData a : audio) {
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    if (audio.size() > 1) {
+                        DebugMode.debugger();
+                    } else if (getGenericInfo().getaId() != null && !StringUtils.equals(getGenericInfo().getaId(), a.getLngId())) {
+                        DebugMode.debugger();
+                    }
+                }
+                getGenericInfo().setaId(a.getLngId());
                 if (a.getBitrate() > 0 && vid.duration > 0 && a.getContentLength() > 0) {
                     final long abr = (8 * a.getContentLength()) / (1024l * vid.duration / 1000);
                     getGenericInfo().setaBitrate((int) abr);
@@ -50,6 +60,19 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
         return AUDIO;
     }
 
+    protected String uniqueIDString = null;
+
+    public synchronized String _getUniqueId() {
+        if (uniqueIDString == null) {
+            uniqueIDString = super._getUniqueId();
+            final String aId = getGenericInfo().getaId();
+            if (aId != null) {
+                uniqueIDString += ".aid" + aId;
+            }
+        }
+        return uniqueIDString;
+    }
+
     @Override
     public String getFileNameQualityTag() {
         return getAudioBitrate().getKbit() + "kbits " + getAudioCodec().getLabel();
@@ -61,6 +84,7 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
         id = id.replace("*CONTAINER*", getContainer().getLabel().toUpperCase(Locale.ENGLISH) + "");
         id = id.replace("*AUDIO_CODEC*", getAudioCodec().getLabel() + "");
         id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
+        id = id.replace("*LNG*", StringUtils.valueOrEmpty(getAudioIdForPattern()));
         id = id.replace("*DEMUX*", (getBaseVariant().getiTagAudio() == null) ? "[DEMUX]" : "");
         switch (getiTagAudioOrVideoItagEquivalent().getAudioCodec()) {
         case AAC_SPATIAL:
@@ -97,11 +121,21 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
 
     private static final String TYPE_ID_PATTERN = PluginJsonConfig.get(YoutubeConfig.class).getVariantNamePatternAudio();
 
+    private String getAudioIdForPattern() {
+        final Locale locale = getAudioLocale();
+        if (locale != null) {
+            return locale.getDisplayName();
+        } else {
+            return null;
+        }
+    }
+
     public String getTypeId() {
         String id = TYPE_ID_PATTERN;
         id = id.replace("*CONTAINER*", getContainer().name() + "");
         id = id.replace("*AUDIO_CODEC*", getAudioCodec() + "");
         id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
+        id = id.replace("*LNG*", StringUtils.valueOrEmpty(getAudioId()));
         id = id.replace("*DEMUX*", (getBaseVariant().getiTagAudio() == null) ? "DEMUX" : "");
         switch (getiTagAudioOrVideoItagEquivalent().getAudioCodec()) {
         case AAC_SPATIAL:
@@ -119,5 +153,15 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
     @Override
     public YoutubeITAG getAudioITAG() {
         return getiTagAudioOrVideoItagEquivalent();
+    }
+
+    @Override
+    public String getAudioId() {
+        return getGenericInfo().getaId();
+    }
+
+    @Override
+    public Locale getAudioLocale() {
+        return getGenericInfo()._getLocale();
     }
 }
