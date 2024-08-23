@@ -439,7 +439,7 @@ public class RapidGatorNet extends PluginForHost {
                     }
                 } else {
                     /* Free + free account + free download of subscriber-only file in premium mode */
-                    if (cfg.isActivateExperimentalWaittimeHandling()) {
+                    if (cfg.isActivateExperimentalWaittimeHandling() && !isPremiumAccount) {
                         currentIP = new BalancedWebIPCheck(br.getProxy()).getExternalIP().getIP();
                         logger.info("currentIP = " + currentIP);
                         synchronized (blockedIPsMap) {
@@ -468,7 +468,7 @@ public class RapidGatorNet extends PluginForHost {
                     }
                     if (isPremiumAccount && subscribersOnlyDownload != null) {
                         /* Use owns premium account but can't download this file as premium user. */
-                        logger.info("Attempting free download in premium mode because only premium subscribers can download this file as premium");
+                        logger.info("Attempting free download in premium mode because only premium subscribers can download this file as premium | subscribersOnlyDownload= " + subscribersOnlyDownload);
                     }
                     logger.info("Pre download wait in seconds: " + waitSecondsStr);
                     long waitMillis = Long.parseLong(waitSecondsStr) * 1000;
