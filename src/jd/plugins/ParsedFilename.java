@@ -15,6 +15,10 @@ public class ParsedFilename {
     private final String                    extensionAdvanced;
     private final CompiledFiletypeExtension extCompiled;
 
+    public static ParsedFilename parse(final String str) {
+        return new ParsedFilename(str);
+    }
+
     public ParsedFilename(final String filename) {
         if (filename == null) {
             throw new IllegalArgumentException();

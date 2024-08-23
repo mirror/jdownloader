@@ -1560,6 +1560,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Original Filename" })
     String PackagizerFilterRuleDialog_createVariablesMenu_filename_org();
 
+    @Default(lngs = { "en" }, values = { "Original Filename without file extension" })
+    String PackagizerFilterRuleDialog_createVariablesMenu_filename_org_without_file_extension();
+
     @Default(lngs = { "en" }, values = { "Original Filetype" })
     String PackagizerFilterRuleDialog_createVariablesMenu_filetype_org();
 
