@@ -5,15 +5,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.appwork.remoteapi.APIQuery;
-import org.jdownloader.api.linkcollector.v2.AddLinksQueryStorable;
-import org.jdownloader.api.linkcollector.v2.LinkCollectorAPIImplV2;
-import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
-import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
-import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
-import org.jdownloader.settings.GeneralSettings;
-
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollector.ConfirmLinksSettings;
 import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
@@ -22,6 +13,15 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackageView;
 import jd.controlling.packagecontroller.AbstractNodeVisitor;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+
+import org.appwork.remoteapi.APIQuery;
+import org.jdownloader.api.linkcollector.v2.AddLinksQueryStorable;
+import org.jdownloader.api.linkcollector.v2.LinkCollectorAPIImplV2;
+import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
+import org.jdownloader.settings.GeneralSettings;
 
 @Deprecated
 public class LinkCollectorAPIImpl implements LinkCollectorAPI {
@@ -269,7 +269,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
     public Boolean startDownloads(final List<Long> linkIds, final List<Long> packageIds) {
         final List<CrawledLink> lks = getAllTheLinks(linkIds, packageIds);
         if (lks.size() > 0) {
-            LinkCollector.getInstance().moveLinksToDownloadList(new SelectionInfo<CrawledPackage, CrawledLink>(null, lks), new ConfirmLinksSettings(MoveLinksMode.MANUAL, null, null, null));
+            LinkCollector.getInstance().moveLinksToDownloadList(new SelectionInfo<CrawledPackage, CrawledLink>(null, lks), new ConfirmLinksSettings(MoveLinksMode.MANUAL));
             return true;
         } else {
             return false;

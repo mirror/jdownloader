@@ -4,15 +4,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Application;
-import org.appwork.utils.IO;
-import org.jdownloader.api.jdanywhere.api.interfaces.ILinkCrawlerApi;
-import org.jdownloader.api.jdanywhere.api.storable.CrawledLinkStoreable;
-import org.jdownloader.api.jdanywhere.api.storable.CrawledPackageStorable;
-import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
-import org.jdownloader.controlling.Priority;
-import org.jdownloader.gui.views.SelectionInfo;
-
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollector.ConfirmLinksSettings;
@@ -21,6 +12,15 @@ import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+
+import org.appwork.utils.Application;
+import org.appwork.utils.IO;
+import org.jdownloader.api.jdanywhere.api.interfaces.ILinkCrawlerApi;
+import org.jdownloader.api.jdanywhere.api.storable.CrawledLinkStoreable;
+import org.jdownloader.api.jdanywhere.api.storable.CrawledPackageStorable;
+import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
+import org.jdownloader.controlling.Priority;
+import org.jdownloader.gui.views.SelectionInfo;
 
 public class LinkCrawlerApi implements ILinkCrawlerApi {
     LinkCollectorAPIImpl lcAPI = new LinkCollectorAPIImpl();
@@ -115,7 +115,7 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
     public boolean AddCrawledPackageToDownloads(long crawledPackageID) {
         final CrawledPackage cp = getCrawledPackageFromID(crawledPackageID);
         if (cp != null) {
-            LinkCollector.getInstance().moveLinksToDownloadList(new SelectionInfo<CrawledPackage, CrawledLink>(cp), new ConfirmLinksSettings(MoveLinksMode.MANUAL, null, null, null));
+            LinkCollector.getInstance().moveLinksToDownloadList(new SelectionInfo<CrawledPackage, CrawledLink>(cp), new ConfirmLinksSettings(MoveLinksMode.MANUAL));
             return true;
         }
         return false;

@@ -636,7 +636,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     @Override
     public void moveToDownloadlist(final long[] linkIds, final long[] packageIds) throws BadParameterException {
         SelectionInfo<CrawledPackage, CrawledLink> selectionInfo = packageControllerUtils.getSelectionInfo(linkIds, packageIds);
-        LinkCollector.getInstance().moveLinksToDownloadList(selectionInfo, new ConfirmLinksSettings(MoveLinksMode.MANUAL, org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled(), null, null));
+        LinkCollector.getInstance().moveLinksToDownloadList(selectionInfo, new ConfirmLinksSettings(MoveLinksMode.MANUAL));
     }
 
     @Override
