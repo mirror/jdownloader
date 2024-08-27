@@ -29,6 +29,8 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.parser.html.HTMLSearch;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -76,10 +78,13 @@ public class BatoToCrawlerV3 extends PluginForDecrypt {
         return buildAnnotationUrls(getPluginDomains());
     }
 
+    private static final Pattern PATTERN_ALBUM   = Pattern.compile("/title/(\\d+)-([a-z0-9\\-]+)$");
+    private static final Pattern PATTERN_CHAPTER = Pattern.compile("/title/(\\d+)-([a-z0-9\\-]+)/\\d+-(vol_\\d+-)?ch_\\d+");
+
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/title/\\d+-[a-z0-9\\-]+(/\\d+-(vol_\\d+-)?ch_\\d+)?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(" + PATTERN_ALBUM.pattern() + "|" + PATTERN_CHAPTER.pattern() + ")");
         }
         return ret.toArray(new String[0]);
     }
@@ -101,7 +106,9 @@ public class BatoToCrawlerV3 extends PluginForDecrypt {
         if (acc != null) {
             ((jd.plugins.hoster.BatoTo) hostPlugin).login(acc, false);
         }
-        br.getPage(param.getCryptedUrl());
+        final String contenturl = param.getCryptedUrl();
+        final String albumID = new Regex(contenturl, PATTERN_ALBUM).getMatch(0);
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -152,14 +159,23 @@ public class BatoToCrawlerV3 extends PluginForDecrypt {
             }
         }
         logger.info("Failed to find images of a single chapter");
-        /* No results were found so check if we got a series of which we want to find the URLs to all chapters */
-        final String[] chapterurls = br.getRegex("(" + Pattern.quote(urlpath) + "/\\d+-(vol_\\d+-)?ch_\\d+)").getColumn(0);
-        if (chapterurls == null || chapterurls.length == 0) {
+        final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+        for (final String url : urls) {
+            if (new Regex(url, PATTERN_CHAPTER).patternFind() && url.contains("title/" + albumID)) {
+                ret.add(this.createDownloadlink(url));
+            }
+        }
+        if (ret.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        for (final String chapterurl : chapterurls) {
-            ret.add(this.createDownloadlink(br.getURL(chapterurl).toExternalForm()));
-        }
+        // /* No results were found so check if we got a series of which we want to find the URLs to all chapters */
+        // final String[] chapterurls = br.getRegex("(" + Pattern.quote(urlpath) + "/\\d+-(vol_\\d+-)?ch_\\d+)").getColumn(0);
+        // if (chapterurls == null || chapterurls.length == 0) {
+        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // }
+        // for (final String chapterurl : chapterurls) {
+        // ret.add(this.createDownloadlink(br.getURL(chapterurl).toExternalForm()));
+        // }
         return ret;
     }
 

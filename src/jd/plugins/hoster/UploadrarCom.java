@@ -62,9 +62,9 @@ public class UploadrarCom extends XFileSharingProBasic {
     @Override
     public String[] scanInfo(String[] fileInfo) {
         super.scanInfo(fileInfo);
-        if (StringUtils.isEmpty(fileInfo[0])) {
-            fileInfo[0] = br.getRegex("div\\s*class\\s*=\\s*\"desc\"\\s*>\\s*<span>\\s*(.*?)\\s*</span>").getMatch(0);
-        }
+        // if (StringUtils.isEmpty(fileInfo[0])) {
+        // fileInfo[0] = br.getRegex("div\\s*class\\s*=\\s*\"desc\"\\s*>\\s*<span>\\s*(.*?)\\s*</span>").getMatch(0);
+        // }
         if (StringUtils.isEmpty(fileInfo[1])) {
             fileInfo[1] = br.getRegex("<p>\\s*size\\s*:\\s*([0-9\\.]+(?:\\s+|\\&nbsp;)?(KB|MB|GB))").getMatch(0);
         }
@@ -201,7 +201,7 @@ public class UploadrarCom extends XFileSharingProBasic {
 
     @Override
     public String regexFilenameAbuse(final Browser br) {
-        final String filename_src = br.getRegex("name=\"file_name\"[^<]*value=\"([^\"]+)\"").getMatch(-1);
+        final String filename_src = br.getRegex("name=\"file_name\"[^>]*value=\"([^\"]+)\"").getMatch(0);
         if (filename_src != null) {
             return filename_src;
         } else {

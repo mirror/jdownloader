@@ -244,6 +244,7 @@ public class VKontakteRuHoster extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         String finalurl = null;
         if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
+            /* Direct link -> No account needed to download it. */
             finalurl = link.getPluginPatternMatcher();
             /* Prefer filename inside url */
             final String filename = extractFileNameFromURL(finalurl);
@@ -980,7 +981,7 @@ public class VKontakteRuHoster extends PluginForHost {
             link.setLivePlugin(this);
         }
         URLConnectionAdapter con = null;
-        boolean closeConnection = true;
+        boolean success = false;
         try {
             if (isDownload && !isHLS(link, finalUrl)) {
                 finalUrl = modifyFinalDownloadurl(finalUrl);
@@ -1003,9 +1004,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         }
                     }
                 }
-                if (isDownload) {
-                    closeConnection = false;
-                }
+                success = true;
                 return 1;
             } else {
                 // request range fucked
@@ -1025,7 +1024,10 @@ public class VKontakteRuHoster extends PluginForHost {
         } catch (final Exception e) {
             return 0;
         } finally {
-            if (closeConnection) {
+            if (!success) {
+                dl = null;
+            }
+            if (!isDownload) {
                 try {
                     if (con != null) {
                         con.disconnect();

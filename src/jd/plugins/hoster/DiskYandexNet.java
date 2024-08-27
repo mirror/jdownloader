@@ -36,12 +36,14 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.text.TextDownloader;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.DiskYandexNetConfig;
+import org.jdownloader.plugins.components.config.DiskYandexNetConfig.ActionForMovedFiles;
+import org.jdownloader.plugins.components.config.DiskYandexNetConfig.ActionForQuotaLimitedFiles;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -71,7 +73,6 @@ public class DiskYandexNet extends PluginForHost {
     public DiskYandexNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://passport.yandex.ru/registration?mode=register&from=cloud");
-        setConfigElements();
     }
 
     @Override
@@ -103,42 +104,35 @@ public class DiskYandexNet extends PluginForHost {
         return "disk.yandex.com";
     }
 
-    /* Settings values */
-    private final String         MOVE_QUOTA_LIMITED_FILES_TO_ACCOUNT                                 = "move_quota_limited_files_to_account";
-    private final String         DELETE_MOVED_FILE_FROM_ACCOUNT_AFTER_QUOTA_LIMITED_DOWNLOAD         = "delete_moved_file_from_account_after_quota_limited_download";
-    private final String         EMPTY_TRASH_AFTER_QUOTA_LIMITED_DOWNLOAD                            = "empty_trash_after_quota_limited_download";
-    private final boolean        MOVE_QUOTA_LIMITED_FILES_TO_ACCOUNT_default                         = true;
-    private final boolean        DELETE_MOVED_FILE_FROM_ACCOUNT_AFTER_QUOTA_LIMITED_DOWNLOAD_default = true;
-    private final boolean        EMPTY_TRASH_AFTER_DOWNLOAD_default                                  = false;
     /* Some constants which they used in browser */
-    public static final String   CLIENT_ID                                                           = "12139679121706110849432";
+    public static final String   CLIENT_ID                              = "12139679121706110849432";
     /* Domains & other login stuff */
-    private final String[]       cookie_domains                                                      = new String[] { "https://yandex.ru", "https://yandex.com", "https://disk.yandex.ru/", "https://disk.yandex.com/", "https://disk.yandex.net/", "https://disk.yandex.com.tr/", "https://disk.yandex.kz/" };
-    public static final String[] sk_domains                                                          = new String[] { "disk.yandex.com", "disk.yandex.ru", "disk.yandex.com.tr", "disk.yandex.ua", "disk.yandex.az", "disk.yandex.com.am", "disk.yandex.com.ge", "disk.yandex.co.il", "disk.yandex.kg", "disk.yandex.lt", "disk.yandex.lv", "disk.yandex.md", "disk.yandex.tj", "disk.yandex.tm", "disk.yandex.uz", "disk.yandex.fr", "disk.yandex.ee", "disk.yandex.kz", "disk.yandex.by" };
+    private final String[]       cookie_domains                         = new String[] { "https://yandex.ru", "https://yandex.com", "https://disk.yandex.ru/", "https://disk.yandex.com/", "https://disk.yandex.net/", "https://disk.yandex.com.tr/", "https://disk.yandex.kz/" };
+    public static final String[] sk_domains                             = new String[] { "disk.yandex.com", "disk.yandex.ru", "disk.yandex.com.tr", "disk.yandex.ua", "disk.yandex.az", "disk.yandex.com.am", "disk.yandex.com.ge", "disk.yandex.co.il", "disk.yandex.kg", "disk.yandex.lt", "disk.yandex.lv", "disk.yandex.md", "disk.yandex.tj", "disk.yandex.tm", "disk.yandex.uz", "disk.yandex.fr", "disk.yandex.ee", "disk.yandex.kz", "disk.yandex.by" };
     /* Properties */
-    public static final String   PROPERTY_HASH                                                       = "hash_main";
-    public static final String   PROPERTY_QUOTA_REACHED                                              = "quoty_reached";
-    public static final String   PROPERTY_CRAWLED_FILENAME                                           = "plain_filename";
-    public static final String   PROPERTY_PATH_INTERNAL                                              = "path_internal";
-    public static final String   PROPERTY_LAST_AUTH_SK                                               = "last_auth_sk";
-    public static final String   PROPERTY_LAST_LONG_SK                                               = "last_long_sk";
-    public static final String   PROPERTY_MEDIA_TYPE                                                 = "media_type";
-    public static final String   PROPERTY_MIME_TYPE                                                  = "mine_type";
-    public static final String   PROPERTY_PREVIEW_URL_ORIGINAL                                       = "preview_url_original";
-    public static final String   PROPERTY_PREVIEW_URL_DEFAULT                                        = "preview_url_default";
-    public static final String   PROPERTY_META_READ_ONLY                                             = "meta_read_only";
-    public static final String   PROPERTY_PASSWORD_TOKEN                                             = "password_token";
-    public static final String   PROPERTY_ACCOUNT_ENFORCE_COOKIE_LOGIN                               = "enforce_cookie_login";
-    private final String         PROPERTY_ACCOUNT_USERID                                             = "account_userid";
-    private static final String  PROPERTY_NORESUME                                                   = "NORESUME";
-    public static final String   COOKIE_KEY_PASSWORD_TOKEN                                           = "passToken";
-    public static final String   APIV1_BASE                                                          = "https://cloud-api.yandex.com/v1";
+    public static final String   PROPERTY_HASH                          = "hash_main";
+    public static final String   PROPERTY_QUOTA_REACHED                 = "quoty_reached";
+    public static final String   PROPERTY_CRAWLED_FILENAME              = "plain_filename";
+    public static final String   PROPERTY_PATH_INTERNAL                 = "path_internal";
+    public static final String   PROPERTY_LAST_AUTH_SK                  = "last_auth_sk";
+    public static final String   PROPERTY_LAST_LONG_SK                  = "last_long_sk";
+    public static final String   PROPERTY_MEDIA_TYPE                    = "media_type";
+    public static final String   PROPERTY_MIME_TYPE                     = "mine_type";
+    public static final String   PROPERTY_PREVIEW_URL_ORIGINAL          = "preview_url_original";
+    public static final String   PROPERTY_PREVIEW_URL_DEFAULT           = "preview_url_default";
+    public static final String   PROPERTY_META_READ_ONLY                = "meta_read_only";
+    public static final String   PROPERTY_PASSWORD_TOKEN                = "password_token";
+    public static final String   PROPERTY_ACCOUNT_ENFORCE_COOKIE_LOGIN  = "enforce_cookie_login";
+    private final String         PROPERTY_ACCOUNT_USERID                = "account_userid";
+    private static final String  PROPERTY_NORESUME                      = "NORESUME";
+    public static final String   COOKIE_KEY_PASSWORD_TOKEN              = "passToken";
+    public static final String   APIV1_BASE                             = "https://cloud-api.yandex.com/v1";
     /*
      * https://tech.yandex.com/disk/api/reference/public-docpage/ 2018-08-09: API(s) seem to work fine again - in case of failure, please
      * disable use_api_file_free_availablecheck ONLY!!
      */
-    private static final boolean allow_use_api_file_free_availablecheck                              = true;
-    private static final boolean allow_use_api_file_free_download                                    = true;
+    private static final boolean allow_use_api_file_free_availablecheck = true;
+    private static final boolean allow_use_api_file_free_download       = true;
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -549,9 +543,8 @@ public class DiskYandexNet extends PluginForHost {
         }
         final String internal_file_path = getInternalFilePath(link, account);
         InternalFileTrashHandlingThread thread = null;
-        final boolean deleteMovedFile = getPluginConfig().getBooleanProperty(DELETE_MOVED_FILE_FROM_ACCOUNT_AFTER_QUOTA_LIMITED_DOWNLOAD, DELETE_MOVED_FILE_FROM_ACCOUNT_AFTER_QUOTA_LIMITED_DOWNLOAD_default);
-        final boolean emptyWholeTrashCan = getPluginConfig().getBooleanProperty(EMPTY_TRASH_AFTER_QUOTA_LIMITED_DOWNLOAD, EMPTY_TRASH_AFTER_DOWNLOAD_default);
-        if (internal_file_path != null && brc != null && (deleteMovedFile || emptyWholeTrashCan)) {
+        final ActionForMovedFiles action = PluginJsonConfig.get(DiskYandexNetConfig.class).getActionForMovedFiles();
+        if (internal_file_path != null && brc != null && (action == ActionForMovedFiles.DELETE_FROM_ACCOUNT || action == ActionForMovedFiles.DELETE_FROM_ACCOUNT_AND_EMPTY_TRASH)) {
             thread = new InternalFileTrashHandlingThread(this, brc, link, account);
             thread.start();
         }
@@ -595,7 +588,7 @@ public class DiskYandexNet extends PluginForHost {
                 logger.warning("Important value is missing! authSk=" + authSk + " | longSK=" + longSK + " | internal_file_path=" + internal_file_path + " | userID=" + userID);
                 return;
             }
-            final boolean emptyWholeTrashCan = this.plg.getPluginConfig().getBooleanProperty(EMPTY_TRASH_AFTER_QUOTA_LIMITED_DOWNLOAD, EMPTY_TRASH_AFTER_DOWNLOAD_default);
+            final boolean emptyWholeTrashCan = PluginJsonConfig.get(DiskYandexNetConfig.class).getActionForMovedFiles() == ActionForMovedFiles.DELETE_FROM_ACCOUNT_AND_EMPTY_TRASH;
             plg.logger.info("Trying to move previously copied file to trash: " + internal_file_path);
             final String connection_id = CLIENT_ID;
             String pathToFileInTrash = null;
@@ -774,14 +767,14 @@ public class DiskYandexNet extends PluginForHost {
      * If no account is given or if the user does not allow us to move such files into his account, this handling will throw an exception.
      */
     private String generateDirecturlQuotaLimitedFile(final Browser br3, final DownloadLink link, final Account account) throws Exception {
-        String dllink = null;
+        final ActionForQuotaLimitedFiles action = PluginJsonConfig.get(DiskYandexNetConfig.class).getActionForQuotaLimitedFiles();
         final boolean fileDownloadQuotaReached = isFileDownloadQuotaReached(link);
         if (!fileDownloadQuotaReached) {
             logger.warning("!Developer mistake! Only call this function for quota reached items!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (account == null) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File has reached quota limit: Add account to be able to download it or try again later", 1 * 60 * 60 * 1000l);
-        } else if (!getPluginConfig().getBooleanProperty(MOVE_QUOTA_LIMITED_FILES_TO_ACCOUNT, MOVE_QUOTA_LIMITED_FILES_TO_ACCOUNT_default)) {
+        } else if (action == ActionForQuotaLimitedFiles.WAIT_AND_RETRY_LATER) {
             /* User has disabled this handling. */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File has reached quota limit: Enable auto move to account or wait and retry later", 1 * 60 * 60 * 1000l);
         }
@@ -928,7 +921,7 @@ public class DiskYandexNet extends PluginForHost {
         checkErrorsWebsite(br2, link, account);
         final Map<String, Object> entries = this.checkErrorsWebAPI(br2, link, account);
         final Map<String, Object> downloadMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "models/{0}/data");
-        dllink = downloadMap.get("file").toString();
+        final String dllink = downloadMap.get("file").toString();
         if (StringUtils.isEmpty(dllink)) {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1555,19 +1548,6 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     @Override
-    public String getDescription() {
-        return "JDownloader's disk.yandex.com Plugin helps downloading files from disk.yandex.com. It provides some settings for downloads via account.";
-    }
-
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Account settings:"));
-        final ConfigEntry moveFilesToAcc = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MOVE_QUOTA_LIMITED_FILES_TO_ACCOUNT, "<html>Account mode: Move </b>quota limited</b> files to account before downloading them to get higher download speeds?</html>").setDefaultValue(MOVE_QUOTA_LIMITED_FILES_TO_ACCOUNT_default);
-        getConfig().addEntry(moveFilesToAcc);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DELETE_MOVED_FILE_FROM_ACCOUNT_AFTER_QUOTA_LIMITED_DOWNLOAD, "Account mode: Delete moved files from account?").setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(DELETE_MOVED_FILE_FROM_ACCOUNT_AFTER_QUOTA_LIMITED_DOWNLOAD_default));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EMPTY_TRASH_AFTER_QUOTA_LIMITED_DOWNLOAD, "Account mode: Empty trash after each quota limited download?").setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(EMPTY_TRASH_AFTER_DOWNLOAD_default));
-    }
-
-    @Override
     public void reset() {
     }
 
@@ -1582,5 +1562,10 @@ public class DiskYandexNet extends PluginForHost {
             return;
         }
         link.removeProperty(DiskYandexNet.PROPERTY_NORESUME);
+    }
+
+    @Override
+    public Class<? extends DiskYandexNetConfig> getConfigInterface() {
+        return DiskYandexNetConfig.class;
     }
 }

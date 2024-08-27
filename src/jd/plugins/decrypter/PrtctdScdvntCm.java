@@ -42,18 +42,17 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
     }
 
     /*
-     * At the moment this decrypter only decrypts: turbobit.net, hotfile.com links as "protected.socadvnet.com" only allows crypting links
-     * of this host!
+     * At the moment this crawler only crawls: turbobit.net, hotfile.com links as "protected.socadvnet.com" only allows crypting links of
+     * this host!
      */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.getCryptedUrl();
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         final String postvar = new Regex(parameter, "protected\\.socadvnet\\.com/\\?(.+)").getMatch(0);
         if (postvar == null) {
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         getPage(parameter);
         if (!this.canHandle(br.getURL())) {
@@ -80,7 +79,7 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
             linksCount = xhr.getRequest().getHtmlCode().split("\\|");
         }
         if (linksCount == null || linksCount.length == 0) {
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final int linkCounter = linksCount.length;
         if (cpPage != null) {
@@ -107,11 +106,12 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         for (int i = 0; i <= linkCounter - 1; i++) {
-            logger.info("Crawling item " + (i + 1) + "/" + linkCounter);
             final Browser br = this.br.cloneBrowser();
             final String actualPage = getList + "?out_name=" + postvar + "&&link_id=" + i;
+            logger.info("Crawling item " + (i + 1) + "/" + linkCounter + " | " + actualPage);
             getPage(br, actualPage);
             if (br.containsHTML("(?i)This file is either removed due to copyright claim or is deleted by the uploader")) {
                 logger.info("Found one offline link for link " + parameter + " linkid:" + i);
@@ -142,13 +142,13 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
             if (fp != null) {
                 fp.add(link);
             }
-            decryptedLinks.add(link);
+            ret.add(link);
             distribute(link);
             if (this.isAbort()) {
                 break;
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private Browser xhrPostPage(String page, String param) throws Exception {
@@ -157,7 +157,7 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
         return xhr;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }

@@ -95,6 +95,7 @@ public class CivitaiCom extends PluginForHost {
     private static final Pattern PATTERN_IMAGE           = Pattern.compile("/images/(\\d+).*", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_DOWNLOAD_MODELS = Pattern.compile("/api/download/models/(\\d+).*", Pattern.CASE_INSENSITIVE);
     private final String         PROPERTY_DIRECTURL      = "directurl";
+    private static final String  PROPERTY_DATE           = "date";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -211,6 +212,11 @@ public class CivitaiCom extends PluginForHost {
                     final String baseURL = "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/";
                     final String directurl = baseURL + imagemap.get("url") + "/width=" + metadata.get("width") + "/" + Encoding.urlEncode(filename);
                     link.setProperty(PROPERTY_DIRECTURL, directurl);
+                }
+                /* Set Packagizer properties */
+                final String createdAtStr = (String) imagemap.get("createdAt");
+                if (!StringUtils.isEmpty(createdAtStr)) {
+                    link.setProperty(PROPERTY_DATE, createdAtStr);
                 }
             } else {
                 if (isDownload) {

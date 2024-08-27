@@ -17,11 +17,13 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -29,6 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahome.com" }, urls = { "https?://(?:www\\.)?(mangakoi|mangahome)\\.com/manga/[A-Za-z0-9\\-_]+(?:/v\\d+)?/c\\d+(?:\\.\\d+)?" })
 public class MangahomeComCrawler extends antiDDoSForDecrypt {
@@ -36,15 +39,21 @@ public class MangahomeComCrawler extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String url = param.toString().replaceFirst("mangakoi\\.com", "mangahome.com");
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
-        getPage(url);
+        return br;
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        /* Domain mangakoi.com is down / not owned by original owner anymore. */
+        final String contenturl = param.toString().replaceFirst("mangakoi\\.com", "mangahome.com");
+        getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex urlinfo = new Regex(url, "https?://[^/]+/manga/([A-Za-z0-9\\-_]+)(?:/v\\d+)?/c(\\d+(?:\\.\\d+)?)");
+        final Regex urlinfo = new Regex(contenturl, "https?://[^/]+/manga/([A-Za-z0-9\\-_]+)(?:/v\\d+)?/c(\\d+(?:\\.\\d+)?)");
         final String chapter_str = urlinfo.getMatch(1);
         final String chapter_str_main;
         String chapter_str_extra = "";
@@ -64,28 +73,25 @@ public class MangahomeComCrawler extends antiDDoSForDecrypt {
         if (ext == null) {
             ext = ".jpg";
         }
-        short page_max = 0;
-        final String[] pages = this.br.getRegex("<option[^>]*>(\\d+)</option>").getColumn(0);
-        for (final String page_temp_str : pages) {
-            final short page_temp = Short.parseShort(page_temp_str);
-            if (page_temp > page_max) {
-                page_max = page_temp;
+        final String[] urls = this.br.getRegex("class=\"image\" src=\"([^\"]+)").getColumn(0);
+        if (urls == null || urls.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final HashSet<String> dupes = new HashSet<String>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        for (short page = 1; page < urls.length; page++) {
+            String url = urls[page];
+            url = br.getURL(url).toExternalForm();
+            if (!dupes.add(url)) {
+                /* Skip dupes */
+                continue;
             }
-        }
-        if (page_max == 0) {
-            logger.info("Failed to find any downloadable content");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        for (short page = 1; page <= page_max; page++) {
             final String chapter_formatted = df_chapter.format(chapter_main);
             final String page_formatted = df_page.format(page);
-            // final String finallink = "directhttp://" + server_urlpart + chapter_formatted + chapter_str_extra + "-" + page_formatted +
-            final String singleImageContentURL = this.br.getBaseURL() + "c" + chapter_str + "/" + page + ".html";
-            final DownloadLink dl = this.createDownloadlink(singleImageContentURL);
+            final DownloadLink dl = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
             final String filename = url_name + "_" + chapter_formatted + chapter_str_extra + "_" + page_formatted + ext;
             dl.setName(filename);
             dl.setProperty("filename", filename);
-            dl.setLinkID(filename);
             dl.setAvailable(true);
             ret.add(dl);
         }
