@@ -19,6 +19,13 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.FilestoreToConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -40,18 +47,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.config.FilestoreToConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "https?://(?:www\\.)?filestore\\.to/\\?d=([A-Z0-9]+)" })
 public class FilestoreTo extends PluginForHost {
     public FilestoreTo(final PluginWrapper wrapper) {
         super(wrapper);
-        enablePremium("http://filestore.to/premium");
+        enablePremium("https://" + getHost() + "/premium");
     }
 
     @Override
@@ -83,11 +83,11 @@ public class FilestoreTo extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
         login(account, true, null);
         if (!StringUtils.endsWithCaseInsensitive(br.getURL(), "/konto")) {
             br.getPage("/konto");
         }
+        final AccountInfo ai = new AccountInfo();
         final String validUntilString = br.getRegex("(?i)Premium-Status\\s*</small>\\s*<div class=\"value text-success\">\\s*(.*?)\\s*Uhr").getMatch(0);
         if (validUntilString != null) {
             final long until = TimeFormatter.getMilliSeconds(validUntilString, "dd'.'MM'.'yyyy' - 'HH':'mm", Locale.ENGLISH);
@@ -143,9 +143,9 @@ public class FilestoreTo extends PluginForHost {
             logger.info("Performing full login");
             br.getPage("https://" + this.getHost() + "/login");
             final Form form = br.getFormbyKey("Email");
-            InputField email = form.getInputFieldByNameRegex("(?i)Email");
+            final InputField email = form.getInputFieldByNameRegex("(?i)Email");
             email.setValue(Encoding.urlEncode(account.getUser()));
-            InputField password = form.getInputFieldByNameRegex("(?i)Password");
+            final InputField password = form.getInputFieldByNameRegex("(?i)Password");
             password.setValue(Encoding.urlEncode(account.getPass()));
             br.submitForm(form);
             if (validateCookiesURL != null) {
@@ -330,7 +330,6 @@ public class FilestoreTo extends PluginForHost {
             br.followConnection(true);
             final String location = br.getRegex("top\\.location\\.href\\s*=\\s*\"(.*?)\"").getMatch(0);
             if (location != null) {
-                br.setFollowRedirects(true);
                 br.getPage(location);
             }
             checkErrors(link);

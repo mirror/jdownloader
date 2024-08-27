@@ -17,10 +17,15 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -103,5 +108,25 @@ public class FilezzMe extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 10;
+    }
+
+    @Override
+    protected String regExTrafficLeft(final Browser br) {
+        final String ret = br.getRegex("Traffic available today\\s*</div>\\s*<div[^>]*>([^<]+)</div>").getMatch(0);
+        if (ret != null) {
+            return ret;
+        } else {
+            return super.regExTrafficLeft(br);
+        }
+    }
+
+    @Override
+    protected Long findExpireTimestamp(final Account account, final Browser br, AtomicBoolean isPreciseTimestampFlag) throws Exception {
+        final String expireStr = new Regex(getCorrectBR(br), "Premium account expire\\s*</span>\\s*<b[^>]*>(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+        if (expireStr != null) {
+            return TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+        } else {
+            return super.findExpireTimestamp(account, br, isPreciseTimestampFlag);
+        }
     }
 }

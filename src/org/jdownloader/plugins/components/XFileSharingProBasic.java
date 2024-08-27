@@ -1040,6 +1040,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      * https://xfswebsite.tld/embed-[a-z0-9]{12}
      */
     public AvailableStatus requestFileInformationWebsiteXFSOld(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        final String contentURL = this.getContentURL(link);
         if (probeDirectDownload(link, account, br, br.createGetRequest(this.getContentURL(link)), true)) {
             return AvailableStatus.TRUE;
         }
@@ -1073,9 +1074,13 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         } else {
             url = this.getMainPage(br) + this.buildURLPath(link, fuid, URL_TYPE.NORMAL);
         }
-        if (probeDirectDownload(link, account, br, br.createGetRequest(url), true)) {
-            return AvailableStatus.TRUE;
-        } else if (isOffline(link, this.br)) {
+        if (!StringUtils.equals(url, contentURL)) {
+            /* Check for direct-download if we haven't already done this before. */
+            if (probeDirectDownload(link, account, br, br.createGetRequest(url), true)) {
+                return AvailableStatus.TRUE;
+            }
+        }
+        if (isOffline(link, this.br)) {
             if (embedException != null) {
                 throw embedException;
             } else if (hasCheckedEmbedHandling) {
@@ -4751,13 +4756,18 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         /* buttons or sites that are only available for logged in users */
         // remove script tags
         // remove comments, eg ddl.to just comment some buttons/links for expired cookies/non logged in
-        final String htmlWithoutScriptTagsAndComments = brc.getRequest().getHtmlCode().replaceAll("(?s)(<script.*?</script>)", "").replaceAll("(?s)(<!--.*?-->)", "");
+        final String htmlWithoutScriptTagsAndComments;
+        if (brc.getRequest() == null || brc.getRequest().getHtmlCode() == null) {
+            htmlWithoutScriptTagsAndComments = "";
+        } else {
+            htmlWithoutScriptTagsAndComments = brc.getRequest().getHtmlCode().replaceAll("(?s)(<script.*?</script>)", "").replaceAll("(?s)(<!--.*?-->)", "");
+        }
         final String ahrefPattern = "<a[^<]*href\\s*=\\s*\"[^\"]*";
         /**
          * Test cases </br>
          * op=logout: ddownload.com </br>
          * /(user_)?logout\": ?? </br>
-         * logout\\.html: fastclick.to <br>
+         * logout\\.html: fastclick.to/drop.download <br>
          * /logout/: crockdown.com:
          *
          *
@@ -5220,14 +5230,31 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                  * Perform linkcheck without logging in. TODO: Remove this and check for offline later as this would save one http request.
                  */
                 requestFileInformationWebsite(link, account, true);
-                br.setFollowRedirects(false);
                 final boolean verifiedLogin = loginWebsite(link, account, false);
-                /* Access main Content-URL */
-                this.getPage(contentURL);
-                if (isAccountLoginVerificationEnabled(account, verifiedLogin) && !isLoggedin(this.br)) {
-                    loginWebsite(link, account, true);
-                    getPage(contentURL);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, contentURL, this.isResumeable(link, account), this.getMaxChunks(account));
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    br.followConnection();
+                    if (isAccountLoginVerificationEnabled(account, verifiedLogin) && !isLoggedin(this.br)) {
+                        /* Now we must be logged in -> Try again */
+                        loginWebsite(link, account, true);
+                        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, contentURL, this.isResumeable(link, account), this.getMaxChunks(account));
+                    }
                 }
+                if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                    logger.info("Given contentURL redirected directly to file download");
+                    /* add a download slot */
+                    controlMaxFreeDownloads(account, link, +1);
+                    try {
+                        /* start the dl */
+                        dl.startDownload();
+                    } finally {
+                        /* remove download slot */
+                        controlMaxFreeDownloads(account, link, -1);
+                    }
+                    return;
+                }
+                br.followConnection();
+                dl = null;
                 if (isFree(account)) {
                     doFree(link, account);
                 } else {

@@ -18,8 +18,12 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -32,6 +36,13 @@ import jd.plugins.PluginForDecrypt;
 public class Me2lineCom extends PluginForDecrypt {
     public Me2lineCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -64,7 +75,6 @@ public class Me2lineCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
-        br.setFollowRedirects(true);
         br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -82,17 +92,18 @@ public class Me2lineCom extends PluginForDecrypt {
         if (captchaAnswer == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.postPage(br.getURL(), "zcap=" + captchaAnswer);
+        final UrlQuery query = new UrlQuery();
+        query.add("zcap", Encoding.urlEncode(captchaAnswer));
+        br.postPage(br.getURL(), query);
         final String forward2 = br.getRegex("<a href=\"(https?://[^\"]+)\"[^>]*>\\s*Show your URL download").getMatch(0);
-        if (forward2 == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (forward2 != null) {
+            br.getPage(forward2);
         }
-        br.getPage(forward2);
         final String forward3 = br.getRegex("<iframe id=\"idIframe\"[^<]*src=\"(https?://[^\"]+)").getMatch(0);
-        if (forward3 == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (forward3 != null) {
+            br.getPage(forward3);
         }
-        br.getPage(forward3);
+        String title = br.getRegex("name=\"twitter:title\" content=\"([^\"]+)").getMatch(0);
         final String[] links = br.getRegex("<a href=\"(https?://[^\"]+)\" target=\"_?blank\"").getColumn(0);
         if (links == null || links.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -101,6 +112,10 @@ public class Me2lineCom extends PluginForDecrypt {
             ret.add(createDownloadlink(singleLink));
         }
         final FilePackage fp = FilePackage.getInstance();
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            fp.setName(title);
+        }
         fp.addLinks(ret);
         return ret;
     }

@@ -109,30 +109,30 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         for (int i = 0; i <= linkCounter - 1; i++) {
-            final Browser br = this.br.cloneBrowser();
+            final Browser brc = br.cloneBrowser();
             final String actualPage = getList + "?out_name=" + postvar + "&&link_id=" + i;
             logger.info("Crawling item " + (i + 1) + "/" + linkCounter + " | " + actualPage);
-            getPage(br, actualPage);
-            if (br.containsHTML("(?i)This file is either removed due to copyright claim or is deleted by the uploader")) {
+            getPage(brc, actualPage);
+            if (brc.containsHTML("(?i)This file is either removed due to copyright claim or is deleted by the uploader")) {
                 logger.info("Found one offline link for link " + parameter + " linkid:" + i);
                 continue;
             }
-            String finallink = br.getRegex("http-equiv\\s*=\\s*\"refresh\" content\\s*=\\s*\"0;url\\s*=\\s*(https?[^\"]+)\"").getMatch(0);
+            String finallink = brc.getRegex("http-equiv\\s*=\\s*\"refresh\" content\\s*=\\s*\"0;url\\s*=\\s*(https?[^\"]+)\"").getMatch(0);
             if (finallink == null) {
                 // Handlings for more hosters will come soon i think
-                if (br.containsHTML("turbobit\\.net")) {
+                if (brc.containsHTML("turbobit\\.net")) {
                     final String singleProtectedLink = "/plugin/turbobit.net.free.php?out_name=" + postvar + "&link_id=" + i;
-                    getPage(br, singleProtectedLink);
-                    if (br.getRedirectLocation() == null) {
+                    getPage(brc, singleProtectedLink);
+                    if (brc.getRedirectLocation() == null) {
                         logger.warning("Redirect location for this link is null: " + parameter);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final String turboId = new Regex(br.getRedirectLocation(), "https?://turbobit\\.net/download/free/(.+)").getMatch(0);
+                    final String turboId = new Regex(brc.getRedirectLocation(), "https?://turbobit\\.net/download/free/(.+)").getMatch(0);
                     if (turboId == null) {
-                        logger.warning("There is a problem with the link: " + br.getURL());
+                        logger.warning("There is a problem with the link: " + brc.getURL());
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    finallink = "http://turbobit.net/" + turboId + ".html";
+                    finallink = "https://turbobit.net/" + turboId + ".html";
                 }
             }
             if (finallink == null) {

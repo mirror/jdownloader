@@ -75,7 +75,11 @@ public class MangahomeComCrawler extends antiDDoSForDecrypt {
         }
         final String[] urls = this.br.getRegex("class=\"image\" src=\"([^\"]+)").getColumn(0);
         if (urls == null || urls.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML(">\\s*is not avaiable yet")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Content is not available yet");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         final HashSet<String> dupes = new HashSet<String>();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();

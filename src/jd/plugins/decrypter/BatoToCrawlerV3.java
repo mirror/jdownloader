@@ -168,14 +168,6 @@ public class BatoToCrawlerV3 extends PluginForDecrypt {
         if (ret.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // /* No results were found so check if we got a series of which we want to find the URLs to all chapters */
-        // final String[] chapterurls = br.getRegex("(" + Pattern.quote(urlpath) + "/\\d+-(vol_\\d+-)?ch_\\d+)").getColumn(0);
-        // if (chapterurls == null || chapterurls.length == 0) {
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // }
-        // for (final String chapterurl : chapterurls) {
-        // ret.add(this.createDownloadlink(br.getURL(chapterurl).toExternalForm()));
-        // }
         return ret;
     }
 

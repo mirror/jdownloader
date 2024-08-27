@@ -31,7 +31,9 @@ public class GenericWBoardDecrypter extends antiDDoSForDecrypt {
         final String parameter = param.getCryptedUrl();
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (!canHandle(br.getURL())) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!canHandle(br.getURL())) {
             // invalid/offline link, redirect to main domain
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
