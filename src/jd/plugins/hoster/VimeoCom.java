@@ -838,14 +838,6 @@ public class VimeoCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (account) {
-            final AccountInfo ai = new AccountInfo();
-            if (!account.getUser().matches(".+@.+\\..+")) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            }
             setBrowserExclusive();
             login(this, br, account, false);
             if (br.getRequest() == null || !StringUtils.containsIgnoreCase(br.getHost(), "vimeo.com")) {
@@ -859,8 +851,9 @@ public class VimeoCom extends PluginForHost {
                     type = br.getRegex("\"user_type\"\\s*:\\s*\"(.*?)\"").getMatch(0);
                 }
             }
+            final AccountInfo ai = new AccountInfo();
             if (type != null) {
-                ai.setStatus(type);
+                ai.setStatus("User type: " + type);
             } else {
                 ai.setStatus(null);
             }

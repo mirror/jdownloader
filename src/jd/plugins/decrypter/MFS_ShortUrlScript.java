@@ -56,39 +56,33 @@ public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final String parameter = param.toString().replaceFirst("^http://", "https://");
         final String fuid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        // redirects happen
         getPage(parameter);
-        // password files
-        final String redirect = br.getRedirectLocation();
-        if (!inValidate(redirect)) {
-            if (StringUtils.containsIgnoreCase(redirect, Browser.getHost(redirect) + "/error.html?")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (StringUtils.containsIgnoreCase(br.getURL(), "/error.html?")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final int repeat = 3;
+        Form pwform = getPasswordForm(br);
+        for (int i = 0; i <= repeat; i++) {
+            if (pwform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find password form");
             }
-            getPage(redirect);
-            final int repeat = 3;
-            Form pwform = getPasswordForm(br);
-            for (int i = 0; i <= repeat; i++) {
-                if (pwform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find password form");
-                }
-                final String pass = getUserInput("Password protected link", param);
-                if (inValidate(pass)) {
-                    throw new DecrypterException(DecrypterException.PASSWORD);
-                }
-                pwform.put("accessPass", Encoding.urlEncode(pass));
-                submitForm(pwform);
-                pwform = getPasswordForm(br);
-                if (pwform == null) {
-                    logger.info("User has entered correct password: " + pass);
-                    break;
-                }
-                if (i + 1 >= repeat) {
-                    logger.warning("Incorrect solve of password");
-                    throw new DecrypterException(DecrypterException.PASSWORD);
-                }
-                /* Try again */
-                continue;
+            final String pass = getUserInput("Password protected link", param);
+            if (inValidate(pass)) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
             }
+            pwform.put("accessPass", Encoding.urlEncode(pass));
+            submitForm(pwform);
+            pwform = getPasswordForm(br);
+            if (pwform == null) {
+                logger.info("User has entered correct password: " + pass);
+                break;
+            }
+            if (i + 1 >= repeat) {
+                logger.warning("Incorrect solve of password");
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
+            /* Try again */
+            continue;
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String frame = br.getRegex("<frame [^>]*src=\"(interstitualAdTop\\.php\\?url=\\d+)\"").getMatch(0);

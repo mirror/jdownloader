@@ -26,37 +26,34 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mikseri.net" }, urls = { "http://(www\\.)?mikseri\\.net/(artists/[^/]+/[^/]+/\\d+/|artists/\\?id=\\d+|artists/[^\"\\']+\\.\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mikseri.net" }, urls = { "https?://(?:www\\.)?mikseri\\.net/(artists/[^/]+/[^/]+/\\d+/|artists/\\?id=\\d+|artists/[^\"\\']+\\.\\d+)" })
 public class MikSeriNet extends PluginForDecrypt {
     public MikSeriNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String parameter = param.toString();
-        String anID = new Regex(parameter, "mikseri\\.net/artists/[^\"\\']+\\.(\\d+)").getMatch(0);
+        String contenturl = param.getCryptedUrl();
+        String anID = new Regex(contenturl, "mikseri\\.net/artists/[^\"\\']+\\.(\\d+)").getMatch(0);
         if (anID != null) {
-            parameter = "http://www.mikseri.net/artists/?id=" + anID;
+            contenturl = "https://www." + getHost() + "/artists/?id=" + anID;
         }
-        br.getPage(parameter);
-        if (br.getURL().contains("/search.php") || br.containsHTML("class=\"error\"")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+        br.getPage(contenturl);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().contains("/search.php") || br.containsHTML("class=\"error\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (parameter.matches(".*?mikseri.net/artists/\\?id=.*?")) {
+        if (contenturl.matches(".*?mikseri.net/artists/\\?id=.*?")) {
             if (br.containsHTML("Artistilla ei valitettavasti toistaiseksi ole kappaleita Mikseri\\.netissä")) {
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String fpName = br.getRegex("<meta name=\"og:title\" content=\"(.*?)\"").getMatch(0);
             if (fpName == null) {
@@ -79,57 +76,64 @@ public class MikSeriNet extends PluginForDecrypt {
                 }
             }
             if (fileIDs == null || fileIDs.length == 0) {
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             progress.setRange(fileIDs.length);
             for (String id : fileIDs) {
-                DownloadLink fina = getSingleLink(id);
-                if (fina == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                decryptedLinks.add(fina);
-                String SongName = br.getRegex("<SongName><\\!\\[CDATA\\[([^<>\"]*?)\\]\\]>").getMatch(0);
-                String SongId = br.getRegex("<SongId>([^<>\"]*?)</SongId>").getMatch(0);
-                fina.setFinalFileName(SongId + "." + SongName + ".mp3");
+                final DownloadLink song = getSingleLink(id);
+                ret.add(song);
+                distribute(song);
                 progress.increase(1);
+                if (this.isAbort()) {
+                    throw new InterruptedException();
+                }
             }
             if (fpName != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName).trim());
+                fp.addLinks(ret);
             }
         } else {
-            final DownloadLink fina = getSingleLink(new Regex(parameter, "/(\\d+)/$").getMatch(0));
-            if (br.containsHTML("<Error>No music to play\\!</Error>")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
-            if (fina == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            decryptedLinks.add(fina);
-            String SongName = br.getRegex("<SongName><\\!\\[CDATA\\[([^<>\"]*?)\\]\\]>").getMatch(0);
-            String SongId = br.getRegex("<SongId>([^<>\"]*?)</SongId>").getMatch(0);
-            fina.setFinalFileName(SongId + "." + SongName + ".mp3");
+            final DownloadLink song = getSingleLink(new Regex(contenturl, "/(\\d+)/$").getMatch(0));
+            ret.add(song);
         }
-        return decryptedLinks;
+        return ret;
     }
 
-    private DownloadLink getSingleLink(String iD) throws IOException {
-        br.getPage("http://www.mikseri.net/player/songlist.php?newsession=1&type=1&parameter=" + iD);
+    private DownloadLink getSingleLink(String iD) throws IOException, PluginException {
+        br.getPage("https://www." + getHost() + "/player/songlist.php?newsession=1&type=1&parameter=" + iD);
+        if (br.containsHTML("<Error>No music to play\\!</Error>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        // if (br.getHttpConnection().getResponseCode() == 404) {
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
         String finallink = br.getRegex("<SongUrl>([^<>\"]*?)</SongUrl>").getMatch(0);
         if (finallink == null) {
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!finallink.contains("http")) {
+        if (!finallink.startsWith("http")) {
             finallink = "http:" + finallink;
         }
-        return createDownloadlink("directhttp://" + finallink);
+        final DownloadLink song = createDownloadlink(DirectHTTP.createURLForThisPlugin(finallink));
+        final String songName = br.getRegex("<SongName><\\!\\[CDATA\\[([^<>\"]*?)\\]\\]>").getMatch(0);
+        final String songId = br.getRegex("<SongId>([^<>\"]*?)</SongId>").getMatch(0);
+        final String minutesStr = br.getRegex("<Minutes>(\\d+)</Minutes>").getMatch(0);
+        final String secondsStr = br.getRegex("<Minutes>(\\d+)</Minutes>").getMatch(0);
+        final String bitrateStr = br.getRegex("<BitRate>(\\d+)</BitRate>").getMatch(0);
+        if (songName != null && songId != null) {
+            song.setFinalFileName(songId + "." + songName + ".mp3");
+        }
+        if (minutesStr != null && secondsStr != null && bitrateStr != null) {
+            /* Set estimated filesize */
+            final int seconds = (Integer.parseInt(minutesStr) * 60) + Integer.parseInt(secondsStr);
+            song.setDownloadSize((seconds * Integer.parseInt(bitrateStr) * 1024) / 8);
+        }
+        song.setAvailable(true);
+        return song;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

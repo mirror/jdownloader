@@ -24,7 +24,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -635,7 +634,10 @@ public class EHentaiOrg extends PluginForHost {
         if (Boolean.TRUE.equals(this.requiresImagePoints(url, userPrefersOriginalImages))) {
             /* Image points are required to download original images from e-hentai.org -> Check cached limits. */
             final int imagePointsLeft = this.getImagePointsLeft(account);
-            if (imagePointsLeft <= 0) {
+            if (imagePointsLeft == -1) {
+                /* No limit in place */
+                return;
+            } else if (imagePointsLeft <= 0) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cached limit msg: Not enough image points left to download this item | " + imagePointsLeft + " points available", 10 * 60 * 1000l);
             }
             final long timestampLastTimeEhentaiImagePointsLimitReached = account.getLongProperty(PROPERTY_ACCOUNT_TIMESTAMP_IMAGE_POINTS_LIMIT_REACHED, 0);
@@ -849,32 +851,29 @@ public class EHentaiOrg extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
         login(this.br, account, true);
-        ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
+        account.setRefreshTimeout(10 * 60 * 1000l);
         br.getPage(MAINPAGE_ehentai + "/home.php");
-        final int[] imagePointsLeftInfo = this.getImagePointsLeftInfo(br);
-        if (imagePointsLeftInfo == null) {
+        final int[] imagePointsLeftInfo = this.parseImagePointsLeftInfo(br);
+        /* 2024-08-28: Image points limits are gone, see: https://board.jdownloader.org/showthread.php?t=96356 */
+        final boolean allowMissingImagePointsInfo = true;
+        if (imagePointsLeftInfo == null && !allowMissingImagePointsInfo) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        account.setProperty(PROPERTY_ACCOUNT_IMAGE_POINTS_LEFT, imagePointsLeftInfo[1] - imagePointsLeftInfo[0]);
-        ai.setStatus(String.format(AccountType.FREE.getLabel() + " [Used %d / %d items]", imagePointsLeftInfo[0], imagePointsLeftInfo[1]));
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /* For development purposes: Set fake trafficlimit so developer can see the limit visually. */
-            final long dummyTrafficUsed = SizeFormatter.getSize(imagePointsLeftInfo[0] + "TiB");
-            final long dummyTrafficMax = SizeFormatter.getSize(imagePointsLeftInfo[1] + "TiB");
-            ai.setTrafficLeft(dummyTrafficMax - dummyTrafficUsed);
-            ai.setTrafficMax(dummyTrafficMax);
-            ai.setSpecialTraffic(true);
+        final AccountInfo ai = new AccountInfo();
+        ai.setUnlimitedTraffic();
+        if (imagePointsLeftInfo != null) {
+            account.setProperty(PROPERTY_ACCOUNT_IMAGE_POINTS_LEFT, imagePointsLeftInfo[1] - imagePointsLeftInfo[0]);
+            ai.setStatus(String.format(AccountType.FREE.getLabel() + " [Used %d / %d items]", imagePointsLeftInfo[0], imagePointsLeftInfo[1]));
+            displayImagePointsUsageInformation(account, imagePointsLeftInfo);
+            if (imagePointsLeftInfo[0] < imagePointsLeftInfo[1]) {
+                /* At least one ImagePoint is available -> Reset limit which may have been set be failed downloads. */
+                account.removeProperty(PROPERTY_ACCOUNT_TIMESTAMP_IMAGE_POINTS_LIMIT_REACHED);
+            }
         } else {
-            ai.setUnlimitedTraffic();
-        }
-        account.setRefreshTimeout(10 * 60 * 1000l);
-        displayImagePointsUsageInformation(account, imagePointsLeftInfo);
-        if (imagePointsLeftInfo[0] < imagePointsLeftInfo[1]) {
-            /* At least one ImagePoint is available -> Reset limit which may have been set be failed downloads. */
+            account.removeProperty(PROPERTY_ACCOUNT_IMAGE_POINTS_LEFT);
             account.removeProperty(PROPERTY_ACCOUNT_TIMESTAMP_IMAGE_POINTS_LIMIT_REACHED);
         }
         return ai;
@@ -932,7 +931,7 @@ public class EHentaiOrg extends PluginForHost {
      * [1] = max limit for this account </br>
      * [1] minus [0] = points left
      */
-    private int[] getImagePointsLeftInfo(final Browser br) {
+    private int[] parseImagePointsLeftInfo(final Browser br) {
         if (!br.getURL().endsWith("/home.php")) {
             logger.warning("!Developer! You did not access '/home.php' before calling this! It will most likely fail!");
         }

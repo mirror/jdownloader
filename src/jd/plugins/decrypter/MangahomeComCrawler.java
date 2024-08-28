@@ -19,8 +19,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,10 +29,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahome.com" }, urls = { "https?://(?:www\\.)?(mangakoi|mangahome)\\.com/manga/[A-Za-z0-9\\-_]+(?:/v\\d+)?/c\\d+(?:\\.\\d+)?" })
-public class MangahomeComCrawler extends antiDDoSForDecrypt {
+public class MangahomeComCrawler extends PluginForDecrypt {
     public MangahomeComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,7 +48,7 @@ public class MangahomeComCrawler extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         /* Domain mangakoi.com is down / not owned by original owner anymore. */
         final String contenturl = param.toString().replaceFirst("mangakoi\\.com", "mangahome.com");
-        getPage(contenturl);
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -69,12 +68,22 @@ public class MangahomeComCrawler extends antiDDoSForDecrypt {
         final String url_fpname = url_name + "_chapter_" + chapter_str;
         final DecimalFormat df_chapter = new DecimalFormat("0000");
         final DecimalFormat df_page = new DecimalFormat("000");
-        String ext = this.br.getRegex("(\\.[A-Za-z]+)\\?v=\\d+\" id=\"image\"").getMatch(0);
+        String ext = br.getRegex("(\\.[A-Za-z]+)\\?v=\\d+\" id=\"image\"").getMatch(0);
         if (ext == null) {
             ext = ".jpg";
         }
         final String[] urls = this.br.getRegex("class=\"image\" src=\"([^\"]+)").getColumn(0);
-        if (urls == null || urls.length == 0) {
+        short page_max = 0;
+        final String[] pages = this.br.getRegex("<option[^>]*>(\\d+)</option>").getColumn(0);
+        if (pages != null && pages.length > 0) {
+            for (final String page_temp_str : pages) {
+                final short page_temp = Short.parseShort(page_temp_str);
+                if (page_temp > page_max) {
+                    page_max = page_temp;
+                }
+            }
+        }
+        if ((urls == null || urls.length == 0) && page_max == 0) {
             if (br.containsHTML(">\\s*is not avaiable yet")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Content is not available yet");
             } else {
@@ -83,21 +92,38 @@ public class MangahomeComCrawler extends antiDDoSForDecrypt {
         }
         final HashSet<String> dupes = new HashSet<String>();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        for (short page = 1; page < urls.length; page++) {
-            String url = urls[page];
-            url = br.getURL(url).toExternalForm();
-            if (!dupes.add(url)) {
-                /* Skip dupes */
-                continue;
+        if (page_max > 0) {
+            for (short page = 1; page <= page_max; page++) {
+                final String chapter_formatted = df_chapter.format(chapter_main);
+                final String page_formatted = df_page.format(page);
+                // final String finallink = "directhttp://" + server_urlpart + chapter_formatted + chapter_str_extra + "-" + page_formatted
+                // +
+                final String singleImageContentURL = this.br.getBaseURL() + "c" + chapter_str + "/" + page + ".html";
+                final DownloadLink dl = this.createDownloadlink(singleImageContentURL);
+                final String filename = url_name + "_" + chapter_formatted + chapter_str_extra + "_" + page_formatted + ext;
+                dl.setName(filename);
+                dl.setProperty("filename", filename);
+                dl.setLinkID(filename);
+                dl.setAvailable(true);
+                ret.add(dl);
             }
-            final String chapter_formatted = df_chapter.format(chapter_main);
-            final String page_formatted = df_page.format(page);
-            final DownloadLink dl = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
-            final String filename = url_name + "_" + chapter_formatted + chapter_str_extra + "_" + page_formatted + ext;
-            dl.setName(filename);
-            dl.setProperty("filename", filename);
-            dl.setAvailable(true);
-            ret.add(dl);
+        } else {
+            for (short page = 1; page < urls.length; page++) {
+                String url = urls[page];
+                url = br.getURL(url).toExternalForm();
+                if (!dupes.add(url)) {
+                    /* Skip dupes */
+                    continue;
+                }
+                final String chapter_formatted = df_chapter.format(chapter_main);
+                final String page_formatted = df_page.format(page);
+                final DownloadLink dl = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
+                final String filename = url_name + "_" + chapter_formatted + chapter_str_extra + "_" + page_formatted + ext;
+                dl.setName(filename);
+                dl.setProperty("filename", filename);
+                dl.setAvailable(true);
+                ret.add(dl);
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(url_fpname);

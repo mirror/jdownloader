@@ -20,6 +20,8 @@ import java.util.Locale;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
@@ -105,7 +107,6 @@ public class FlyFilesNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         String dllink = checkDirectLink(link, "directlink");
@@ -116,9 +117,11 @@ public class FlyFilesNet extends PluginForHost {
             }
             final String captchaurl = br.getRegex("\"(/captcha/[^<>\"]*?)\"").getMatch(0);
             final String waitSecondsStr = br.getRegex("var\\s+timeWait\\s+=\\s+(\\d+);").getMatch(0);
-            final String reCaptchaV2ID = br.getRegex("\\'sitekey\\'\\s*?:\\s*?\\'([^\"\\']+)\\'").getMatch(0);
+            final String captchaSiteKey = br.getRegex("\\'sitekey\\'\\s*?:\\s*?\\'([^\\']+)\\'").getMatch(0);
             final String postURL = "https://" + this.getHost() + "/";
-            String postata = "getDownLink=" + this.getFID(link);
+            final UrlQuery query = new UrlQuery();
+            query.add("getDownLink", this.getFID(link));
+            query.add("human", "1");
             if (waitSecondsStr != null) {
                 final long wait = Long.parseLong(waitSecondsStr);
                 /* Usually if there is a waittime it is a long waittime (1-2 hours). */
@@ -126,24 +129,34 @@ public class FlyFilesNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
                 }
             }
+            final boolean requiredCaptcha;
             if (captchaurl != null) {
                 final String code = this.getCaptchaCode(captchaurl, link);
-                postata += "&captcha_value=" + Encoding.urlEncode(code);
-                br.postPage(postURL, postata);
-                if (br.containsHTML("#downlinkCaptcha\\|0")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-            } else if (br.containsHTML("ReCaptchaDownload") && reCaptchaV2ID != null) {
+                query.add("captcha_value", Encoding.urlEncode(code));
+                requiredCaptcha = true;
+            } else if (br.containsHTML("ReCaptchaDownload") && captchaSiteKey != null) {
                 /* 2016-12-29 */
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaV2ID).getToken();
-                postata += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
-                br.postPage(postURL, postata);
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, captchaSiteKey).getToken();
+                query.add("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                requiredCaptcha = true;
+            } else if (br.containsHTML("Hu?CaptchaDownload") && captchaSiteKey != null) {
+                /* 2016-12-29 */
+                final String hCaptchaResponse = new CaptchaHelperHostPluginHCaptcha(this, br, captchaSiteKey).getToken();
+                query.add("h-captcha-response", Encoding.urlEncode(hCaptchaResponse));
+                requiredCaptcha = true;
             } else {
-                br.postPage(postURL, postata);
+                requiredCaptcha = false;
             }
+            br.postPage(postURL, query);
             // they don't show any info about limits or waits. You seem to just
             // get '#' instead of link.
-            if (br.containsHTML("#downlink\\|#")) {
+            if (br.containsHTML("#downlinkCaptcha\\|0")) {
+                if (!requiredCaptcha) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Website says 'wrong captcha' but a captcha was never required");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+            } else if (br.containsHTML("#downlink\\|#")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster connection limit reached.", 10 * 60 * 1000l);
             }
             dllink = getDllink(br);
@@ -211,8 +224,8 @@ public class FlyFilesNet extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
         login(account, true);
+        final AccountInfo ai = new AccountInfo();
         final String expire = new Regex(br, "id=\"premiumDate\"[^>]*>(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         if (expire == null) {
             /* Expired premium --> Free accounts are not supported! */
