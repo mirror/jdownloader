@@ -244,6 +244,12 @@ public interface ArdConfigInterface extends PluginConfigInterface {
 
     @DefaultBooleanValue(true)
     @Order(152)
+    boolean isGrabHTTP1440pVideoEnabled();
+
+    void setGrabHTTP1440pVideoEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
+    @Order(153)
     boolean isGrabHTTP2160pVideoEnabled();
 
     void setGrabHTTP2160pVideoEnabled(boolean b);

@@ -143,7 +143,13 @@ public class FileCryptCc extends PluginForDecrypt {
             mainLoopCounter++;
             logger.info("cutcaptchaAvoidanceLoop " + (cutCaptchaRetryIndex + 1) + " / " + (cutCaptchaAvoidanceMaxRetries + 1) + "| mainLoopCounter=" + mainLoopCounter);
             /* Website has no language selection as it auto-chooses based on IP and/or URL but we can force English language. */
-            br.setCookie(Browser.getHost(contenturl), "lang", "en");
+            final String host;
+            if (br.getRequest() != null) {
+                host = br.getHost();
+            } else {
+                host = Browser.getHost(contenturl);
+            }
+            br.setCookie(host, "lang", "en");
             br.addAllowedResponseCodes(500);// submit captcha responds with 500 code
             /* Use new User-Agent for each attempt */
             br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(BrowserName.Chrome));

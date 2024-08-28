@@ -448,7 +448,7 @@ public class Ardmediathek extends PluginForDecrypt {
         final Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.walkJson(mediaCollection, "widgets/{0}/mediaCollection/embedded");
         final List<Map<String, Object>> mediaArray = (List<Map<String, Object>>) map.get("streams");
         final ArrayList<DownloadLink> results = new ArrayList<DownloadLink>();
-        for (Map<String, Object> media : mediaArray) {
+        for (final Map<String, Object> media : mediaArray) {
             final List<Map<String, Object>> mediaStreams = (List<Map<String, Object>>) media.get("media");
             /* Look-ahead */
             boolean hasAudiodescription = false;
@@ -542,8 +542,9 @@ public class Ardmediathek extends PluginForDecrypt {
             logger.info(logpart + " | Do not grab HLS streams because the number of qualities for progressive and HLS looks to be the same");
             this.grabHLS = false;
         }
-        if (hlsMaster != null) {
-            addHLS(param, metadata, foundQualitiesMap, br, hlsMaster, false);
+        if (hlsMaster != null && this.grabHLS) {
+            final ArrayList<DownloadLink> hlsResults = addHLS(param, metadata, br, hlsMaster, false);
+            results.addAll(hlsResults);
         }
         if (http_url_audio != null) {
             /* Legacy handling, TODO: Remove this */
@@ -1688,6 +1689,18 @@ public class Ardmediathek extends PluginForDecrypt {
         }
     }
 
+    private ArrayList<DownloadLink> addHLS(final CryptedLink param, final ArdMetadata metadata, final Browser br, final String hlsMaster, final boolean isAudioDescription) throws Exception {
+        final HashMap<String, DownloadLink> foundQualitiesMap = new HashMap<String, DownloadLink>();
+        addHLS(param, metadata, foundQualitiesMap, br, hlsMaster, isAudioDescription);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final Iterator<Entry<String, DownloadLink>> iterator = foundQualitiesMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Entry<String, DownloadLink> entry = iterator.next();
+            ret.add(entry.getValue());
+        }
+        return ret;
+    }
+
     private boolean foundAtLeastOneValidItem = false;
 
     private DownloadLink addQualityHTTP(final CryptedLink param, final ArdMetadata metadata, final HashMap<String, DownloadLink> qualitiesMap, final String directurl, final String filesize_str, final VideoResolution resolution, final boolean isAudioDescription) {
@@ -2072,6 +2085,7 @@ public class Ardmediathek extends PluginForDecrypt {
     public enum VideoResolution {
         // Order is default quality sort order
         P_2160(3840, 2160),
+        P_1440(2560, 1440),
         P_1080(1920, 1080),
         P_720(1280, 720),
         /** 2022-10-21: Removed as we now detect quality/resolution by height. */
