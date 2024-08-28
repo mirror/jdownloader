@@ -136,9 +136,12 @@ public class FileCryptCc extends PluginForDecrypt {
         String logoPW = null;
         String successfullyUsedFolderPassword = null;
         int cutCaptchaRetryIndex = -1;
+        int mainLoopCounter = -1;
         final int cutCaptchaAvoidanceMaxRetries = PluginJsonConfig.get(this.getConfigInterface()).getMaxCutCaptchaAvoidanceRetries();
+        final HashSet<String> usedWrongPasswords = new HashSet<String>();
         cutcaptchaAvoidanceLoop: while (cutCaptchaRetryIndex++ <= cutCaptchaAvoidanceMaxRetries && !this.isAbort()) {
-            logger.info("cutcaptchaAvoidanceLoop " + (cutCaptchaRetryIndex + 1) + " / " + (cutCaptchaAvoidanceMaxRetries + 1));
+            mainLoopCounter++;
+            logger.info("cutcaptchaAvoidanceLoop " + (cutCaptchaRetryIndex + 1) + " / " + (cutCaptchaAvoidanceMaxRetries + 1) + "| mainLoopCounter=" + mainLoopCounter);
             /* Website has no language selection as it auto-chooses based on IP and/or URL but we can force English language. */
             br.setCookie(Browser.getHost(contenturl), "lang", "en");
             br.addAllowedResponseCodes(500);// submit captcha responds with 500 code
@@ -151,37 +154,42 @@ public class FileCryptCc extends PluginForDecrypt {
                 /* Empty link/folder. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String customLogoID = br.getRegex("custom/([a-z0-9]+)\\.png").getMatch(0);
-            if (customLogoID != null && logoPW == null) {
+            if (mainLoopCounter == 0) {
                 /**
-                 * Magic auto passwords: </br>
-                 * Creators can set custom logos on each folder. Each logo has a unique ID. This way we can try specific passwords first
-                 * that are typically associated with folders published by those sources.
+                 * Search password based on folder-logo. </br>
+                 * Only do this one time in the first run of this loop.
                  */
-                if ("53d1b".equals(customLogoID) || "80d13".equals(customLogoID) || "fde1d".equals(customLogoID) || "8abe0".equals(customLogoID) || "8f073".equals(customLogoID)) {
-                    logoPW = "serienfans.org";
-                } else if ("975e4".equals(customLogoID)) {
-                    logoPW = "filmfans.org";
-                } else if ("51967".equals(customLogoID)) {
-                    logoPW = "kellerratte";
-                } else if ("aaf75".equals(customLogoID)) {
-                    /* 2023-10-23 */
-                    logoPW = "cs.rin.ru";
-                }
-                if (logoPW != null) {
-                    logger.info("Found possible PW by logoID: " + logoPW);
+                final String customLogoID = br.getRegex("custom/([a-z0-9]+)\\.png").getMatch(0);
+                if (customLogoID != null) {
+                    /**
+                     * Magic auto passwords: </br>
+                     * Creators can set custom logos on each folder. Each logo has a unique ID. This way we can try specific passwords first
+                     * that are typically associated with folders published by those sources.
+                     */
+                    if ("53d1b".equals(customLogoID) || "80d13".equals(customLogoID) || "fde1d".equals(customLogoID) || "8abe0".equals(customLogoID) || "8f073".equals(customLogoID)) {
+                        logoPW = "serienfans.org";
+                    } else if ("975e4".equals(customLogoID)) {
+                        logoPW = "filmfans.org";
+                    } else if ("51967".equals(customLogoID)) {
+                        logoPW = "kellerratte";
+                    } else if ("aaf75".equals(customLogoID)) {
+                        /* 2023-10-23 */
+                        logoPW = "cs.rin.ru";
+                    }
+                    if (logoPW != null) {
+                        logger.info("Found possible PW by logoID: " + logoPW);
+                    } else {
+                        logger.info("Found unknown logoID: " + customLogoID);
+                    }
                 } else {
-                    logger.info("Found unknown logoID: " + customLogoID);
+                    logger.info("Failed to find logoID");
                 }
-            } else {
-                logger.info("Failed to find logoID");
             }
             /* Separate password and captcha handling. This is easier for several reasons! */
             if (containsPassword()) {
                 int passwordCounter = 0;
                 final int maxPasswordRetries = 3;
                 final List<String> passwords = getPreSetPasswords();
-                final HashSet<String> usedPasswords = new HashSet<String>();
                 final String lastUsedPassword = this.getPluginConfig().getStringProperty(PROPERTY_PLUGIN_LAST_USED_PASSWORD);
                 if (logoPW != null) {
                     logger.info("Try PW by logo: " + logoPW);
@@ -192,9 +200,8 @@ public class FileCryptCc extends PluginForDecrypt {
                      * This may happen if user first enters correct password but then wrong captcha or retry was done to try to avoid
                      * cutcaptcha.
                      */
-                    logger.info("Entering password handling with known correct password [user probably entered wrong captcha before]: " + successfullyUsedFolderPassword);
-                    passwords.clear();
-                    passwords.add(successfullyUsedFolderPassword);
+                    logger.info("Entering password handling with known correct password: " + successfullyUsedFolderPassword);
+                    passwords.add(0, successfullyUsedFolderPassword);
                 } else if (StringUtils.isNotEmpty(lastUsedPassword)) {
                     logger.info("Trying last used password first: " + lastUsedPassword);
                     passwords.add(0, lastUsedPassword);
@@ -226,42 +233,57 @@ public class FileCryptCc extends PluginForDecrypt {
                     /* If there is captcha + password, password comes first, then captcha! */
                     if (passwordForm == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find pasword Form");
-                    } else if (passwordFieldKey == null) {
+                    } else if (StringUtils.isEmpty(passwordFieldKey)) {
                         /* Developer mistake */
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "passwordFieldKey can't be empty");
                     }
-                    final String passCode;
-                    if (passwords.size() > 0) {
-                        /* First check all stored passwords. */
-                        passCode = passwords.remove(0);
-                        logger.info("Trying auto password: " + passCode);
-                    } else {
-                        /* when previous provided passwords have failed, or not provided we should ask */
+                    String passCode = null;
+                    while (passwords.size() > 0) {
+                        /* List of previously used passwords */
+                        final String pw = passwords.remove(0);
+                        if (!usedWrongPasswords.contains(pw)) {
+                            passCode = pw;
+                        } else {
+                            // no need to submit password that has already been tried!
+                            logger.info("Skipping already tried wrong password: " + pw);
+                            continue;
+                        }
+                    }
+                    if (passCode == null) {
+                        /* when previous provided passwords have failed -> Ask user */
                         passCode = getUserInput("Password?", param);
                         if (StringUtils.isEmpty(passCode)) {
                             /* Bad user input */
                             throw new DecrypterException(DecrypterException.PASSWORD);
                         }
-                    }
-                    if (!usedPasswords.add(passCode)) {
-                        // no need to submit password that has already been tried!
-                        logger.info("Skipping already tried password: " + passCode);
-                        continue;
+                        if (!usedWrongPasswords.contains(passCode)) {
+                            // no need to submit password that has already been tried!
+                            logger.info("Skipping already tried password: " + passCode);
+                            continue;
+                        }
                     }
                     passwordForm.put(passwordFieldKey, Encoding.urlEncode(passCode));
                     submitForm(passwordForm);
                     if (!containsPassword()) {
-                        logger.info("Password success: " + passCode);
+                        /* Success */
+                        if (successfullyUsedFolderPassword == null) {
+                            /* Avoid log spam */
+                            logger.info("Password success: " + passCode);
+                        }
                         successfullyUsedFolderPassword = passCode;
                         break passwordLoop;
                     } else {
                         logger.info("Password failure | Wrong password: " + passCode);
+                        usedWrongPasswords.add(passCode);
                     }
                 }
                 if (passwordCounter >= maxPasswordRetries && containsPassword()) {
                     throw new DecrypterException(DecrypterException.PASSWORD);
                 }
-                logger.info("Saving correct password for future usage: " + successfullyUsedFolderPassword);
+                if (!StringUtils.equals(this.getPluginConfig().getStringProperty(PROPERTY_PLUGIN_LAST_USED_PASSWORD), successfullyUsedFolderPassword)) {
+                    /* Avoid log spam thus only log this if the password is new. */
+                    logger.info("Saving correct password for future usage: " + successfullyUsedFolderPassword);
+                }
                 this.getPluginConfig().setProperty(PROPERTY_PLUGIN_LAST_USED_PASSWORD, successfullyUsedFolderPassword);
             }
             /* Process captcha */

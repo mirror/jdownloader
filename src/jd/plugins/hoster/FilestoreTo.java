@@ -55,6 +55,11 @@ public class FilestoreTo extends PluginForHost {
     }
 
     @Override
+    public String getAGBLink() {
+        return "https://" + getHost() + "/?p=terms";
+    }
+
+    @Override
     public void init() {
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
     }
@@ -147,16 +152,16 @@ public class FilestoreTo extends PluginForHost {
             final InputField password = form.getInputFieldByNameRegex("(?i)Password");
             password.setValue(Encoding.urlEncode(account.getPass()));
             br.submitForm(form);
-            if (!this.isLoggedinHTML(br)) {
-                throw new AccountInvalidException();
-            }
             /**
              * 2024-08-28: Small workaround: They sometimes redirect to http here which can cause some ISP blocks to engage. </br>
-             * Especially from german provider vodafone.de which would interfere and redirect to: </br>
+             * Especially from German provider vodafone.de which would interfere and redirect to: </br>
              * http://securenet.sicherheit.vodafone.de/campaign/botnet-fixed/get/message.html?url=http://filestore.to/konto
              */
             if (!br.getURL().equals(validateCookiesURL)) {
                 br.getPage(validateCookiesURL);
+            }
+            if (!this.isLoggedinHTML(br)) {
+                throw new AccountInvalidException();
             }
             account.saveCookies(br.getCookies(br.getHost()), "");
             return true;
@@ -176,11 +181,6 @@ public class FilestoreTo extends PluginForHost {
         } else {
             handleDownload(link, account, true, 0);
         }
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "https://filestore.to/?p=terms";
     }
 
     @Override

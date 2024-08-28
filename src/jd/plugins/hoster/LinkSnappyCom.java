@@ -147,6 +147,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         if (!link.isNameSet()) {
+            /* Set fallback name */
             link.setName(this.getFID(link));
         }
         if (account == null) {
@@ -177,7 +178,6 @@ public class LinkSnappyCom extends PluginForHost {
 
     private AccountInfo api_fetchAccountInfo(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            final AccountInfo ac = new AccountInfo();
             final Map<String, Object> userResponse = loginAPI(account, force);
             final Map<String, Object> usermap = (Map<String, Object>) userResponse.get("return");
             final Object expireTimestampO = usermap.get("expire");
@@ -185,6 +185,7 @@ public class LinkSnappyCom extends PluginForHost {
              * final String accountType = (String) entries.get("accountType"); // "free" for free accounts and "elite" for premium AND
              * lifetime accounts
              */
+            final AccountInfo ac = new AccountInfo();
             if ("lifetime".equalsIgnoreCase(expireTimestampO.toString()) || "2177388000".equals(expireTimestampO.toString())) {
                 /* 2177388000 -> Valid until 2038 -> Lifetime account */
                 account.setType(AccountType.LIFETIME);
@@ -244,6 +245,7 @@ public class LinkSnappyCom extends PluginForHost {
             final HashMap<String, Map<String, Object>> allHosterInfoMap = new HashMap<String, Map<String, Object>>();
             final Map<String, Object> hosterMap = (Map<String, Object>) hosterMapResponse.get("return");
             final Iterator<Entry<String, Object>> it = hosterMap.entrySet().iterator();
+            final ArrayList<String> allSkippedHosts = new ArrayList<String>();
             while (it.hasNext()) {
                 final Entry<String, Object> entry = it.next();
                 final Map<String, Object> thisHosterInformation = (Map<String, Object>) entry.getValue();
@@ -262,14 +264,17 @@ public class LinkSnappyCom extends PluginForHost {
                 final long usage = JavaScriptEngineFactory.toLong(thisHosterInformation.get("Usage"), 0);
                 if (canDownload != 1) {
                     logger.info("Skipping host as it is because API says download is not possible (canDownload!=1): " + host);
+                    allSkippedHosts.add(host);
                     continue;
                 } else if (status != 1) {
                     /* Host is currently not working or disabled for this MOCH --> Do not add it to the list of supported hosts */
                     logger.info("Skipping host as it is not available at the moment (status!=1): " + host);
+                    allSkippedHosts.add(host);
                     continue;
                 } else if (quota != -1 && quota - usage <= 0) {
                     /* User does not have any traffic left for this host */
                     logger.info("Skipping host as account has no quota left for it: " + host);
+                    allSkippedHosts.add(host);
                     continue;
                 }
                 /* Workaround to find real host. */
@@ -284,6 +289,7 @@ public class LinkSnappyCom extends PluginForHost {
                 allHosterInfoMap.put(realHost, thisHosterInformation);
                 supportedHosts.add(realHost);
             }
+            logger.info("All skipped hosts: " + allSkippedHosts);
             account.setProperty(PROPERTY_HOSTER_INFO_MAP, allHosterInfoMap);
             // final List<String> mapped = ac.setMultiHostSupport(this, supportedHosts);
             /* Free account information & downloading is only possible via website; not via API! */
@@ -482,6 +488,7 @@ public class LinkSnappyCom extends PluginForHost {
             if (Boolean.TRUE.equals(enteredCorrectPassword) && passCode != null) {
                 link.setDownloadPassword(passCode);
             }
+            /* Check for other errors */
             handleErrors(link, account, entries);
             /* 2021-02-18: Downloadurl will always be returned even if file hasn't been downloaded successfully serverside yet! */
             dllink = (String) entries.get("generated");
@@ -539,10 +546,10 @@ public class LinkSnappyCom extends PluginForHost {
         final int dlResponseCode = dl.getConnection().getResponseCode();
         if (dlResponseCode == 401) {
             /*
-             * claimed ip session changed mid session. not physically possible in JD... but user could have load balancing software or
+             * Claimed ip session changed mid session. not physically possible in JD... but user could have load balancing software or
              * router or isps' also can do this. a full retry should happen
              */
-            throw new PluginException(LinkStatus.ERROR_RETRY, "Your ip has been changed. Please retry");
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Your IP has been changed. Please retry");
         } else if (dlResponseCode == 425) {
             /*
              * This error code will occur only when the link is being cached in LS system. You have to wait till its finished. Check
@@ -603,6 +610,10 @@ public class LinkSnappyCom extends PluginForHost {
         }
     }
 
+    /**
+     * Parses API json (without error handling for API answer). </br>
+     * Takes care about invalid API responses (non-json responses).
+     */
     private Map<String, Object> parseJson(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
         Map<String, Object> entries = null;
         try {
@@ -631,6 +642,16 @@ public class LinkSnappyCom extends PluginForHost {
         if (errormsg == null) {
             return;
         }
+        if (StringUtils.containsIgnoreCase(errormsg, "Two-Factor Verification Required")) {
+            /* User needs to confirm link via email before he can login via API via JDownloader. */
+            String redirect = (String) entries.get("redirect");
+            try {
+                /* Create full URL out of relative URL. */
+                redirect = br.getURL(redirect).toString();
+            } catch (final Throwable ignore) {
+            }
+            throw new AccountUnavailableException("\r\n" + errormsg + "\r\n" + redirect, 5 * 60 * 1000l);
+        }
         if (new Regex(errormsg, "(?i)No server available for this filehost, Please retry after few minutes").matches()) {
             /* Temp disable complete filehost for some minutes */
             mhm.putError(account, link, 5 * 60 * 1000l, errormsg);
@@ -640,7 +661,7 @@ public class LinkSnappyCom extends PluginForHost {
         } else if (new Regex(errormsg, "(?i)You have reached max download limit of").matches()) {
             try {
                 account.getAccountInfo().setTrafficLeft(0);
-            } catch (final Throwable e) {
+            } catch (final Throwable ignore) {
                 // Catch NPE
             }
             throw new AccountUnavailableException("\r\nLimit Reached. Please purchase elite membership!", 1 * 60 * 1000);
@@ -687,7 +708,11 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     private boolean isErrorDownloadPasswordRequiredOrWrong(final String msg) {
-        return msg != null && msg.matches("(?i)This file requires password");
+        if (msg != null && msg.matches("(?i)This file requires password")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private String getError(final Map<String, Object> map) {
@@ -728,46 +753,29 @@ public class LinkSnappyCom extends PluginForHost {
                 if (!validateCookies) {
                     /* Do not validate cookies. */
                     return null;
-                } else {
-                    logger.info("Validating cookies");
-                    br.getPage("https://" + this.getHost() + relative_url_userdetails);
-                    final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                    final String error = getError(entries);
-                    // "Invalid username" is shown when 2Fa login is required o_O.
-                    if (error == null) {
-                        logger.info("Cached login successful");
-                        /* Save new cookie timestamp */
-                        account.saveCookies(br.getCookies(this.getHost()), "");
-                        return entries;
-                    } else {
-                        logger.info("Cached login failed:" + error);
-                        br.clearCookies(null);
-                        account.clearCookies("");
-                    }
+                }
+                logger.info("Validating cookies");
+                br.getPage("https://" + this.getHost() + relative_url_userdetails);
+                try {
+                    final Map<String, Object> entries = this.handleErrors(br, null, account);
+                    logger.info("Cached login successful");
+                    /* Save new cookie timestamp */
+                    account.saveCookies(br.getCookies(this.getHost()), "");
+                    return entries;
+                } catch (final Throwable e) {
+                    logger.log(e);
+                    logger.info("Cached login failed");
+                    br.clearCookies(null);
+                    account.clearCookies("");
                 }
             }
             /* Full login is required */
             logger.info("Performing full login");
             br.getPage("https://" + this.getHost() + "/api/AUTHENTICATE?" + "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            final Map<String, Object> entries = this.handleErrors(br, null, account);
-            final String error = getError(entries);
-            if (error != null) {
-                final String redirect = (String) entries.get("redirect");
-                if (StringUtils.containsIgnoreCase(error, "Two-Factor Verification Required") && !StringUtils.isEmpty(redirect)) {
-                    /* 2021-02-16: Rare case: User needs to open this URL and confirm log. */
-                    /**
-                     * {"status":"ERROR","error":"Two-Factor Verification Required. Please check your
-                     * Email","return":null,"redirect":"\/validate\/xxxxxxxxxx"}
-                     */
-                    final String fullURL = br.getURL(redirect).toString();
-                    throw new AccountUnavailableException("\r\n" + error + "\r\n" + fullURL, 5 * 60 * 1000l);
-                } else {
-                    throw new AccountInvalidException(error);
-                }
-            }
+            this.handleErrors(br, null, account);
             account.saveCookies(br.getCookies(br.getHost()), "");
             br.getPage("https://" + this.getHost() + relative_url_userdetails);
-            final Map<String, Object> entries2 = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> entries2 = this.handleErrors(br, null, account);
             return entries2;
         }
     }
