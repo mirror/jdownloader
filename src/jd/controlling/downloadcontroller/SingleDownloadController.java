@@ -557,6 +557,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             final PluginException eplg = (PluginException) e;
             if (eplg.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && AvailableStatus.TRUE.equals(link.getAvailableStatus())) {
                 /* File is online according to original filehoster -> Do not trust offline status from multihoster. */
+                // TODO: Add translation-string
                 return new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Multihoster " + multihosterplugin.getHost() + " claims that this file is offline");
             }
         }
