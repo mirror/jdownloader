@@ -321,10 +321,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
 
     private SingleDownloadReturnState download(final LogSource downloadLogger) {
         PluginForHost handlePlugin = null;
+        boolean isMultihoster = false;
         try {
             downloadLogger.info("DownloadCandidate: " + candidate);
             PluginForHost linkPlugin = null;
             if (AccountCache.ACCOUNTTYPE.MULTI.equals(candidate.getCachedAccount().getType())) {
+                isMultihoster = true;
                 final PluginClassLoaderChild defaultCL = session.getPluginClassLoaderChild(downloadLink.getDefaultPlugin());
                 PluginClassLoader.setThreadPluginClassLoaderChild(defaultCL, defaultCL);
                 // this.setContextClassLoader(defaultCL);
@@ -463,13 +465,16 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             return ret;
         } catch (Throwable throwable) {
             final PluginForHost lastPlugin = finalizeProcessingPlugin();
+            if (isMultihoster) {
+                throwable = this.getMultihosterError(downloadLink, lastPlugin, throwable);
+            }
             try {
                 throw throwable;
-            } catch (InterruptedIOException e) {
+            } catch (final InterruptedIOException e) {
                 if (isAborting()) {
                     throwable = new PluginException(LinkStatus.ERROR_RETRY, null, e);
                 }
-            } catch (BrowserException browserException) {
+            } catch (final BrowserException browserException) {
                 if (isConnectionOffline(lastPlugin, browserException)) {
                     throwable = new NoInternetConnection(browserException).fillInStackTrace();
                 } else if (Exceptions.containsInstanceOf(browserException, InterruptedIOException.class) && isAborting()) {
@@ -477,7 +482,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 } else if (browserException.getCause() != null) {
                     throwable = browserException.getCause();
                 }
-            } catch (SkipReasonException skipReasonException) {
+            } catch (final SkipReasonException skipReasonException) {
                 switch (skipReasonException.getSkipReason()) {
                 case CAPTCHA:
                     invalidateLastChallengeResponse(downloadLogger, lastPlugin);
@@ -537,6 +542,25 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 downloadLogger.log(e);
             }
         }
+    }
+
+    /**
+     * Execute this on download failure. </br>
+     * This may return a different Throwable than the one that was initially thrown for example if a multihoster claims that a file is
+     * offline but we know that it is online.
+     */
+    private Throwable getMultihosterError(final DownloadLink link, final PluginForHost multihosterplugin, final Throwable e) {
+        if (link == null || multihosterplugin == null || e == null) {
+            throw new IllegalArgumentException();
+        }
+        if (e instanceof PluginException) {
+            final PluginException eplg = (PluginException) e;
+            if (eplg.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && AvailableStatus.TRUE.equals(link.getAvailableStatus())) {
+                /* File is online according to original filehoster -> Do not trust offline status from multihoster. */
+                return new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Multihoster " + multihosterplugin.getHost() + " claims that this file is offline");
+            }
+        }
+        return e;
     }
 
     public PluginForHost getProcessingPlugin() {
