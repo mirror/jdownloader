@@ -3,17 +3,17 @@ package org.jdownloader.captcha.v2.solver.twocaptcha;
 import java.io.IOException;
 import java.util.Map;
 
-import jd.http.Browser;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverStatus;
+import org.jdownloader.captcha.v2.challenge.cutcaptcha.CutCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.HCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
@@ -27,6 +27,8 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_TWO_CAPTCHA;
+
+import jd.http.Browser;
 
 public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
     private static final TwoCaptchaSolver INSTANCE = new TwoCaptchaSolver();
@@ -51,8 +53,14 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
     }
 
     @Override
-    protected boolean isChallengeSupported(Challenge<?> c) {
-        return c instanceof RecaptchaV2Challenge || c instanceof HCaptchaChallenge || c instanceof BasicCaptchaChallenge;
+    protected boolean isChallengeSupported(final Challenge<?> c) {
+        if (c instanceof RecaptchaV2Challenge || c instanceof HCaptchaChallenge || c instanceof BasicCaptchaChallenge) {
+            return true;
+        } else if (c instanceof CutCaptchaChallenge && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

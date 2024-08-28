@@ -321,7 +321,7 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
     protected static final HashMap<String, Set<String>> INVALID_SITE_KEYS = new HashMap<String, Set<String>>();
 
     /**
-     * will auto find api key, based on google default &lt;div&gt;, @Override to make customised finder.
+     * Will auto find API key if none is given, based on google default &lt;div&gt;, @Override to make customized finder.
      *
      * @author raztoki
      * @since JD2
