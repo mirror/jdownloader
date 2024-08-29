@@ -1,5 +1,14 @@
 package org.jdownloader.captcha.v2.challenge.cutcaptcha;
 
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.blacklist.BlacklistEntry;
+import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
+import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByHost;
+import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
+import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.captcha.v2.CaptchaCrawlerHelperInterface;
+import org.jdownloader.captcha.v2.ChallengeResponseController;
+
 import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
@@ -13,16 +22,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.blacklist.BlacklistEntry;
-import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
-import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByHost;
-import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
-import org.jdownloader.captcha.blacklist.CaptchaBlackList;
-import org.jdownloader.captcha.v2.CaptchaCrawlerHelperInterface;
-import org.jdownloader.captcha.v2.ChallengeResponseController;
-
 public class CaptchaHelperCrawlerPluginCutCaptcha extends AbstractCaptchaHelperCutCaptcha<PluginForDecrypt> implements CaptchaCrawlerHelperInterface {
+    public CaptchaHelperCrawlerPluginCutCaptcha(PluginForDecrypt plugin, Browser br) {
+        super(plugin, br, null);
+    }
+
     public CaptchaHelperCrawlerPluginCutCaptcha(PluginForDecrypt plugin, Browser br, String siteKey) {
         super(plugin, br, siteKey);
     }

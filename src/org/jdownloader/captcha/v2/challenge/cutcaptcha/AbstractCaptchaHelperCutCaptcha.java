@@ -18,20 +18,13 @@ public abstract class AbstractCaptchaHelperCutCaptcha<T extends Plugin> {
     protected String             siteKey;
     protected String             apiKey;
 
+    public AbstractCaptchaHelperCutCaptcha(T plugin, Browser br) {
+        this(plugin, br, null, null);
+    }
+
+    @Deprecated
     public AbstractCaptchaHelperCutCaptcha(T plugin, Browser br, String siteKey) {
-        this.plugin = plugin;
-        if (br.getRequest() == null) {
-            throw new IllegalStateException("Browser.getRequest() == null!");
-        } else {
-            this.br = br;
-        }
-        if (plugin.getLogger() == null) {
-            logger = LogController.getInstance().getLogger(getClass().getSimpleName());
-        } else {
-            logger = plugin.getLogger();
-        }
-        this.siteKey = siteKey;
-        this.apiKey = null; // TODO
+        this(plugin, br, siteKey, null);
     }
 
     public AbstractCaptchaHelperCutCaptcha(final T plugin, final Browser br, final String siteKey, final String apiKey) {

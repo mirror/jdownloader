@@ -78,12 +78,13 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
             handleCutCaptcha(job);
             return;
         }
+        /* Image captcha */
         job.showBubble(this);
         checkInterruption();
         RequestOptions options = prepare(job);
         try {
             job.getChallenge().sendStatsSolving(this);
-            Browser br = new Browser();
+            final Browser br = new Browser();
             br.setReadTimeout(5 * 60000);
             // Put your CAPTCHA image file, file object, input stream,
             // or vector of bytes here:
@@ -91,10 +92,10 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
             final byte[] data = IO.readFile(((ImageCaptchaChallenge) captchaChallenge).getImageFile());
             UrlQuery qi = createQueryForUpload(job, options, data);
             String json = br.postPage("https://2captcha.com/in.php", qi);
-            BalanceResponse response = JSonStorage.restoreFromString(json, new TypeRef<BalanceResponse>() {
+            final BalanceResponse response = JSonStorage.restoreFromString(json, new TypeRef<BalanceResponse>() {
             });
             if (1 == response.getStatus()) {
-                String id = response.getRequest();
+                final String id = response.getRequest();
                 job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 10)));
                 while (job.getJob().isAlive() && !job.getJob().isSolved()) {
                     final UrlQuery queryPoll = createQueryForPolling();
@@ -269,7 +270,7 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
             q.appendEncoded("json", "1");
             q.appendEncoded("soft_id", getSoftID());
             q.appendEncoded("misery_key", challenge.getSiteKey());
-            q.appendEncoded("api_key", "TODO");
+            q.appendEncoded("api_key", challenge.getApiKey());
             q.appendEncoded("pageurl", challenge.getSiteUrl());
             final String json = br.getPage("https://2captcha.com/in.php?" + q.toString());
             final BalanceResponse response = JSonStorage.restoreFromString(json, new TypeRef<BalanceResponse>() {
@@ -307,44 +308,51 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
 
     @Override
     public boolean setInvalid(final AbstractResponse<?> response) {
-        // TODO: Add functionality
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            return false;
-        }
-        /* https://2captcha.com/api-docs/report-incorrect */
-        final Browser br = new Browser();
-        try {
-            final Map<String, Object> postdata = new HashMap<String, Object>();
-            postdata.put("clientKey", this.config.getApiKey());
-            postdata.put("taskId", "TODO");
-            final PostRequest req = br.createJSonPostRequest(this.getApiBaseV2() + "/reportIncorrect", postdata);
-            br.getPage(req);
-            return true;
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
-        return false;
+        return sendCaptchaFeedback(response, false);
     }
 
     @Override
-    public boolean setValid(AbstractResponse<?> response) {
-        // TODO: Add functionality
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+    public boolean setValid(final AbstractResponse<?> response) {
+        return sendCaptchaFeedback(response, true);
+    }
+
+    private final boolean sendCaptchaFeedback(final AbstractResponse<?> response, final boolean positiveFeedback) {
+        if (!this.config.isFeedBackSendingEnabled()) {
+            /* User has disabled feedback sending */
             return false;
         }
-        /* https://2captcha.com/api-docs/report-correct */
+        // TODO: Add functionality
+        // if (!(response instanceof TwoCaptchaResponse)) {
+        // /* This should never happen! */
+        // return false;
+        // }
+        final TwoCaptchaResponse twocaptcharesponse = (TwoCaptchaResponse) response;
+        final String captchaID = twocaptcharesponse.getCaptchaID();
         final Browser br = new Browser();
         try {
+            final String url;
+            if (positiveFeedback) {
+                /* https://2captcha.com/api-docs/report-correct */
+                url = "/reportCorrect";
+            } else {
+                /* https://2captcha.com/api-docs/report-incorrect */
+                url = "/reportIncorrect";
+            }
             final Map<String, Object> postdata = new HashMap<String, Object>();
             postdata.put("clientKey", this.config.getApiKey());
-            postdata.put("taskId", "TODO");
-            final PostRequest req = br.createJSonPostRequest(this.getApiBaseV2() + "/reportCorrect", postdata);
+            postdata.put("taskId", captchaID);
+            final PostRequest req = br.createJSonPostRequest(this.getApiBaseV2() + url, postdata);
             br.getPage(req);
-            return true;
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            if ("success".equalsIgnoreCase(entries.get("status").toString())) {
+                return true;
+            } else {
+                return false;
+            }
         } catch (final Throwable e) {
             e.printStackTrace();
+            return false;
         }
-        return false;
     }
 
     public static class BalanceResponse implements Storable {
@@ -373,7 +381,7 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
     }
 
     public TwoCaptchaAccount loadAccount() {
-        TwoCaptchaAccount ret = new TwoCaptchaAccount();
+        final TwoCaptchaAccount ret = new TwoCaptchaAccount();
         try {
             final Browser br = new Browser();
             final UrlQuery q = new UrlQuery();

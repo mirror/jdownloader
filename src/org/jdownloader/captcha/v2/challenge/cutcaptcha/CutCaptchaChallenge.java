@@ -28,9 +28,12 @@ public abstract class CutCaptchaChallenge extends AbstractBrowserChallenge {
         return siteKey;
     }
 
+    public String getApiKey() {
+        return apiKey;
+    }
+
     public String getSiteUrl() {
-        // TODO
-        return null;
+        return this.getPluginBrowser().getURL();
     }
 
     public CutCaptchaChallenge(final Plugin plugin, final String siteKey, final String apiKey) {
@@ -39,8 +42,7 @@ public abstract class CutCaptchaChallenge extends AbstractBrowserChallenge {
             // default: SAs61IAI
             throw new WTFException("Bad SiteKey:" + siteKey);
         } else if (!looksLikeValidApiKey(apiKey)) {
-            // default: SAs61IAI
-            throw new WTFException("Bad SiteKey:" + siteKey);
+            throw new WTFException("Bad APIKey:" + apiKey);
         }
         this.siteKey = siteKey;
         this.apiKey = apiKey;
@@ -49,7 +51,7 @@ public abstract class CutCaptchaChallenge extends AbstractBrowserChallenge {
     private static boolean looksLikeValidSiteKey(final String siteKey) {
         if (siteKey == null) {
             return false;
-        } else if (!siteKey.matches("^[a-f0-9]{40}$")) {
+        } else if (siteKey.matches("^[a-f0-9]{40}$")) {
             return true;
         } else {
             return false;
@@ -59,7 +61,7 @@ public abstract class CutCaptchaChallenge extends AbstractBrowserChallenge {
     private static boolean looksLikeValidApiKey(final String siteKey) {
         if (siteKey == null) {
             return false;
-        } else if (!siteKey.matches("^[\\w-]{5,}$")) {
+        } else if (siteKey.matches("^[\\w-]{5,}$")) {
             return true;
         } else {
             return false;
@@ -99,7 +101,7 @@ public abstract class CutCaptchaChallenge extends AbstractBrowserChallenge {
 
     protected final boolean isCaptchaResponseValid() {
         final String v = getResult().getValue();
-        if (isSolved() && isValidToken(v)) {
+        if (isSolved() && looksLikeValidToken(v)) {
             return true;
         } else {
             return false;
@@ -111,12 +113,12 @@ public abstract class CutCaptchaChallenge extends AbstractBrowserChallenge {
         return "cut";
     }
 
-    public static boolean isValidToken(String v) {
+    public static boolean looksLikeValidToken(String v) {
         return v != null && v.matches("[\\w-]{10,}");
     }
 
     @Override
     public boolean validateResponse(AbstractResponse<String> response) {
-        return super.validateResponse(response) && isValidToken(response.getValue());
+        return super.validateResponse(response) && looksLikeValidToken(response.getValue());
     }
 }

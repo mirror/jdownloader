@@ -6,7 +6,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 public class AbstractResponse<T> {
     private final UniqueAlltimeID id         = new UniqueAlltimeID();
     private int                   priority;
-    private ValidationResult      validation = null;                  ;
+    private ValidationResult      validation = null;
 
     public ValidationResult getValidation() {
         return validation;
@@ -14,8 +14,8 @@ public class AbstractResponse<T> {
 
     public boolean setValidation(final ValidationResult validation) {
         try {
-            // only validate once
             if (this.validation != null) {
+                /* Already validated */
                 return false;
             } else {
                 this.validation = validation;
@@ -42,7 +42,7 @@ public class AbstractResponse<T> {
                 }
                 return true;
             }
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             this.validation = null;
             LoggerFactory.getDefaultLogger().log(e);
             return false;
