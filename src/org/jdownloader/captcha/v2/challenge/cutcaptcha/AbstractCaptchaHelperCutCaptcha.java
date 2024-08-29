@@ -118,7 +118,7 @@ public abstract class AbstractCaptchaHelperCutCaptcha<T extends Plugin> {
         } else if (apiKey == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            return new CutCaptchaChallenge(siteKey, plugin) {
+            return new CutCaptchaChallenge(plugin, siteKey, apiKey) {
                 @Override
                 public BrowserViewport getBrowserViewport(BrowserWindow screenResource, java.awt.Rectangle elementBounds) {
                     return null;

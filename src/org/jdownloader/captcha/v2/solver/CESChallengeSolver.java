@@ -1,9 +1,5 @@
 package org.jdownloader.captcha.v2.solver;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -16,6 +12,10 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.plugins.SkipReason;
+
+import jd.SecondLevelLaunch;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 
 public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> {
     protected final static CaptchaSettings SETTINGS = JsonConfig.create(CaptchaSettings.class);
@@ -43,8 +43,9 @@ public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> {
     final public void solve(final SolverJob<T> job) throws InterruptedException, SolverException {
         if (!validateLogins()) {
             return;
-        }
-        if (!isEnabled() || !canHandle(job.getChallenge())) {
+        } else if (!isEnabled()) {
+            return;
+        } else if (!canHandle(job.getChallenge())) {
             return;
         }
         checkInterruption();
@@ -72,25 +73,26 @@ public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> {
     protected abstract boolean validateLogins();
 
     protected void initServicePanel(final KeyHandler... handlers) {
-        if (!org.appwork.utils.Application.isHeadless()) {
-            SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-                @SuppressWarnings("unchecked")
-                public void run() {
-                    for (KeyHandler k : handlers) {
-                        k.getEventSender().addListener(new GenericConfigEventListener<Object>() {
-                            @Override
-                            public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
-                            }
-
-                            @Override
-                            public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
-                                ServicePanel.getInstance().requestUpdate(true);
-                            }
-                        });
-                    }
-                }
-            });
+        if (org.appwork.utils.Application.isHeadless()) {
+            return;
         }
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+            @SuppressWarnings("unchecked")
+            public void run() {
+                for (KeyHandler k : handlers) {
+                    k.getEventSender().addListener(new GenericConfigEventListener<Object>() {
+                        @Override
+                        public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
+                        }
+
+                        @Override
+                        public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
+                            ServicePanel.getInstance().requestUpdate(true);
+                        }
+                    });
+                }
+            }
+        });
     }
 
     public String getAccountStatusString() {

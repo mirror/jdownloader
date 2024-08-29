@@ -59,14 +59,14 @@ public abstract class AbstractTwoCaptchaSolver<T> extends CESChallengeSolver<T> 
     }
 
     protected void showMessageAndQuit(String title, String msg) throws SolverException {
-        MessageDialogImpl d = new MessageDialogImpl(0, title, msg, null, null);
+        final MessageDialogImpl d = new MessageDialogImpl(0, title, msg, null, null);
         UIOManager.I().show(MessageDialogInterface.class, d);
         throw new SolverException(title);
     }
 
     protected UrlQuery createQueryForPolling() {
         UrlQuery queryPoll = new UrlQuery();
-        queryPoll.appendEncoded("key", config.getApiKey() + "");
+        queryPoll.appendEncoded("key", config.getApiKey());
         queryPoll.appendEncoded("action", "get");
         return queryPoll;
     }
@@ -89,13 +89,21 @@ public abstract class AbstractTwoCaptchaSolver<T> extends CESChallengeSolver<T> 
     }
 
     protected void validateApiKey(CESSolverJob<T> job) throws SolverException {
-        if (!config.getApiKey().matches("^[a-f0-9]+$")) {
-            showMessageAndQuit("2Captcha.com Error", "API Key is not correct!" + "\n" + "Only a-f and 0-9");
+        if (!config.getApiKey().matches("^[a-f0-9]{32}$")) {
+            showMessageAndQuit("2Captcha.com Error", "API Key is not correct!" + "\n" + "Needs to match [a-f0-9]{32}.");
         }
     }
 
     @Override
     protected void solveBasicCaptchaChallenge(CESSolverJob<T> job, BasicCaptchaChallenge challenge) throws SolverException {
         // not used. solveCEs is overwritten
+    }
+
+    protected String getSoftID() {
+        return "3724";
+    }
+
+    protected String getApiBaseV2() {
+        return "https://api.2captcha.com";
     }
 }

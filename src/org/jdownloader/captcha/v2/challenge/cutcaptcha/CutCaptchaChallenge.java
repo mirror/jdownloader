@@ -3,8 +3,6 @@ package org.jdownloader.captcha.v2.challenge.cutcaptcha;
 import java.io.IOException;
 import java.net.URL;
 
-import jd.plugins.Plugin;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -20,20 +18,51 @@ import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
 
+import jd.plugins.Plugin;
+
 public abstract class CutCaptchaChallenge extends AbstractBrowserChallenge {
     private final String siteKey;
+    private final String apiKey;
 
     public String getSiteKey() {
         return siteKey;
     }
 
-    public CutCaptchaChallenge(String siteKey, Plugin pluginForHost) {
-        super("cutcaptcha", pluginForHost);
-        if (siteKey == null || !siteKey.matches("^[\\w-]{5,}$")) {
+    public String getSiteUrl() {
+        // TODO
+        return null;
+    }
+
+    public CutCaptchaChallenge(final Plugin plugin, final String siteKey, final String apiKey) {
+        super("cutcaptcha", plugin);
+        if (!looksLikeValidSiteKey(siteKey)) {
             // default: SAs61IAI
             throw new WTFException("Bad SiteKey:" + siteKey);
+        } else if (!looksLikeValidApiKey(apiKey)) {
+            // default: SAs61IAI
+            throw new WTFException("Bad SiteKey:" + siteKey);
+        }
+        this.siteKey = siteKey;
+        this.apiKey = apiKey;
+    }
+
+    private static boolean looksLikeValidSiteKey(final String siteKey) {
+        if (siteKey == null) {
+            return false;
+        } else if (!siteKey.matches("^[a-f0-9]{40}$")) {
+            return true;
         } else {
-            this.siteKey = siteKey;
+            return false;
+        }
+    }
+
+    private static boolean looksLikeValidApiKey(final String siteKey) {
+        if (siteKey == null) {
+            return false;
+        } else if (!siteKey.matches("^[\\w-]{5,}$")) {
+            return true;
+        } else {
+            return false;
         }
     }
 
