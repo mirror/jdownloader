@@ -94,7 +94,7 @@ public class CivitaiCom extends PluginForHost {
     /* Connection stuff */
     private static final Pattern PATTERN_IMAGE           = Pattern.compile("/images/(\\d+).*", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_DOWNLOAD_MODELS = Pattern.compile("/api/download/models/(\\d+).*", Pattern.CASE_INSENSITIVE);
-    private final String         PROPERTY_DIRECTURL      = "directurl";
+    public static final String   PROPERTY_DIRECTURL      = "directurl";
     private static final String  PROPERTY_DATE           = "date";
 
     @Override
@@ -377,5 +377,9 @@ public class CivitaiCom extends PluginForHost {
         } else {
             return false;
         }
+    }
+
+    public static String createImageURL(final String imageID) {
+        return "https://civitai.com/images/" + imageID;
     }
 }

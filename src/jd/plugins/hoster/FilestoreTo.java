@@ -69,6 +69,10 @@ public class FilestoreTo extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
     }
 
+    private String getContentURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher().replaceFirst("(?i)http://", "https://");
+    }
+
     /* Don't touch the following! */
     private static final AtomicInteger freeRunning = new AtomicInteger(0);
 
@@ -84,103 +88,6 @@ public class FilestoreTo extends PluginForHost {
 
     private String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        login(account, true, "/konto");
-        final AccountInfo ai = new AccountInfo();
-        final String validUntilString = br.getRegex("(?i)Premium-Status\\s*</small>\\s*<div class=\"value text-success\">\\s*(.*?)\\s*Uhr").getMatch(0);
-        if (validUntilString != null) {
-            final long until = TimeFormatter.getMilliSeconds(validUntilString, "dd'.'MM'.'yyyy' - 'HH':'mm", Locale.ENGLISH);
-            ai.setValidUntil(until);
-            if (!ai.isExpired()) {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(20);
-                account.setConcurrentUsePossible(true);
-                return ai;
-            }
-        }
-        account.setType(AccountType.FREE);
-        account.setMaxSimultanDownloads(2);
-        account.setConcurrentUsePossible(false);
-        return ai;
-    }
-
-    private boolean isLoggedinHTML(final Browser br) {
-        if (br.containsHTML("\"[^\"]*logout\"")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private boolean login(final Account account, final boolean validateCookies, String validateCookiesURL) throws Exception {
-        synchronized (account) {
-            final Cookies cookies = account.loadCookies("");
-            this.prepBrowser(br);
-            if (validateCookiesURL == null) {
-                validateCookiesURL = "/konto";
-            }
-            if (validateCookiesURL.startsWith("/")) {
-                validateCookiesURL = "https://" + this.getHost() + validateCookiesURL;
-            }
-            if (cookies != null) {
-                br.setCookies(getHost(), cookies);
-                if (!validateCookies) {
-                    /* Do not validate cookies */
-                    return false;
-                }
-                logger.info("Validating login cookies...");
-                br.getPage(validateCookiesURL);
-                if (this.isLoggedinHTML(br)) {
-                    logger.info("Cookie login successful");
-                    /* refresh saved cookies timestamp */
-                    account.saveCookies(br.getCookies(br.getHost()), "");
-                    return true;
-                } else {
-                    logger.info("Cookie login failed");
-                    br.clearCookies(null);
-                    account.clearCookies("");
-                }
-            }
-            logger.info("Performing full login");
-            br.getPage("https://" + this.getHost() + "/login");
-            final Form form = br.getFormbyKey("Email");
-            final InputField email = form.getInputFieldByNameRegex("(?i)Email");
-            email.setValue(Encoding.urlEncode(account.getUser()));
-            final InputField password = form.getInputFieldByNameRegex("(?i)Password");
-            password.setValue(Encoding.urlEncode(account.getPass()));
-            br.submitForm(form);
-            /**
-             * 2024-08-28: Small workaround: They sometimes redirect to http here which can cause some ISP blocks to engage. </br>
-             * Especially from German provider vodafone.de which would interfere and redirect to: </br>
-             * http://securenet.sicherheit.vodafone.de/campaign/botnet-fixed/get/message.html?url=http://filestore.to/konto
-             */
-            if (!br.getURL().equals(validateCookiesURL)) {
-                br.getPage(validateCookiesURL);
-            }
-            if (!this.isLoggedinHTML(br)) {
-                throw new AccountInvalidException();
-            }
-            account.saveCookies(br.getCookies(br.getHost()), "");
-            return true;
-        }
-    }
-
-    @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false, null);
-        br.getPage(link.getPluginPatternMatcher());
-        if (!isLoggedinHTML(br)) {
-            login(account, true, link.getPluginPatternMatcher());
-        }
-        if (AccountType.FREE.equals(account.getType())) {
-            handleDownload(link, account, true, 1);
-        } else {
-            handleDownload(link, account, true, 0);
-        }
     }
 
     @Override
@@ -224,9 +131,10 @@ public class FilestoreTo extends PluginForHost {
         setBrowserExclusive();
         prepBrowser(br);
         Exception exception = null;
+        final String contenturl = getContentURL(link);
         for (int i = 1; i < 3; i++) {
             try {
-                br.getPage(link.getPluginPatternMatcher());
+                br.getPage(contenturl);
             } catch (final Exception e) {
                 logger.log(e);
                 exception = e;
@@ -381,6 +289,105 @@ public class FilestoreTo extends PluginForHost {
         handleDownload(link, null, true, 1);
     }
 
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        login(account, true, "/konto");
+        final AccountInfo ai = new AccountInfo();
+        final String validUntilString = br.getRegex("(?i)Premium-Status\\s*</small>\\s*<div class=\"value text-success\">\\s*(.*?)\\s*Uhr").getMatch(0);
+        if (validUntilString != null) {
+            final long until = TimeFormatter.getMilliSeconds(validUntilString, "dd'.'MM'.'yyyy' - 'HH':'mm", Locale.ENGLISH);
+            ai.setValidUntil(until);
+            if (!ai.isExpired()) {
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(20);
+                account.setConcurrentUsePossible(true);
+                return ai;
+            }
+        }
+        account.setType(AccountType.FREE);
+        account.setMaxSimultanDownloads(2);
+        account.setConcurrentUsePossible(false);
+        return ai;
+    }
+
+    private boolean isLoggedinHTML(final Browser br) {
+        if (br.containsHTML("\"[^\"]*logout\"")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean login(final Account account, final boolean validateCookies, String validateCookiesURL) throws Exception {
+        synchronized (account) {
+            final Cookies cookies = account.loadCookies("");
+            this.prepBrowser(br);
+            if (validateCookiesURL == null) {
+                validateCookiesURL = "/konto";
+            }
+            if (validateCookiesURL.startsWith("/")) {
+                validateCookiesURL = "https://" + this.getHost() + validateCookiesURL;
+            }
+            if (cookies != null) {
+                br.setCookies(getHost(), cookies);
+                if (!validateCookies) {
+                    /* Do not validate cookies */
+                    return false;
+                }
+                logger.info("Validating login cookies...");
+                br.getPage(validateCookiesURL);
+                if (this.isLoggedinHTML(br)) {
+                    logger.info("Cookie login successful");
+                    /* refresh saved cookies timestamp */
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return true;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
+                    account.clearCookies("");
+                }
+            }
+            logger.info("Performing full login");
+            br.getPage("https://" + this.getHost() + "/login");
+            final Form form = br.getFormbyKey("Email");
+            final InputField email = form.getInputFieldByNameRegex("(?i)Email");
+            email.setValue(Encoding.urlEncode(account.getUser()));
+            final InputField password = form.getInputFieldByNameRegex("(?i)Password");
+            password.setValue(Encoding.urlEncode(account.getPass()));
+            br.submitForm(form);
+            /**
+             * 2024-08-28: Small workaround: They sometimes redirect to http here which can cause some ISP blocks to engage. </br>
+             * Especially from German provider vodafone.de which would interfere and redirect to: </br>
+             * http://securenet.sicherheit.vodafone.de/campaign/botnet-fixed/get/message.html?url=http://filestore.to/konto
+             */
+            if (!br.getURL().equals(validateCookiesURL)) {
+                br.getPage(validateCookiesURL);
+            }
+            if (!this.isLoggedinHTML(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            return true;
+        }
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false, null);
+        final String contenturl = this.getContentURL(link);
+        br.getPage(contenturl);
+        if (!isLoggedinHTML(br)) {
+            login(account, true, contenturl);
+        }
+        if (AccountType.FREE.equals(account.getType())) {
+            handleDownload(link, account, true, 1);
+        } else {
+            handleDownload(link, account, true, 0);
+        }
+    }
+
+    /** Finds direct downloadable URL inside HTML code. */
     private String getDllink(final Browser br) {
         String dllink = br.getRegex("<a href\\s*=\\s*(\"|')([^>]*)\\1>hier</a>").getMatch(1);
         if (dllink == null) {

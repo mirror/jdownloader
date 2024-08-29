@@ -98,6 +98,14 @@ public abstract class RapideoCore extends PluginForHost {
     protected abstract String getAPIBase();
 
     /**
+     * 2024-08-29: They got another endpoint which is e.g. hidden in their qnap download addon: </br>
+     * https://www.rapideo.net/software/qnap/rapideo.addon
+     */
+    protected String getAPIBase2() {
+        return "https://www." + getHost() + "/api/rest";
+    }
+
+    /**
      * rapideo.net: newrd </br>
      * nopremium.pl: nopremium
      */
@@ -108,6 +116,20 @@ public abstract class RapideoCore extends PluginForHost {
 
     /** Returns value used as password for API requests. */
     protected abstract String getPasswordAPI(final Account account);
+
+    protected ACCESS_TYPE getAccessType() {
+        if (useAPI()) {
+            return ACCESS_TYPE.API;
+        } else {
+            return ACCESS_TYPE.WEBSITE;
+        }
+    }
+
+    public enum ACCESS_TYPE {
+        API,
+        API_2,
+        WEBSITE
+    }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {

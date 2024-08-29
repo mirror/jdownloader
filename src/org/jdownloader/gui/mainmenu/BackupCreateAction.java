@@ -79,9 +79,12 @@ public class BackupCreateAction extends CustomizableAppAction {
                     File file = d.getSelectedFile();
                     if (file == null) {
                         return;
-                    } else if (!file.getName().endsWith(".jd2backup")) {
+                    }
+                    /* Correct filename if needed. */
+                    if (!file.getName().endsWith(".jd2backup")) {
                         file = new File(file.getAbsolutePath() + ".jd2backup");
                     }
+                    /* Ask used what to do if that file already exists. */
                     if (file.exists()) {
                         Dialog.getInstance().showConfirmDialog(0, _GUI.T.lit_overwrite(), _GUI.T.file_exists_want_to_overwrite_question(file.getName()));
                         file.delete();

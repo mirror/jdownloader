@@ -18,7 +18,7 @@ public interface FilestoreToConfig extends PluginConfigInterface {
     final String              TEXT_WaittimeOnNoFreeSlotsMinutes         = "Wait minutes on error 'no free slots available'";
     final String              TEXT_StartFreeDownloadsSequentially       = "Start free downloads sequentially and not at the same time?";
     final String              TEXT_WaittimeBetweenDownloadStartsSeconds = "Wait seconds between download-starts";
-    final String              TEXT_UserAgent                            = "Enter User-Agent which will be used for all website http requests:";
+    final String              TEXT_UserAgent                            = "Enter User-Agent which will be used for all website http(s) requests:";
     final String              TEXT_ModifyFinalDownloadurls              = "Modify final downloadurls in free mode: Replace '/free' with '/premium'?";
     public static TRANSLATION TRANSLATION                               = new TRANSLATION();
 

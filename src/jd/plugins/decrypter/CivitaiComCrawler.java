@@ -37,6 +37,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -90,6 +91,7 @@ public class CivitaiComCrawler extends PluginForDecrypt {
         final String modelVersionId = query.get("modelVersionId");
         final String itemType = urlregex.getMatch(0);
         final String itemID = urlregex.getMatch(1);
+        final CivitaiCom hosterplugin = (CivitaiCom) this.getNewPluginForHostInstance(this.getHost());
         /*
          * Using API: https://github.com/civitai/civitai/wiki/REST-API-Reference,
          * https://wiki.civitai.com/wiki/Civitai_API#GET_/api/v1/images
@@ -222,7 +224,13 @@ public class CivitaiComCrawler extends PluginForDecrypt {
             final List<Map<String, Object>> files = (List<Map<String, Object>>) entries.get("files");
             for (final Map<String, Object> file : files) {
                 final Map<String, Object> hashes = (Map<String, Object>) file.get("hashes");
-                final DownloadLink link = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(file.get("downloadUrl").toString()));
+                final String downloadurl = file.get("downloadUrl").toString();
+                final DownloadLink link;
+                if (hosterplugin.canHandle(downloadurl)) {
+                    link = this.createDownloadlink(downloadurl);
+                } else {
+                    link = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(downloadurl));
+                }
                 link.setFinalFileName(file.get("name").toString());
                 link.setDownloadSize(((Number) file.get("sizeKB")).longValue() * 1024);
                 link.setAvailable(true);
@@ -238,7 +246,21 @@ public class CivitaiComCrawler extends PluginForDecrypt {
             }
             final List<Map<String, Object>> images = (List<Map<String, Object>>) entries.get("images");
             for (final Map<String, Object> image : images) {
-                final DownloadLink link = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(image.get("url").toString()));
+                final String directurl = image.get("url").toString();
+                final String imageID = new Regex(directurl, "(\\d+)\\.[a-z]+$").getMatch(0);
+                final DownloadLink link;
+                if (imageID != null) {
+                    /* Link will be handled via civitai.com hoster plugin. */
+                    link = this.createDownloadlink(CivitaiCom.createImageURL(imageID));
+                    link.setProperty(CivitaiCom.PROPERTY_DIRECTURL, directurl);
+                } else {
+                    /* Link will be handled via DirectHTTP hoster plugin. */
+                    link = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl));
+                }
+                final String filenameFromURL = Plugin.getFileNameFromURL(new URL(directurl));
+                if (filenameFromURL != null) {
+                    link.setName(filenameFromURL);
+                }
                 link.setAvailable(true);
                 thisRet.add(link);
             }
