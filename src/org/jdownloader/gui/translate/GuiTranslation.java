@@ -696,7 +696,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Sorted by '%s1'-Column" })
     String DownloadsTable_actionPerformed_sortwarner_title(String column);
 
-    @Default(lngs = { "en" }, values = { "Your download list is not in download order any more.\r\nYou just performed a temporary sort.\r\nClick twice on the highlighted column header to return to default (Top-Down) order.\r\nTo perform a permanent sort, press and hold CTRL and click inside any column header." })
+    @Default(lngs = { "en" }, values = { "You've just applied a visual sort.\r\nNOTE: This does not change download order!\r\nTo revert this, click on the highlighted column header until the highlighting disappears.\r\nTo perform a permanent sort which will change the download orderr, press and hold CTRL and click inside any column header." })
     String DownloadsTable_actionPerformed_sortwarner_text();
 
     @Default(lngs = { "en" }, values = { "Comment" })
