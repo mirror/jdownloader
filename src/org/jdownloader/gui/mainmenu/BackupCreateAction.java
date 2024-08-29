@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.zip.ZipEntry;
 
 import javax.swing.filechooser.FileFilter;
@@ -29,6 +30,7 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.utils.Application;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -84,10 +86,32 @@ public class BackupCreateAction extends CustomizableAppAction {
                     if (!file.getName().endsWith(".jd2backup")) {
                         file = new File(file.getAbsolutePath() + ".jd2backup");
                     }
-                    /* Ask used what to do if that file already exists. */
                     if (file.exists()) {
+                        /* File already exists -> Ask user to confirm deletion of that file. */
                         Dialog.getInstance().showConfirmDialog(0, _GUI.T.lit_overwrite(), _GUI.T.file_exists_want_to_overwrite_question(file.getName()));
                         file.delete();
+                    } else {
+                        /**
+                         * Try to write the file. </br>
+                         * If we can't write it, it doesn't make sense to initiate an application restart.
+                         */
+                        try {
+                            final RandomAccessFile filewrite = IO.open(file, "rw");
+                            filewrite.close();
+                            file.delete();
+                            // I've removed the errorhandling down below since that should be an edge case.
+                            // if (!file.delete()) {
+                            // /* This should never happen! */
+                            // // TODO: Add translation
+                            // Dialog.getInstance().showMessageDialog("Failed to delete test-written file " + file.getName());
+                            // return;
+                            // }
+                        } catch (final IOException e) {
+                            // TODO: Add translation
+                            final String titleAndMsg = "Failed to write file " + file.getName();
+                            Dialog.getInstance().showExceptionDialog(titleAndMsg, titleAndMsg, e);
+                            return;
+                        }
                     }
                     final File backupFile = file;
                     ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
