@@ -26,12 +26,16 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.DirectHTTP;
 
@@ -50,23 +54,21 @@ public class Wrdprss extends antiDDoSForDecrypt {
         return true;
     }
 
-    private String parameter = null;
+    private String contenturl = null;
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        parameter = param.toString().replace("watchseries-online.ch/", "watchseries-online.pl/");
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        contenturl = param.getCryptedUrl().replace("watchseries-online.ch/", "watchseries-online.pl/");
         if (StringUtils.startsWithCaseInsensitive(param.getCryptedUrl(), "https")) {
-            parameter = parameter.replaceFirst("^http://", "https://");
+            contenturl = contenturl.replaceFirst("^http://", "https://");
         }
-        getPage(parameter);
+        getPage(contenturl);
         br.followRedirect();
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        } else if (br.getHttpConnection().getResponseCode() == 403) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Defaultpasswörter der Seite setzen */
         final ArrayList<String> link_passwds = new ArrayList<String>();
@@ -77,7 +79,7 @@ public class Wrdprss extends antiDDoSForDecrypt {
             }
         }
         final ArrayList<String[]> customHeaders = new ArrayList<String[]>();
-        if (parameter.matches(".+hi10anime\\.com.+")) {
+        if (contenturl.matches(".+hi10anime\\.com.+")) {
             customHeaders.add(new String[] { "Referer", br.getURL() });
         }
         /* Passwort suchen */
@@ -85,32 +87,32 @@ public class Wrdprss extends antiDDoSForDecrypt {
         if (password != null) {
             link_passwds.add(password.trim());
         }
-        if (parameter.matches(".+watchseries-online\\.be.+")) {
+        if (contenturl.matches(".+watchseries-online\\.be.+")) {
             if (br.getRedirectLocation() != null) {
                 br.followRedirect();
             }
             final String BaseURL = new Regex(br.getBaseURL(), "(https?://[^/]+)/").getMatch(0);
             final String[] lnks = br.getRegex("href=\"([^\"]+)\">Play<").getColumn(0);
             for (final String link : lnks) {
-                decryptedLinks.add(createDownloadlink(BaseURL + link));
+                ret.add(createDownloadlink(BaseURL + link));
             }
-            return decryptedLinks;
+            return ret;
         }
-        if (parameter.matches(".+cgpersia\\.com.+")) {
+        if (contenturl.matches(".+cgpersia\\.com.+")) {
             if (br.getRedirectLocation() != null) {
                 br.followRedirect();
             }
-            final String BaseURL = new Regex(br.getBaseURL(), "(https?://[^/]+)/").getMatch(0);
+            // final String BaseURL = new Regex(br.getBaseURL(), "(https?://[^/]+)/").getMatch(0);
             final String[] preBlocks = br.getRegex("<pre>\\s*([^<]+)\\s*</pre>").getColumn(0);
             if (preBlocks != null) {
                 for (final String preBlock : preBlocks) {
                     final String[] lnks = HTMLParser.getHttpLinks(preBlock, null);
                     for (final String link : lnks) {
-                        decryptedLinks.add(createDownloadlink(link));
+                        ret.add(createDownloadlink(link));
                     }
                 }
             }
-            return decryptedLinks;
+            return ret;
         }
         /* Alle Parts suchen */
         final String[] links = br.getRegex(Pattern.compile("href=.*?((?:(?:https?|ftp):)?//[^\"']{2,}|(&#x[a-f0-9]{2};)+)", Pattern.CASE_INSENSITIVE)).getColumn(0);
@@ -132,10 +134,20 @@ public class Wrdprss extends antiDDoSForDecrypt {
                 if (!customHeaders.isEmpty()) {
                     dLink.setProperty(DirectHTTP.PROPERTY_HEADERS, customHeaders);
                 }
-                decryptedLinks.add(dLink);
+                ret.add(dLink);
             }
         }
-        return decryptedLinks;
+        if (ret.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String title = br.getRegex("<title>([^<]+)").getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            fp.setName(title);
+        }
+        fp.addLinks(ret);
+        return ret;
     }
 
     public boolean kanHandle(final String link) {
@@ -147,7 +159,7 @@ public class Wrdprss extends antiDDoSForDecrypt {
         }
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

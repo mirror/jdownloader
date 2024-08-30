@@ -40,7 +40,7 @@ public interface FileCryptConfig extends PluginConfigInterface {
         PREFER_GIVEN_MIRROR_ID {
             @Override
             public String getLabel() {
-                return "Crawl pre-selected mirror only (crawl all if no pre-selected is available)";
+                return "Crawl only pre-selected mirror if it contains available links";
             }
         },
         CRAWL_ALL_AVAILABLE_MIRRORS {

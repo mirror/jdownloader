@@ -129,7 +129,7 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
      * @throws InterruptedException
      * @throws Exception
      */
-    private boolean handleResponse(CESSolverJob<String> job, final String challengeID, final String challengeResponse) throws InterruptedException, Exception {
+    private boolean handleResponse(final CESSolverJob<String> job, final String challengeID, final String challengeResponse) throws InterruptedException, Exception {
         if ("CAPCHA_NOT_READY".equals(challengeResponse)) {
             Thread.sleep(5000);
             return false;
@@ -321,11 +321,6 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
             /* User has disabled feedback sending */
             return false;
         }
-        // TODO: Add functionality
-        // if (!(response instanceof TwoCaptchaResponse)) {
-        // /* This should never happen! */
-        // return false;
-        // }
         final TwoCaptchaResponse twocaptcharesponse = (TwoCaptchaResponse) response;
         final String captchaID = twocaptcharesponse.getCaptchaID();
         final Browser br = new Browser();
