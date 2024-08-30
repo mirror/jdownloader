@@ -107,6 +107,11 @@ public class FlyFilesNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private enum CAPTCHA_TYPE {
+        IMAGE,
+        INTERACTIVE
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         String dllink = checkDirectLink(link, "directlink");
@@ -129,30 +134,34 @@ public class FlyFilesNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
                 }
             }
-            final boolean requiredCaptcha;
+            final CAPTCHA_TYPE captchatype;
             if (captchaurl != null) {
                 final String code = this.getCaptchaCode(captchaurl, link);
                 query.add("captcha_value", Encoding.urlEncode(code));
-                requiredCaptcha = true;
+                captchatype = CAPTCHA_TYPE.IMAGE;
             } else if (br.containsHTML("ReCaptchaDownload") && captchaSiteKey != null) {
                 /* 2016-12-29 */
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, captchaSiteKey).getToken();
                 query.add("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                requiredCaptcha = true;
+                captchatype = CAPTCHA_TYPE.INTERACTIVE;
             } else if (br.containsHTML("Hu?CaptchaDownload") && captchaSiteKey != null) {
                 /* 2016-12-29 */
                 final String hCaptchaResponse = new CaptchaHelperHostPluginHCaptcha(this, br, captchaSiteKey).getToken();
                 query.add("h-captcha-response", Encoding.urlEncode(hCaptchaResponse));
-                requiredCaptcha = true;
+                captchatype = CAPTCHA_TYPE.INTERACTIVE;
             } else {
-                requiredCaptcha = false;
+                captchatype = null;
             }
             br.postPage(postURL, query);
             // they don't show any info about limits or waits. You seem to just
             // get '#' instead of link.
             if (br.containsHTML("#downlinkCaptcha\\|0")) {
-                if (!requiredCaptcha) {
+                if (captchatype == null) {
+                    /* This should never happen! */
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Website says 'wrong captcha' but a captcha was never required");
+                } else if (captchatype == CAPTCHA_TYPE.INTERACTIVE) {
+                    /* 2024-08-30: They shadow ban VPNs by just never allowing the solution of the interactive captcha. */
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "VPN blocked?");
                 } else {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
