@@ -446,14 +446,21 @@ public class Ardmediathek extends PluginForDecrypt {
         int maxHeightHls = -1;
         int maxHeightProgressive = -1;
         final Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.walkJson(mediaCollection, "widgets/{0}/mediaCollection/embedded");
-        final List<Map<String, Object>> mediaArray = (List<Map<String, Object>>) map.get("streams");
+        final List<Map<String, Object>> streams = (List<Map<String, Object>>) map.get("streams");
         final ArrayList<DownloadLink> results = new ArrayList<DownloadLink>();
-        for (final Map<String, Object> media : mediaArray) {
-            final List<Map<String, Object>> mediaStreams = (List<Map<String, Object>>) media.get("media");
+        boolean skippedSignLanguage = false;
+        for (final Map<String, Object> stream : streams) {
+            final boolean isSignLanguage = "DGS".equalsIgnoreCase(stream.get("kindName").toString());
+            if (isSignLanguage && !this.cfg.isPreferAudioDescription() && !skippedSignLanguage) {
+                logger.info("Skipping signLanguage");
+                skippedSignLanguage = true;
+                continue;
+            }
+            final List<Map<String, Object>> media = (List<Map<String, Object>>) stream.get("media");
             /* Look-ahead */
             boolean hasAudiodescription = false;
             boolean hasNormalVersion = false;
-            for (final Map<String, Object> mediaStream : mediaStreams) {
+            for (final Map<String, Object> mediaStream : media) {
                 final List<Map<String, Object>> audios = (List<Map<String, Object>>) mediaStream.get("audios");
                 for (final Map<String, Object> audio : audios) {
                     final String audioKind = audio.get("kind").toString();
@@ -468,7 +475,7 @@ public class Ardmediathek extends PluginForDecrypt {
             if (hasAudiodescription && !hasNormalVersion) {
                 logger.info("Video is only available as audio-description version");
             }
-            for (final Map<String, Object> mediaStream : mediaStreams) {
+            for (final Map<String, Object> mediaStream : media) {
                 // list is sorted from best to lowest quality, first one is m3u8
                 final String url = mediaStream.get("url").toString();
                 final String mimeType = mediaStream.get("mimeType").toString();
@@ -476,7 +483,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 final Number heightO = (Number) mediaStream.get("maxVResolutionPx");
                 final List<Map<String, Object>> audios = (List<Map<String, Object>>) mediaStream.get("audios");
                 if (audios.size() != 1) {
-                    logger.info("Skipping item with 'audios' lenth != 1: " + url);
+                    logger.info("Skipping item with 'audios' length != 1: " + url);
                     continue;
                 }
                 final Map<String, Object> audio = audios.get(0);
@@ -525,6 +532,10 @@ public class Ardmediathek extends PluginForDecrypt {
                 final DownloadLink download = addQualityHTTP(param, metadata, foundQualitiesMap, url, null, resolution, isAudiodescription);
                 download.setProperty("languagecode", audioLanguageCode);
                 results.add(download);
+            }
+            if (isSignLanguage && this.cfg.isPreferAudioDescription()) {
+                logger.info("Stopping in order to only return sign language items");
+                break;
             }
         }
         // hlsMaster =
