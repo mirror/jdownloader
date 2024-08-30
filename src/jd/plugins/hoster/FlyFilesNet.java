@@ -160,8 +160,11 @@ public class FlyFilesNet extends PluginForHost {
                     /* This should never happen! */
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Website says 'wrong captcha' but a captcha was never required");
                 } else if (captchatype == CAPTCHA_TYPE.INTERACTIVE) {
-                    /* 2024-08-30: They shadow ban VPNs by just never allowing the solution of the interactive captcha. */
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "VPN blocked?");
+                    /*
+                     * 2024-08-30: Answers for interactive captchas are usually correct -> They shadow ban VPNs by just never allowing the
+                     * solution of the interactive captcha.
+                     */
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "IP/VPN blocked?");
                 } else {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }

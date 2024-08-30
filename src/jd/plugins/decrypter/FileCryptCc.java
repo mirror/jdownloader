@@ -765,7 +765,7 @@ public class FileCryptCc extends PluginForDecrypt {
 
     private final void cleanUpHTML(final Browser br) {
         String toClean = br.getRequest().getHtmlCode();
-        ArrayList<String> regexStuff = new ArrayList<String>();
+        final ArrayList<String> regexStuff = new ArrayList<String>();
         // generic cleanup
         regexStuff.add("<!(--.*?--)>");
         regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')(?:(?:[\\w:;\\s#-]*(visibility\\s*:\\s*hidden;|display\\s*:\\s*none;|font-size\\s*:\\s*0;)[\\w:;\\s#-]*)|font-size\\s*:\\s*0|visibility\\s*:\\s*hidden|display\\s*:\\s*none)\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
