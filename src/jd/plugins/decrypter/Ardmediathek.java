@@ -451,7 +451,7 @@ public class Ardmediathek extends PluginForDecrypt {
         boolean skippedSignLanguage = false;
         for (final Map<String, Object> stream : streams) {
             final boolean isSignLanguage = "DGS".equalsIgnoreCase(stream.get("kindName").toString());
-            if (isSignLanguage && !this.cfg.isPreferAudioDescription() && !skippedSignLanguage) {
+            if (isSignLanguage && !this.cfg.isPreferAudioDescription() && streams.size() > 1 && !skippedSignLanguage) {
                 logger.info("Skipping signLanguage");
                 skippedSignLanguage = true;
                 continue;

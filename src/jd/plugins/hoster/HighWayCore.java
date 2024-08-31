@@ -375,7 +375,7 @@ public abstract class HighWayCore extends UseNet {
         if (account != null) {
             this.login(account, false);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, this.getMaxChunks(link));
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, this.getMaxChunks(link, account));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection(true);
@@ -433,8 +433,8 @@ public abstract class HighWayCore extends UseNet {
         } else {
             getMultiHosterManagement().runCheck(account, link);
             boolean resume = account.getBooleanProperty(PROPERTY_ACCOUNT_RESUME, defaultRESUME);
-            int maxChunks = this.getMaxChunks(link);
-            /* Look for host specific max chunks limit */
+            int maxChunks = this.getMaxChunks(link, account);
+            /* Look for host specific connection limits. */
             final String thishost = link.getHost();
             synchronized (getMapLock()) {
                 final Map<String, Integer> hostMaxchunksMap = getMap(HighWayCore.hostMaxchunksMap);
@@ -708,7 +708,7 @@ public abstract class HighWayCore extends UseNet {
                 ai.setStatus(StringUtils.valueOfOrNull(accountInfo.get("type")) + " | Remaining today: " + SIZEUNIT.formatValue((SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue(), trafficLeftToday));
             }
             final Map<String, Object> usenetLogins = (Map<String, Object>) accountInfo.get("usenet");
-            if (this.useApikeyLogin()) {
+            if (this.useApikeyLogin() && usenetLogins != null) {
                 /* Try to set unique username as user could enter anything in the username field in this case */
                 final String uniqueUsername = (String) usenetLogins.get("username");
                 if (!StringUtils.isEmpty(uniqueUsername)) {
@@ -780,7 +780,7 @@ public abstract class HighWayCore extends UseNet {
                 account.setProperty(PROPERTY_ACCOUNT_USENET_PASSWORD, usenetLogins.get("pass"));
                 account.setProperty(PROPERTY_ACCOUNT_MAX_DOWNLOADS_USENET, accountInfo.get("usenet_connection"));
             } else {
-                supportedHosts.remove("Usenet");
+                supportedHosts.remove("usenet");
                 account.removeProperty(PROPERTY_ACCOUNT_USENET_USERNAME);
                 account.removeProperty(PROPERTY_ACCOUNT_USENET_PASSWORD);
                 account.removeProperty(PROPERTY_ACCOUNT_MAX_DOWNLOADS_USENET);
@@ -864,15 +864,24 @@ public abstract class HighWayCore extends UseNet {
 
     protected abstract void exceptionAccountInvalid(final Account account) throws PluginException;
 
-    private int getMaxChunks(final DownloadLink link) {
-        final int maxChunksStored = link.getIntegerProperty(PROPERTY_ACCOUNT_MAXCHUNKS, defaultMAXCHUNKS);
-        return correctChunks(maxChunksStored);
+    private int getMaxChunks(final DownloadLink link, final Account account) {
+        /* First look for link specific chunk limit. */
+        Number maxChunks = (Number) link.getProperty(PROPERTY_ACCOUNT_MAXCHUNKS);
+        if (maxChunks == null) {
+            /* Look for account specific chunk limit. */
+            maxChunks = (Number) account.getProperty(PROPERTY_ACCOUNT_MAXCHUNKS);
+            if (maxChunks == null) {
+                /* Fallback to default */
+                maxChunks = defaultMAXCHUNKS;
+            }
+        }
+        return correctChunks(maxChunks.intValue());
     }
 
     /** Corrects input so that it fits what we use in our plugins. */
     private int correctChunks(final int maxchunks) {
         if (maxchunks > 1) {
-            /* Minus maxChunksStored -> Up to X chunks */
+            /* Negative number means "up to X chunks". */
             return -maxchunks;
         } else {
             return maxchunks;
