@@ -27,6 +27,8 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -65,20 +67,19 @@ public class OneInkCc extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final String contentID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contenturl = param.getCryptedUrl();
+        final String contentID = new Regex(contenturl, this.getSupportedLinks()).getMatch(0);
         br.setFollowRedirects(false);
-        br.getPage(parameter);
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getRedirectLocation() != null) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String redirect = br.getRegex("window\\.location\\.href\\s*=\\s*\"(https?://[^\"]+)").getMatch(0);
         if (redirect != null && !redirect.contains(contentID)) {
             /* 2021-03-19: Direct redirect */
-            decryptedLinks.add(createDownloadlink(redirect));
-            return decryptedLinks;
+            ret.add(createDownloadlink(redirect));
+            return ret;
         } else if (redirect != null) {
             br.setFollowRedirects(true);
             br.getPage(redirect);
@@ -119,10 +120,10 @@ public class OneInkCc extends PluginForDecrypt {
                  * 2018-11-13: Broken/offline URL with infinite captcha loop (for valid URLs, we will find values for some of the keys[] and
                  * can skip this captcha!)
                  */
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            return null;
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         if (data != null) {
@@ -131,17 +132,13 @@ public class OneInkCc extends PluginForDecrypt {
         } else {
             br.submitForm(passForm);
         }
-        final String finallink = br.toString();
-        if (finallink == null || !finallink.startsWith("http")) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        final String finallink = br.getRequest().getHtmlCode();
+        if (finallink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (!finallink.startsWith("http")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (finallink.contains("_Link-Not-Found_")) {
-            /* 2020-08-06: E.g. https://1ink.cc/#_Link-Not-Found_# */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
+        ret.add(createDownloadlink(finallink));
+        return ret;
     }
 }

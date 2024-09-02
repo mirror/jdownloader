@@ -66,26 +66,36 @@ public class ImageVenueCom extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            String regex = "https?://img[0-9]+\\." + buildHostsPatternPart(domains) + "/img\\.php\\?(loc=[^&]+\\&)?image=.+";
-            regex += "|https?://img[0-9]+\\." + buildHostsPatternPart(domains) + "/loc\\d+/th_\\d+[^/]+";
-            regex += "|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/view/o/\\?i=[^\\&]+\\&h=[^\\&]+";
+            final String hostsPatternPart = buildHostsPatternPart(domains);
+            String regex = "https?://img[0-9]+\\." + hostsPatternPart + "/img\\.php\\?(loc=[^&]+\\&)?image=.+";
+            regex += "|" + getThumbnailPatternOld(hostsPatternPart);
+            regex += "|" + getThumbnailPatternNew(hostsPatternPart);
+            regex += "|https?://(?:www\\.)?" + hostsPatternPart + "/view/o/\\?i=[^\\&]+\\&h=[^\\&]+";
             // galleries start with GA, images with ME?
-            regex += "|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?!GA)[A-Za-z0-9]+";
-            regex += "|https?://cdn-images\\." + buildHostsPatternPart(domains) + "/[^/]+/[^/]+/[^/]+/[A-Za-z0-9]+[^/\\?]*(\\.png|\\.jpe?g)";
-            regex += "|https?://cdno-data\\." + buildHostsPatternPart(domains) + "/html\\.[^/]+/upload\\d+/loc\\d+/[^/]+(\\.png|\\.jpe?g)";
+            regex += "|https?://(?:www\\.)?" + hostsPatternPart + "/(?!GA)[A-Za-z0-9]+";
+            regex += "|https?://cdn-images\\." + hostsPatternPart + "/[^/]+/[^/]+/[^/]+/[A-Za-z0-9]+[^/\\?]*(\\.png|\\.jpe?g)";
+            regex += "|https?://cdno-data\\." + hostsPatternPart + "/html\\.[^/]+/upload\\d+/loc\\d+/[^/]+(\\.png|\\.jpe?g)";
             ret.add(regex);
         }
         return ret.toArray(new String[0]);
     }
 
+    private static String getThumbnailPatternOld(final String domainpart) {
+        return "https?://(img[0-9]+)\\." + domainpart + "/(loc\\d+)/th_(\\d+[^/]+)";
+    }
+
+    private static String getThumbnailPatternNew(final String domainpart) {
+        return "https?://cdn-thumbs\\." + domainpart + "/[^/]+/[^/]+/[^/]+/([A-Z0-9]+)_t\\.jpg";
+    }
+
     @Override
     public String getAGBLink() {
-        return "http://imagevenue.com/tos.php";
+        return "https://" + getHost() + "/tos.php";
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     private String getFilenameFromURL(final DownloadLink link) throws MalformedURLException {
@@ -105,25 +115,32 @@ public class ImageVenueCom extends PluginForHost {
     private String getContentURL(final DownloadLink link) {
         final String url = link != null ? link.getPluginPatternMatcher() : null;
         final String cdnImageD = new Regex(url, "https?://cdn-images\\.[^/]*/[^/]+/[^/]+/[^/]+/([A-Za-z0-9]+)").getMatch(0);
-        final Regex thumbnailurl = new Regex(url, "https?://(img[0-9]+)\\.[^/]+/([^/]+)/th_(\\d+[^/]+)");
+        final Regex thumbnailOld;
+        final Regex thumbnailNew;
         if (cdnImageD != null) {
             /* cdn-images to normal urls */
             return "https://www." + getHost() + "/" + cdnImageD;
-        } else if (thumbnailurl.matches()) {
-            return generateContentURL(thumbnailurl.getMatch(2), thumbnailurl.getMatch(0));
+        } else if ((thumbnailOld = new Regex(url, getThumbnailPatternOld("[^/]+"))).patternFind()) {
+            return generateContentURLOld(thumbnailOld.getMatch(2), thumbnailOld.getMatch(0));
+        } else if ((thumbnailNew = new Regex(url, getThumbnailPatternNew("[^/]+"))).patternFind()) {
+            return generateContentURLNew(thumbnailNew.getMatch(0));
         } else {
             final String cdnodata[] = new Regex(url, "https?://cdno-data\\.[^/]*/html\\.([^/]+)/upload\\d+/loc\\d+/([^/]+(?:\\.png|\\.jpe?g))").getRow(0);
             if (cdnodata != null) {
                 /* cdno-data to normal urls */
-                return generateContentURL(cdnodata[1], cdnodata[0]);
+                return generateContentURLOld(cdnodata[1], cdnodata[0]);
             }
         }
         /* Return URL which was added by the user and assume that's already the one we want. */
         return link.getPluginPatternMatcher();
     }
 
-    private String generateContentURL(final String i, final String imageServer) {
-        return "https://www." + this.getHost() + "/view/o/?i=" + i + "&h=" + imageServer;
+    private String generateContentURLOld(final String i, final String imageServer) {
+        return "https://www." + getHost() + "/view/o/?i=" + i + "&h=" + imageServer;
+    }
+
+    private String generateContentURLNew(final String imageID) {
+        return "https://www." + getHost() + "/" + imageID;
     }
 
     private String dllink = null;

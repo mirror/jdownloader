@@ -22,6 +22,10 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -36,10 +40,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.decrypter.ImgSrcRuCrawler;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
@@ -63,7 +63,7 @@ public class ImgSrcRu extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://imgsrc.ru/main/dudes.php";
+        return "https://" + getHost() + "/main/dudes.php";
     }
 
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
@@ -193,7 +193,6 @@ public class ImgSrcRu extends PluginForHost {
                     } catch (final Throwable e) {
                         logger.log(e);
                     }
-
                 }
             } catch (final Throwable e) {
                 logger.log(e);
@@ -240,7 +239,7 @@ public class ImgSrcRu extends PluginForHost {
         ImgSrcRuCrawler.getPage(br, url);
         if (br.getHttpConnection().getResponseCode() == 400) {
             Browser.setRequestIntervalLimitGlobal(getHost(), 750);
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 400 rate limit reached", 1 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 400 rate limit reached", 10 * 60 * 1000l);
         } else if (br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

@@ -347,9 +347,14 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     private void connectionErrorhandling(final URLConnectionAdapter con, final DownloadLink link, final Account account, final ArchiveOrgLendingInfo oldLendingInfo) throws Exception {
-        if (this.isBook(link)) {
-            /* Check errors for books */
-            if (!this.looksLikeDownloadableContent(con, link)) {
+        final boolean isBook = this.isBook(link);
+        if (isBook && con.getURL().toString().contains("preview-unavailable.png")) {
+            // https://archive.org/bookreader/static/preview-unavailable.png
+            /* This page of a book is only available when book is borrowed by user. */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Book preview unavailable");
+        }
+        if (!this.looksLikeDownloadableContent(con, link)) {
+            if (isBook) {
                 final int responsecode = con.getResponseCode();
                 if (account != null && isBookLendingRequired(link) && (responsecode == 403 || responsecode == 404)) {
                     synchronized (bookBorrowSessions) {
@@ -371,15 +376,13 @@ public class ArchiveOrg extends PluginForHost {
                     /* Unknown reason of failure */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 3 * 60 * 1000l);
                 }
-            } else if (con.getURL().toString().contains("preview-unavailable.png")) {
-                // https://archive.org/bookreader/static/preview-unavailable.png
-                /* This page of a book is only available when book is borrowed by user. */
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Book preview unavailable");
             }
-        }
-        /* Generic errorhandling */
-        if (!this.looksLikeDownloadableContent(con, link)) {
             br.followConnection(true);
+            if (con.getResponseCode() == 401) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401");
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             /* <h1>Item not available</h1> */
             if (br.containsHTML("(?i)>\\s*Item not available<")) {
                 if (br.containsHTML("(?i)>\\s*The item is not available due to issues")) {
@@ -398,8 +401,6 @@ public class ArchiveOrg extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403: Item not available");
                 }
             }
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (con.getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (link.getHashInfo() != null) {

@@ -127,15 +127,14 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
             final Map<String, Object> infomap = (Map<String, Object>) entries.get("set");
             final List<List<Object>> imgs = (List<List<Object>>) infomap.get("images");
             for (final List<Object> imgInfo : imgs) {
-                String link = Encoding.htmlDecode(imgInfo.get(4).toString());
+                String link = Encoding.htmlDecode(imgInfo.get(3).toString());
                 if (link.startsWith("/")) {
-                    link = br.getURL(link).toString();
+                    link = br.getURL(link).toExternalForm();
                 }
                 if (this.canHandle(link)) {
                     continue;
-                } else {
-                    ret.add(createDownloadlink(link));
                 }
+                ret.add(createDownloadlink(link));
             }
             final List<Object> modelInfo = (List<Object>) JavaScriptEngineFactory.walkJson(infomap, "models/{0}");
             final String fpName = infomap.get("site") + " - " + modelInfo.get(1) + " - " + "Set " + setID;

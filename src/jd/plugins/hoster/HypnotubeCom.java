@@ -17,15 +17,22 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.parser.html.HTMLSearch;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -38,6 +45,7 @@ import jd.plugins.PluginForHost;
 public class HypnotubeCom extends PluginForHost {
     public HypnotubeCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://www." + this.getHost() + "/signup");
     }
 
     @Override
@@ -52,18 +60,24 @@ public class HypnotubeCom extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private final String         PATTERN_NORMAL    = "(?i)https?://[^/]+/video/([a-z0-9\\-]*)-(\\d+)\\.html";
-    private final String         PATTERN_EMBED     = "(?i)https?://[^/]+/embed/(\\d+)";
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        return 1;
+    }
+
+    private String        dllink         = null;
+    private final Pattern PATTERN_NORMAL = Pattern.compile("(?i)https?://[^/]+/video/([a-z0-9\\-]*)-(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
+    private final Pattern PATTERN_EMBED  = Pattern.compile("https?://[^/]+/embed/(\\d+)", Pattern.CASE_INSENSITIVE);
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "hypnotube.com" });
+        ret.add(new String[] { "shesfreaky.com" });
         return ret;
     }
 
@@ -86,7 +100,7 @@ public class HypnotubeCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://hypnotube.com/static/tos";
+        return "https://" + getHost() + "/static/tos";
     }
 
     @Override
@@ -111,9 +125,10 @@ public class HypnotubeCom extends PluginForHost {
         if (url == null) {
             return null;
         }
-        String title = new Regex(url, PATTERN_NORMAL).getMatch(1);
+        String title = new Regex(url, PATTERN_NORMAL).getMatch(0);
         if (title != null) {
             title = title.replace("-", " ").trim();
+            // title = StringUtils.toCamelCase(title, true);
             return title;
         }
         return null;
@@ -121,10 +136,10 @@ public class HypnotubeCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, false);
+        return requestFileInformation(link, null, false);
     }
 
-    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
         final String extDefault = ".mp4";
         final String videoid = this.getFID(link);
@@ -137,7 +152,7 @@ public class HypnotubeCom extends PluginForHost {
             }
         }
         this.setBrowserExclusive();
-        if (link.getPluginPatternMatcher().matches(PATTERN_EMBED)) {
+        if (new Regex(link.getPluginPatternMatcher(), PATTERN_EMBED).patternFind()) {
             /* Access normal video URL so we can find the video title */
             br.getPage("https://" + this.getHost() + "/video/-" + videoid + ".html");
             final String normalURL = br.getRegex("(https?://[^/]+/video/[a-z0-9\\-]+-" + videoid + "\\.html)").getMatch(0);
@@ -168,21 +183,103 @@ public class HypnotubeCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link, true);
+        handleDownload(link, null);
+    }
+
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link, account, true);
         final String accountRequiredError = br.getRegex(">\\s*(We're sorry, You must be friends with[^<]+)").getMatch(0);
         if (accountRequiredError != null) {
+            /* You must be friends with user XY to be able to watch this content. */
             throw new AccountRequiredException(Encoding.htmlDecode(accountRequiredError).trim());
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(link, null));
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 
+    private boolean login(final Account account, final String checkurl, final boolean force) throws Exception {
+        synchronized (account) {
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                logger.info("Attempting cookie login");
+                this.br.setCookies(this.getHost(), cookies);
+                if (!force) {
+                    /* Don't validate cookies */
+                    return false;
+                }
+                if (checkurl != null) {
+                    br.getPage(checkurl);
+                } else {
+                    br.getPage("https://www." + this.getHost() + "/");
+                }
+                if (this.isLoggedin(br)) {
+                    logger.info("Cookie login successful");
+                    /* Refresh cookie timestamp */
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return true;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
+                    account.clearCookies("");
+                }
+            }
+            logger.info("Performing full login");
+            br.getPage("https://www." + this.getHost() + "/login");
+            Form loginform = br.getFormbyProperty("id", "formLogin"); // shesfreaky.com
+            if (loginform == null) {
+                loginform = br.getFormbyProperty("id", "login-form"); // hypnotube.com
+                if (loginform == null) {
+                    loginform = br.getFormbyKey("ahd_username"); // both
+                }
+            }
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find loginform");
+            }
+            loginform.put("ahd_username", Encoding.urlEncode(account.getUser()));
+            loginform.put("ahd_password", Encoding.urlEncode(account.getPass()));
+            br.submitForm(loginform);
+            if (!isLoggedin(br)) {
+                throw new AccountInvalidException();
+            }
+            if (checkurl != null) {
+                br.getPage(checkurl);
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            return true;
+        }
+    }
+
+    private boolean isLoggedin(final Browser br) {
+        return br.containsHTML("/logout\"");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, null, true);
+        ai.setUnlimitedTraffic();
+        account.setConcurrentUsePossible(true);
+        account.setType(AccountType.FREE);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        this.handleDownload(link, account);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return Integer.MAX_VALUE;
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override
