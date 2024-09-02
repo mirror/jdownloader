@@ -34,11 +34,12 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class OtakuAttitudeNet extends PluginForDecrypt {
-    public OtakuAttitudeNet(PluginWrapper wrapper) {
+public class OtakuAttitudeNetCrawler extends PluginForDecrypt {
+    public OtakuAttitudeNetCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -65,7 +66,7 @@ public class OtakuAttitudeNet extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9\\-]+)\\.html");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?!launch-download)([a-z0-9\\-]+)\\.html");
         }
         return ret.toArray(new String[0]);
     }
@@ -73,6 +74,11 @@ public class OtakuAttitudeNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
+        final PluginForHost hosterplugin = this.getNewPluginForHostInstance(this.getHost());
+        if (hosterplugin.canHandle(param.getCryptedUrl())) {
+            ret.add(this.createDownloadlink(param.getCryptedUrl()));
+            return ret;
+        }
         final String contenturl = param.getCryptedUrl();
         final GetRequest getRequest = br.createGetRequest(contenturl);
         final URLConnectionAdapter con = this.br.openRequestConnection(br.createGetRequest(contenturl));
@@ -104,7 +110,7 @@ public class OtakuAttitudeNet extends PluginForDecrypt {
             }
         }
         final String[] downloadIDs = br.getRegex("class=\"download(?: cell_impaire)?\" id=\"(\\d+)\"").getColumn(0);
-        if (downloadIDs.length == 0) {
+        if (downloadIDs == null || downloadIDs.length == 0) {
             /* Plugin broken or there is no downloadable content */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -119,7 +125,7 @@ public class OtakuAttitudeNet extends PluginForDecrypt {
             String filename = new Regex(bonusDownloadsHTML, "class=\"cell cell_bonus\"[^>]*>([^<]+)</td>").getMatch(0);
             final String filesize = new Regex(bonusDownloadsHTML, "class=\"cell cell_bonus\">(\\d+ Mo)</td>").getMatch(0);
             final String url = br.getURL(getDirectDownloadurl(contentID, downloadID)).toString();
-            final DownloadLink subtitle = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
+            final DownloadLink subtitle = this.createDownloadlink(url);
             if (filename != null) {
                 filename = Encoding.htmlDecode(filename).trim();
                 if (filenameBase == null && filename.contains("_")) {
@@ -133,19 +139,28 @@ public class OtakuAttitudeNet extends PluginForDecrypt {
             subtitle.setAvailable(true);
             ret.add(subtitle);
         }
+        final String[] resolutions = br.getRegex("class=\"cell\">(\\d+×\\d+)px</td>").getColumn(0);
         final int padLength = StringUtils.getPadLength(downloadIDs.length);
         /* Crawl video clips */
-        for (final String downloadID : downloadIDs) {
+        for (int i = 0; i < downloadIDs.length; i++) {
+            final String downloadID = downloadIDs[i];
             final String downloadIDFormatted = StringUtils.formatByPadLength(padLength, Integer.parseInt(downloadID));
             final String url = br.getURL(getDirectDownloadurl(contentID, downloadID)).toString();
-            final DownloadLink video = this.createDownloadlink("directhttp://" + url);
+            final DownloadLink video = this.createDownloadlink(url);
             video.setChunks(5);// max chunks by default
             /* Try to set temporary filename. Mimic original filenames as close as possible as we cannot know them in beforehand. */
             if (filenameBase != null) {
+                String qualitySuffix = "";
+                if (resolutions != null && resolutions.length == downloadIDs.length) {
+                    final String resolution = resolutions[i];
+                    if (resolution.contains("720")) {
+                        qualitySuffix = "_[HD]";
+                    }
+                }
                 if (fpName != null) {
-                    video.setName(filenameBase + "_" + fpName + "_-_" + downloadIDFormatted + ".mp4");
+                    video.setName(filenameBase + "_" + fpName + "_-_" + downloadIDFormatted + qualitySuffix + ".mp4");
                 } else {
-                    video.setName(filenameBase + "_-_" + downloadIDFormatted + ".mp4");
+                    video.setName(filenameBase + "_-_" + downloadIDFormatted + qualitySuffix + ".mp4");
                 }
             } else if (fpName != null) {
                 video.setName(fpName + "_" + downloadIDFormatted + ".mp4");
@@ -167,6 +182,6 @@ public class OtakuAttitudeNet extends PluginForDecrypt {
     }
 
     private String getDirectDownloadurl(final String contentID, final String downloadID) {
-        return "/launch-download-2-" + contentID + "-ddl-" + downloadID + ".html";
+        return "/launch-download-1-" + contentID + "-ddl-" + downloadID + ".html";
     }
 }

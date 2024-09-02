@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -25,8 +27,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parisanime.com" }, urls = { "https?://(?:www\\.)?parisanime\\.com/video/[A-Za-z0-9]+" })
 public class ParisanimeCom extends antiDDoSForDecrypt {
     public ParisanimeCom(PluginWrapper wrapper) {
@@ -34,29 +34,27 @@ public class ParisanimeCom extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contenturl = param.getCryptedUrl();
         /* 2020-05-11: First request can be skipped saving us some milliseconds ;) */
         final boolean skipFirstRequest = true;
         if (!skipFirstRequest) {
-            getPage(parameter);
+            getPage(contenturl);
             if (br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        br.getHeaders().put("Referer", parameter);
+        br.getHeaders().put("Referer", contenturl);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        getPage(parameter);
+        getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404 || br.toString().trim().equalsIgnoreCase("no link found")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String finallink = this.br.getRegex("data-url=\\'(https?://[^<>\"\\']+)\\'").getMatch(0);
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
+        ret.add(createDownloadlink(finallink));
+        return ret;
     }
 }

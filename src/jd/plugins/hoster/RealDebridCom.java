@@ -514,7 +514,7 @@ public class RealDebridCom extends PluginForHost {
             case TRAFFIC_EXHAUSTED:
                 mhm.putError(account, link, 5 * 60 * 1000l, "Traffic exhausted");
             case FAIR_USAGE_LIMIT_REACHED:
-                mhm.putError(account, link, 30 * 60 * 1000l, "Fair usage limit reahed");
+                mhm.putError(account, link, 30 * 60 * 1000l, "Fair usage limit reached");
             default:
                 mhm.handleErrorGeneric(account, link, e.getMessage(), 50, 1 * 60 * 1000l);
             }
