@@ -42,23 +42,18 @@ public class NoPremiumPl extends RapideoCore {
     }
 
     @Override
-    protected String getAPIBase() {
+    protected String getAPIV1Base() {
         return "https://crypt." + getHost() + "/";
     }
 
     @Override
-    protected String getAPISiteParam() {
+    protected String getAPIV1SiteParam() {
         return "nopremium";
     }
 
     @Override
-    protected String getPasswordAPI(Account account) {
+    protected String getPasswordAPIV1(Account account) {
         return JDHash.getSHA1(JDHash.getMD5(account.getPass()));
-    }
-
-    @Override
-    protected boolean useAPI() {
-        return true;
     }
 
     @Override

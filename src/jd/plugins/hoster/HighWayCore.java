@@ -57,6 +57,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -82,7 +83,7 @@ public abstract class HighWayCore extends UseNet {
     private static Map<String, Map<String, Integer>>       hostTrafficCalculationMap              = new HashMap<String, Map<String, Integer>>();
     private static Map<String, Object>                     mapLockMap                             = new HashMap<String, Object>();
     private final int                                      defaultMAXCHUNKS                       = -4;
-    private final boolean                                  defaultRESUME                          = false;
+    private final boolean                                  defaultRESUME                          = true;
     private final String                                   PROPERTY_ACCOUNT_MAXCHUNKS             = "maxchunks";
     private final String                                   PROPERTY_ACCOUNT_RESUME                = "resume";
     private final String                                   PROPERTY_ACCOUNT_MAX_DOWNLOADS_ACCOUNT = "max_downloads_account";
@@ -108,10 +109,10 @@ public abstract class HighWayCore extends UseNet {
 
     public static Browser prepBRHighway(final Browser br) {
         br.setCookiesExclusive(true);
-        br.getHeaders().put("User-Agent", "JDownloader");
+        br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, "JDownloader");
+        /* API returns error messages in different languages depending on this header. */
+        br.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_LANGUAGE, System.getProperty("user.language"));
         br.setCustomCharset("utf-8");
-        /* API returns errormessages in different languages depending on this header. */
-        br.getHeaders().put("Accept-Language", System.getProperty("user.language"));
         br.setFollowRedirects(true);
         return br;
     }
@@ -231,7 +232,6 @@ public abstract class HighWayCore extends UseNet {
                 link.getLinkStatus().setStatusText("Only downloadable/checkable via account!");
                 return AvailableStatus.UNCHECKABLE;
             }
-            br.setFollowRedirects(true);
             this.login(account, false);
             final boolean check_via_json = true;
             if (check_via_json) {
@@ -241,7 +241,8 @@ public abstract class HighWayCore extends UseNet {
                 final Number code = (Number) entries.get("code");
                 if (code != null && code.intValue() != 0) {
                     /* E.g. {"code":"8","error":"ID nicht bekannt"} */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    final String errormessage = (String) entries.get("error");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, errormessage);
                 }
                 this.checkErrors(br, link, account);
                 link.setFinalFileName(entries.get("name").toString());
@@ -250,27 +251,7 @@ public abstract class HighWayCore extends UseNet {
                     link.setVerifiedFileSize(Long.parseLong(filesizeBytesStr));
                 }
             } else {
-                URLConnectionAdapter con = null;
-                try {
-                    con = br.openHeadConnection(Encoding.urlDecode(link.getPluginPatternMatcher(), true));
-                    if (!this.looksLikeDownloadableContent(con) || con.getCompleteContentLength() <= 0) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    final String filename = getFileNameFromConnection(con);
-                    if (filename != null) {
-                        link.setFinalFileName(filename);
-                    }
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (Throwable e) {
-                    }
-                }
+                checkDirecturl(link);
             }
         } else {
             /* Direct-URL download. */
@@ -283,41 +264,41 @@ public abstract class HighWayCore extends UseNet {
             }
             if (!link.isNameSet() && fallbackFilename != null) {
                 /* Set fallback name */
-                link.setName(fallbackFilename);
+                link.setName(Encoding.htmlDecode(fallbackFilename).trim());
             }
             if (account == null) {
                 /* Some items might be checkable without account but we require an account for all items just in case. */
-                link.getLinkStatus().setStatusText("Only downloadable/checkable via account!");
+                link.getLinkStatus().setStatusText("Only downloadable & checkable via account!");
                 return AvailableStatus.UNCHECKABLE;
             }
             this.login(account, false);
-            URLConnectionAdapter con = null;
-            try {
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                con = brc.openHeadConnection(link.getPluginPatternMatcher());
-                if (!this.looksLikeDownloadableContent(con)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                final String serverFilename = getFileNameFromConnection(con);
-                if (!StringUtils.isEmpty(serverFilename)) {
-                    link.setFinalFileName(serverFilename);
-                }
-                if (con.getCompleteContentLength() != -1) {
-                    if (con.isContentDecoded()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
+            checkDirecturl(link);
         }
         return AvailableStatus.TRUE;
+    }
+
+    private void checkDirecturl(final DownloadLink link) throws IOException, PluginException {
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openHeadConnection(link.getPluginPatternMatcher());
+            handleSelfhostedFileConnectionErrors(br, con);
+            final String serverFilename = getFileNameFromConnection(con);
+            if (!StringUtils.isEmpty(serverFilename)) {
+                link.setFinalFileName(serverFilename);
+            }
+            if (con.getCompleteContentLength() != -1) {
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
     }
 
     @Override
@@ -362,7 +343,6 @@ public abstract class HighWayCore extends UseNet {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        this.requestFileInformation(link, account);
         if (isUsenetLink(link)) {
             super.handleMultiHost(link, account);
             return;
@@ -372,16 +352,28 @@ public abstract class HighWayCore extends UseNet {
     }
 
     private void handleSelfhostedFileDownload(final DownloadLink link, final Account account) throws Exception {
+        if (this.requiresAccount(link) && account == null) {
+            /* This should never happen as canHandle already returns false when account is required but not available. */
+            throw new AccountRequiredException();
+        }
+        this.requestFileInformation(link, account);
         if (account != null) {
             this.login(account, false);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, this.getMaxChunks(link, account));
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file", 1 * 60 * 1000l);
-        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), this.isResumeable(link, account), this.getMaxChunks(link, account));
+        handleSelfhostedFileConnectionErrors(br, dl.getConnection());
         dl.startDownload();
+    }
+
+    protected void handleSelfhostedFileConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                this.throwFinalConnectionException(br, con);
+            }
+        }
     }
 
     /**
@@ -432,28 +424,12 @@ public abstract class HighWayCore extends UseNet {
             return;
         } else {
             getMultiHosterManagement().runCheck(account, link);
-            boolean resume = account.getBooleanProperty(PROPERTY_ACCOUNT_RESUME, defaultRESUME);
-            int maxChunks = this.getMaxChunks(link, account);
-            /* Look for host specific connection limits. */
-            final String thishost = link.getHost();
-            synchronized (getMapLock()) {
-                final Map<String, Integer> hostMaxchunksMap = getMap(HighWayCore.hostMaxchunksMap);
-                if (hostMaxchunksMap.containsKey(thishost)) {
-                    maxChunks = hostMaxchunksMap.get(thishost);
-                }
-                final Map<String, Boolean> hostResumeMap = getMap(HighWayCore.hostResumeMap);
-                if (hostResumeMap.containsKey(thishost)) {
-                    resume = hostResumeMap.get(thishost);
-                }
-            }
-            if (!resume) {
-                maxChunks = 1;
-            }
+            boolean resume = this.isResumeable(link, account);
+            final int maxChunks = this.getMaxChunks(link, account);
             int statuscode;
             if (!this.attemptStoredDownloadurlDownload(link, this.getHost() + "directlink", resume, maxChunks)) {
                 this.login(account, false);
                 /* Request creation of downloadlink */
-                br.setFollowRedirects(true);
                 Map<String, Object> entries = null;
                 String passCode = link.getDownloadPassword();
                 int counter = 0;
@@ -518,7 +494,6 @@ public abstract class HighWayCore extends UseNet {
                         logger.info("Unsupported file-hash string: " + hash);
                     }
                 }
-                br.setFollowRedirects(true);
                 link.setProperty(this.getHost() + "directlink", dllink);
                 br.setAllowedResponseCodes(new int[] { 503 });
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
@@ -637,16 +612,15 @@ public abstract class HighWayCore extends UseNet {
                 if (cacheStatusO != null && cacheStatusO.toString().matches("(?i)i|s")) {
                     logger.info("Stepping out of cache handling because: Detected valid cacheStatus");
                     return entries;
-                }
-                retryInSecondsThisRound = ((Number) entries.get("retry_in_seconds")).intValue();
-                textForJD = (String) entries.get("for_jd");
-                if (!blockDownloadSlotsForCloudDownloads(account)) {
+                } else if (!blockDownloadSlotsForCloudDownloads(account)) {
                     /**
                      * Throw exception right away so other download candidates will be tried. </br>
                      * This may speed up downloads significantly for some users.
                      */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, textForJD, retryInSecondsThisRound * 1000l);
                 }
+                retryInSecondsThisRound = ((Number) entries.get("retry_in_seconds")).intValue();
+                textForJD = (String) entries.get("for_jd");
                 /* Wait and re-check */
                 final int retryInSeconds = Math.min(retryInSecondsThisRound, maxWaitSeconds - secondsWaited);
                 this.sleep(retryInSeconds * 1000l, link, textForJD);
@@ -662,6 +636,7 @@ public abstract class HighWayCore extends UseNet {
                     logger.info("Stopping because: Exceeded max wait seconds " + maxWaitSeconds);
                     break;
                 }
+                /* Continue */
             } while (true);
         } finally {
             link.removePluginProgress(waitProgress);
@@ -674,9 +649,9 @@ public abstract class HighWayCore extends UseNet {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (account) {
-            final AccountInfo ai = new AccountInfo();
             this.login(account, true);
             this.getPage(this.getAPIBase() + "?hoster&user");
+            final AccountInfo ai = new AccountInfo();
             final Map<String, Object> entries = this.checkErrors(this.br, this.getDownloadLink(), account);
             final Map<String, Object> accountInfo = (Map<String, Object>) entries.get("user");
             final int accountResume = ((Number) accountInfo.get("resume")).intValue();
@@ -847,11 +822,14 @@ public abstract class HighWayCore extends UseNet {
                 }
             }
             logger.info("Performing full login");
+            final UrlQuery query = new UrlQuery();
             if (this.useApikeyLogin()) {
-                br.postPage(getAPIBase() + "?login", "apikey=" + Encoding.urlEncode(account.getPass()));
+                query.add("apikey", account.getPass());
             } else {
-                br.postPage(getAPIBase() + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
+                query.appendEncoded("user", account.getUser());
+                query.appendEncoded("pass", account.getPass());
             }
+            br.postPage(getAPIBase() + "?login", query);
             this.checkErrors(this.br, this.getDownloadLink(), account);
             /* No Exception --> Assume that login was successful */
             account.saveCookies(br.getCookies(br.getHost()), "");
@@ -864,9 +842,35 @@ public abstract class HighWayCore extends UseNet {
 
     protected abstract void exceptionAccountInvalid(final Account account) throws PluginException;
 
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        synchronized (getMapLock()) {
+            final String downloadLinkHost = link.getHost();
+            final String hostFromLink = Browser.getHost(link.getPluginPatternMatcher(), true);
+            final Map<String, Boolean> hostResumeMap = getMap(HighWayCore.hostResumeMap);
+            if (hostResumeMap.containsKey(downloadLinkHost)) {
+                return hostResumeMap.get(downloadLinkHost);
+            } else if (hostResumeMap.containsKey(hostFromLink)) {
+                /* E.g. selfhosted items download */
+                return hostResumeMap.get(hostFromLink);
+            }
+        }
+        return this.defaultRESUME;
+    }
+
     private int getMaxChunks(final DownloadLink link, final Account account) {
-        /* First look for link specific chunk limit. */
-        Number maxChunks = (Number) link.getProperty(PROPERTY_ACCOUNT_MAXCHUNKS);
+        Number maxChunks = null;
+        synchronized (getMapLock()) {
+            final Map<String, Integer> hostMaxchunksMap = getMap(HighWayCore.hostMaxchunksMap);
+            final String downloadLinkHost = link.getHost();
+            final String hostFromLink = Browser.getHost(link.getPluginPatternMatcher(), true);
+            if (hostMaxchunksMap.containsKey(downloadLinkHost)) {
+                maxChunks = hostMaxchunksMap.get(downloadLinkHost);
+            } else if (hostMaxchunksMap.containsKey(hostFromLink)) {
+                /* E.g. selfhosted items download */
+                maxChunks = hostMaxchunksMap.get(hostFromLink);
+            }
+        }
         if (maxChunks == null) {
             /* Look for account specific chunk limit. */
             maxChunks = (Number) account.getProperty(PROPERTY_ACCOUNT_MAXCHUNKS);
@@ -1010,7 +1014,7 @@ public abstract class HighWayCore extends UseNet {
                 }
             }
         } else {
-            /* Handle old style/old API errormessages */
+            /* Handle legacy API error messages */
             if (msg.equalsIgnoreCase("UserOrPassInvalid")) {
                 throw new AccountInvalidException();
             } else {

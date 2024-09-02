@@ -44,24 +44,19 @@ public class RapideoPl extends RapideoCore {
     }
 
     @Override
-    protected String getAPIBase() {
+    protected String getAPIV1Base() {
         /* Do NOT use rapideo.pl here! */
         return "https://enc.rapideo.pl/";
     }
 
     @Override
-    protected String getAPISiteParam() {
+    protected String getAPIV1SiteParam() {
         return "newrd";
     }
 
     @Override
-    protected String getPasswordAPI(final Account account) {
+    protected String getPasswordAPIV1(final Account account) {
         return md5HEX(account.getPass());
-    }
-
-    @Override
-    protected boolean useAPI() {
-        return true;
     }
 
     private static String md5HEX(final String s) {

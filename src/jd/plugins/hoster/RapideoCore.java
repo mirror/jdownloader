@@ -20,6 +20,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -36,6 +37,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -54,6 +56,11 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public abstract class RapideoCore extends PluginForHost {
+    public RapideoCore(PluginWrapper wrapper) {
+        super(wrapper);
+        this.enablePremium("https://www." + getHost() + "/rejestracja");
+    }
+
     @Override
     public Browser createNewBrowserInstance() {
         final Browser br = super.createNewBrowserInstance();
@@ -74,11 +81,6 @@ public abstract class RapideoCore extends PluginForHost {
         return 0;
     }
 
-    public RapideoCore(PluginWrapper wrapper) {
-        super(wrapper);
-        this.enablePremium("https://www." + getHost() + "/rejestracja");
-    }
-
     @Override
     public String getAGBLink() {
         return "https://www." + getHost() + "/legal";
@@ -89,13 +91,15 @@ public abstract class RapideoCore extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
     }
 
+    private static final String PROPERTY_ACCOUNT_AUTH_TOKEN = "auth_token";
+
     protected abstract MultiHosterManagement getMultiHosterManagement();
 
     /**
      * rapideo.net: enc.rapideo.pl </br>
      * nopremium.pl: crypt.nopremium.pl
      */
-    protected abstract String getAPIBase();
+    protected abstract String getAPIV1Base();
 
     /**
      * 2024-08-29: They got another endpoint which is e.g. hidden in their qnap download addon: </br>
@@ -109,32 +113,37 @@ public abstract class RapideoCore extends PluginForHost {
      * rapideo.net: newrd </br>
      * nopremium.pl: nopremium
      */
-    protected abstract String getAPISiteParam();
-
-    /** If this returns true, only API will be used, otherwise only website. */
-    protected abstract boolean useAPI();
+    protected abstract String getAPIV1SiteParam();
 
     /** Returns value used as password for API requests. */
-    protected abstract String getPasswordAPI(final Account account);
+    protected abstract String getPasswordAPIV1(final Account account);
 
-    protected ACCESS_TYPE getAccessType() {
-        if (useAPI()) {
-            return ACCESS_TYPE.API;
-        } else {
-            return ACCESS_TYPE.WEBSITE;
-        }
+    /** This controls the endpoint to be used when accessing this service. */
+    protected ENDPOINT_TYPE getEndpointType() {
+        return ENDPOINT_TYPE.APIv2;
     }
 
-    public enum ACCESS_TYPE {
-        API,
-        API_2,
+    public enum ENDPOINT_TYPE {
+        APIv1,
+        APIv2,
         WEBSITE
+    }
+
+    /** Returns pre-filled map containing basic json POST data for APIv2 rquests. */
+    private Map<String, Object> getPostmapAPIv2() {
+        final Map<String, Object> postdata = new HashMap<String, Object>();
+        postdata.put("device", "JDownloader");
+        postdata.put("version", this.getVersion());
+        return postdata;
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (this.useAPI()) {
-            return this.fetchAccountInfoAPI(account);
+        final ENDPOINT_TYPE accesstype = getEndpointType();
+        if (accesstype == ENDPOINT_TYPE.APIv1) {
+            return this.fetchAccountInfoAPIv1(account);
+        } else if (accesstype == ENDPOINT_TYPE.APIv2) {
+            return this.fetchAccountInfoAPIv2(account);
         } else {
             return this.fetchAccountInfoWebsite(account);
         }
@@ -214,8 +223,8 @@ public abstract class RapideoCore extends PluginForHost {
         return ac;
     }
 
-    private AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
-        final Map<String, Object> root = loginAPI(br.cloneBrowser(), account);
+    private AccountInfo fetchAccountInfoAPIv1(final Account account) throws Exception {
+        final Map<String, Object> root = loginAPIV1(br.cloneBrowser(), account);
         final AccountInfo ac = new AccountInfo();
         final Object trafficLeftO = root.get("balance");
         if (trafficLeftO != null && trafficLeftO.toString().matches("\\d+")) {
@@ -223,7 +232,64 @@ public abstract class RapideoCore extends PluginForHost {
         } else {
             ac.setTrafficLeft(0);
         }
-        /* API */
+        final List<String> supportedHosts = getSupportedHostsAPIv1(account);
+        /*
+         * They only have accounts with traffic, no free/premium difference (other than no traffic) - we treat no-traffic as FREE --> Cannot
+         * download anything
+         */
+        if (trafficLeftO != null && ac.getTrafficLeft() > 0) {
+            account.setType(AccountType.PREMIUM);
+        } else {
+            account.setType(AccountType.FREE);
+        }
+        account.setConcurrentUsePossible(true);
+        ac.setMultiHostSupport(this, supportedHosts);
+        return ac;
+    }
+
+    private AccountInfo fetchAccountInfoAPIv2(final Account account) throws Exception {
+        final String authtoken = this.getAuthTokenApiV2(account);
+        final Map<String, Object> postdata = this.getPostmapAPIv2();
+        postdata.put("authtoken", authtoken);
+        final PostRequest req = br.createJSonPostRequest(this.getAPIBase2() + "/account", postdata);
+        br.getPage(req);
+        final Map<String, Object> root = this.checkErrorsAPIv2(br, null, account);
+        final Map<String, Object> accountmap = (Map<String, Object>) root.get("account");
+        final Object premium_expire_dateO = accountmap.get("premium_expire_date");
+        final AccountInfo ac = new AccountInfo();
+        final Object transfer_left_gb = accountmap.get("transfer_left_gb");
+        final Object bonus_left_gb = accountmap.get("bonus_left_gb");
+        double trafficLeft_gb = 0;
+        if (transfer_left_gb != null && transfer_left_gb.toString().matches("\\d+(\\.\\d+)?")) {
+            trafficLeft_gb = Double.parseDouble(transfer_left_gb.toString());
+        }
+        if (bonus_left_gb != null && bonus_left_gb.toString().matches("\\d+(\\.\\d+)?")) {
+            trafficLeft_gb += Double.parseDouble(bonus_left_gb.toString());
+        }
+        ac.setTrafficLeft((long) (trafficLeft_gb * 1024 * 1024 * 1024));
+        /**
+         * 2024-08-29: TODO: I've never seen an account with expire-date so for now I'll only set it for accounts with zero traffic left.
+         */
+        if (premium_expire_dateO instanceof Number && trafficLeft_gb == 0) {
+            // ac.setValidUntil(((Number) premium_expire_dateO).longValue());
+        }
+        /* There is no v2 endpoint available to fetch list of supported hosts -> Use v1 endpoint. */
+        final List<String> supportedHosts = getSupportedHostsAPIv1(account);
+        /*
+         * They only have accounts with traffic, no free/premium difference (other than no traffic) - we treat no-traffic as FREE --> Cannot
+         * download anything
+         */
+        if (Boolean.TRUE.equals(accountmap.get("premium_active")) || trafficLeft_gb > 0) {
+            account.setType(AccountType.PREMIUM);
+        } else {
+            account.setType(AccountType.FREE);
+        }
+        account.setConcurrentUsePossible(true);
+        ac.setMultiHostSupport(this, supportedHosts);
+        return ac;
+    }
+
+    private List<String> getSupportedHostsAPIv1(final Account account) throws IOException {
         br.getPage("https://www." + getHost() + "/clipboard.php?json=3");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final List<Map<String, Object>> hosterlist = (List<Map<String, Object>>) restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
@@ -241,18 +307,7 @@ public abstract class RapideoCore extends PluginForHost {
                 logger.info("Skipping serverside disabled domains: " + domains);
             }
         }
-        /*
-         * They only have accounts with traffic, no free/premium difference (other than no traffic) - we treat no-traffic as FREE --> Cannot
-         * download anything
-         */
-        if (trafficLeftO != null && ac.getTrafficLeft() > 0) {
-            account.setType(AccountType.PREMIUM);
-        } else {
-            account.setType(AccountType.FREE);
-        }
-        account.setConcurrentUsePossible(true);
-        ac.setMultiHostSupport(this, supportedHosts);
-        return ac;
+        return supportedHosts;
     }
 
     private void loginWebsite(final Account account, final boolean verifyCookies) throws Exception {
@@ -307,17 +362,51 @@ public abstract class RapideoCore extends PluginForHost {
         }
     }
 
-    private Map<String, Object> loginAPI(final Browser br, final Account account) throws IOException, PluginException, InterruptedException {
-        final UrlQuery query = new UrlQuery();
-        query.add("site", getAPISiteParam());
-        query.add("output", "json");
-        query.add("loc", "1");
-        query.add("info", "1");
-        query.add("username", Encoding.urlEncode(account.getUser()));
-        query.add("password", getPasswordAPI(account));
-        br.postPage(getAPIBase(), query);
-        final Map<String, Object> root = this.checkErrorsAPI(br, null, account);
-        return root;
+    private Map<String, Object> loginAPIV1(final Browser br, final Account account) throws IOException, PluginException, InterruptedException {
+        synchronized (account) {
+            final UrlQuery query = new UrlQuery();
+            query.add("site", getAPIV1SiteParam());
+            query.add("output", "json");
+            query.add("loc", "1");
+            query.add("info", "1");
+            query.add("username", Encoding.urlEncode(account.getUser()));
+            query.add("password", getPasswordAPIV1(account));
+            br.postPage(getAPIV1Base(), query);
+            final Map<String, Object> root = this.checkErrorsAPIv1(br, null, account);
+            return root;
+        }
+    }
+
+    private Map<String, Object> loginAPIV2(final Browser br, final Account account) throws IOException, PluginException, InterruptedException {
+        synchronized (account) {
+            final Map<String, Object> postdata = getPostmapAPIv2();
+            postdata.put("login", account.getUser());
+            postdata.put("password", account.getPass());
+            final PostRequest req = br.createJSonPostRequest(this.getAPIBase2() + "/login", postdata);
+            br.getPage(req);
+            final Map<String, Object> resp = this.checkErrorsAPIv2(br, null, account);
+            if (!Boolean.TRUE.equals(resp.get("logged"))) {
+                /* This should never happen */
+                throw new AccountInvalidException();
+            }
+            final String auth_token = resp.get("authtoken").toString();
+            if (StringUtils.isEmpty(auth_token)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* This token looks to be valid forever. */
+            account.setProperty(PROPERTY_ACCOUNT_AUTH_TOKEN, auth_token);
+            return resp;
+        }
+    }
+
+    private String getAuthTokenApiV2(final Account account) throws IOException, PluginException, InterruptedException {
+        final String storedToken = account.getStringProperty(PROPERTY_ACCOUNT_AUTH_TOKEN);
+        if (storedToken != null) {
+            return storedToken;
+        } else {
+            this.loginAPIV2(br, account);
+            return account.getStringProperty(PROPERTY_ACCOUNT_AUTH_TOKEN);
+        }
     }
 
     private void checkErrorsWebsite(final Browser br, final DownloadLink link, final Account account) throws PluginException {
@@ -334,10 +423,15 @@ public abstract class RapideoCore extends PluginForHost {
         }
     }
 
-    private Map<String, Object> checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
-        Map<String, Object> entries = null;
+    /**
+     * Parses json with basic errorhandling.
+     *
+     * @throws Exception
+     */
+    private Map<String, Object> parseJsonAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
         try {
-            entries = (Map<String, Object>) restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
+            final Map<String, Object> entries = (Map<String, Object>) restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
+            return entries;
         } catch (final JSonMapperException e) {
             /* Check for html based errors */
             this.checkErrorsWebsite(br, link, account);
@@ -353,14 +447,14 @@ public abstract class RapideoCore extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errortext);
             }
         }
-        return checkErrorsAPI(entries, link, account);
     }
 
-    private final void errorBannedIP(final Account account) throws AccountUnavailableException {
-        throw new AccountUnavailableException("Your IP has been banned", 5 * 60 * 1000l);
+    private Map<String, Object> checkErrorsAPIv1(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
+        final Map<String, Object> entries = parseJsonAPI(br, link, account);
+        return checkErrorsAPIv1(entries, link, account);
     }
 
-    private Map<String, Object> checkErrorsAPI(final Map<String, Object> entries, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
+    private Map<String, Object> checkErrorsAPIv1(final Map<String, Object> entries, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
         final Number errnoO = (Number) entries.get("errno");
         final String errstring = (String) entries.get("errstring");
         if (errstring == null || errnoO == null) {
@@ -406,20 +500,207 @@ public abstract class RapideoCore extends PluginForHost {
         }
     }
 
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return Integer.MAX_VALUE;
+    private Map<String, Object> checkErrorsAPIv2(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
+        final Map<String, Object> entries = parseJsonAPI(br, link, account);
+        return checkErrorsAPIv2(entries, link, account);
+    }
+
+    private Map<String, Object> checkErrorsAPIv2(final Map<String, Object> entries, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
+        final Map<String, Object> filemap = (Map<String, Object>) entries.get("file");
+        if (filemap != null) {
+            /* Handle download related errors */
+            /*
+             * Example:
+             * {"file":{"index":1,"error":15,"message":"Hostingnieobs\u0142ugiwany-skorzystajznaszejwyszukiwarkiwpisuj...","url":"https:..."
+             * }}
+             */
+            final Number errorO = (Number) filemap.get("error");
+            final String message = (String) filemap.get("message");
+            if (errorO == null || message == null) {
+                /* No error */
+                return entries;
+            }
+            final int errorcode = errorO.intValue();
+            /* Errors which shall disable the host immediately. */
+            final HashSet<Integer> permanentErrors = new HashSet<Integer>();
+            permanentErrors.add(15);
+            final MultiHosterManagement mhm = getMultiHosterManagement();
+            if (permanentErrors.contains(errorcode)) {
+                mhm.putError(account, link, 5 * 60 * 1000l, message);
+            } else {
+                mhm.handleErrorGeneric(account, link, message, 50);
+            }
+            /* This shall never be reached! */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Handle login related errors */
+        final Number errorO = (Number) entries.get("error");
+        final String message = (String) entries.get("message");
+        if (message == null || errorO == null) {
+            /* No error */
+            return entries;
+        }
+        final int errorcode = errorO.intValue();
+        if (errorcode == 1) {
+            /* { "error": 1, "message": "Authtoken invalid"} */
+            account.removeProperty(PROPERTY_ACCOUNT_AUTH_TOKEN);
+            throw new AccountUnavailableException(message, 1 * 60 * 1000l);
+        } else {
+            /* 2024-08-21: At this moment, we only handle account related error messages here. */
+            final HashSet<Integer> accountInvalidErrors = new HashSet<Integer>();
+            /* { "error": 3, "message": "Invalid username or password"} */
+            accountInvalidErrors.add(3);
+            final HashSet<Integer> accountUnavailableErrors = new HashSet<Integer>();
+            final HashSet<Integer> downloadErrors = new HashSet<Integer>();
+            if (accountInvalidErrors.contains(errorcode)) {
+                /* Permanent account errors like invalid user/pw */
+                throw new AccountInvalidException(message);
+            } else if (accountUnavailableErrors.contains(errorcode)) {
+                /* Temporary account errors */
+                throw new AccountUnavailableException(message, 5 * 60 * 1000l);
+            } else if (downloadErrors.contains(errorcode) && link != null) {
+                /* Temporary account errors */
+                this.getMultiHosterManagement().handleErrorGeneric(account, link, message, 3);
+                /* This shall never be reached! */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                /* Unknown errors */
+                if (link != null) {
+                    /* Treat as download related error. */
+                    this.getMultiHosterManagement().handleErrorGeneric(account, link, message, 50);
+                    /* This shall never be reached! */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    /* Treat as account related error. */
+                    throw new AccountInvalidException(message);
+                }
+            }
+        }
+    }
+
+    private final void errorBannedIP(final Account account) throws AccountUnavailableException {
+        throw new AccountUnavailableException("Your IP has been banned", 5 * 60 * 1000l);
+    }
+
+    private String getDirecturlAPIv1(final DownloadLink link, final Account account) throws Exception {
+        final MultiHosterManagement mhm = getMultiHosterManagement();
+        final String url_urlencoded = Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
+        final Browser brc = br.cloneBrowser();
+        final UrlQuery query = new UrlQuery();
+        query.add("site", getAPIV1SiteParam());
+        query.add("output", "json");
+        // query.add("loc", "1");
+        query.add("info", "0");
+        query.add("username", Encoding.urlEncode(account.getUser()));
+        query.add("password", getPasswordAPIV1(account));
+        query.add("url", url_urlencoded);
+        brc.postPage(getAPIV1Base(), query);
+        /* We expect the whole response to be an URL. */
+        final String dllink = brc.getRequest().getHtmlCode();
+        try {
+            new URL(dllink);
+        } catch (final MalformedURLException e) {
+            /* This should never happen */
+            this.checkErrorsAPIv1(brc, link, account);
+            mhm.handleErrorGeneric(account, link, "API returned invalid downloadlink", 50);
+        }
+        return dllink;
+    }
+
+    private String getDirecturlAPIv2(final DownloadLink link, final Account account) throws Exception {
+        final String authtoken = this.getAuthTokenApiV2(account);
+        final String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
+        final Map<String, Object> postdata = this.getPostmapAPIv2();
+        postdata.put("authtoken", authtoken);
+        postdata.put("url", url);
+        final PostRequest req = br.createJSonPostRequest(this.getAPIBase2() + "/files/check", postdata);
+        br.getPage(req);
+        final Map<String, Object> resp = this.checkErrorsAPIv2(br, link, account);
+        final Map<String, Object> filemap = (Map<String, Object>) resp.get("file");
+        final String hash = filemap.get("hash").toString();
+        final Map<String, Object> postdata2 = this.getPostmapAPIv2();
+        postdata2.put("authtoken", authtoken);
+        postdata2.put("hash", hash);
+        /* Important! Without this parameter, the following request will not return the field "file.url"! */
+        postdata2.put("mode", "qnap");
+        final PostRequest req2 = br.createJSonPostRequest(this.getAPIBase2() + "/files/download", postdata2);
+        br.getPage(req2);
+        final Map<String, Object> resp2 = this.checkErrorsAPIv2(br, link, account);
+        final Map<String, Object> filemap2 = (Map<String, Object>) resp2.get("file");
+        final String dllink = filemap2.get("url").toString();
+        return dllink;
+    }
+
+    private String getDirecturlWebsite(final DownloadLink link, final Account account) throws Exception {
+        final MultiHosterManagement mhm = getMultiHosterManagement();
+        final String url_urlencoded = Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
+        loginWebsite(account, false);
+        br.getPage("https://www." + getHost() + "/twoje_pliki");
+        checkErrorsWebsite(br, link, account);
+        br.postPage("/twoje_pliki", "loadfiles=1");
+        br.postPage("/twoje_pliki", "loadfiles=2");
+        br.postPage("/twoje_pliki", "loadfiles=3");
+        final int random = new Random().nextInt(1000000);
+        final DecimalFormat df = new DecimalFormat("000000");
+        final String random_session = df.format(random);
+        final String filename = link.getName();
+        br.postPage("/twoje_pliki", "session=" + random_session + "&links=" + url_urlencoded);
+        if (br.containsHTML("strong>\\s*Brak transferu\\s*</strong>")) {
+            throw new AccountUnavailableException("Out of traffic", 1 * 60 * 1000l);
+        }
+        final String id = br.getRegex("data\\-id=\"([a-z0-9]+)\"").getMatch(0);
+        if (id == null) {
+            mhm.handleErrorGeneric(account, link, "Failed to find transferID", 50);
+        }
+        br.postPage("/twoje_pliki", "downloadprogress=1");
+        br.postPage("/progress", "session=" + random_session + "&total=1");
+        br.postPage("/twoje_pliki", "insert=1&ds=false&di=false&note=false&notepaths=" + url_urlencoded + "&sids=" + id + "&hids=&iids=&wids=");
+        br.postPage("/twoje_pliki", "loadfiles=1");
+        br.postPage("/twoje_pliki", "loadfiles=2");
+        br.postPage("/twoje_pliki", "loadfiles=3");
+        /* Sometimes it takes over 10 minutes until the file has been downloaded to the remote server. */
+        for (int i = 1; i <= 280; i++) {
+            br.postPage("/twoje_pliki", "downloadprogress=1");
+            checkErrorsWebsite(br, link, account);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final List<Map<String, Object>> standardFiles = (List<Map<String, Object>>) entries.get("StandardFiles");
+            Map<String, Object> activeDownloadingFileInfo = null;
+            for (final Map<String, Object> standardFile : standardFiles) {
+                final String thisFilename = (String) standardFile.get("filename");
+                final String thisFilenameFull = (String) standardFile.get("filename_full");
+                /* Find our file as multiple files could be downloading at the same time. */
+                if (thisFilename.equalsIgnoreCase(filename) || thisFilenameFull.equalsIgnoreCase(filename)) {
+                    activeDownloadingFileInfo = standardFile;
+                    break;
+                }
+            }
+            if (activeDownloadingFileInfo == null) {
+                mhm.handleErrorGeneric(account, link, "Failed to locate added info to actively downloading file", 20);
+            }
+            final String status = activeDownloadingFileInfo.get("status").toString();
+            if (status.equalsIgnoreCase("finish")) {
+                return activeDownloadingFileInfo.get("download_url").toString();
+            } else if (status.equalsIgnoreCase("initialization")) {
+                this.sleep(3 * 1000l, link);
+                continue;
+            } else {
+                /* Serverside download has never been started or stopped for unknown reasons. */
+                logger.warning("Serverside download failed?!");
+                break;
+            }
+        }
+        return null;
     }
 
     @Override
-    public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        throw new AccountRequiredException();
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        return AvailableStatus.UNCHECKABLE;
     }
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         final String directurlproperty = "directurl_" + this.getHost();
-        final String storedDirecturl = link.getStringProperty("directurl_" + this.getHost());
+        final String storedDirecturl = link.getStringProperty(directurlproperty);
         final MultiHosterManagement mhm = getMultiHosterManagement();
         String dllink = null;
         if (storedDirecturl != null) {
@@ -427,85 +708,14 @@ public abstract class RapideoCore extends PluginForHost {
             dllink = storedDirecturl;
         } else {
             mhm.runCheck(account, link);
-            loginWebsite(account, false);
-            final String url_urlencoded = Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
-            if (this.useAPI()) {
-                final Browser brc = br.cloneBrowser();
-                final UrlQuery query = new UrlQuery();
-                query.add("site", getAPISiteParam());
-                query.add("output", "json");
-                // query.add("loc", "1");
-                query.add("info", "0");
-                query.add("username", Encoding.urlEncode(account.getUser()));
-                query.add("password", getPasswordAPI(account));
-                query.add("url", url_urlencoded);
-                brc.postPage(getAPIBase(), query);
-                /* We expect the whole response to be an URL. */
-                dllink = brc.getRequest().getHtmlCode();
-                try {
-                    new URL(dllink);
-                } catch (final MalformedURLException e) {
-                    /* This should never happen */
-                    this.checkErrorsAPI(brc, link, account);
-                    mhm.handleErrorGeneric(account, link, "API returned invalid downloadlink", 50);
-                }
+            final ENDPOINT_TYPE accesstype = getEndpointType();
+            if (accesstype == ENDPOINT_TYPE.APIv1) {
+                dllink = getDirecturlAPIv1(link, account);
+            } else if (accesstype == ENDPOINT_TYPE.APIv2) {
+                dllink = getDirecturlAPIv2(link, account);
             } else {
                 /* Website */
-                br.getPage("https://www." + getHost() + "/twoje_pliki");
-                checkErrorsWebsite(br, link, account);
-                br.postPage("/twoje_pliki", "loadfiles=1");
-                br.postPage("/twoje_pliki", "loadfiles=2");
-                br.postPage("/twoje_pliki", "loadfiles=3");
-                final int random = new Random().nextInt(1000000);
-                final DecimalFormat df = new DecimalFormat("000000");
-                final String random_session = df.format(random);
-                final String filename = link.getName();
-                br.postPage("/twoje_pliki", "session=" + random_session + "&links=" + url_urlencoded);
-                if (br.containsHTML("strong>\\s*Brak transferu\\s*</strong>")) {
-                    throw new AccountUnavailableException("Out of traffic", 1 * 60 * 1000l);
-                }
-                final String id = br.getRegex("data\\-id=\"([a-z0-9]+)\"").getMatch(0);
-                if (id == null) {
-                    mhm.handleErrorGeneric(account, link, "Failed to find transferID", 50);
-                }
-                br.postPage("/twoje_pliki", "downloadprogress=1");
-                br.postPage("/progress", "session=" + random_session + "&total=1");
-                br.postPage("/twoje_pliki", "insert=1&ds=false&di=false&note=false&notepaths=" + url_urlencoded + "&sids=" + id + "&hids=&iids=&wids=");
-                br.postPage("/twoje_pliki", "loadfiles=1");
-                br.postPage("/twoje_pliki", "loadfiles=2");
-                br.postPage("/twoje_pliki", "loadfiles=3");
-                /* Sometimes it takes over 10 minutes until the file has been downloaded to the remote server. */
-                for (int i = 1; i <= 280; i++) {
-                    br.postPage("/twoje_pliki", "downloadprogress=1");
-                    checkErrorsWebsite(br, link, account);
-                    final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                    final List<Map<String, Object>> standardFiles = (List<Map<String, Object>>) entries.get("StandardFiles");
-                    Map<String, Object> activeDownloadingFileInfo = null;
-                    for (final Map<String, Object> standardFile : standardFiles) {
-                        final String thisFilename = (String) standardFile.get("filename");
-                        final String thisFilenameFull = (String) standardFile.get("filename_full");
-                        /* Find our file as multiple files could be downloading at the same time. */
-                        if (thisFilename.equalsIgnoreCase(filename) || thisFilenameFull.equalsIgnoreCase(filename)) {
-                            activeDownloadingFileInfo = standardFile;
-                            break;
-                        }
-                    }
-                    if (activeDownloadingFileInfo == null) {
-                        mhm.handleErrorGeneric(account, link, "Failed to locate added info to actively downloading file", 20);
-                    }
-                    final String status = activeDownloadingFileInfo.get("status").toString();
-                    if (status.equalsIgnoreCase("finish")) {
-                        dllink = (String) activeDownloadingFileInfo.get("download_url");
-                        break;
-                    } else if (status.equalsIgnoreCase("initialization")) {
-                        this.sleep(3 * 1000l, link);
-                        continue;
-                    } else {
-                        /* Serverside download has never been started or stopped for unknown reasons. */
-                        logger.warning("Serverside download failed?!");
-                        break;
-                    }
-                }
+                dllink = getDirecturlWebsite(link, account);
             }
             if (StringUtils.isEmpty(dllink)) {
                 mhm.handleErrorGeneric(account, link, "Failed to generate downloadurl", 20);
@@ -516,7 +726,7 @@ public abstract class RapideoCore extends PluginForHost {
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
                 /* Use API errorhandling here since it will do a fallback to website errorhandling if response is not a json response. */
-                this.checkErrorsAPI(br, link, account);
+                this.checkErrorsAPIv1(br, link, account);
                 // this.checkErrorsWebsite(br, link, account);
                 mhm.handleErrorGeneric(account, link, "Final downloadlink did not lead to downloadable content", 50);
             }
@@ -533,8 +743,13 @@ public abstract class RapideoCore extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        return AvailableStatus.UNCHECKABLE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        throw new AccountRequiredException();
     }
 
     @Override
