@@ -261,4 +261,26 @@ public interface ArdConfigInterface extends PluginConfigInterface {
     String getAudioLanguagePriorityString();
 
     void setAudioLanguagePriorityString(String str);
+
+    public static enum HlsCrawlMode implements LabelInterface {
+        AUTO {
+            @Override
+            public String getLabel() {
+                return "Auto";
+            }
+        },
+        ALWAYS_WHEN_HLS_IS_SELECTED {
+            @Override
+            public String getLabel() {
+                return "Return HLS streams if any are selected";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("WEBVTT")
+    @Order(200)
+    HlsCrawlMode getHlsCrawlMode();
+
+    void setHlsCrawlMode(final HlsCrawlMode mode);
 }
