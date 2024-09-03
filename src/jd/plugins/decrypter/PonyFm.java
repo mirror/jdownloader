@@ -66,23 +66,25 @@ public class PonyFm extends PluginForDecrypt {
         return buildAnnotationUrls(getPluginDomains());
     }
 
+    private static final String PATTERN_RELATIVE_ALBUM    = "/albums/(\\d+)(\\-[a-z0-9\\-]+)?";
     private static final String PATTERN_RELATIVE_TRACK    = "/tracks/(\\d+)(\\-[a-z0-9\\-]+)?";
     private static final String PATTERN_RELATIVE_PLAYLIST = "/playlist/(\\d+)(\\-[a-z0-9\\-]+)?";
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(" + PATTERN_RELATIVE_TRACK + "|" + PATTERN_RELATIVE_PLAYLIST + ")");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(" + PATTERN_RELATIVE_ALBUM + "|" + PATTERN_RELATIVE_TRACK + "|" + PATTERN_RELATIVE_PLAYLIST + ")");
         }
         return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
-        final Regex singletrack = new Regex(param.getCryptedUrl(), PATTERN_RELATIVE_TRACK);
-        final Regex playlist = new Regex(param.getCryptedUrl(), PATTERN_RELATIVE_PLAYLIST);
-        if (singletrack.patternFind()) {
-            final String trackid = singletrack.getMatch(0);
+        final Regex regex_singletrack = new Regex(param.getCryptedUrl(), PATTERN_RELATIVE_TRACK);
+        final Regex regex_playlist;
+        final Regex regex_album;
+        if (regex_singletrack.patternFind()) {
+            final String trackid = regex_singletrack.getMatch(0);
             br.getPage("https://" + this.getHost() + "/api/web/tracks/" + trackid + "?log=true");
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("\"Track not found")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -90,8 +92,8 @@ public class PonyFm extends PluginForDecrypt {
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> track = (Map<String, Object>) entries.get("track");
             return crawlProcessTrackJson(track);
-        } else if (playlist.patternFind()) {
-            final String playlistid = playlist.getMatch(0);
+        } else if ((regex_playlist = new Regex(param.getCryptedUrl(), PATTERN_RELATIVE_PLAYLIST)).patternFind()) {
+            final String playlistid = regex_playlist.getMatch(0);
             br.getPage("https://" + this.getHost() + "/api/web/playlists/" + playlistid);
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("\"Playlist not found")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -107,17 +109,48 @@ public class PonyFm extends PluginForDecrypt {
                 ret.addAll(crawlProcessTrackJson(track));
             }
             /* Add playlist cover */
-            final String playlistTitle = entries.get("title").toString();
+            final String title = entries.get("title").toString();
             final Map<String, Object> covers = (Map<String, Object>) entries.get("covers");
             final String urlCover = (String) covers.get("original");
             final String extCover = getFileNameExtensionFromString(urlCover);
             final DownloadLink dlcover = createDownloadlink(urlCover);
-            dlcover.setFinalFileName(playlistTitle + "_cover" + "." + extCover);
+            dlcover.setFinalFileName(title + "_cover" + "." + extCover);
             dlcover.setAvailable(true);
             ret.add(dlcover);
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(playlistTitle);
+            fp.setName(title);
             fp.setPackageKey("pony_fm://playlist/" + entries.get("id"));
+            fp.addLinks(ret);
+            return ret;
+        } else if ((regex_album = new Regex(param.getCryptedUrl(), PATTERN_RELATIVE_ALBUM)).patternFind()) {
+            final String albumid = regex_album.getMatch(0);
+            br.getPage("https://" + this.getHost() + "/api/web/albums/" + albumid);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> album = (Map<String, Object>) entries.get("album");
+            final int track_count = ((Number) album.get("track_count")).intValue();
+            if (track_count == 0) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+            final List<Map<String, Object>> tracks = (List<Map<String, Object>>) album.get("tracks");
+            for (final Map<String, Object> track : tracks) {
+                ret.addAll(crawlProcessTrackJson(track));
+            }
+            /* Add playlist cover */
+            final String title = album.get("title").toString();
+            final Map<String, Object> covers = (Map<String, Object>) album.get("covers");
+            final String urlCover = (String) covers.get("original");
+            final String extCover = getFileNameExtensionFromString(urlCover);
+            final DownloadLink dlcover = createDownloadlink(urlCover);
+            dlcover.setFinalFileName(title + "_cover" + "." + extCover);
+            dlcover.setAvailable(true);
+            ret.add(dlcover);
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(title);
+            fp.setPackageKey("pony_fm://album/" + album.get("id"));
             fp.addLinks(ret);
             return ret;
         } else {

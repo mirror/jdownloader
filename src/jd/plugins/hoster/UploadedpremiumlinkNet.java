@@ -37,6 +37,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -49,8 +50,9 @@ import jd.plugins.components.MultiHosterManagement;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadedpremiumlink.net" }, urls = { "" })
 public class UploadedpremiumlinkNet extends PluginForHost {
     /** Docs: https://docs.uploadedpremiumlink.net/ */
-    private final String                 API_BASE = "https://api.uploadedpremiumlink.net/wp-json/api";
-    private static MultiHosterManagement mhm      = new MultiHosterManagement("uploadedpremiumlink.net");
+    private final String                 API_BASE                                       = "https://api.uploadedpremiumlink.net/wp-json/api";
+    private static MultiHosterManagement mhm                                            = new MultiHosterManagement("uploadedpremiumlink.net");
+    private static final String          PROPERTY_UPLOADEDPREMIUMLINK_PASSWORD_REQUIRED = "uploadedpremiumlink_password_required";
 
     @SuppressWarnings("deprecation")
     public UploadedpremiumlinkNet(PluginWrapper wrapper) {
@@ -105,6 +107,10 @@ public class UploadedpremiumlinkNet extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
+        String passCode = link.getDownloadPassword();
+        if (link.hasProperty(PROPERTY_UPLOADEDPREMIUMLINK_PASSWORD_REQUIRED) && passCode == null) {
+            passCode = getUserInput("Password?", link);
+        }
         final UrlQuery query = new UrlQuery();
         query.add("link", Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
         if (link.getDownloadPassword() != null) {
@@ -133,6 +139,11 @@ public class UploadedpremiumlinkNet extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         final Map<String, Object> user = login(account);
+        /*
+         * User only enters API Key so he can put anything into the username field -> Let's make sure that that value is correct by using
+         * the one the API is returning.
+         */
+        account.setUser(user.get("username").toString());
         final Number expire_date_timestampO = (Number) user.get("expire_date_timestamp");
         long expire_date_timestamp = 0;
         if (expire_date_timestampO != null) {
@@ -150,18 +161,18 @@ public class UploadedpremiumlinkNet extends PluginForHost {
         ai.setStatus(user.get("type").toString() + " | Total traffic left: " + user.get("traffic_left") + " | Daily links generated: " + user.get("daily_links_generated") + "/" + user.get("daily_links_limit"));
         ai.setTrafficLeft(((Number) user.get("daily_traffic_left")).longValue());
         ai.setTrafficMax(((Number) user.get("daily_traffic_limit")).longValue());
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        final ArrayList<String> supportedhosts = new ArrayList<String>();
         final List<Map<String, Object>> hosters = (List<Map<String, Object>>) user.get("hosters");
         for (final Map<String, Object> hoster : hosters) {
             final List<String> domains = (List<String>) hoster.get("alternatives_domain");
             final String primary_domain = hoster.get("primary_domain").toString();
             if ("online".equals(hoster.get("status"))) {
-                supportedHosts.addAll(domains);
+                supportedhosts.addAll(domains);
             } else {
                 logger.info("Skipping currently unsupported/offline host: " + primary_domain);
             }
         }
-        ai.setMultiHostSupport(this, supportedHosts);
+        ai.setMultiHostSupport(this, supportedhosts);
         account.setConcurrentUsePossible(true);
         return ai;
     }
@@ -186,10 +197,10 @@ public class UploadedpremiumlinkNet extends PluginForHost {
     private Object accessAPI(final Account account, final DownloadLink link, final Request req) throws IOException, PluginException, InterruptedException {
         br.getPage(req);
         /* 2024-09-02: Temporary workaround for buggy response containing a warning */
-        final String json = br.getRegex("/>\\s*(\\{.+)").getMatch(0);
-        if (json != null) {
-            br.getRequest().setHtmlCode(json);
-        }
+        // final String json = br.getRegex("/>\\s*(\\{.+)").getMatch(0);
+        // if (json != null) {
+        // br.getRequest().setHtmlCode(json);
+        // }
         return checkErrors(account, link);
     }
 
@@ -251,7 +262,6 @@ public class UploadedpremiumlinkNet extends PluginForHost {
         downloadErrorsFileUnavailable.add("LINK_TYPE_UNSUPPORTED");
         downloadErrorsFileUnavailable.add("MUST_BE_PREMIUM");
         downloadErrorsFileUnavailable.add("RESOURCE_RETRIEVAL_FAILURE");
-        /** TODO: LINK_PASS_PROTECTED, LINK_THIRD_PARTY_PR_SUB_REQUIRED */
         final String message = entries.get("message").toString();
         final String category_error = entries.get("category_error").toString();
         if (accountErrorsPermanent.contains(category_error)) {
@@ -264,6 +274,20 @@ public class UploadedpremiumlinkNet extends PluginForHost {
             mhm.handleErrorGeneric(account, link, message, 20);
         } else if (category_error.equalsIgnoreCase("FILE_NOT_FOUND")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, message);
+        } else if (category_error.equalsIgnoreCase("LINK_PASS_PROTECTED")) {
+            final String dlpw = link.getDownloadPassword();
+            link.setDownloadPassword(null);
+            link.setProperty(PROPERTY_UPLOADEDPREMIUMLINK_PASSWORD_REQUIRED, true);
+            final String text;
+            if (dlpw == null) {
+                text = "Password required";
+            } else {
+                text = "Password wrong";
+            }
+            throw new PluginException(LinkStatus.ERROR_RETRY, text);
+        } else if (category_error.equalsIgnoreCase("LINK_THIRD_PARTY_PR_SUB_REQUIRED")) {
+            /* Extra subscription required to download that item. */
+            throw new AccountRequiredException(message);
         } else {
             /* Unknown error code */
             if (link != null) {
