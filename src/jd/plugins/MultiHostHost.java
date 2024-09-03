@@ -1,5 +1,9 @@
 package jd.plugins;
 
+import java.util.ArrayList;
+
+import org.appwork.utils.formatter.SizeFormatter;
+
 public class MultiHostHost {
     /** How long shall we block this host if a limit gets reached? Until the next day/hour? */
     public enum LimitResetMode {
@@ -7,46 +11,64 @@ public class MultiHostHost {
     }
 
     /** Why was this host blocked? Because of too many errored out tries via JD or because of the multihost/multihost limits? */
-    public enum DeactivatedReason {
-        JDOWNLOADER,
-        MULTIHOST;
+    public enum MultihosterHostStatus {
+        WORKING,
+        WORKING_UNSTABLE,
+        DEACTIVATED_JDOWNLOADER,
+        DEACTIVATED_MULTIHOST,
+        UNSUPPORTED_JDOWNLOADER;
     }
 
-    private String domain                    = null;
-    private int    linksLeft                 = -1;
-    private int    linksLeftMax              = -1;
-    private long   trafficLeft               = -1;
-    private long   trafficMax                = -1;
+    private String                domain                    = null;
+    private ArrayList<String>     domains                   = new ArrayList<String>();
+    private Integer               linksLeft                 = null;
+    private int                   linksMax                  = -1;
+    private long                  trafficLeft               = -1;
+    private long                  trafficMax                = -1;
     /* Timestamp when limits get reset. */
-    private long   timestampLimitReset       = -1;
+    private long                  timestampLimitReset       = -1;
     /* How much traffic is credited when downloading from this host? */
-    private short  trafficUsageFactorPercent = 100;
+    private short                 trafficUsageFactorPercent = 100;
+    private String                statusText                = null;
+    private MultihosterHostStatus status                    = MultihosterHostStatus.WORKING;
 
     public MultiHostHost(final String domain) {
         this.domain = domain;
+        this.addDomain(domain);
     }
 
     protected String getDomain() {
         return this.domain;
     }
-    // private void setDomain(String domain) {
-    // this.domain = domain;
-    // }
+
+    private void addDomain(String domain) {
+        this.domain = domain;
+        if (!this.domains.contains(domain)) {
+            this.domains.add(domain);
+        }
+    }
 
     protected int getLinksLeft() {
         return linksLeft;
     }
 
-    protected void setLinksLeft(int linksLeft) {
-        this.linksLeft = linksLeft;
+    protected void setLinksLeft(int num) {
+        this.linksLeft = num;
     }
 
-    protected int getLinksLeftMax() {
-        return linksLeftMax;
+    protected int getLinksMax() {
+        return linksMax;
     }
 
-    protected void setLinksLeftMax(int linksLeftMax) {
-        this.linksLeftMax = linksLeftMax;
+    protected void setLinksMax(int num) {
+        this.linksMax = num;
+    }
+
+    /** Only do this when linksMax is given. */
+    protected void setLinksUsed(int num) {
+        if (this.linksLeft != null) {
+            this.linksLeft = this.linksMax - num;
+        }
     }
 
     protected long getTrafficLeft() {
@@ -61,8 +83,12 @@ public class MultiHostHost {
         return trafficMax;
     }
 
-    protected void setTrafficMax(long trafficMax) {
-        this.trafficMax = trafficMax;
+    protected void setTrafficMax(long bytes) {
+        this.trafficMax = bytes;
+    }
+
+    protected void setTrafficUsed(long bytes) {
+        this.trafficLeft = this.trafficMax - bytes;
     }
 
     protected long getTimestampTrafficReset() {
@@ -81,19 +107,48 @@ public class MultiHostHost {
         this.trafficUsageFactorPercent = trafficUsageFactorPercent;
     }
 
+    /** Traffic usage factor e.g. 3 -> 300%. */
+    protected void setTrafficUsageFactor(short num) {
+        this.trafficUsageFactorPercent = (short) (100 * num);
+    }
+
     protected boolean canDownload(final DownloadLink link) {
-        if (this.linksLeft == -1 && this.trafficLeft == -1) {
-            /* No limits -> Allow download */
-            return true;
-        } else if (this.trafficLeft == -1 && this.linksLeft > 0) {
-            /* E.g. multihost only limits max. links per time but not traffic. */
-            return true;
-        } else if (this.linksLeft > 0 && (this.trafficLeft == -1 || link.getView().getBytesTotal() <= 0 || this.trafficLeft >= link.getView().getBytesTotal())) {
-            /* Limits but enough traffic available for this link -> Allow download */
-            return true;
-        } else {
-            /* One of the two limitations reached -> Download impossible */
+        if (this.linksLeft == 0) {
             return false;
+        } else if (this.trafficLeft == 0) {
+            return false;
+        } else if (link.getView().getBytesTotal() != -1 && this.trafficLeft < link.getView().getBytesTotal()) {
+            /* Not enough traffic to download this link */
+            return false;
+        } else {
+            return true;
         }
+    }
+
+    public String getStatusText() {
+        if (this.statusText != null) {
+            return statusText;
+        } else if (status != null) {
+            return status.name();
+        } else {
+            return null;
+        }
+    }
+
+    public void setStatusText(String statusText) {
+        this.statusText = statusText;
+    }
+
+    public MultihosterHostStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(MultihosterHostStatus status) {
+        this.status = status;
+    }
+
+    @Override
+    public String toString() {
+        return this.getDomain() + " | LinksAvailable: " + this.getLinksLeft() + "/" + this.getLinksMax() + " | Traffic: " + SizeFormatter.formatBytes(this.getTrafficLeft()) + "/" + SizeFormatter.formatBytes(this.getTrafficMax());
     }
 }
