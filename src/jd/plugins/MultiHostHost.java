@@ -29,6 +29,8 @@ public class MultiHostHost {
     private long                  timestampLimitReset       = -1;
     /* How much traffic is credited when downloading from this host? */
     private short                 trafficUsageFactorPercent = 100;
+    private int                   maxChunks                 = 0;
+    private boolean               resume                    = true;
     private String                statusText                = null;
     private MultihosterHostStatus status                    = MultihosterHostStatus.WORKING;
 
@@ -147,8 +149,24 @@ public class MultiHostHost {
         this.status = status;
     }
 
+    public int getMaxChunks() {
+        return maxChunks;
+    }
+
+    public void setMaxChunks(int maxChunks) {
+        this.maxChunks = maxChunks;
+    }
+
+    public boolean isResume() {
+        return resume;
+    }
+
+    public void setResume(boolean resume) {
+        this.resume = resume;
+    }
+
     @Override
     public String toString() {
-        return this.getDomain() + " | LinksAvailable: " + this.getLinksLeft() + "/" + this.getLinksMax() + " | Traffic: " + SizeFormatter.formatBytes(this.getTrafficLeft()) + "/" + SizeFormatter.formatBytes(this.getTrafficMax());
+        return this.getDomain() + " | LinksAvailable: " + this.getLinksLeft() + "/" + this.getLinksMax() + " | Traffic: " + SizeFormatter.formatBytes(this.getTrafficLeft()) + "/" + SizeFormatter.formatBytes(this.getTrafficMax()) + " | Chunks: " + this.getMaxChunks() + " | Resume: " + this.isResume();
     }
 }
