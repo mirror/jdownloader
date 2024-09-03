@@ -633,15 +633,14 @@ public abstract class PluginForHost extends Plugin {
     }
 
     private File copyCaptcha(String method, File file) throws Exception {
-        if (file != null) {
-            final File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
-            copy.delete();
-            copy.getParentFile().mkdirs();
-            IO.copyFile(file, copy);
-            return copy;
-        } else {
+        if (file == null) {
             return null;
         }
+        final File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
+        copy.delete();
+        copy.getParentFile().mkdirs();
+        IO.copyFile(file, copy);
+        return copy;
     }
 
     public boolean isAccountLoginCaptchaChallenge(final DownloadLink link, Challenge<?> c) {
@@ -802,51 +801,53 @@ public abstract class PluginForHost extends Plugin {
     }
 
     protected PluginConfigPanelNG createConfigPanel() {
-        if (getConfigInterface() != null || isPremiumEnabled()) {
-            final PluginConfigPanelNG ret = new PluginConfigPanelNG() {
-                private PluginConfigPanel oldStyle;
-
-                @Override
-                public void updateContents() {
-                }
-
-                @Override
-                protected void initPluginSettings(Plugin plugin) {
-                    super.initPluginSettings(plugin);
-                    if (hasOldConfigContainer()) {
-                        final PluginConfigPanel oldStyle = PluginConfigPanel.create(getLazyP());
-                        if (oldStyle != null) {
-                            add(oldStyle, "pushx,growx,spanx");
-                        }
-                        this.oldStyle = oldStyle;
-                    }
-                }
-
-                @Override
-                protected void onHide() {
-                    super.onHide();
-                    final PluginConfigPanel oldStyle = this.oldStyle;
-                    if (oldStyle != null) {
-                        oldStyle.setHidden();
-                    }
-                }
-
-                @Override
-                protected void onShow() {
-                    super.onShow();
-                    final PluginConfigPanel oldStyle = this.oldStyle;
-                    if (oldStyle != null) {
-                        oldStyle.setShown();
-                    }
-                }
-
-                @Override
-                public void save() {
-                }
-            };
-            return ret;
+        if (getConfigInterface() == null) {
+            return null;
+        } else if (!isPremiumEnabled()) {
+            return null;
         }
-        return null;
+        final PluginConfigPanelNG ret = new PluginConfigPanelNG() {
+            private PluginConfigPanel oldStyle;
+
+            @Override
+            public void updateContents() {
+            }
+
+            @Override
+            protected void initPluginSettings(Plugin plugin) {
+                super.initPluginSettings(plugin);
+                if (hasOldConfigContainer()) {
+                    final PluginConfigPanel oldStyle = PluginConfigPanel.create(getLazyP());
+                    if (oldStyle != null) {
+                        add(oldStyle, "pushx,growx,spanx");
+                    }
+                    this.oldStyle = oldStyle;
+                }
+            }
+
+            @Override
+            protected void onHide() {
+                super.onHide();
+                final PluginConfigPanel oldStyle = this.oldStyle;
+                if (oldStyle != null) {
+                    oldStyle.setHidden();
+                }
+            }
+
+            @Override
+            protected void onShow() {
+                super.onShow();
+                final PluginConfigPanel oldStyle = this.oldStyle;
+                if (oldStyle != null) {
+                    oldStyle.setShown();
+                }
+            }
+
+            @Override
+            public void save() {
+            }
+        };
+        return ret;
     }
 
     @Override
@@ -936,46 +937,45 @@ public abstract class PluginForHost extends Plugin {
      */
     public ArrayList<DownloadLink> getDownloadLinks(CrawledLink source, final String data, final FilePackage fp) {
         final String[] hits = new Regex(data, getSupportedLinks()).getColumn(-1);
-        if (hits != null && hits.length > 0) {
-            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(hits.length);
-            try {
-                PluginForHost plugin = null;
-                for (String url : hits) {
-                    /* remove newlines... */
-                    url = url.trim();
-                    /*
-                     * this removes the " from HTMLParser.ArrayToString
-                     */
-                    /* only 1 " at start */
-                    while (url.charAt(0) == '"') {
-                        url = url.substring(1);
-                    }
-                    /* can have several " at the end */
-                    while (url.charAt(url.length() - 1) == '"') {
-                        url = url.substring(0, url.length() - 1);
-                    }
-                    /*
-                     * use this REGEX to cut of following http links, (?=https?:|$|\r|\n|)
-                     */
-                    /* we use null as ClassLoader to make sure all share the same ProtoTypeClassLoader */
-                    if (isValidURL(url)) {
-                        if (plugin == null) {
-                            plugin = getLazyP().getPrototype(null);
-                        }
-                        final DownloadLink link = new DownloadLink(plugin, null, getHost(), url, true);
-                        links.add(link);
-                    }
-                }
-            } catch (Throwable e) {
-                LogSource.exception(logger, e);
-            }
-            if (fp != null && fp != FilePackage.getDefaultFilePackage()) {
-                fp.addLinks(links);
-            }
-            return links;
-        } else {
+        if (hits == null || hits.length == 0) {
             return null;
         }
+        final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(hits.length);
+        try {
+            PluginForHost plugin = null;
+            for (String url : hits) {
+                /* remove newlines... */
+                url = url.trim();
+                /*
+                 * this removes the " from HTMLParser.ArrayToString
+                 */
+                /* only 1 " at start */
+                while (url.charAt(0) == '"') {
+                    url = url.substring(1);
+                }
+                /* can have several " at the end */
+                while (url.charAt(url.length() - 1) == '"') {
+                    url = url.substring(0, url.length() - 1);
+                }
+                /*
+                 * use this REGEX to cut of following http links, (?=https?:|$|\r|\n|)
+                 */
+                /* we use null as ClassLoader to make sure all share the same ProtoTypeClassLoader */
+                if (isValidURL(url)) {
+                    if (plugin == null) {
+                        plugin = getLazyP().getPrototype(null);
+                    }
+                    final DownloadLink link = new DownloadLink(plugin, null, getHost(), url, true);
+                    links.add(link);
+                }
+            }
+        } catch (Throwable e) {
+            LogSource.exception(logger, e);
+        }
+        if (fp != null && fp != FilePackage.getDefaultFilePackage()) {
+            fp.addLinks(links);
+        }
+        return links;
     }
 
     public boolean isValidURL(String URL) {
@@ -1301,14 +1301,15 @@ public abstract class PluginForHost extends Plugin {
         final AccountInfo ai = account.getAccountInfo();
         if (ai == null) {
             return;
+        } else if (ai.isUnlimitedTraffic()) {
+            /* Unlimited traffic -> Do not deduct trraffic. */
+            return;
         }
-        if (!ai.isUnlimitedTraffic()) {
-            final long left = Math.max(0, ai.getTrafficLeft() - bytesTransfered);
-            ai.setTrafficLeft(left);
-            if (left == 0) {
-                if (!ai.isSpecialTraffic()) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
+        final long left = Math.max(0, ai.getTrafficLeft() - bytesTransfered);
+        ai.setTrafficLeft(left);
+        if (left == 0) {
+            if (!ai.isSpecialTraffic()) {
+                throw new AccountUnavailableException("No traffic left", 5 * 60 * 1000);
             }
         }
     }
@@ -1472,7 +1473,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void waitForNextConnectionAllowed(DownloadLink downloadLink) throws InterruptedException {
-        WaitingQueueItem queueItem = downloadLink.getDownloadLinkController().getQueueItem();
+        final WaitingQueueItem queueItem = downloadLink.getDownloadLinkController().getQueueItem();
         long wait = getTimegapBetweenConnections();
         if (wait <= 0) {
             queueItem.lastConnectionTimestamp.set(System.currentTimeMillis());
@@ -1711,32 +1712,30 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public PluginForHost assignPlugin(PluginFinder pluginFinder, final DownloadLink link) {
-        if (link != null) {
-            link.setHost(getHost());
-            link.setDefaultPlugin(this);
-            return this;
-        } else {
+        if (link == null) {
             return null;
         }
+        link.setHost(getHost());
+        link.setDefaultPlugin(this);
+        return this;
     }
 
     public boolean assignPlugin(final Account account) {
-        if (account != null) {
-            final String oldHost = account.getHoster();
-            List<String> hosterHistory = account.getHosterHistory();
-            if (hosterHistory == null) {
-                hosterHistory = new ArrayList<String>();
-                account.setHosterHistory(hosterHistory);
-            }
-            if (!hosterHistory.contains(oldHost)) {
-                hosterHistory.add(oldHost);
-            }
-            account.setHoster(getHost());
-            account.setPlugin(this);
-            return true;
-        } else {
+        if (account == null) {
             return false;
         }
+        final String oldHost = account.getHoster();
+        List<String> hosterHistory = account.getHosterHistory();
+        if (hosterHistory == null) {
+            hosterHistory = new ArrayList<String>();
+            account.setHosterHistory(hosterHistory);
+        }
+        if (!hosterHistory.contains(oldHost)) {
+            hosterHistory.add(oldHost);
+        }
+        account.setHoster(getHost());
+        account.setPlugin(this);
+        return true;
     }
 
     public static boolean implementsRewriteHost(PluginForHost plugin) {
@@ -2308,13 +2307,14 @@ public abstract class PluginForHost extends Plugin {
 
     protected void updateDownloadLink(final CheckableLink checkableLink, final String url) {
         final DownloadLink downloadLink = checkableLink != null ? checkableLink.getDownloadLink() : null;
-        if (downloadLink != null && url != null) {
-            downloadLink.setPluginPatternMatcher(url);
-            downloadLink.setDomainInfo(null);
-            downloadLink.resume(Arrays.asList(new PluginForHost[] { this }));
-            final LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
-            linkChecker.check(checkableLink);
+        if (downloadLink == null || url == null) {
+            return;
         }
+        downloadLink.setPluginPatternMatcher(url);
+        downloadLink.setDomainInfo(null);
+        downloadLink.resume(Arrays.asList(new PluginForHost[] { this }));
+        final LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+        linkChecker.check(checkableLink);
     }
 
     protected boolean supportsUpdateDownloadLink(final CheckableLink downloadLink) {
@@ -2334,77 +2334,77 @@ public abstract class PluginForHost extends Plugin {
 
     protected JMenuItem createChangeURLMenuItem(final CheckableLink checkableLink) {
         final DownloadLink downloadLink = checkableLink != null ? checkableLink.getDownloadLink() : null;
-        if (downloadLink != null && !UrlProtection.PROTECTED_CONTAINER.equals(downloadLink.getUrlProtection())) {
-            return new JMenuItem(new BasicAction() {
-                /**
-                 *
-                 */
-                private static final long serialVersionUID = 5968961149921441923L;
-                private final BadgeIcon   icon;
-                {
-                    icon = new BadgeIcon(downloadLink.getDomainInfo(), new AbstractIcon(IconKey.ICON_URL, 16), 4, 4);
-                    setName(_GUI.T.lit_change_url());
-                    setSmallIcon(icon);
-                }
-
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    final InputDialogInterface ret = UIOManager.I().show(InputDialogInterface.class, new InputDialog(0, " " + downloadLink.getName(), _GUI.T.lit_change_url(), downloadLink.getPluginPatternMatcher(), icon, null, null));
-                    try {
-                        ret.throwCloseExceptions();
-                        final String url = ret.getText();
-                        if (!StringUtils.equals(downloadLink.getPluginPatternMatcher(), url)) {
-                            if (checkableLink instanceof CrawledLink) {
-                                LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-                                    @Override
-                                    protected Void run() throws RuntimeException {
-                                        updateDownloadLink(checkableLink, url);
-                                        return null;
-                                    }
-                                });
-                            } else {
-                                DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
-                                    @Override
-                                    public boolean isHighPriority() {
-                                        return false;
-                                    }
-
-                                    @Override
-                                    public void interrupt() {
-                                    }
-
-                                    @Override
-                                    public void execute(DownloadSession currentSession) {
-                                        final SingleDownloadController con = downloadLink.getDownloadLinkController();
-                                        if (con == null) {
-                                            updateDownloadLink(checkableLink, url);
-                                        } else {
-                                            con.getJobsAfterDetach().add(new DownloadWatchDogJob() {
-                                                @Override
-                                                public void execute(DownloadSession currentSession) {
-                                                    updateDownloadLink(checkableLink, url);
-                                                }
-
-                                                @Override
-                                                public void interrupt() {
-                                                }
-
-                                                @Override
-                                                public boolean isHighPriority() {
-                                                    return false;
-                                                }
-                                            });
-                                        }
-                                    }
-                                });
-                            }
-                        }
-                    } catch (DialogNoAnswerException ignore) {
-                    }
-                }
-            });
+        if (downloadLink == null || UrlProtection.PROTECTED_CONTAINER.equals(downloadLink.getUrlProtection())) {
+            return null;
         }
-        return null;
+        return new JMenuItem(new BasicAction() {
+            /**
+             *
+             */
+            private static final long serialVersionUID = 5968961149921441923L;
+            private final BadgeIcon   icon;
+            {
+                icon = new BadgeIcon(downloadLink.getDomainInfo(), new AbstractIcon(IconKey.ICON_URL, 16), 4, 4);
+                setName(_GUI.T.lit_change_url());
+                setSmallIcon(icon);
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final InputDialogInterface ret = UIOManager.I().show(InputDialogInterface.class, new InputDialog(0, " " + downloadLink.getName(), _GUI.T.lit_change_url(), downloadLink.getPluginPatternMatcher(), icon, null, null));
+                try {
+                    ret.throwCloseExceptions();
+                    final String url = ret.getText();
+                    if (!StringUtils.equals(downloadLink.getPluginPatternMatcher(), url)) {
+                        if (checkableLink instanceof CrawledLink) {
+                            LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+                                @Override
+                                protected Void run() throws RuntimeException {
+                                    updateDownloadLink(checkableLink, url);
+                                    return null;
+                                }
+                            });
+                        } else {
+                            DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
+                                @Override
+                                public boolean isHighPriority() {
+                                    return false;
+                                }
+
+                                @Override
+                                public void interrupt() {
+                                }
+
+                                @Override
+                                public void execute(DownloadSession currentSession) {
+                                    final SingleDownloadController con = downloadLink.getDownloadLinkController();
+                                    if (con == null) {
+                                        updateDownloadLink(checkableLink, url);
+                                    } else {
+                                        con.getJobsAfterDetach().add(new DownloadWatchDogJob() {
+                                            @Override
+                                            public void execute(DownloadSession currentSession) {
+                                                updateDownloadLink(checkableLink, url);
+                                            }
+
+                                            @Override
+                                            public void interrupt() {
+                                            }
+
+                                            @Override
+                                            public boolean isHighPriority() {
+                                                return false;
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    }
+                } catch (DialogNoAnswerException ignore) {
+                }
+            }
+        });
     }
 
     public void extendLinkgrabberContextMenu(JComponent parent, final PluginView<CrawledLink> pv, Collection<PluginView<CrawledLink>> allPvs) {
@@ -2898,7 +2898,10 @@ public abstract class PluginForHost extends Plugin {
      * @return
      */
     public boolean isSpeedLimited(DownloadLink link, Account account) {
-        if (link != null && StringUtils.equals(link.getHost(), getHost())) {
+        if (link == null) {
+            return false;
+        }
+        if (StringUtils.equals(link.getHost(), getHost())) {
             if (hasFeature(LazyPlugin.FEATURE.MULTIHOST)) {
                 return false;
             } else {

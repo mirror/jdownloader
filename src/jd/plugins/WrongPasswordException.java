@@ -1,5 +1,7 @@
 package jd.plugins;
 
+import org.jdownloader.translate._JDT;
+
 public class WrongPasswordException extends PluginException {
     /*
      * This is just an idea for the ability to add the type of password in order to have nicer UI translation such as
@@ -61,7 +63,7 @@ public class WrongPasswordException extends PluginException {
 
     protected WrongPasswordException(final Boolean clearExistingPassword) {
         // TODO: Add translation
-        super(LinkStatus.ERROR_RETRY, "Wrong password");
+        super(LinkStatus.ERROR_RETRY, _JDT.T.plugins_errors_wrongpassword());
         this.setClearExistingPassword(clearExistingPassword);
     }
 }
