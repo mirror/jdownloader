@@ -1,9 +1,8 @@
 package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 
 import java.awt.event.ActionEvent;
+import java.io.File;
 import java.util.List;
-
-import jd.plugins.DownloadLink;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
@@ -11,6 +10,8 @@ import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractEx
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.plugins.FinalLinkState;
+
+import jd.plugins.DownloadLink;
 
 public class ExtractArchiveNowAction extends AbstractExtractionContextAction {
     /**
@@ -55,8 +56,9 @@ public class ExtractArchiveNowAction extends AbstractExtractionContextAction {
             return false;
         }
         /**
-         * Check if at least one selected item is a finished download. </br> This is just a very simple check to provide visual feedback
-         * (grey-out action on non allowed items).
+         * Check if at least one selected item is a finished downloa or a while which exists. </br>
+         * This is just a very simple check to provide visual feedback (grey-out action on non allowed items). </br>
+         * Believe it or not but some people are using this feature to extract files that they've never downloaded via JDownloader.
          */
         for (final Object o : selection.getChildren()) {
             if (!(o instanceof DownloadLink)) {
@@ -64,6 +66,9 @@ public class ExtractArchiveNowAction extends AbstractExtractionContextAction {
             }
             final DownloadLink dl = (DownloadLink) o;
             if (FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
+                return true;
+            } else if (new File(dl.getFileOutput()).exists()) {
+                /* Target file exists so we can extract it. */
                 return true;
             }
         }
