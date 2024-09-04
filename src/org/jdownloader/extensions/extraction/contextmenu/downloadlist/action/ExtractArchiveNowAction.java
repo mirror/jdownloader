@@ -28,25 +28,26 @@ public class ExtractArchiveNowAction extends AbstractExtractionContextAction {
         super.onAsyncInitDone();
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(final ActionEvent e) {
         final List<Archive> lArchives = getArchives();
-        if (lArchives != null && lArchives.size() > 0) {
-            Thread thread = new Thread() {
-                @Override
-                public void run() {
-                    for (Archive archive : lArchives) {
-                        if (_getExtension().isComplete(archive)) {
-                            _getExtension().addToQueue(archive, true);
-                        } else {
-                            Dialog.getInstance().showMessageDialog(org.jdownloader.extensions.extraction.translate.T.T.cannot_extract_incomplete(archive.getName()));
-                        }
+        if (lArchives == null || lArchives.size() == 0) {
+            return;
+        }
+        final Thread thread = new Thread() {
+            @Override
+            public void run() {
+                for (Archive archive : lArchives) {
+                    if (_getExtension().isComplete(archive)) {
+                        _getExtension().addToQueue(archive, true);
+                    } else {
+                        Dialog.getInstance().showMessageDialog(org.jdownloader.extensions.extraction.translate.T.T.cannot_extract_incomplete(archive.getName()));
                     }
                 }
-            };
-            thread.setName("Extract Context: extract");
-            thread.setDaemon(true);
-            thread.start();
-        }
+            }
+        };
+        thread.setName("Extract Context: extract");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     @Override
