@@ -16,12 +16,16 @@ public class MultiHostHost {
         WORKING_UNSTABLE,
         DEACTIVATED_JDOWNLOADER,
         DEACTIVATED_MULTIHOST,
-        UNSUPPORTED_JDOWNLOADER;
+        DEACTIVATED_MULTIHOST_NOT_FOR_THIS_ACCOUNT_TYPE,
+        UNSUPPORTED_JDOWNLOADER,
+        OFFLINE;
     }
 
     private String                domain                    = null;
     private ArrayList<String>     domains                   = new ArrayList<String>();
-    private Integer               linksLeft                 = null;
+    private boolean               isUnlimitedTraffic        = true;
+    private boolean               isUnlimitedLinks          = true;
+    private int                   linksLeft                 = -1;
     private int                   linksMax                  = -1;
     private long                  trafficLeft               = -1;
     private long                  trafficMax                = -1;
@@ -68,9 +72,7 @@ public class MultiHostHost {
 
     /** Only do this when linksMax is given. */
     protected void setLinksUsed(int num) {
-        if (this.linksLeft != null) {
-            this.linksLeft = this.linksMax - num;
-        }
+        this.linksLeft = this.linksMax - num;
     }
 
     protected long getTrafficLeft() {
@@ -115,9 +117,11 @@ public class MultiHostHost {
     }
 
     protected boolean canDownload(final DownloadLink link) {
-        if (this.linksLeft == 0) {
+        if (isUnlimitedTraffic || isUnlimitedLinks) {
+            return true;
+        } else if (this.linksLeft <= 0) {
             return false;
-        } else if (this.trafficLeft == 0) {
+        } else if (this.trafficLeft <= 0) {
             return false;
         } else if (link.getView().getBytesTotal() != -1 && this.trafficLeft < link.getView().getBytesTotal()) {
             /* Not enough traffic to download this link */
