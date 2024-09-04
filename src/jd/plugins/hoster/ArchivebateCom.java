@@ -78,7 +78,7 @@ public class ArchivebateCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://archivebate.com/terms";
+        return "https://" + getHost() + "/terms";
     }
 
     @Override
@@ -92,7 +92,7 @@ public class ArchivebateCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "/(?:embed|watch)/(\\d+)").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "(?i)/(?:embed|watch)/(\\d+)").getMatch(0);
     }
 
     @Override

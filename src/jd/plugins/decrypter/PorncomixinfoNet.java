@@ -46,6 +46,12 @@ public class PorncomixinfoNet extends PluginForDecrypt {
         return ret;
     }
 
+    private List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("porncomixinfo.com"); // 2024-09-04
+        return deadDomains;
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
@@ -69,7 +75,10 @@ public class PorncomixinfoNet extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final String contenturl = param.getCryptedUrl();
+        String contenturl = param.getCryptedUrl();
+        for (final String deadDomain : getDeadDomains()) {
+            contenturl = contenturl.replace(deadDomain, this.getHost());
+        }
         br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

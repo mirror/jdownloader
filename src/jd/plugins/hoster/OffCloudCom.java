@@ -63,39 +63,40 @@ import jd.plugins.components.PluginJSonUtils;
 public class OffCloudCom extends UseNet {
     /** Using API: https://github.com/offcloud/offcloud-api */
     /* Properties */
-    private static final String                   PROPERTY_DOWNLOADTYPE                     = "offclouddownloadtype";
-    private static final String                   PROPERTY_DOWNLOADTYPE_instant             = "instant";
-    private static final String                   PROPERTY_DOWNLOADTYPE_cloud               = "cloud";
+    private static final String                   PROPERTY_DOWNLOADTYPE                        = "offclouddownloadtype";
+    private static final String                   PROPERTY_DOWNLOADTYPE_instant                = "instant";
+    private static final String                   PROPERTY_DOWNLOADTYPE_cloud                  = "cloud";
+    private static final String                   PROPERTY_TIMESTAMP_LAST_TIME_DELETED_HISTORY = "last_time_deleted_history";
     /* Other constants & properties */
-    private static final String                   API_BASE                                  = "https://offcloud.com/api/";
-    private static final String                   WEBSITE_BASE                              = "https://offcloud.com/";
-    private static final String                   NOCHUNKS                                  = "NOCHUNKS";
-    private static final String                   NORESUME                                  = "NORESUME";
+    private static final String                   API_BASE                                     = "https://offcloud.com/api/";
+    private static final String                   WEBSITE_BASE                                 = "https://offcloud.com/";
+    private static final String                   NOCHUNKS                                     = "NOCHUNKS";
+    private static final String                   NORESUME                                     = "NORESUME";
     /* Connection limits */
-    private static final boolean                  ACCOUNT_PREMIUM_RESUME                    = true;
-    private static final int                      ACCOUNT_PREMIUM_MAXCHUNKS                 = 0;
-    private static final int                      ACCOUNT_PREMIUM_MAXDOWNLOADS              = 20;
+    private static final boolean                  ACCOUNT_PREMIUM_RESUME                       = true;
+    private static final int                      ACCOUNT_PREMIUM_MAXCHUNKS                    = 0;
+    private static final int                      ACCOUNT_PREMIUM_MAXDOWNLOADS                 = 20;
     /*
-     * This is the interval in which the complete download history will be deleted from the account (if etting is checked by the user && JD
+     * This is the interval in which the complete download history will be deleted from the account (if setting is enabled by the user && JD
      * does check the account)
      */
-    private static final long                     DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL = 1 * 60 * 60 * 1000l;
-    private static final long                     CLOUD_MAX_WAITTIME                        = 600000l;
-    private int                                   statuscode                                = 0;
+    private static final long                     DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL    = 1 * 60 * 60 * 1000l;
+    private static final long                     CLOUD_MAX_WAITTIME                           = 600000l;
+    private int                                   statuscode                                   = 0;
     /* Contains <host><number of max possible chunks per download> */
-    private static HashMap<String, Integer>       hostMaxchunksMap                          = new HashMap<String, Integer>();
+    private static HashMap<String, Integer>       hostMaxchunksMap                             = new HashMap<String, Integer>();
     /* Contains <host><number of max possible simultan downloads> */
-    private static HashMap<String, Integer>       hostMaxdlsMap                             = new HashMap<String, Integer>();
+    private static HashMap<String, Integer>       hostMaxdlsMap                                = new HashMap<String, Integer>();
     /* Contains <host><number of currently running simultan downloads> */
-    private static HashMap<String, AtomicInteger> hostRunningDlsNumMap                      = new HashMap<String, AtomicInteger>();
+    private static HashMap<String, AtomicInteger> hostRunningDlsNumMap                         = new HashMap<String, AtomicInteger>();
     /* List of hosts which are only available via cloud (queue) download system */
-    public static ArrayList<String>               cloudOnlyHosts                            = new ArrayList<String>();
-    private Account                               currAcc                                   = null;
-    private DownloadLink                          currDownloadLink                          = null;
-    private static Object                         CTRLLOCK                                  = new Object();
-    private static AtomicInteger                  maxPrem                                   = new AtomicInteger(1);
-    private long                                  deletedDownloadHistoryEntriesNum          = 0;
-    private static MultiHosterManagement          mhm                                       = new MultiHosterManagement("offcloud.com");
+    public static ArrayList<String>               cloudOnlyHosts                               = new ArrayList<String>();
+    private Account                               currAcc                                      = null;
+    private DownloadLink                          currDownloadLink                             = null;
+    private static Object                         CTRLLOCK                                     = new Object();
+    private static AtomicInteger                  maxPrem                                      = new AtomicInteger(1);
+    private long                                  deletedDownloadHistoryEntriesNum             = 0;
+    private static MultiHosterManagement          mhm                                          = new MultiHosterManagement("offcloud.com");
 
     public OffCloudCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -493,7 +494,7 @@ public class OffCloudCom extends UseNet {
              * or never executed (0).
              */
             this.deleteCompleteDownloadHistory(PROPERTY_DOWNLOADTYPE_instant);
-            account.setProperty("last_time_deleted_history", System.currentTimeMillis());
+            account.setProperty(PROPERTY_TIMESTAMP_LAST_TIME_DELETED_HISTORY, System.currentTimeMillis());
         }
         if (cfg.isDeleteDownloadHistoryCompleteCloudEnabled()) {
             /*
@@ -501,7 +502,7 @@ public class OffCloudCom extends UseNet {
              * or never executed (0).
              */
             this.deleteCompleteDownloadHistory(PROPERTY_DOWNLOADTYPE_cloud);
-            account.setProperty("last_time_deleted_history", System.currentTimeMillis());
+            account.setProperty(PROPERTY_TIMESTAMP_LAST_TIME_DELETED_HISTORY, System.currentTimeMillis());
         }
         return ai;
     }
@@ -721,12 +722,12 @@ public class OffCloudCom extends UseNet {
 
     /* Returns the time difference between now and the last time the complete download history has been deleted. */
     private long getLast_deleted_complete_download_history_time_ago() {
-        return System.currentTimeMillis() - this.currAcc.getLongProperty("last_time_deleted_history", System.currentTimeMillis());
+        return System.currentTimeMillis() - this.currAcc.getLongProperty(PROPERTY_TIMESTAMP_LAST_TIME_DELETED_HISTORY, System.currentTimeMillis());
     }
 
     /* Returns the time difference between now and the last time the complete download history has been deleted. */
     private long getLast_deleted_complete_download_history_time_ago(final Account acc) {
-        return System.currentTimeMillis() - acc.getLongProperty("last_time_deleted_history", System.currentTimeMillis());
+        return System.currentTimeMillis() - acc.getLongProperty(PROPERTY_TIMESTAMP_LAST_TIME_DELETED_HISTORY, System.currentTimeMillis());
     }
 
     private void prepareBrForJsonRequest() {
