@@ -103,7 +103,8 @@ public class PorncomixinfoNet extends PluginForDecrypt {
                 /* New 2023-10-30 */
                 final String[] imageurls = br.getRegex("=\"image-\\d+\"\\s*src=\"\\s*(https?://[^\"]+)\"").getColumn(0);
                 if (imageurls != null && imageurls.length > 0) {
-                    for (final String imageurl : imageurls) {
+                    for (String imageurl : imageurls) {
+                        imageurl = Encoding.htmlOnlyDecode(imageurl);
                         final DownloadLink link = createDownloadlink(DirectHTTP.createURLForThisPlugin(imageurl));
                         ret.add(link);
                     }

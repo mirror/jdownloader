@@ -200,11 +200,6 @@ public class UploadedpremiumlinkNet extends PluginForHost {
 
     private Object accessAPI(final Account account, final DownloadLink link, final Request req) throws IOException, PluginException, InterruptedException {
         br.getPage(req);
-        /* 2024-09-02: Temporary workaround for buggy response containing a warning */
-        // final String json = br.getRegex("/>\\s*(\\{.+)").getMatch(0);
-        // if (json != null) {
-        // br.getRequest().setHtmlCode(json);
-        // }
         return checkErrors(account, link);
     }
 
