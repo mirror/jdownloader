@@ -49,12 +49,12 @@ public class HighWayMe2 extends HighWayCore {
 
     public HighWayMe2(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://high-way.me/pages/tariffs/");
+        this.enablePremium("https://" + getHost() + "/pages/tariffs/");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://high-way.me/help/terms";
+        return "https://" + getHost() + "/help/terms";
     }
 
     @Override

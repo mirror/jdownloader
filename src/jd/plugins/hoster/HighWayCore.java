@@ -58,6 +58,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountTrafficView;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -170,17 +171,52 @@ public abstract class HighWayCore extends UseNet {
         }
     }
 
-    /** For some hosts this multihost calculates less/more traffic than the actual filesize --> Take this into account here */
+    /** For some hosts this multihost calculates less/more traffic than the real file size --> Calculate this here */
     @Override
     public void update(final DownloadLink link, final Account account, long bytesTransfered) throws PluginException {
+        final int trafficCalc = getTrafficCalc(link);
+        bytesTransfered = (bytesTransfered * trafficCalc) / 100;
+        super.update(link, account, bytesTransfered);
+    }
+
+    /** Returns percentage factor used for traffic calculation. */
+    private int getTrafficCalc(final DownloadLink link) {
         synchronized (getMapLock()) {
             final Map<String, Integer> map = getMap(hostTrafficCalculationMap);
             final Integer trafficCalc = map.get(link.getHost());
             if (trafficCalc != null) {
-                bytesTransfered = (bytesTransfered * trafficCalc) / 100;
+                return trafficCalc.intValue();
+            } else {
+                return 100;
             }
         }
-        super.update(link, account, bytesTransfered);
+    }
+
+    @Override
+    public boolean enoughTrafficFor(final DownloadLink link, final Account account) throws Exception {
+        if (this.getStoredDirectlink(link) != null) {
+            /* Assume that no traffic is needed to download stored direct urls. */
+            return true;
+        }
+        final AccountTrafficView accountTrafficView = getAccountTrafficView(account);
+        if (accountTrafficView == null) {
+            return true;
+        } else if (accountTrafficView.isUnlimitedTraffic()) {
+            return true;
+        }
+        final long downloadSize = link.getView().getBytesTotalEstimated();
+        if (downloadSize <= 0) {
+            /* Size is unknown -> Assume we got enough traffic to download that link. */
+            return true;
+        }
+        final int trafficCalc = getTrafficCalc(link);
+        final long trafficNeeded = (downloadSize * trafficCalc) / 100;
+        final long trafficLeft = accountTrafficView.getTrafficLeft();
+        if (trafficNeeded <= trafficLeft) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -199,7 +235,7 @@ public abstract class HighWayCore extends UseNet {
         } else if (link.getPluginPatternMatcher().matches(PATTERN_TV)) {
             try {
                 return UrlQuery.parse(link.getPluginPatternMatcher()).get("id");
-            } catch (MalformedURLException e) {
+            } catch (final MalformedURLException e) {
                 /* This should never happen! */
                 e.printStackTrace();
                 return null;
@@ -427,7 +463,7 @@ public abstract class HighWayCore extends UseNet {
             boolean resume = this.isResumeable(link, account);
             final int maxChunks = this.getMaxChunks(link, account);
             int statuscode;
-            if (!this.attemptStoredDownloadurlDownload(link, this.getHost() + "directlink", resume, maxChunks)) {
+            if (!this.attemptStoredDownloadurlDownload(link, resume, maxChunks)) {
                 this.login(account, false);
                 /* Request creation of downloadlink */
                 Map<String, Object> entries = null;
@@ -442,7 +478,7 @@ public abstract class HighWayCore extends UseNet {
                         getdata += "&pass=" + Encoding.urlEncode(passCode);
                     }
                     br.getPage(getWebsiteBase() + "load.php?" + getdata);
-                    entries = restoreFromString(br.toString(), TypeRef.MAP);
+                    entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                     statuscode = ((Number) entries.get("code")).intValue();
                     if (statuscode != STATUSCODE_PASSWORD_NEEDED_OR_WRONG) {
                         break;
@@ -494,7 +530,7 @@ public abstract class HighWayCore extends UseNet {
                         logger.info("Unsupported file-hash string: " + hash);
                     }
                 }
-                link.setProperty(this.getHost() + "directlink", dllink);
+                link.setProperty(getDirectlinkProperty(), dllink);
                 br.setAllowedResponseCodes(new int[] { 503 });
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
                 if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -513,8 +549,16 @@ public abstract class HighWayCore extends UseNet {
         }
     }
 
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty, final boolean resumable, final int maxchunks) throws Exception {
-        final String url = link.getStringProperty(directlinkproperty);
+    private String getStoredDirectlink(final DownloadLink link) {
+        return link.getStringProperty(getDirectlinkProperty());
+    }
+
+    private String getDirectlinkProperty() {
+        return this.getHost() + "directlink";
+    }
+
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception {
+        final String url = this.getStoredDirectlink(link);
         if (StringUtils.isEmpty(url)) {
             return false;
         }
@@ -652,7 +696,7 @@ public abstract class HighWayCore extends UseNet {
             this.login(account, true);
             this.getPage(this.getAPIBase() + "?hoster&user");
             final AccountInfo ai = new AccountInfo();
-            final Map<String, Object> entries = this.checkErrors(this.br, this.getDownloadLink(), account);
+            final Map<String, Object> entries = this.checkErrors(this.br, null, account);
             final Map<String, Object> accountInfo = (Map<String, Object>) entries.get("user");
             final int accountResume = ((Number) accountInfo.get("resume")).intValue();
             final long premiumUntil = ((Number) accountInfo.get("premium_bis")).longValue();
@@ -830,7 +874,7 @@ public abstract class HighWayCore extends UseNet {
                 query.appendEncoded("pass", account.getPass());
             }
             br.postPage(getAPIBase() + "?login", query);
-            this.checkErrors(this.br, this.getDownloadLink(), account);
+            this.checkErrors(this.br, null, account);
             /* No Exception --> Assume that login was successful */
             account.saveCookies(br.getCookies(br.getHost()), "");
         }

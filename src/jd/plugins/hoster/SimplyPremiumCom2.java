@@ -53,12 +53,12 @@ public class SimplyPremiumCom2 extends HighWayCore {
 
     public SimplyPremiumCom2(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.simply-premium.com/vip");
+        this.enablePremium("https://www." + getHost() + "/vip");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://www.simply-premium.com/terms";
+        return "https://www." + getHost() + "/terms";
     }
 
     @Override

@@ -19,7 +19,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class PornComixInfoIComixzillaCom extends PluginForDecrypt {
+/** Formerly known as: porncomix.one */
+public class PornComixInfoPornIlikecomixCom extends PluginForDecrypt {
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
@@ -28,14 +29,8 @@ public class PornComixInfoIComixzillaCom extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "porncomix.online", "comixzilla.com", "ilikecomix.io" });
+        ret.add(new String[] { "ilikecomix.com", "porncomixone.net" });
         return ret;
-    }
-
-    private List<String> getDeadDomains() {
-        final ArrayList<String> deadDomains = new ArrayList<String>();
-        deadDomains.add("ilikecomix.io"); // 2024-09-04
-        return deadDomains;
     }
 
     public static String[] getAnnotationNames() {
@@ -54,7 +49,7 @@ public class PornComixInfoIComixzillaCom extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/comic/([\\w-]+)/([\\w-]+)/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/allporn/comics/([\\w-]+)/([\\w-]+)/?");
         }
         return ret.toArray(new String[0]);
     }
@@ -63,37 +58,32 @@ public class PornComixInfoIComixzillaCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String contenturl = param.getCryptedUrl();
-        for (final String deadDomain : getDeadDomains()) {
-            contenturl = contenturl.replace(deadDomain, this.getHost());
-        }
-        br.getPage(contenturl);
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String urltitle = new Regex(br.getURL(), "/([^/]+)/?$").getMatch(0);
-        /* Allow to pickup quotes */
-        String postTitle = br.getRegex("<title>Reading ([^<]+) PornComix Online - Porn Comics</title>").getMatch(0);
+        final String urltitle = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1);
+        String postTitle = br.getRegex("\"headline\": \"([^\"]+)").getMatch(0);
         if (StringUtils.isEmpty(postTitle)) {
             /* Fallback */
             postTitle = urltitle.replace("-", " ").trim();
+        } else {
+            postTitle = Encoding.htmlDecode(postTitle).trim();
         }
         String[] images = br.getRegex("img id=\"image-\\d+\" src=\"([^\"]+)").getColumn(0);
         if (images == null || images.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (String imageurl : images) {
-            imageurl = imageurl.trim();
+            imageurl = br.getURL(imageurl).toString();
             final DownloadLink link = createDownloadlink(DirectHTTP.createURLForThisPlugin(imageurl));
             link.setAvailable(true);
             link.setContainerUrl(param.getCryptedUrl());
             ret.add(link);
         }
-        if (postTitle != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(postTitle));
-            fp.addLinks(ret);
-        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(postTitle);
+        fp.addLinks(ret);
         return ret;
     }
 }

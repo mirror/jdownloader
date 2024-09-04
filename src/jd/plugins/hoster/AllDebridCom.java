@@ -27,12 +27,14 @@ import java.util.Map.Entry;
 import java.util.WeakHashMap;
 
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -80,7 +82,7 @@ public class AllDebridCom extends PluginForHost {
         super(wrapper);
         /* 2020-03-27: As long as we're below 4 API requests per second we're fine according to admin. */
         setStartIntervall(1000);
-        this.enablePremium("https://alldebrid.com/offer/");
+        this.enablePremium("https://" + getHost() + "/offer/");
     }
 
     @Override
@@ -128,15 +130,16 @@ public class AllDebridCom extends PluginForHost {
         }
     }
 
-    private static MultiHosterManagement  mhm                                  = new MultiHosterManagement("alldebrid.com");
-    public static final String            api_base                             = "https://api.alldebrid.com/v4";
+    private static MultiHosterManagement                 mhm                                = new MultiHosterManagement("alldebrid.com");
+    private static WeakHashMap<Account, HashSet<String>> RATE_LIMITED                       = new WeakHashMap<Account, HashSet<String>>();
+    public static final String                           api_base                           = "https://api.alldebrid.com/v4";
     // this is used by provider which calculates unique token to agent/client.
-    public static final String            agent_raw                            = "JDownloader";
-    private static final String           agent                                = "agent=" + agent_raw;
-    private final String                  PROPERTY_APIKEY_CREATED_TIMESTAMP    = "APIKEY_CREATED_TIMESTAMP";
-    private static final String           PROPERTY_apikey                      = "apiv4_apikey";
-    private final String                  PROPERTY_maxchunks                   = "alldebrid_maxchunks";
-    private final AccountInvalidException exceptionFreeAccountsAreNotSupported = new AccountInvalidException("Free accounts are not supported!");
+    public static final String                           agent_raw                          = "JDownloader";
+    private static final String                          agent                              = "agent=" + agent_raw;
+    private final String                                 PROPERTY_APIKEY_CREATED_TIMESTAMP  = "APIKEY_CREATED_TIMESTAMP";
+    private static final String                          PROPERTY_apikey                    = "apiv4_apikey";
+    private final String                                 PROPERTY_maxchunks                 = "alldebrid_maxchunks";
+    private static final String                          ERROR_CODE_LINK_PASSWORD_PROTECTED = "LINK_PASS_PROTECTED";
 
     public String login(final Account account, final AccountInfo accountInfo, final boolean validateApikey) throws Exception {
         synchronized (account) {
@@ -154,16 +157,17 @@ public class AllDebridCom extends PluginForHost {
             /* Full login */
             logger.info("Performing full login");
             br.getPage(api_base + "/pin/get?" + agent);
-            final Map<String, Object> entries = this.handleErrors(account, null);
-            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+            final Map<String, Object> data = this.handleErrors(account, null);
             final String user_url = data.get("user_url").toString();
             final String check_url = data.get("check_url").toString();
             final int maxSecondsServerside = ((Number) data.get("expires_in")).intValue();
-            final Thread dialog = showPINLoginInformation(user_url, maxSecondsServerside);
+            final int maxWaitSecondsClientside = 1200;
+            final int waitSecondsForDialog = Math.min(maxSecondsServerside, maxWaitSecondsClientside);
+            final Thread dialog = showPINLoginInformation(user_url, waitSecondsForDialog);
             int secondsWaited = 0;
             final int waitSecondsPerLoop = 3;
             try {
-                for (int i = 0; i <= 23; i++) {
+                while (true) {
                     logger.info("Waiting for user to authorize application. Seconds waited: " + secondsWaited + "/" + maxSecondsServerside);
                     Thread.sleep(waitSecondsPerLoop * 1000);
                     secondsWaited += waitSecondsPerLoop;
@@ -174,17 +178,25 @@ public class AllDebridCom extends PluginForHost {
                     }
                     /** Example response: { "status": "success", "data": { "activated": false, "expires_in": 590 }}} */
                     final Map<String, Object> resp = this.handleErrors(account, null);
-                    final Map<String, Object> respData = (Map<String, Object>) resp.get("data");
-                    apikey = (String) respData.get("apikey");
+                    apikey = (String) resp.get("apikey");
                     final int secondsLeftServerside = ((Number) data.get("expires_in")).intValue();
                     if (!StringUtils.isEmpty(apikey)) {
                         logger.info("Stopping because: Found apikey!");
                         break;
-                    } else if (secondsLeftServerside < waitSecondsPerLoop) {
+                    } else if (secondsWaited >= maxSecondsServerside) {
+                        logger.info("Stopping because: Timeout #1 | User did not perform authorization within " + maxSecondsServerside + " seconds");
+                        break;
+                    } else if (secondsLeftServerside <= waitSecondsPerLoop) {
                         logger.info("Stopping because: Timeout #2");
+                        break;
+                    } else if (secondsWaited >= maxWaitSecondsClientside) {
+                        logger.info("Stopping because: Timeout #3");
                         break;
                     } else if (!dialog.isAlive()) {
                         logger.info("Stopping because: Dialog closed!");
+                        break;
+                    } else if (this.isAbort()) {
+                        logger.info("Stopping because: Aborted by user");
                         break;
                     }
                 }
@@ -207,9 +219,9 @@ public class AllDebridCom extends PluginForHost {
         synchronized (account) {
             setAuthHeader(br, apikey);
             br.getPage(api_base + "/user?" + agent);
-            final Map<String, Object> root = handleErrors(account, null);
-            final Map<String, Object> data = (Map<String, Object>) root.get("data");
+            final Map<String, Object> data = handleErrors(account, null);
             final Map<String, Object> user = (Map<String, Object>) data.get("user");
+            // final List<String> notifications = (List<String>) user.get("notifications");
             final String userName = (String) user.get("username");
             if (!StringUtils.isEmpty(userName)) {
                 account.setUser(userName);
@@ -219,39 +231,39 @@ public class AllDebridCom extends PluginForHost {
              * property in our Account object!
              */
             account.setPass(null);
-            if ((Boolean) user.get("isPremium") == Boolean.TRUE) {
-                final Number premiumUntil = (Number) user.get("premiumUntil");
-                if (premiumUntil != null) {
-                    ai.setValidUntil(premiumUntil.longValue() * 1000l, br);
-                }
-                if ((Boolean) user.get("isTrial") == Boolean.TRUE) {
-                    /*
-                     * 2020-03-27: Premium "test" accounts which last 7 days and have a total of 25GB as quota. Once that limit is reached,
-                     * they can only download from "Free" hosts (only a hand full of hosts).
-                     */
-                    ai.setStatus("Premium Account (Free trial, reverts to free once traffic is used up)");
-                    final Number remainingTrialQuota = (Number) user.get("remainingTrialQuota");
-                    if (remainingTrialQuota != null) {
-                        /* 2020-03-27: Hardcoded maxTraffic value */
-                        final long maxTraffic = SizeFormatter.getSize("25GB");
-                        final long remainingTrialTraffic = remainingTrialQuota.longValue() * 1000 * 1000;
-                        ai.setTrafficLeft(remainingTrialTraffic);
-                        if (remainingTrialTraffic <= maxTraffic) {
-                            ai.setTrafficMax(maxTraffic);
-                        }
-                    }
-                } else {
-                    /* "Real" premium account. */
-                    ai.setStatus("Premium Account");
-                }
-                account.setType(AccountType.PREMIUM);
-            } else {
+            if ((Boolean) user.get("isPremium") == Boolean.FALSE) {
                 /*
                  * "Real" free account (or expired trial premium [= user downloaded more than 25GB trial quota]) --> Cannot download and
                  * cannot even login via API officially!
                  */
-                throw exceptionFreeAccountsAreNotSupported;
+                throw new AccountInvalidException("Free accounts are not supported!");
             }
+            final Number premiumUntil = (Number) user.get("premiumUntil");
+            if (premiumUntil != null) {
+                ai.setValidUntil(premiumUntil.longValue() * 1000l, br);
+            }
+            if ((Boolean) user.get("isTrial") == Boolean.TRUE) {
+                /*
+                 * 2020-03-27: Premium "test" accounts which last 7 days and have a total of 25GB as quota. Once that limit is reached, they
+                 * can only download from "Free" hosts (only a hand full of hosts).
+                 */
+                ai.setStatus("Premium Account (Free trial, reverts to free once traffic is used up)");
+                final Number remainingTrialQuota = (Number) user.get("remainingTrialQuota");
+                if (remainingTrialQuota != null) {
+                    /* 2020-03-27: Hardcoded maxTraffic value */
+                    final long maxTraffic = SizeFormatter.getSize("25GB");
+                    final long remainingTrialTraffic = remainingTrialQuota.longValue() * 1000 * 1000;
+                    ai.setTrafficLeft(remainingTrialTraffic);
+                    if (remainingTrialTraffic <= maxTraffic) {
+                        ai.setTrafficMax(maxTraffic);
+                    }
+                }
+            }
+            final Number fidelityPoints = (Number) user.get("fidelityPoints");
+            if (fidelityPoints != null) {
+                ai.setPremiumPoints(fidelityPoints.longValue());
+            }
+            account.setType(AccountType.PREMIUM);
         }
     }
 
@@ -266,56 +278,51 @@ public class AllDebridCom extends PluginForHost {
         final Iterator<Entry<String, Object>> iterator = supportedHostsInfo.entrySet().iterator();
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         while (iterator.hasNext()) {
-            try {
-                final Entry<String, Object> hostO = iterator.next();
-                final Map<String, Object> entry = (Map<String, Object>) hostO.getValue();
-                String host_without_tld = (String) entry.get("name");
-                if (StringUtils.isEmpty(host_without_tld)) {
-                    host_without_tld = hostO.getKey();
+            final Entry<String, Object> hostO = iterator.next();
+            final Map<String, Object> entry = (Map<String, Object>) hostO.getValue();
+            String host_without_tld = (String) entry.get("name");
+            if (StringUtils.isEmpty(host_without_tld)) {
+                host_without_tld = hostO.getKey();
+            }
+            /*
+             * 2020-04-01: This check will most likely never be required as free accounts officially cannot be used via API at all and JD
+             * also does not accept them but we're doing this check nevertheless.
+             */
+            final String type = (String) entry.get("type");
+            final Boolean status = (Boolean) entry.get("status"); // optional field
+            // final Number quota = (Number) entry.get("quota");
+            if (account.getType() == AccountType.FREE && !"free".equalsIgnoreCase(type)) {
+                logger.info("Skipping host because it cannot be used with free accounts: " + host_without_tld);
+                continue;
+            }
+            /*
+             * Most hosts either have no limit or traffic limit ("traffic"). Some have a 'max downloads per day' limit instead -->
+             * "nb_download". We cannot handle this and thus ignore it. Also ignore trafficlimit because they could always deliver cached
+             * content for which the user will not be charged traffic at all!
+             */
+            // final String quotaType = (String) entries.get("quotaType");
+            // final long quotaLeft = JavaScriptEngineFactory.toLong(entries.get("quota"), -1);
+            /* Skip currently disabled hosts --> 2020-03-26: Do not skip any hosts anymore, display all in JD RE: admin */
+            if (Boolean.FALSE.equals(status)) {
+                /* Log hosts which look to be non working according to API. */
+                logger.info("Host which might currently be broken: " + host_without_tld);
+                /* 2024-09-03: Do not ignore/skip such entries */
+                // continue;
+            }
+            /* Add all domains of host */
+            final List<String> domains = (List<String>) entry.get("domains");
+            if (domains == null && StringUtils.isEmpty(host_without_tld)) {
+                logger.info("WTF, unexpected format of field 'domains': " + host_without_tld);
+                continue;
+            }
+            if (domains != null) {
+                for (final String domain : domains) {
+                    supportedHosts.add(domain);
                 }
-                /*
-                 * 2020-04-01: This check will most likely never be required as free accounts officially cannot be used via API at all and
-                 * JD also does not accept them but we're doing this check nevertheless.
-                 */
-                final String type = (String) entry.get("type");
-                final Boolean status = (Boolean) entry.get("status"); // optional field
-                if (account.getType() == AccountType.FREE && !"free".equalsIgnoreCase(type)) {
-                    logger.info("Skipping host because it cannot be used with free accounts: " + host_without_tld);
-                    continue;
-                }
-                /*
-                 * Most hosts either have no limit or traffic limit ("traffic"). Some have a 'max downloads per day' limit instead -->
-                 * "nb_download". We cannot handle this and thus ignore it. Also ignore trafficlimit because they could always deliver
-                 * cached content for which the user will not be charged traffic at all!
-                 */
-                // final String quotaType = (String) entries.get("quotaType");
-                // final long quotaLeft = JavaScriptEngineFactory.toLong(entries.get("quota"), -1);
-                /* Skip currently disabled hosts --> 2020-03-26: Do not skip any hosts anymore, display all in JD RE: admin */
-                if (Boolean.FALSE.equals(status)) {
-                    /* Log hosts which look to be non working according to API. */
-                    logger.info("Host which might currently be broken: " + host_without_tld);
-                    // continue;
-                }
-                /* Add all domains of host */
-                final Object domainsO = entry.get("domains");
-                if (domainsO == null && StringUtils.isEmpty(host_without_tld)) {
-                    logger.info("WTF, unexpected format of field 'domains': " + host_without_tld);
-                    continue;
-                }
-                if (domainsO != null) {
-                    final List<String> domains = (List<String>) entry.get("domains");
-                    for (final String domain : domains) {
-                        supportedHosts.add(domain);
-                    }
-                } else {
-                    /* Fallback - this should usually not happen */
-                    logger.info("Adding host_without_tld: " + host_without_tld);
-                    supportedHosts.add(host_without_tld);
-                }
-            } catch (final Throwable e) {
-                /* Skip broken/unexpected json objects */
-                logger.log(e);
-                logger.warning("Skipped item due to unexpected json structure");
+            } else {
+                /* Fallback - this should usually not happen */
+                logger.info("Adding host_without_tld: " + host_without_tld);
+                supportedHosts.add(host_without_tld);
             }
         }
         accountInfo.setMultiHostSupport(this, supportedHosts);
@@ -406,8 +413,7 @@ public class AllDebridCom extends PluginForHost {
                             break;
                         }
                         /** Example response: { "status": "success", "data": { "activated": false, "expires_in": 590 }}} */
-                        final Map<String, Object> resp = this.handleErrors(account, link);
-                        final Map<String, Object> data = (Map<String, Object>) resp.get("data");
+                        final Map<String, Object> data = this.handleErrors(account, link);
                         final String verifStatus = data.get("verif").toString();
                         if (verifStatus.equals("denied")) {
                             /* User opened link from email and denied this login-attempt. */
@@ -493,78 +499,83 @@ public class AllDebridCom extends PluginForHost {
         return thread;
     }
 
-    /** See https://docs.alldebrid.com/v4/#all-errors */
+    /** See https://docs.alldebrid.com/#all-errors */
     private Map<String, Object> handleErrors(final Account account, final DownloadLink link) throws PluginException, Exception {
         /* 2020-03-25: E.g. {"status": "error", "error": {"code": "AUTH_BAD_APIKEY","message": "The auth apikey is invalid"}} */
-        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        Map<String, Object> entries = null;
+        try {
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        } catch (final JSonMapperException jme) {
+            if (link != null) {
+                mhm.handleErrorGeneric(account, link, "Bad API answer", 50, 5 * 60 * 1000l);
+            } else {
+                throw Exceptions.addSuppressed(new AccountUnavailableException("Bad API answer", 1 * 60 * 1000l), jme);
+            }
+        }
         final String status = (String) entries.get("status");
         if (!"error".equalsIgnoreCase(status)) {
-            return entries;
+            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+            return data;
         }
         final boolean isSelfhosted = this.isSelfhosted(link);
         final Map<String, Object> errormap = (Map<String, Object>) entries.get("error");
-        final String code = (String) errormap.get("code");
+        final String errorcode = (String) errormap.get("code");
         String message = (String) errormap.get("message");
         if (StringUtils.isEmpty(message)) {
             /* We always want to have a human readable errormessage */
             message = "Unknown error";
         }
-        if (code.equalsIgnoreCase("AUTH_BAD_APIKEY")) {
-            /* This is the only error which allows us to remove the apikey and re-login. */
-            account.removeProperty(PROPERTY_apikey);
-            throw new AccountInvalidException("Invalid login: " + message + "\r\nRefresh account to renew apikey.");
-        } else if (code.equalsIgnoreCase("AUTH_BLOCKED")) {
-            /* Apikey GEO-blocked or IP blocked */
-            this.authBlockedLogin(account, link, errormap);
-        } else if (code.equalsIgnoreCase("AUTH_USER_BANNED")) {
-            throw new AccountInvalidException(message);
-        } else if (code.equalsIgnoreCase("DELAYED_INVALID_ID")) {
-            /* This can only happen in '/link/delayed' handling */
-            mhm.handleErrorGeneric(account, link, message, 10);
-        } else if (code.equalsIgnoreCase("NO_SERVER")) {
-            /*
-             * 2020-03-26: Formerly known as "/alldebrid_server_not_allowed.txt" --> "Servers are not allowed to use this feature" --> Retry
-             * later
-             */
-            mhm.handleErrorGeneric(account, link, message, 50);
-        } else if (code.equalsIgnoreCase("LINK_HOST_NOT_SUPPORTED")) {
+        final HashSet<String> accountErrorsPermanent = new HashSet<String>();
+        accountErrorsPermanent.add("AUTH_MISSING_APIKEY");
+        accountErrorsPermanent.add("AUTH_BAD_APIKEY");
+        accountErrorsPermanent.add("AUTH_USER_BANNED");
+        accountErrorsPermanent.add("PIN_EXPIRED");
+        accountErrorsPermanent.add("PIN_INVALID");
+        accountErrorsPermanent.add("ACCOUNT_INVALID");
+        final HashSet<String> accountErrorsTemporary = new HashSet<String>();
+        accountErrorsTemporary.add("MAINTENANCE");
+        accountErrorsTemporary.add("AUTH_BLOCKED");
+        accountErrorsTemporary.add("ALREADY_SENT");
+        accountErrorsTemporary.add("NO_SERVER");
+        accountErrorsTemporary.add("FREE_TRIAL_LIMIT_REACHED");
+        accountErrorsTemporary.add("PIN_ALREADY_AUTHED");
+        accountErrorsTemporary.add("PIN_EXPIRED");
+        accountErrorsTemporary.add("INSUFFICIENT_BALANCE");
+        final HashSet<String> downloadErrorsHostUnavailable = new HashSet<String>();
+        downloadErrorsHostUnavailable.add("LINK_HOST_NOT_SUPPORTED");
+        downloadErrorsHostUnavailable.add("LINK_HOST_UNAVAILABLE");
+        downloadErrorsHostUnavailable.add("LINK_HOST_FULL");
+        downloadErrorsHostUnavailable.add("LINK_HOST_LIMIT_REACHED");
+        downloadErrorsHostUnavailable.add("USER_LINK_INVALID");
+        final HashSet<String> downloadErrorsFileUnavailable = new HashSet<String>();
+        downloadErrorsFileUnavailable.add("LINK_IS_MISSING");
+        downloadErrorsFileUnavailable.add("BAD_LINK");
+        downloadErrorsFileUnavailable.add("LINK_TOO_MANY_DOWNLOADS");
+        downloadErrorsFileUnavailable.add("LINK_ERROR");
+        downloadErrorsFileUnavailable.add("LINK_TEMPORARY_UNAVAILABLE");
+        downloadErrorsFileUnavailable.add("MUST_BE_PREMIUM");
+        downloadErrorsFileUnavailable.add("DOWNLOAD_FAILED");
+        downloadErrorsFileUnavailable.add("DELAYED_INVALID_ID");
+        if (errorcode.equalsIgnoreCase("LINK_HOST_NOT_SUPPORTED")) {
             if (isSelfhosted) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 mhm.putError(account, link, 5 * 60 * 1000l, message);
             }
-        } else if (code.equalsIgnoreCase("LINK_TEMPORARY_UNAVAILABLE")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message, 30 * 1000l);
-        } else if (code.equalsIgnoreCase("LINK_DOWN")) {
-            /* URL is offline according to multihoster --> Do not trust this error --> Skip to next download candidate instead! */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (code.equalsIgnoreCase("LINK_PASS_PROTECTED")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "URL is password protected", 5 * 60 * 1000l);
-        } else if (code.equalsIgnoreCase("LINK_HOST_UNAVAILABLE")) {
-            /* Host under maintenance or not available */
-            mhm.putError(account, link, 5 * 60 * 1000l, message);
-        } else if (code.equalsIgnoreCase("LINK_HOST_LIMIT_REACHED")) {
-            mhm.putError(account, link, 5 * 60 * 1000l, message);
-        } else if (code.equalsIgnoreCase("LINK_TOO_MANY_DOWNLOADS")) {
-            /* Some hosts' simultaneous downloads are limited by this multihost - this may sometimes happen. */
-            mhm.putError(account, link, 5 * 60 * 1000l, message);
-        } else if (code.equalsIgnoreCase("LINK_HOST_FULL")) {
-            /* API docs: 'All servers are full for this host please retry later' */
-            mhm.putError(account, link, 5 * 60 * 1000l, message);
-        } else if (code.equalsIgnoreCase("FREE_TRIAL_LIMIT_REACHED")) {
-            /*
-             * Traffic of free trial account is used-up --> Account is now basically a free account and free accounts are unsupported!
-             */
-            throw exceptionFreeAccountsAreNotSupported;
-        } else if (code.equalsIgnoreCase("MUST_BE_PREMIUM")) {
-            /* Single URL is not downloadable with current (free?) alldebrid account */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message, 5 * 60 * 1000l);
-        } else if (code.equalsIgnoreCase("PIN_ALREADY_AUTHED")) {
-            /* "You already have a valid auth apikey" --> Not sure about this --> Temp. disable account */
+        } else if (errorcode.equalsIgnoreCase(ERROR_CODE_LINK_PASSWORD_PROTECTED)) {
+            link.setDownloadPassword(null);
+            link.setPasswordProtected(true);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "URL is password protected", 5 * 60 * 1000l);
+        } else if (accountErrorsPermanent.contains(errorcode)) {
+            /* This is the only error which allows us to remove the apikey and re-login. */
+            account.removeProperty(PROPERTY_apikey);
+            throw new AccountInvalidException(message);
+        } else if (downloadErrorsFileUnavailable.contains(errorcode)) {
             throw new AccountUnavailableException(message, 5 * 60 * 1000);
-        } else if (code.equalsIgnoreCase("PIN_EXPIRED") || code.equalsIgnoreCase("PIN_INVALID")) {
-            /* Do not use given errormessage here as it is irritating. */
-            throw new AccountInvalidException("Invalid login!");
+        } else if (downloadErrorsHostUnavailable.contains(errorcode)) {
+            mhm.putError(accountErrorsTemporary, link, 5 * 60 * 1000l, message);
+        } else if (downloadErrorsFileUnavailable.contains(errorcode)) {
+            mhm.handleErrorGeneric(account, link, message, 20);
         } else {
             /*
              * Unknown/Generic error --> Assume it is a download issue but display it as temp. account issue if no DownloadLink is given.
@@ -578,6 +589,7 @@ public class AllDebridCom extends PluginForHost {
             if (link != null) {
                 mhm.handleErrorGeneric(account, link, message, 50);
             } else {
+                /* Temp disable account */
                 throw new AccountUnavailableException(message, 5 * 60 * 1000);
             }
         }
@@ -629,7 +641,7 @@ public class AllDebridCom extends PluginForHost {
         }
         try {
             dl.startDownload();
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             if (StringUtils.containsIgnoreCase(e.getMessage(), "Server: Too Many Requests")) {
                 setRateLimit(link, account, url);
             }
@@ -778,11 +790,10 @@ public class AllDebridCom extends PluginForHost {
         }
         dlform.put("link", Encoding.urlEncode(url));
         dlform.put("agent", agent_raw);
-        if (!StringUtils.isEmpty(downloadPassword)) {
+        if (downloadPassword != null) {
             dlform.put("password", Encoding.urlEncode(downloadPassword));
         }
         int counter = 0;
-        final String pwprotectedErrorString = "LINK_PASS_PROTECTED";
         do {
             counter++;
             if (counter > 1) {
@@ -793,7 +804,7 @@ public class AllDebridCom extends PluginForHost {
             try {
                 handleErrors(account, link);
             } catch (final PluginException e) {
-                if (br.containsHTML(pwprotectedErrorString)) {
+                if (br.containsHTML(ERROR_CODE_LINK_PASSWORD_PROTECTED)) {
                     /*
                      * Stored password was wrong or this was the first attempt and we didn't know the item was password protected so now we
                      * know we need to ask the user to enter a download password.
@@ -807,19 +818,18 @@ public class AllDebridCom extends PluginForHost {
             logger.info("Breaking loop because: User entered correct password or none was needed");
             break;
         } while (counter <= 3);
+        final Map<String, Object> data = handleErrors(account, link);
         if (!StringUtils.isEmpty(downloadPassword)) {
             /* Entered password looks to be correct -> Store password */
             link.setDownloadPassword(downloadPassword);
         }
-        final Map<String, Object> entries = handleErrors(account, link);
-        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
         if (isSelfhosted) {
             link.setFinalFileName(data.get("filename").toString());
             link.setVerifiedFileSize(((Number) data.get("filesize")).longValue());
         }
         final Object delayID = data.get("delayed");
         if (delayID != null) {
-            /* See https://docs.alldebrid.com/v4/#delayed-links */
+            /* See https://docs.alldebrid.com/#delayed-links */
             if (!cacheDLChecker(link, account, delayID.toString())) {
                 /* Error or serverside download not finished in given time. */
                 logger.info("Delayed handling failure");
@@ -907,7 +917,7 @@ public class AllDebridCom extends PluginForHost {
         waitProgress.setProgressSource(this);
         int lastProgress = -1;
         try {
-            /* See https://docs.alldebrid.com/v4/#delayed-links */
+            /* See https://docs.alldebrid.com/#delayed-links */
             final Form dlform = new Form();
             dlform.setMethod(MethodType.GET);
             dlform.setAction(api_base + "/link/delayed");
@@ -938,8 +948,7 @@ public class AllDebridCom extends PluginForHost {
                 br.submitForm(dlform);
                 try {
                     /* We have to use the parser here because json contains two 'status' objects ;) */
-                    final Map<String, Object> entries = handleErrors(account, link);
-                    final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+                    final Map<String, Object> data = handleErrors(account, link);
                     delayedStatus = (int) JavaScriptEngineFactory.toLong(data.get("status"), 3);
                     final int tmpCurrentProgress = (int) ((Number) data.get("progress")).doubleValue() * 100;
                     if (tmpCurrentProgress > currentProgress) {
@@ -1027,8 +1036,6 @@ public class AllDebridCom extends PluginForHost {
         return chunks;
     }
 
-    private static WeakHashMap<Account, HashSet<String>> RATE_LIMITED = new WeakHashMap<Account, HashSet<String>>();
-
     private void checkRateLimit(Browser br, URLConnectionAdapter con, final Account account, final DownloadLink link) throws PluginException {
         if (br.containsHTML("rate limiting, please retry") || con.getResponseCode() == 429) {
             Browser.setRequestIntervalLimitGlobal(br.getHost(), 2000);
@@ -1051,14 +1058,13 @@ public class AllDebridCom extends PluginForHost {
         if (account == null) {
             /* Account needed to check such links. */
             return AvailableStatus.UNCHECKABLE;
-        } else {
-            if (!link.isNameSet()) {
-                link.setName(this.getFID(link));
-            }
-            generteFreshDirecturl(link, account);
-            /* No exception = File is online */
-            return AvailableStatus.TRUE;
         }
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
+        generteFreshDirecturl(link, account);
+        /* No exception = File is online */
+        return AvailableStatus.TRUE;
     }
 
     @Override

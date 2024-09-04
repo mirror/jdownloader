@@ -24,6 +24,18 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,18 +59,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterCom extends PluginForHost {
@@ -448,7 +448,7 @@ public class XHamsterCom extends PluginForHost {
                 }
             } else {
                 /* Free / Free-Account users can only download trailers. */
-                dllink = br.getRegex("<video src=\"(http[^<>\"]+)\"").getMatch(0);
+                dllink = br.getRegex("<video id=\"video-trailer\"[^<]*src=\"(http[^<>\"]+)\"").getMatch(0);
             }
             if (title != null) {
                 title = Encoding.htmlDecode(title).trim();
@@ -973,7 +973,8 @@ public class XHamsterCom extends PluginForHost {
     public void handleDownload(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account, true);
         final String contentURL = getCorrectedURL(link.getPluginPatternMatcher());
-        if (!this.isPremiumURL(contentURL) && StringUtils.isEmpty(dllink)) {
+        final boolean isPremiumURL = this.isPremiumURL(contentURL);
+        if (StringUtils.isEmpty(dllink) && !isPremiumURL) {
             // Access the page again to get a new direct link because by checking the availability the first linkisn't valid anymore
             String passCode = link.getDownloadPassword();
             if (isPasswordProtected(br)) {
@@ -1033,6 +1034,8 @@ public class XHamsterCom extends PluginForHost {
                 throw new AccountRequiredException("You need to be friends with uploader");
             } else if (isPaidContent(br)) {
                 throw new AccountRequiredException("Paid content");
+            } else if (isPremiumURL) {
+                throw new AccountRequiredException("Paid content & trailer download failed");
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -1343,9 +1346,10 @@ public class XHamsterCom extends PluginForHost {
             /* Check vja ajax request -> json */
             br.getPage(api_base_premium + "/subscription/get");
             /**
-             * Returns "null" if cookies are valid but this is not a premium account. </br> Redirects to mainpage if cookies are invalid.
-             * </br> Return json if cookies are valid. </br> Can also return json along with http responsecode 400 for valid cookies but
-             * user is non-premium.
+             * Returns "null" if cookies are valid but this is not a premium account. </br>
+             * Redirects to mainpage if cookies are invalid. </br>
+             * Return json if cookies are valid. </br>
+             * Can also return json along with http responsecode 400 for valid cookies but user is non-premium.
              */
             final boolean looksLikeJsonResponse = br.getRequest().getHtmlCode().startsWith("{");
             if (br.getHttpConnection().getContentType().contains("json") && (looksLikeJsonResponse || br.toString().equals("null"))) {
@@ -1491,9 +1495,11 @@ public class XHamsterCom extends PluginForHost {
             }
         }
         /**
-         * 2022-07-22: Workaround for possible serverside bug: </br> In some countries, xhamster seems to redirect users to xhamster2.com.
-         * </br> If those users send an Accept-Language header of "de,en-gb;q=0.7,en;q=0.3" they can get stuck in a redirect-loop between
-         * deu.xhamster3.com and deu.xhamster3.com. </br> See initial report: https://board.jdownloader.org/showthread.php?t=91170
+         * 2022-07-22: Workaround for possible serverside bug: </br>
+         * In some countries, xhamster seems to redirect users to xhamster2.com. </br>
+         * If those users send an Accept-Language header of "de,en-gb;q=0.7,en;q=0.3" they can get stuck in a redirect-loop between
+         * deu.xhamster3.com and deu.xhamster3.com. </br>
+         * See initial report: https://board.jdownloader.org/showthread.php?t=91170
          */
         final String acceptLanguage = "en-gb;q=0.7,en;q=0.3";
         br.setAcceptLanguage(acceptLanguage);

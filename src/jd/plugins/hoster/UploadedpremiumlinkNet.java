@@ -127,6 +127,10 @@ public class UploadedpremiumlinkNet extends PluginForHost {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl", 10 * 1000l);
         }
+        if (passCode != null && link.getDownloadPassword() == null) {
+            logger.info("User entered valid download password: " + passCode);
+            link.setDownloadPassword(passCode);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
@@ -263,29 +267,28 @@ public class UploadedpremiumlinkNet extends PluginForHost {
         downloadErrorsFileUnavailable.add("MUST_BE_PREMIUM");
         downloadErrorsFileUnavailable.add("RESOURCE_RETRIEVAL_FAILURE");
         final String message = entries.get("message").toString();
-        final String category_error = entries.get("category_error").toString();
-        if (accountErrorsPermanent.contains(category_error)) {
+        final String errorcode = entries.get("category_error").toString();
+        if (accountErrorsPermanent.contains(errorcode)) {
             throw new AccountInvalidException(message);
-        } else if (downloadErrorsFileUnavailable.contains(category_error)) {
+        } else if (downloadErrorsFileUnavailable.contains(errorcode)) {
             throw new AccountUnavailableException(message, 5 * 60 * 1000);
-        } else if (downloadErrorsHostUnavailable.contains(category_error)) {
+        } else if (downloadErrorsHostUnavailable.contains(errorcode)) {
             mhm.putError(accountErrorsTemporary, link, 5 * 60 * 1000l, message);
-        } else if (downloadErrorsFileUnavailable.contains(category_error)) {
+        } else if (downloadErrorsFileUnavailable.contains(errorcode)) {
             mhm.handleErrorGeneric(account, link, message, 20);
-        } else if (category_error.equalsIgnoreCase("FILE_NOT_FOUND")) {
+        } else if (errorcode.equalsIgnoreCase("FILE_NOT_FOUND")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, message);
-        } else if (category_error.equalsIgnoreCase("LINK_PASS_PROTECTED")) {
-            final String dlpw = link.getDownloadPassword();
-            link.setDownloadPassword(null);
-            link.setProperty(PROPERTY_UPLOADEDPREMIUMLINK_PASSWORD_REQUIRED, true);
+        } else if (errorcode.equalsIgnoreCase("LINK_PASS_PROTECTED")) {
             final String text;
-            if (dlpw == null) {
+            if (link.getDownloadPassword() == null) {
                 text = "Password required";
             } else {
                 text = "Password wrong";
             }
+            link.setDownloadPassword(null);
+            link.setProperty(PROPERTY_UPLOADEDPREMIUMLINK_PASSWORD_REQUIRED, true);
             throw new PluginException(LinkStatus.ERROR_RETRY, text);
-        } else if (category_error.equalsIgnoreCase("LINK_THIRD_PARTY_PR_SUB_REQUIRED")) {
+        } else if (errorcode.equalsIgnoreCase("LINK_THIRD_PARTY_PR_SUB_REQUIRED")) {
             /* Extra subscription required to download that item. */
             throw new AccountRequiredException(message);
         } else {
