@@ -21,6 +21,7 @@ public class MultiHostHost {
         OFFLINE;
     }
 
+    private String                name                      = null;
     private String                domain                    = null;
     private ArrayList<String>     domains                   = new ArrayList<String>();
     private boolean               isUnlimitedTraffic        = true;

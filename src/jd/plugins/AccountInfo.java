@@ -397,6 +397,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 assignedMultiHostPlugins.add(hostCleaned);
             }
         }
+        final HashSet<String> skippedOfflineEntries = new HashSet<String>();
         if (!nonTldHosts.isEmpty()) {
             final HashMap<String, List<LazyHostPlugin>> map = new HashMap<String, List<LazyHostPlugin>>();
             pluginloop: for (final LazyHostPlugin lazyHostPlugin : hpc.list()) {
@@ -452,12 +453,15 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 LazyHostPlugin lazyPlugin = null;
                 if (list.size() == 1) {
                     final LazyHostPlugin lazyHostPlugin = list.get(0);
-                    if (!lazyHostPlugin.isOfflinePlugin()) {
-                        lazyPlugin = lazyHostPlugin;
+                    if (lazyHostPlugin.isOfflinePlugin()) {
+                        skippedOfflineEntries.add(host);
+                        continue;
                     }
+                    lazyPlugin = lazyHostPlugin;
                 } else if (list.size() > 1) {
                     for (final LazyHostPlugin lazyHostPlugin : list) {
                         if (lazyHostPlugin.isOfflinePlugin()) {
+                            skippedOfflineEntries.add(host);
                             continue;
                         }
                         if (lazyPlugin == null) {
@@ -511,7 +515,9 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 }
                 plugins.add(lazyPlugin);
             } else {
-                if (!lazyPlugin.isOfflinePlugin() && !lazyPlugin.isFallbackPlugin() && !assignedMultiHostPlugins.contains(lazyPlugin.getHost())) {
+                if (lazyPlugin.isOfflinePlugin()) {
+                    skippedOfflineEntries.add(host);
+                } else if (!lazyPlugin.isFallbackPlugin() && !assignedMultiHostPlugins.contains(lazyPlugin.getHost())) {
                     try {
                         if (!lazyPlugin.isHasAllowHandle()) {
                             assignedMultiHostPlugins.add(lazyPlugin.getHost());
@@ -574,11 +580,18 @@ public class AccountInfo extends Property implements AccountTrafficView {
         }
         /* Log items without result */
         if (unassignedMultiHostSupport.size() > 0 && multiHostPlugin != null) {
+            logger.info("Found " + unassignedMultiHostSupport.size() + " unassigned entries");
             for (final String host : unassignedMultiHostSupport) {
                 logger.info("Could not assign any host for: " + host);
             }
         }
-        if (assignedMultiHostPlugins.size() == 0) {
+        if (skippedOfflineEntries.size() > 0 && multiHostPlugin != null) {
+            logger.info("Found " + skippedOfflineEntries.size() + " offline entries");
+            for (final String host : skippedOfflineEntries) {
+                logger.info("Offline entry: " + host);
+            }
+        }
+        if (assignedMultiHostPlugins.size() == 0 && multiHostPlugin != null) {
             logger.info("Failed to find ANY usable results");
             this.removeProperty(propertyKey);
             return null;
@@ -602,7 +615,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 }
                 continue;
             } else {
-                List<LazyHostPlugin> best = new ArrayList<LazyHostPlugin>();
+                final List<LazyHostPlugin> best = new ArrayList<LazyHostPlugin>();
                 for (LazyHostPlugin plugin : plugins) {
                     try {
                         final PluginForHost plg = pluginFinder.getPlugin(plugin);
@@ -634,22 +647,26 @@ public class AccountInfo extends Property implements AccountTrafficView {
     /** Removes host from list of supported hosts. */
     public boolean removeMultiHostSupport(final String host) {
         final Object ret = getProperty("multiHostSupport", null);
-        if (ret != null && ret instanceof List) {
-            final List<String> list = (List<String>) ret;
-            if (list.contains(host)) {
-                if (list.size() > 1) {
-                    final List<String> newList = new CopyOnWriteArrayList<String>(list);
-                    if (newList.remove(host)) {
-                        this.setProperty("multiHostSupport", newList);
-                        return true;
-                    }
-                } else {
-                    this.setProperty("multiHostSupport", Property.NULL);
-                    return true;
-                }
-            }
+        if (ret == null || !(ret instanceof List)) {
+            return false;
         }
-        return false;
+        final List<String> list = (List<String>) ret;
+        if (!list.contains(host)) {
+            return false;
+        }
+        if (list.size() > 1) {
+            final List<String> newList = new CopyOnWriteArrayList<String>(list);
+            if (newList.remove(host)) {
+                this.setProperty("multiHostSupport", newList);
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            /* This was the only supported host -> Remove property */
+            this.setProperty("multiHostSupport", Property.NULL);
+            return true;
+        }
     }
 
     public List<String> getMultiHostSupport() {
