@@ -9,10 +9,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.UniqueAlltimeID;
 import org.appwork.utils.logging2.LogInterface;
@@ -20,13 +16,15 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
+
 public class PluginFinder {
     private final HashMap<String, PluginForHost> pluginCaches            = new HashMap<String, PluginForHost>();
     private Map<String, Object>                  hostMappings            = new HashMap<String, Object>();
-
     private static volatile List<LazyHostPlugin> ASSIGN_PLUGINS          = new ArrayList<LazyHostPlugin>();
     private static volatile Map<String, Object>  HOST_MAPPINGS           = new ConcurrentHashMap<String, Object>();
-
     private final static Set<String>             BROKEN_PLUGINS          = new HashSet<String>();
     private final static AtomicLong              PLUGINSLASTMODIFICATION = new AtomicLong(-1);
     private final LogInterface                   logger;
@@ -120,62 +118,63 @@ public class PluginFinder {
     }
 
     public synchronized LazyHostPlugin _assignHost(final String host) {
-        if (host != null) {
-            if (!hostMappings.containsKey(host)) {
-                final LazyHostPlugin lazyPlugin = HostPluginController.getInstance().get(host);
-                if (lazyPlugin != null) {
-                    if (!lazyPlugin.isHasRewrite()) {
-                        /* lazyPlugin has no customized rewriteHost */
-                        hostMappings.put(host, lazyPlugin);
-                        return lazyPlugin;
-                    } else {
-                        try {
-                            final PluginForHost plugin = getPlugin(lazyPlugin);
-                            final String rewriteHost = plugin.rewriteHost(host);
-                            if (StringUtils.equalsIgnoreCase(rewriteHost, host)) {
-                                /* host equals rewriteHost */
-                                hostMappings.put(host, lazyPlugin);
-                                return lazyPlugin;
-                            } else if (StringUtils.isNotEmpty(rewriteHost)) {
-                                /* different rewriteHost, we need to call assignHost(rewriteHost) to check for further changes */
-                                return _assignHost(rewriteHost);
-                            }
-                        } catch (final Throwable e) {
-                            logger.log(e);
+        if (host == null) {
+            return null;
+        }
+        if (!hostMappings.containsKey(host)) {
+            final LazyHostPlugin lazyPlugin = HostPluginController.getInstance().get(host);
+            if (lazyPlugin != null) {
+                if (!lazyPlugin.isHasRewrite()) {
+                    /* lazyPlugin has no customized rewriteHost */
+                    hostMappings.put(host, lazyPlugin);
+                    return lazyPlugin;
+                } else {
+                    try {
+                        final PluginForHost plugin = getPlugin(lazyPlugin);
+                        final String rewriteHost = plugin.rewriteHost(host);
+                        if (StringUtils.equalsIgnoreCase(rewriteHost, host)) {
+                            /* host equals rewriteHost */
+                            hostMappings.put(host, lazyPlugin);
+                            return lazyPlugin;
+                        } else if (StringUtils.isNotEmpty(rewriteHost)) {
+                            /* different rewriteHost, we need to call assignHost(rewriteHost) to check for further changes */
+                            return _assignHost(rewriteHost);
                         }
+                    } catch (final Throwable e) {
+                        logger.log(e);
                     }
                 }
-                for (final LazyHostPlugin lazyHostPlugin : HostPluginController.getInstance().list()) {
-                    if (lazyHostPlugin.isHasRewrite()) {
-                        synchronized (BROKEN_PLUGINS) {
-                            if (BROKEN_PLUGINS.contains(lazyHostPlugin.toString())) {
-                                continue;
-                            }
-                        }
-                        try {
-                            final PluginForHost plugin = getPlugin(lazyHostPlugin);
-                            final String rewriteHost = plugin.rewriteHost(host);
-                            if (StringUtils.equalsIgnoreCase(rewriteHost, host)) {
-                                /* host equals rewriteHost */
-                                hostMappings.put(host, lazyHostPlugin);
-                                return lazyHostPlugin;
-                            } else if (StringUtils.isNotEmpty(rewriteHost)) {
-                                /* different rewriteHost, we need to call assignHost(rewriteHost) to check for further changes */
-                                return _assignHost(rewriteHost);
-                            }
-                        } catch (final Throwable e) {
-                            logger.log(e);
+            }
+            for (final LazyHostPlugin lazyHostPlugin : HostPluginController.getInstance().list()) {
+                if (lazyHostPlugin.isHasRewrite()) {
+                    synchronized (BROKEN_PLUGINS) {
+                        if (BROKEN_PLUGINS.contains(lazyHostPlugin.toString())) {
+                            continue;
                         }
                     }
+                    try {
+                        final PluginForHost plugin = getPlugin(lazyHostPlugin);
+                        final String rewriteHost = plugin.rewriteHost(host);
+                        if (StringUtils.equalsIgnoreCase(rewriteHost, host)) {
+                            /* host equals rewriteHost */
+                            hostMappings.put(host, lazyHostPlugin);
+                            return lazyHostPlugin;
+                        } else if (StringUtils.isNotEmpty(rewriteHost)) {
+                            /* different rewriteHost, we need to call assignHost(rewriteHost) to check for further changes */
+                            return _assignHost(rewriteHost);
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                    }
                 }
-                hostMappings.put(host, NULL);
-                logger.severe("Could not assign any host for: " + host);
-                return null;
             }
-            final Object ret = hostMappings.get(host);
-            if (ret instanceof LazyHostPlugin) {
-                return (LazyHostPlugin) ret;
-            }
+            hostMappings.put(host, NULL);
+            logger.severe("Could not assign any host for: " + host);
+            return null;
+        }
+        final Object ret = hostMappings.get(host);
+        if (ret instanceof LazyHostPlugin) {
+            return (LazyHostPlugin) ret;
         }
         return null;
     }
