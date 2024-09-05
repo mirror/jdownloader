@@ -123,7 +123,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
      * You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to return false when using such a pattern!
      */
     private static final String   type_normal_without_fuid  = "(?i)^https?://[^/]+/(?:videos?/)?([^/\\?#]*?)(?:/?|\\.html)$";
-    private static final String   type_mobile               = "(?i)^https?://m\\.([^/]+/(videos?/)?\\d+/[^/\\?#]+/$)";
+    // private static final String type_mobile = "(?i)^https?://m\\.([^/]+/(videos?/)?\\d+/[^/\\?#]+/$)";
     /**
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(List)} (excluding
      * "embed" URLs).
@@ -904,26 +904,46 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
     }
 
+    /** If this is a private video, this will return the reason for why it is private as text. */
+    private String getPrivateVideoWebsiteMessage(final Browser br) {
+        final List<String> texts = new ArrayList<String>();
+        /* English */
+        texts.add("This video is a private video uploaded by");
+        texts.add("Only active members can watch private videos");
+        texts.add("This is a private video. You must be");
+        /* German */
+        texts.add("Das ist ein privates Video des Benutzers");
+        texts.add("Zugang zu den privaten Videos haben nur registrierte Benutzer");
+        /* Spanish */
+        texts.add("Es el video privado del usuario");
+        texts.add("Este video privado e de usuario");
+        texts.add("Seulement les utilisateurs enregistrés du site peuvent avoir");
+        texts.add("So os usuarios registados no sitio podem ter acesso aos videos privados");
+        /* Italian */
+        texts.add("Questo è il video personale dell'utente");
+        texts.add("Solo gli utenti iscritti al sito possono avere l'accesso ai video personali");
+        /* French */
+        texts.add("Cette vidéo est privée d'utilisateur");
+        texts.add("Cette vidéo est privée d'utilisateur");
+        /* Russian */
+        texts.add("Это личное видео пользователя");
+        texts.add("Только зарегистрированные пользователи сайта могут иметь доступ к личным видео");
+        String msg = null;
+        for (final String text : texts) {
+            msg = br.getRegex(">(\\s*" + Pattern.quote(text) + "[^<]+)").getMatch(0);
+            if (msg != null) {
+                msg = Encoding.htmlDecode(msg).trim();
+                break;
+            }
+        }
+        return msg;
+    }
+
     /** If this returns true we for sure got a private video or paid content which can only be viewed with a paid account. */
     protected boolean isPrivateVideoWebsite(final Browser br) {
         /* 2020-10-09: Tested for pornyeah.com, anyporn.com, camwhoreshd.com */
-        if (br.containsHTML("(?i)>\\s*Cette vidéo est privée d'utilisateur|Seulement les utilisateurs enregistrés du site peuvent avoir accès à des vidéos privées")) {
-            return true;
-        } else if (br.containsHTML("(?i)>\\s*Questo è il video personale dell'utente|Solo gli utenti iscritti al sito possono avere l'accesso ai video personali")) {
-            return true;
-        } else if (br.containsHTML("(?i)>\\s*Este video privado e de usuario|So os usuarios registados no sitio podem ter acesso aos videos privados")) {
-            return true;
-        } else if (br.containsHTML("(?i)>\\s*Это личное видео пользователя|Только зарегистрированные пользователи сайта могут иметь доступ к личным видео")) {
-            return true;
-        } else if (br.containsHTML("(?i)>\\s*Es el video privado del usuario|Seulement les utilisateurs enregistrés du site peuvent avoir accès à des vidéos privées")) {
-            return true;
-        } else if (br.containsHTML("(?i)>\\s*Das ist ein privates Video des Benutzers|Zugang zu den privaten Videos haben nur registrierte Benutzer")) {
-            return true;
-        } else if (br.containsHTML("(?i)>\\s*This video is a private video uploaded by |Only active members can watch private videos")) {
-            return true;
-        } else if (br.containsHTML("(?i)>\\s*This is a private video\\. You must be")) {
-            // xfreehd.com
-            // This is a private video. You must be subscribers or friends with XYZ to view it
+        final String msg = getPrivateVideoWebsiteMessage(br);
+        if (msg != null) {
             return true;
         } else {
             return false;
@@ -1025,7 +1045,12 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             requestFileInformation(link, account, true);
             if (StringUtils.isEmpty(this.dllink)) {
                 if (this.isPrivateVideo(link)) {
-                    throw new AccountRequiredException("Private videos can only be watched by registered users or friends of the uploader");
+                    final String msg = this.getPrivateVideoWebsiteMessage(br);
+                    if (msg != null) {
+                        throw new AccountRequiredException(msg);
+                    } else {
+                        throw new AccountRequiredException("Private videos can only be watched by registered users or friends of the uploader");
+                    }
                 } else {
                     /* Broken video or broken plugin. */
                     this.checkErrorsLastResort(br, link, account);

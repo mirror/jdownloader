@@ -16,7 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.URL;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,8 +31,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "https?://(?:www\\.)?pornhost\\.com/([0-9]+/([0-9]+\\.html)?|[0-9]+|embed/\\d+)" })
 public class PornHostCom extends PluginForHost {
@@ -62,9 +61,12 @@ public class PornHostCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("gallery not found") || br.containsHTML("You will be redirected to")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("gallery not found") || br.containsHTML("You will be redirected to")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        boolean isVideo = true;
         if (link.getPluginPatternMatcher().contains(".html")) {
             dllink = br.getRegex("class=\"image\"[^>]*>\\s*<img src=\"(http[^\"]+)\"").getMatch(0);
             if (dllink == null) {
@@ -87,19 +89,33 @@ public class PornHostCom extends PluginForHost {
         // Maybe we have a picture
         if (dllink == null) {
             dllink = br.getRegex("<div class=\"image\" style=\"width: \\d+px; height: \\d+px\">[\t\n\r ]+<img src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            isVideo = false;
+        }
+        final String extDefault;
+        if (isVideo) {
+            extDefault = ".mp4";
+        } else {
+            extDefault = ".jpg";
+        }
+        String title = br.getRegex("class=\"video-title\"[^>]*>([^<]+)</h1>").getMatch(0);
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            link.setName(title + extDefault);
         }
         if (dllink != null) {
             dllink = Encoding.htmlOnlyDecode(dllink);
-            final String filename = Plugin.getFileNameFromURL(new URL(dllink));
-            if (filename != null) {
-                link.setFinalFileName(filename);
-            }
             URLConnectionAdapter con = null;
             try {
                 final Browser brc = br.cloneBrowser();
                 con = brc.openHeadConnection(dllink);
                 if (!looksLikeDownloadableContent(con)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (title == null) {
+                    final String filename = Plugin.getFileNameFromConnection(con);
+                    if (filename != null) {
+                        link.setFinalFileName(filename);
+                    }
                 }
                 if (con.getCompleteContentLength() > 0) {
                     if (con.isContentDecoded()) {
