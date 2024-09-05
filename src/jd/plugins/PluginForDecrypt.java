@@ -357,36 +357,37 @@ public abstract class PluginForDecrypt extends Plugin {
 
     protected DownloadLink createLinkCrawlerRetry(final CrawledLink link, final DecrypterRetryException retryException) {
         final LazyHostPlugin plugin = HostPluginController.getInstance().get("LinkCrawlerRetry");
-        if (plugin != null && retryException != null) {
-            try {
-                String name = retryException.getCustomName();
+        if (plugin == null || retryException == null) {
+            return null;
+        }
+        try {
+            String name = retryException.getCustomName();
+            if (StringUtils.isEmpty(name)) {
+                try {
+                    name = getFileNameFromURL(new URL(link.getURL()));
+                } catch (final MalformedURLException e) {
+                }
                 if (StringUtils.isEmpty(name)) {
-                    try {
-                        name = getFileNameFromURL(new URL(link.getURL()));
-                    } catch (final MalformedURLException e) {
-                    }
-                    if (StringUtils.isEmpty(name)) {
-                        name = getHost();
-                    }
+                    name = getHost();
                 }
-                final String explanation = retryException.getReason().getExplanation(this);
-                String nameForDownloadLink = explanation + "!";
-                if (!StringUtils.equals(explanation, name)) {
-                    nameForDownloadLink += name;
-                }
-                final DownloadLink ret = new DownloadLink(plugin.getPrototype(null), nameForDownloadLink, plugin.getHost(), link.getURL(), true);
-                if (StringUtils.isNotEmpty(retryException.getComment())) {
-                    ret.setComment(retryException.getComment());
-                }
-                if (DecrypterRetryException.RetryReason.FILE_NOT_FOUND.equals(retryException.getReason())) {
-                    ret.setAvailable(false);
-                }
-                ret.setProperty("reason", retryException.getReason());
-                ret.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.TXT);
-                return ret;
-            } catch (UpdateRequiredClassNotFoundException e) {
-                logger.log(e);
             }
+            final String explanation = retryException.getReason().getExplanation(this);
+            String nameForDownloadLink = explanation + "!";
+            if (!StringUtils.equals(explanation, name)) {
+                nameForDownloadLink += name;
+            }
+            final DownloadLink ret = new DownloadLink(plugin.getPrototype(null), nameForDownloadLink, plugin.getHost(), link.getURL(), true);
+            if (StringUtils.isNotEmpty(retryException.getComment())) {
+                ret.setComment(retryException.getComment());
+            }
+            if (DecrypterRetryException.RetryReason.FILE_NOT_FOUND.equals(retryException.getReason())) {
+                ret.setAvailable(false);
+            }
+            ret.setProperty("reason", retryException.getReason());
+            ret.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.TXT);
+            return ret;
+        } catch (UpdateRequiredClassNotFoundException e) {
+            logger.log(e);
         }
         return null;
     }
@@ -571,12 +572,11 @@ public abstract class PluginForDecrypt extends Plugin {
         final LinkCrawlerDistributer dist = getDistributer();
         if (dist == null || links == null || links.length == 0) {
             return;
-        } else {
-            try {
-                dist.distribute(links);
-            } finally {
-                validateLastChallengeResponse();
-            }
+        }
+        try {
+            dist.distribute(links);
+        } finally {
+            validateLastChallengeResponse();
         }
     }
 
@@ -684,15 +684,14 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     private File copyCaptcha(String method, File file) throws Exception {
-        if (file != null) {
-            final File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
-            copy.delete();
-            copy.getParentFile().mkdirs();
-            IO.copyFile(file, copy);
-            return copy;
-        } else {
+        if (file == null) {
             return null;
         }
+        final File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
+        copy.delete();
+        copy.getParentFile().mkdirs();
+        IO.copyFile(file, copy);
+        return copy;
     }
 
     protected ClickedPoint getCaptchaClickedPoint(final String captchaAddress, CryptedLink param, final String explain) throws Exception {
