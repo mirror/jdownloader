@@ -498,7 +498,6 @@ public class AccountInfo extends Property implements AccountTrafficView {
             }
             unassignedMultiHostSupport.addAll(nonTldHosts);
         }
-        final HashSet<String> assignedMultiHostPlugins2 = new HashSet<String>();
         final Iterator<String> it = assignedMultiHostPlugins.iterator();
         while (it.hasNext()) {
             final String host = it.next();
@@ -510,7 +509,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 unassignedMultiHostSupport.add(host);
                 continue;
             }
-            if (assignedMultiHostPlugins2.contains(lazyPlugin.getHost())) {
+            if (assignedMultiHostPlugins.contains(lazyPlugin.getHost())) {
                 Set<LazyHostPlugin> plugins = mapping.get(host);
                 if (plugins == null) {
                     plugins = new HashSet<LazyHostPlugin>();
@@ -526,7 +525,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 }
                 try {
                     if (!lazyPlugin.isHasAllowHandle()) {
-                        assignedMultiHostPlugins2.add(lazyPlugin.getHost());
+                        assignedMultiHostPlugins.add(lazyPlugin.getHost());
                         Set<LazyHostPlugin> plugins = mapping.get(host);
                         if (plugins == null) {
                             plugins = new HashSet<LazyHostPlugin>();
@@ -537,7 +536,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                         final DownloadLink link = new DownloadLink(null, "", lazyPlugin.getHost(), "", false);
                         final PluginForHost plg = pluginFinder.getPlugin(lazyPlugin);
                         if (plg.allowHandle(link, multiHostPlugin)) {
-                            assignedMultiHostPlugins2.add(lazyPlugin.getHost());
+                            assignedMultiHostPlugins.add(lazyPlugin.getHost());
                             Set<LazyHostPlugin> plugins = mapping.get(host);
                             if (plugins == null) {
                                 plugins = new HashSet<LazyHostPlugin>();
@@ -571,7 +570,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 }
                 final String pattern = lazyHostPlugin.getPatternSource();
                 if (StringUtils.containsIgnoreCase(pattern, host) || pattern.matches(matcher) || pattern.matches(matcher2)) {
-                    assignedMultiHostPlugins2.add(lazyHostPlugin.getHost());
+                    assignedMultiHostPlugins.add(lazyHostPlugin.getHost());
                     Set<LazyHostPlugin> plugins = mapping.get(host);
                     if (plugins == null) {
                         plugins = new HashSet<LazyHostPlugin>();
@@ -598,7 +597,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 logger.info("Offline entry: " + host);
             }
         }
-        if (assignedMultiHostPlugins2.size() == 0) {
+        if (assignedMultiHostPlugins.size() == 0) {
             if (logger != null) {
                 logger.info("Failed to find ANY usable results");
             }
@@ -612,7 +611,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
             final String cleanHost = cleanList.get(host);
             final Set<LazyHostPlugin> plugins = mapping.get(cleanHost);
             if (plugins == null) {
-                // ret.add(null);
+                ret.add(null);
                 continue;
             } else if (plugins.size() == 1) {
                 final LazyHostPlugin plugin = plugins.iterator().next();
@@ -651,6 +650,12 @@ public class AccountInfo extends Property implements AccountTrafficView {
             }
         }
         Collections.sort(list, new NaturalOrderComparator());
+        if (logger != null) {
+            logger.info("Found real hosts: " + list.size());
+            for (final String host : list) {
+                logger.finest("Found host: " + host);
+            }
+        }
         this.setProperty(propertyKey, new CopyOnWriteArrayList<String>(list));
         return ret;
     }
