@@ -21,12 +21,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -43,6 +39,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BbcCom;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BbcComiPlayerCrawler extends PluginForDecrypt {
@@ -110,7 +111,7 @@ public class BbcComiPlayerCrawler extends PluginForDecrypt {
             // BbcCom.errorGeoBlocked();
             throw new DecrypterRetryException(RetryReason.GEO, vpid, "This content is not available in your country!");
         }
-        Map<Integer, HashSet<String>> subtitles = new HashMap<>();
+        Map<Integer, Set<String>> subtitles = new HashMap<Integer, Set<String>>();
         final List<Map<String, Object>> mediaList = (List<Map<String, Object>>) root.get("media");
         for (final Map<String, Object> media : mediaList) {
             final String kind = (String) media.get("kind");
@@ -167,7 +168,7 @@ public class BbcComiPlayerCrawler extends PluginForDecrypt {
                     } else {
                         prio = 0;
                     }
-                    HashSet<String> subtitlelist = subtitles.get(prio);
+                    Set<String> subtitlelist = subtitles.get(prio);
                     if (subtitlelist == null) {
                         subtitlelist = new HashSet<String>();
                         subtitles.put(prio, subtitlelist);
@@ -244,10 +245,10 @@ public class BbcComiPlayerCrawler extends PluginForDecrypt {
         if (userWantsSubtitle && !subtitles.isEmpty()) {
             /* Find first working subtitle as some may be broken or unavailable. */
             /* Sort map according to internal priority */
-            final Map<Integer, HashSet<String>> sortedMap = new TreeMap<>(subtitles);
+            final Map<Integer, Set<String>> sortedMap = new TreeMap<Integer, Set<String>>(subtitles);
             final List<String> sortedSubtitles = new ArrayList<String>();
-            for (final Map.Entry<Integer, HashSet<String>> entry : sortedMap.entrySet()) {
-                final HashSet<String> subtitlelist = entry.getValue();
+            for (final Map.Entry<Integer, Set<String>> entry : sortedMap.entrySet()) {
+                final Set<String> subtitlelist = entry.getValue();
                 sortedSubtitles.addAll(subtitlelist);
             }
             /* List is sorted by priority 0-100 but we want the higher value first -> Revert order */
