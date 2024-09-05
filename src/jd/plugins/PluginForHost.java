@@ -2720,8 +2720,10 @@ public abstract class PluginForHost extends Plugin {
 
     private void handle(ArrayList<ExceptionRunnable> revertList, final DownloadLink downloadLink, final MovePluginProgress progress, final File currentFile, final File newFile) throws FileExistsException, CouldNotRenameException, IOException {
         if (!currentFile.exists()) {
+            /* Do nothing */
             return;
         } else if (currentFile.equals(newFile)) {
+            /* Do nothing */
             return;
         }
         progress.setFile(newFile);
