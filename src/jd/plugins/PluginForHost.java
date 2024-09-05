@@ -911,7 +911,7 @@ public abstract class PluginForHost extends Plugin {
 
     /** default fetchAccountInfo, set account valid to true */
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         account.setValid(true);
         return ai;
     }
@@ -1125,46 +1125,45 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public AccountTrafficView getAccountTrafficView(final Account account) {
-        final AccountInfo accountInfo;
-        if (account != null && (accountInfo = account.getAccountInfo()) != null) {
-            return accountInfo;
-        } else {
+        if (account == null) {
             return null;
         }
+        return account.getAccountInfo();
     }
 
     public boolean enoughTrafficFor(DownloadLink downloadLink, Account account) throws Exception {
         final AccountTrafficView accountTrafficView = getAccountTrafficView(account);
-        if (accountTrafficView != null) {
-            if (accountTrafficView.isUnlimitedTraffic() || accountTrafficView.isSpecialTraffic()) {
-                return true;
-            } else {
-                final long trafficLeft = accountTrafficView.getTrafficLeft();
-                final long minimum = 1024;
-                if (trafficLeft == 0) {
-                    if (accountTrafficView.isTrafficRefill()) {
-                        final long downloadSize = downloadLink.getView().getBytesTotalEstimated();
-                        final long downloadLeft;
-                        if (downloadSize >= 0) {
-                            downloadLeft = Math.max(minimum, downloadSize - downloadLink.getView().getBytesLoaded());
-                        } else {
-                            downloadLeft = minimum;
-                        }
-                        throw new ConditionalSkipReasonException(new WaitForAccountTrafficSkipReason(account, downloadLeft));
-                    } else {
-                        return false;
-                    }
-                } else {
+        if (accountTrafficView == null) {
+            return true;
+        }
+        if (accountTrafficView.isUnlimitedTraffic() || accountTrafficView.isSpecialTraffic()) {
+            return true;
+        } else {
+            final long trafficLeft = accountTrafficView.getTrafficLeft();
+            final long minimum = 1024;
+            if (trafficLeft == 0) {
+                if (accountTrafficView.isTrafficRefill()) {
                     final long downloadSize = downloadLink.getView().getBytesTotalEstimated();
+                    final long downloadLeft;
                     if (downloadSize >= 0) {
-                        final long downloadLeft = Math.max(0, downloadSize - downloadLink.getView().getBytesLoaded());
-                        if (trafficLeft - downloadLeft <= 0) {
-                            if (accountTrafficView.isTrafficRefill()) {
-                                final long required = Math.max(minimum, downloadLeft - trafficLeft);
-                                throw new ConditionalSkipReasonException(new WaitForAccountTrafficSkipReason(account, required));
-                            } else {
-                                return false;
-                            }
+                        downloadLeft = Math.max(minimum, downloadSize - downloadLink.getView().getBytesLoaded());
+                    } else {
+                        downloadLeft = minimum;
+                    }
+                    throw new ConditionalSkipReasonException(new WaitForAccountTrafficSkipReason(account, downloadLeft));
+                } else {
+                    return false;
+                }
+            } else {
+                final long downloadSize = downloadLink.getView().getBytesTotalEstimated();
+                if (downloadSize >= 0) {
+                    final long downloadLeft = Math.max(0, downloadSize - downloadLink.getView().getBytesLoaded());
+                    if (trafficLeft - downloadLeft <= 0) {
+                        if (accountTrafficView.isTrafficRefill()) {
+                            final long required = Math.max(minimum, downloadLeft - trafficLeft);
+                            throw new ConditionalSkipReasonException(new WaitForAccountTrafficSkipReason(account, required));
+                        } else {
+                            return false;
                         }
                     }
                 }
@@ -1739,14 +1738,13 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public static boolean implementsRewriteHost(PluginForHost plugin) {
+        if (plugin == null) {
+            return false;
+        }
         try {
-            if (plugin != null) {
-                final Method method = plugin.getClass().getMethod("rewriteHost", new Class[] { String.class });
-                final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
-                return implementsHandlePremium && plugin.rewriteHost((String) null) != null;
-            } else {
-                return false;
-            }
+            final Method method = plugin.getClass().getMethod("rewriteHost", new Class[] { String.class });
+            final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
+            return implementsHandlePremium && plugin.rewriteHost((String) null) != null;
         } catch (NoSuchMethodException e) {
             LogController.CL().log(e);
             return false;
@@ -1757,14 +1755,13 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public static boolean implementsAllowHandle(PluginForHost plugin) {
+        if (plugin == null) {
+            return false;
+        }
         try {
-            if (plugin != null) {
-                final Method method = plugin.getClass().getMethod("allowHandle", new Class[] { DownloadLink.class, PluginForHost.class });
-                final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
-                return implementsHandlePremium;
-            } else {
-                return false;
-            }
+            final Method method = plugin.getClass().getMethod("allowHandle", new Class[] { DownloadLink.class, PluginForHost.class });
+            final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
+            return implementsHandlePremium;
         } catch (NoSuchMethodException e) {
             return false;
         } catch (Throwable e) {
@@ -1785,14 +1782,13 @@ public abstract class PluginForHost extends Plugin {
 
     /** Does this plugin override the method required to do mass linkchecking? */
     public static boolean implementsCheckLinks(PluginForHost plugin) {
+        if (plugin == null) {
+            return false;
+        }
         try {
-            if (plugin != null) {
-                final Method method = plugin.getClass().getMethod("checkLinks", new DownloadLink[0].getClass());
-                final boolean hasMassCheck = method.getDeclaringClass() != PluginForHost.class;
-                return hasMassCheck;
-            } else {
-                return false;
-            }
+            final Method method = plugin.getClass().getMethod("checkLinks", new DownloadLink[0].getClass());
+            final boolean hasMassCheck = method.getDeclaringClass() != PluginForHost.class;
+            return hasMassCheck;
         } catch (NoSuchMethodException e) {
             return false;
         } catch (Throwable e) {
@@ -1802,14 +1798,15 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public static boolean implementsHandlePremium(PluginForHost plugin) {
+        if (plugin == null) {
+            return false;
+        } else if (!plugin.isPremiumEnabled()) {
+            return false;
+        }
         try {
-            if (plugin != null && plugin.isPremiumEnabled()) {
-                final Method method = plugin.getClass().getMethod("handlePremium", new Class[] { DownloadLink.class, Account.class });
-                final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
-                return implementsHandlePremium;
-            } else {
-                return false;
-            }
+            final Method method = plugin.getClass().getMethod("handlePremium", new Class[] { DownloadLink.class, Account.class });
+            final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
+            return implementsHandlePremium;
         } catch (NoSuchMethodException e) {
             return false;
         } catch (Throwable e) {
@@ -1819,14 +1816,13 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public static boolean implementsSortDownloadLink(PluginForHost plugin) {
+        if (plugin == null) {
+            return false;
+        }
         try {
-            if (plugin != null) {
-                final Method method = plugin.getClass().getMethod("sortDownloadLinks", new Class[] { Account.class, List.class });
-                final boolean implementsSortDownloadLink = method.getDeclaringClass() != PluginForHost.class;
-                return implementsSortDownloadLink;
-            } else {
-                return false;
-            }
+            final Method method = plugin.getClass().getMethod("sortDownloadLinks", new Class[] { Account.class, List.class });
+            final boolean implementsSortDownloadLink = method.getDeclaringClass() != PluginForHost.class;
+            return implementsSortDownloadLink;
         } catch (NoSuchMethodException e) {
             return false;
         } catch (Throwable e) {
@@ -2596,34 +2592,37 @@ public abstract class PluginForHost extends Plugin {
     private static Object CHECKSHOWFREEDIALOGLOCK = new Object();
 
     protected boolean checkShowFreeDialog(final String domain) {
+        if (domain == null) {
+            return false;
+        } else if (Application.isHeadless()) {
+            return false;
+        }
         try {
-            if (domain != null && !Application.isHeadless()) {
-                synchronized (CHECKSHOWFREEDIALOGLOCK) {
-                    final String key = JDHash.getMD5(domain) + "_05032020";
-                    final long TIMEOUT = 1000l * 60 * 60 * 24 * 31 * 2;
-                    long lastTimestamp = -1;
-                    SubConfiguration config = null;
-                    try {
-                        config = getPluginConfig();
-                        final Object value = config.getProperty(key, null);
-                        if (value != null) {
-                            try {
-                                lastTimestamp = Long.parseLong(value.toString());
-                            } catch (final Throwable e) {
-                            }
+            synchronized (CHECKSHOWFREEDIALOGLOCK) {
+                final String key = JDHash.getMD5(domain) + "_05032020";
+                final long TIMEOUT = 1000l * 60 * 60 * 24 * 31 * 2;
+                long lastTimestamp = -1;
+                SubConfiguration config = null;
+                try {
+                    config = getPluginConfig();
+                    final Object value = config.getProperty(key, null);
+                    if (value != null) {
+                        try {
+                            lastTimestamp = Long.parseLong(value.toString());
+                        } catch (final Throwable e) {
                         }
-                        if (lastTimestamp < 0 || System.currentTimeMillis() - lastTimestamp > TIMEOUT) {
-                            lastTimestamp = System.currentTimeMillis();
-                            return true;
-                        } else {
-                            config = null;
-                            lastTimestamp = -1;
-                        }
-                    } finally {
-                        if (config != null && lastTimestamp > 0) {
-                            config.setProperty(key, Long.toString(lastTimestamp));
-                            config.save();
-                        }
+                    }
+                    if (lastTimestamp < 0 || System.currentTimeMillis() - lastTimestamp > TIMEOUT) {
+                        lastTimestamp = System.currentTimeMillis();
+                        return true;
+                    } else {
+                        config = null;
+                        lastTimestamp = -1;
+                    }
+                } finally {
+                    if (config != null && lastTimestamp > 0) {
+                        config.setProperty(key, Long.toString(lastTimestamp));
+                        config.save();
                     }
                 }
             }
@@ -2720,7 +2719,9 @@ public abstract class PluginForHost extends Plugin {
     }
 
     private void handle(ArrayList<ExceptionRunnable> revertList, final DownloadLink downloadLink, final MovePluginProgress progress, final File currentFile, final File newFile) throws FileExistsException, CouldNotRenameException, IOException {
-        if (!currentFile.exists() || currentFile.equals(newFile)) {
+        if (!currentFile.exists()) {
+            return;
+        } else if (currentFile.equals(newFile)) {
             return;
         }
         progress.setFile(newFile);
@@ -2734,11 +2735,9 @@ public abstract class PluginForHost extends Plugin {
     }
 
     private void renameOrMove(MovePluginProgress progress, final DownloadLink downloadLink, File old, File newFile) throws FileExistsException, CouldNotRenameException, IOException {
-        // TODO: what if newFile exists?
         if (newFile.exists()) {
             throw new FileExistsException(old, newFile);
-        }
-        if (!newFile.getParentFile().exists() && !newFile.getParentFile().mkdirs()) {
+        } else if (!newFile.getParentFile().exists() && !newFile.getParentFile().mkdirs()) {
             throw new IOException("Could not create " + newFile.getParent());
         }
         try {
@@ -2769,13 +2768,11 @@ public abstract class PluginForHost extends Plugin {
     private void copyMove(final MovePluginProgress progress, final DownloadLink downloadLink, final File old, final File newFile) throws IOException {
         if (!old.exists() && newFile.exists()) {
             return;
-        }
-        if (old.exists()) {
-            // we did an file exists check earlier. so if the file exists here, the only reason is a failed rename/move;
-            newFile.delete();
-        } else {
+        } else if (!old.exists()) {
             throw new IOException("Cannot move " + old + " to " + newFile + ". The File does not exist!");
         }
+        // we did an file exists check earlier. so if the file exists here, the only reason is a failed rename/move;
+        newFile.delete();
         Thread thread = null;
         if (JSonStorage.getPlainStorage("Dialogs").get(COPY_MOVE_FILE, -1) < 0) {
             // System.out.println("Thread start");
