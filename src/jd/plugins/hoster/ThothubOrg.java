@@ -25,12 +25,12 @@ import jd.plugins.HostPlugin;
 public class ThothubOrg extends KernelVideoSharingComV2 {
     public ThothubOrg(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://thothub.org/");
+        this.enablePremium("https://" + getHost() + "/");
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        ret.add(new String[] { "thothub.org" });
+        ret.add(new String[] { "thothub.org", "thothub.to" });
         return ret;
     }
 

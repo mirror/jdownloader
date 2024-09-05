@@ -16,19 +16,23 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -106,7 +110,7 @@ public class BbcComiPlayerCrawler extends PluginForDecrypt {
             // BbcCom.errorGeoBlocked();
             throw new DecrypterRetryException(RetryReason.GEO, vpid, "This content is not available in your country!");
         }
-        String subtitleURL = null;
+        Map<Integer, HashSet<String>> subtitles = new HashMap<>();
         final List<Map<String, Object>> mediaList = (List<Map<String, Object>>) root.get("media");
         for (final Map<String, Object> media : mediaList) {
             final String kind = (String) media.get("kind");
@@ -154,7 +158,22 @@ public class BbcComiPlayerCrawler extends PluginForDecrypt {
                     }
                 }
             } else if (kind.equalsIgnoreCase("captions")) {
-                subtitleURL = JavaScriptEngineFactory.walkJson(connections, "{0}/href").toString();
+                for (final Map<String, Object> connection : connections) {
+                    final String priorityStr = connection.get("priority").toString();
+                    final String url = connection.get("href").toString();
+                    final int prio;
+                    if (priorityStr != null && priorityStr.matches("\\d+")) {
+                        prio = Integer.parseInt(priorityStr);
+                    } else {
+                        prio = 0;
+                    }
+                    HashSet<String> subtitlelist = subtitles.get(prio);
+                    if (subtitlelist == null) {
+                        subtitlelist = new HashSet<String>();
+                        subtitles.put(prio, subtitlelist);
+                    }
+                    subtitlelist.add(url);
+                }
             }
         }
         if (hlsContainers == null || hlsContainers.isEmpty()) {
@@ -221,10 +240,51 @@ public class BbcComiPlayerCrawler extends PluginForDecrypt {
         link.setFinalFileName(BbcCom.getFilename(link));
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         ret.add(link);
-        if (subtitleURL != null && hosterPlugin.getPluginConfig().getBooleanProperty(BbcCom.SETTING_CRAWL_SUBTITLE, BbcCom.default_SETTING_CRAWL_SUBTITLE)) {
-            final DownloadLink subtitle = new DownloadLink(hosterPlugin, hosterPlugin.getHost(), subtitleURL, true);
-            subtitle.setFinalFileName(link.getFinalFileName().substring(0, link.getFinalFileName().lastIndexOf(".")) + ".ttml");
-            ret.add(subtitle);
+        final boolean userWantsSubtitle = hosterPlugin.getPluginConfig().getBooleanProperty(BbcCom.SETTING_CRAWL_SUBTITLE, BbcCom.default_SETTING_CRAWL_SUBTITLE);
+        if (userWantsSubtitle && !subtitles.isEmpty()) {
+            /* Find first working subtitle as some may be broken or unavailable. */
+            /* Sort map according to internal priority */
+            final Map<Integer, HashSet<String>> sortedMap = new TreeMap<>(subtitles);
+            final List<String> sortedSubtitles = new ArrayList<String>();
+            for (final Map.Entry<Integer, HashSet<String>> entry : sortedMap.entrySet()) {
+                final HashSet<String> subtitlelist = entry.getValue();
+                sortedSubtitles.addAll(subtitlelist);
+            }
+            /* List is sorted by priority 0-100 but we want the higher value first -> Revert order */
+            Collections.reverse(sortedSubtitles);
+            String subtitleValidated = null;
+            long subtitleSize = 0;
+            int index = 0;
+            for (final String thisSubtitleURL : sortedSubtitles) {
+                logger.info("Checking subtitle " + (index + 1) + "/" + sortedSubtitles.size() + " | URL: " + thisSubtitleURL);
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openGetConnection(thisSubtitleURL);
+                    if (con.isOK()) {
+                        subtitleValidated = thisSubtitleURL;
+                        subtitleSize = con.getCompleteContentLength();
+                        break;
+                    }
+                } catch (final Throwable e) {
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+                logger.info("Skipping invalid subtitle: " + thisSubtitleURL);
+                index++;
+            }
+            if (subtitleValidated != null) {
+                final DownloadLink subtitle = new DownloadLink(hosterPlugin, hosterPlugin.getHost(), subtitleValidated, true);
+                subtitle.setFinalFileName(link.getFinalFileName().substring(0, link.getFinalFileName().lastIndexOf(".")) + ".ttml");
+                if (subtitleSize > 0) {
+                    subtitle.setDownloadSize(subtitleSize);
+                }
+                ret.add(subtitle);
+            } else {
+                logger.info("All found subtitles are invalid");
+            }
         }
         /* Set additional properties that are supposed to be set on all results */
         for (final DownloadLink crawledresult : ret) {

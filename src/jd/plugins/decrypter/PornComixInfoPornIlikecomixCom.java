@@ -10,6 +10,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -48,12 +49,13 @@ public class PornComixInfoPornIlikecomixCom extends PluginForDecrypt {
     }
 
     private static final Pattern PATTERN_1 = Pattern.compile("/allporn/comics/([\\w-]+)/([\\w-]+)/?", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_2 = Pattern.compile("/myhentai-gallery/([\\w-]+)/?", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_2 = Pattern.compile("/([\\w-]+)/([\\w-]+)/?", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_3 = Pattern.compile("/([\\w-]+)/([\\w-]+)/?(page/\\d+/?)?", Pattern.CASE_INSENSITIVE);
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(" + PATTERN_1.pattern() + "|" + PATTERN_2 + ")");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(" + PATTERN_1.pattern() + "|" + PATTERN_2 + "|" + PATTERN_3 + ")");
         }
         return ret.toArray(new String[0]);
     }
@@ -68,6 +70,7 @@ public class PornComixInfoPornIlikecomixCom extends PluginForDecrypt {
         }
         final Regex pattern1 = new Regex(param.getCryptedUrl(), PATTERN_1);
         final Regex pattern2 = new Regex(param.getCryptedUrl(), PATTERN_2);
+        final Regex pattern3 = new Regex(param.getCryptedUrl(), PATTERN_3);
         final String urltitle;
         final String[] images;
         String postTitle;
@@ -87,7 +90,26 @@ public class PornComixInfoPornIlikecomixCom extends PluginForDecrypt {
             postTitle = Encoding.htmlDecode(postTitle).trim();
         }
         if (images == null || images.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Only allow one level of crawling here otherwise this one may result in endless crawling. */
+            final DownloadLink previousGeneration = param.getDownloadLink();
+            if (previousGeneration != null) {
+                logger.info("Prohibit endless crawling -> Returning nothing");
+                return ret;
+            } else if (pattern3.patternFind()) {
+                /* Generic crawler e.g. for https://ilikecomix.com/author/bla/ */
+                final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+                for (final String url : urls) {
+                    if (new Regex(url, PATTERN_2).patternFind()) {
+                        ret.add(this.createDownloadlink(url));
+                    }
+                }
+                if (ret.isEmpty()) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                return ret;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(postTitle);

@@ -18,7 +18,16 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -42,12 +51,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kink.com" }, urls = { "https?://(?:www\\.)?kink.com/shoot/(\\d+)" })
 public class KinkCom extends PluginForHost {
     public KinkCom(PluginWrapper wrapper) {
@@ -67,7 +70,6 @@ public class KinkCom extends PluginForHost {
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
     }
-
     /* DEV NOTES */
     // Tags: Porn plugin
     // protocol: no https
@@ -128,14 +130,25 @@ public class KinkCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String title = br.getRegex("<title>\\s*([^<>\"]+)\\s*</title>").getMatch(0);
-        String filetitle;
-        if (!StringUtils.isEmpty(title)) {
-            filetitle = fid + "_" + title;
-        } else {
-            filetitle = fid;
-        }
+        String title = br.getRegex("<title>\\s*([^<>\"]+)\\s*</title>").getMatch(0);
         String directurl = null;
+        String json = br.getRegex("data-setup=\"([^\"]+)").getMatch(0);
+        int heightMaxTrailer = -1;
+        String directurlTrailerBest = null;
+        if (json != null) {
+            json = Encoding.htmlOnlyDecode(json);
+            final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
+            title = entries.get("title").toString();
+            final Map<String, Object> trailer = (Map<String, Object>) entries.get("trailer");
+            final List<Map<String, Object>> sources = (List<Map<String, Object>>) trailer.get("sources");
+            for (final Map<String, Object> source : sources) {
+                final int height = ((Number) source.get("resolution")).intValue();
+                if (directurlTrailerBest == null || height > heightMaxTrailer) {
+                    directurlTrailerBest = source.get("url").toString();
+                    heightMaxTrailer = height;
+                }
+            }
+        }
         if (account != null) {
             /* Look for "official" downloadlinks --> Find highest quality */
             int qualityMax = -1;
@@ -148,21 +161,21 @@ public class KinkCom extends PluginForHost {
                 if (qualityTmp > qualityMax) {
                     qualityMax = qualityTmp;
                     String url = dlinfo[0];
-                    if (Encoding.isHtmlEntityCoded(url)) {
-                        url = Encoding.htmlDecode(url);
-                    }
+                    url = Encoding.htmlOnlyDecode(url);
                     directurl = url;
                 }
             }
             logger.info("Chosen premium download quality: " + qualityMax + " -> " + directurl);
         } else {
             /* Download trailer */
-            String url = br.getRegex("data\\-type\\s*=\\s*\"trailer\\-src\" data\\-url\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
-            if (Encoding.isHtmlEntityCoded(url)) {
-                url = Encoding.htmlDecode(url);
-            }
-            directurl = url;
+            directurl = directurlTrailerBest;
             logger.info("Chosen trailer: " + directurl);
+        }
+        String filetitle;
+        if (!StringUtils.isEmpty(title)) {
+            filetitle = fid + "_" + title;
+        } else {
+            filetitle = fid;
         }
         filetitle = Encoding.htmlDecode(filetitle);
         filetitle = filetitle.trim();
