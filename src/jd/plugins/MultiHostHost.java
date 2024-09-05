@@ -6,10 +6,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 public class MultiHostHost {
     /** How long shall we block this host if a limit gets reached? Until the next day/hour? */
-    public enum LimitResetMode {
-        DAILY;
-    }
-
+    // public enum LimitResetMode {
+    // DAILY;
+    // }
     /** Why was this host blocked? Because of too many errored out tries via JD or because of the multihost/multihost limits? */
     public enum MultihosterHostStatus {
         WORKING,
@@ -17,8 +16,7 @@ public class MultiHostHost {
         DEACTIVATED_JDOWNLOADER,
         DEACTIVATED_MULTIHOST,
         DEACTIVATED_MULTIHOST_NOT_FOR_THIS_ACCOUNT_TYPE,
-        UNSUPPORTED_JDOWNLOADER,
-        OFFLINE;
+        UNSUPPORTED_JDOWNLOADER;
     }
 
     private String                name                      = null;
@@ -31,7 +29,6 @@ public class MultiHostHost {
     private long                  trafficMax                = -1;
     // TODO: Maybe remove this? I didn't see such an information used anywhere.
     private long                  timestampLimitReset       = -1;
-    /* How much traffic is credited when downloading from this host? */
     private short                 trafficUsageFactorPercent = 100;
     private int                   maxChunks                 = 0;
     private Boolean               resume                    = null;
@@ -95,6 +92,10 @@ public class MultiHostHost {
         this.timestampLimitReset = timestampTrafficReset;
     }
 
+    /**
+     * How much traffic is needed and credited when downloading from this host? </br>
+     * 500 = 5 times the size of the downloaded file.
+     */
     protected short getTrafficUsageFactorPercent() {
         return trafficUsageFactorPercent;
     }
