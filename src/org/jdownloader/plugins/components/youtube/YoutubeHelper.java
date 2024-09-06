@@ -37,6 +37,24 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Request;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
@@ -103,24 +121,6 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Request;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 
 public class YoutubeHelper {
     static {
@@ -2266,14 +2266,8 @@ public class YoutubeHelper {
     }
 
     protected boolean isAPIPrefered(Browser br) {
-        final String serializedExperimentIdsString = br.getRegex("\"serializedExperimentIds\"\\s*:\\s*\"([0-9 ,]+)\"").getMatch(0);
-        if (serializedExperimentIdsString != null) {
-            final List<String> serializedExperimentIds = Arrays.asList(serializedExperimentIdsString.split(","));
-            if (serializedExperimentIds.contains("51217476") || serializedExperimentIds.contains("51217102")) {
-                return true;
-            }
-        }
-        return false;
+        // WEB is fully potoken'd, https://github.com/ytdl-org/youtube-dl/issues/32905
+        return true;
     }
 
     public Request getPage(Browser br, Request request) throws Exception {
@@ -2297,18 +2291,8 @@ public class YoutubeHelper {
         if (br.getRequest().getHttpConnection().getResponseCode() == 429) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too Many Requests", 10 * 60 * 1000l);
         } else {
-            if (isAPIPrefered(br) && false) {
-                // retry web mode with different UA
-                final String ua = request.getHeaders().getValue(HTTPConstants.HEADER_REQUEST_UPGRADE_INSECURE_REQUESTS);
-                if (!StringUtils.containsIgnoreCase(ua, "com.google.ios.youtube")) {
-                    br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, "com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1 like Mac OS X;)");
-                    return getPage(br, request.cloneRequest());
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
+            return br.getRequest();
         }
-        return br.getRequest();
     }
 
     public void setConsentCookie(final Browser browser, String id) {
@@ -3422,8 +3406,8 @@ public class YoutubeHelper {
     }
 
     /**
-     * Loads thumbnail data from HTML and returns all possible qualities. </br>
-     * Returns null if nothing is found. </br>
+     * Loads thumbnail data from HTML and returns all possible qualities. <br>
+     * Returns null if nothing is found. <br>
      * 2024-08-22: Thumbnail presentation inside html code is the same for playlists and single videos.
      */
     public List<YoutubeStreamData> loadThumbnails(String itemID, final boolean grabFilesize) {
@@ -4234,7 +4218,7 @@ public class YoutubeHelper {
                 this.ytInitialPlayerResponse = jsonToJavaMap(ytInitialPlayerResponse, true);
             } else {
                 /**
-                 * Do not remove this! </br>
+                 * Do not remove this! <br>
                  * It's important to clean fields because YoutubeHelper might be shared instance!
                  */
                 this.ytInitialPlayerResponse = null;
@@ -4268,7 +4252,7 @@ public class YoutubeHelper {
                 }
             } else {
                 /**
-                 * Do not remove this! </br>
+                 * Do not remove this! <br>
                  * It's important to clean fields because YoutubeHelper might be shared instance!
                  */
                 this.ytPlayerConfig = null;
@@ -4292,7 +4276,7 @@ public class YoutubeHelper {
                 }
             } else {
                 /**
-                 * Do not remove this! </br>
+                 * Do not remove this! <br>
                  * It's important to clean fields because YoutubeHelper might be shared instance!
                  */
                 this.ytCfgSet = null;
