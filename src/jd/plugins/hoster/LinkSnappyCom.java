@@ -331,19 +331,25 @@ public class LinkSnappyCom extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
     }
 
-    private void errorDailyLimitReached(final DownloadLink link, final Account account) throws PluginException {
+    private void errorDailyLimitReached(final DownloadLink link, final Account account, final String suggestedErrorMessage) throws PluginException {
+        final String msg;
+        if (suggestedErrorMessage != null) {
+            msg = suggestedErrorMessage;
+        } else {
+            msg = "Account has exceeded the daily quota";
+        }
         if (link != null) {
             /* Daily specific host downloadlimit reached --> Disable host for some time */
-            mhm.putError(account, this.getDownloadLink(), 10 * 60 * 1000l, "Reached daily limit for this host");
+            mhm.putError(account, this.getDownloadLink(), 10 * 60 * 1000l, msg);
         } else {
             /* Daily total downloadlimit for account is reached */
             logger.info("Daily limit reached");
             /* Workaround for account overview display bug so users see at least that there is no traffic left */
-            try {
-                account.getAccountInfo().setTrafficLeft(0);
-            } catch (final Throwable ignore) {
+            final AccountInfo ai = account.getAccountInfo();
+            if (ai != null) {
+                ai.setTrafficLeft(0);
             }
-            throw new AccountUnavailableException("Daily download limit reached", 1 * 60 * 1000);
+            throw new AccountUnavailableException(msg, 5 * 60 * 1000);
         }
     }
 
@@ -567,7 +573,7 @@ public class LinkSnappyCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Moving to new server", 5 * 60 * 1000l);
         } else if (dlResponseCode == 509) {
             /* out of traffic should not retry! throw exception on first response! */
-            errorDailyLimitReached(link, account);
+            errorDailyLimitReached(link, account, null);
         } else if (dlResponseCode == 429) {
             // what does ' max connection limit' error mean??, for user to that given hoster??, or user to that linksnappy finallink
             // server?? or linksnappy global (across all finallink servers) connections
@@ -693,7 +699,7 @@ public class LinkSnappyCom extends PluginForHost {
         } else if (new Regex(errormsg, "(?i)Incorrect Username or Password").matches()) {
             throw new AccountInvalidException(errormsg);
         } else if (new Regex(errormsg, "(?i)Account has exceeded the daily quota").matches()) {
-            errorDailyLimitReached(null, account);
+            errorDailyLimitReached(null, account, errormsg);
             /* This code will never be reached. */
             throw new AccountInvalidException(errormsg);
         } else {

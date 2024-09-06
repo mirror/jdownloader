@@ -394,11 +394,6 @@ public class ZdfDeMediathek extends PluginForHost {
     }
 
     @Override
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
-    }
-
-    @Override
     public String getDescription() {
         return "Lade Video- und Audioinhalte aus der ZDFMediathek herunter";
     }

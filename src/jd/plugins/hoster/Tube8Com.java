@@ -27,9 +27,10 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
@@ -45,23 +46,16 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
-
-import org.appwork.storage.TypeRef;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Tube8Com extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
-    private String               dllink                          = null;
-    private static final String  mobile                          = "mobile";
-    private static final String  ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
-    private static final boolean default_allow_multihoster_usage = false;
+    private String              dllink = null;
+    private static final String mobile = "mobile";
 
     public Tube8Com(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
         this.enablePremium("http://www.tube8.com/signin.html");
     }
 
@@ -478,27 +472,6 @@ public class Tube8Com extends PluginForHost {
             }
             System.arraycopy(keyBytes, 0, keyBytes, nBits / 2, nBits / 2);
             return new SecretKeySpec(keyBytes, "AES");
-        }
-    }
-
-    private void setConfigElements() {
-        String user_text;
-        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            user_text = "Erlaube den Download von Links dieses Anbieters über Multihoster (nicht empfohlen)?\r\n<html><b>Kann die Anonymität erhöhen, aber auch die Fehleranfälligkeit!</b>\r\nAktualisiere deine(n) Multihoster Account(s) nach dem Aktivieren dieser Einstellung um diesen Hoster in der Liste der unterstützten Hoster deines/r Multihoster Accounts zu sehen (sofern diese/r ihn unterstützen).</html>";
-        } else {
-            user_text = "Allow links of this host to be downloaded via multihosters (not recommended)?\r\n<html><b>This might improve anonymity but perhaps also increase error susceptibility!</b>\r\nRefresh your multihoster account(s) after activating this setting to see this host in the list of the supported hosts of your multihost account(s) (in case this host is supported by your used multihost(s)).</html>";
-        }
-        final ConfigEntry allow_moch_usage = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, JDL.L("plugins.hoster." + this.getClass().getName() + ".ALLOW_MULTIHOST_USAGE", user_text)).setDefaultValue(default_allow_multihoster_usage);
-        getConfig().addEntry(allow_moch_usage);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), mobile, "Prefer videos for mobile phones (3gp format)").setDefaultValue(false).setEnabledCondidtion(allow_moch_usage, false));
-    }
-
-    @Override
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        if (this.getPluginConfig().getBooleanProperty(ALLOW_MULTIHOST_USAGE, default_allow_multihoster_usage)) {
-            return true;
-        } else {
-            return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
         }
     }
 }

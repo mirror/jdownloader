@@ -1722,28 +1722,6 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
-    @Override
-    public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
-        if (!link.isEnabled() && "".equals(link.getPluginPatternMatcher())) {
-            /*
-             * setMultiHostSupport uses a dummy DownloadLink, with isEnabled == false. we must set to true for the host to be added to the
-             * supported host array.
-             */
-            return true;
-        } else {
-            if ("debrid-link.fr".equals(plugin.getHost()) || "debrid-link.com".equals(plugin.getHost())) {
-                // only supports 360p
-                return false;
-            } else {
-                /* Original plugin can handle every kind of URL! */
-                final boolean downloadViaSourcePlugin = link.getHost().equalsIgnoreCase(plugin.getHost());
-                /* MOCHs can only handle video URLs! */
-                final boolean downloadViaMOCH = !link.getHost().equalsIgnoreCase(plugin.getHost()) && isVideo(link.getStringProperty("mainlink", null));
-                return downloadViaSourcePlugin || downloadViaMOCH;
-            }
-        }
-    }
-
     public static String getProtocolPremium() {
         return "https://";
     }

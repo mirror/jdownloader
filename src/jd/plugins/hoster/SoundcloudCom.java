@@ -908,12 +908,6 @@ public class SoundcloudCom extends PluginForHost {
     }
 
     @Override
-    public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
-        /* Do not allow URLs of this host to be downloaded via multihoster. */
-        return link.getHost().equalsIgnoreCase(plugin.getHost());
-    }
-
-    @Override
     public String getDescription() {
         return "JDownloader's soundcloud.com plugin helps downloading audiofiles. JDownloader provides settings for custom filenames.";
     }

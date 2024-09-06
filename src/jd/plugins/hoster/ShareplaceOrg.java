@@ -40,7 +40,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -252,10 +251,6 @@ public class ShareplaceOrg extends YetiShareCore {
             link.setFinalFileName(Encoding.deepHtmlDecode(name));
         }
         dl.startDownload();
-    }
-
-    public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
-        return link.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
     @Override

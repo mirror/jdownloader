@@ -232,17 +232,6 @@ public class CzechavCom extends PluginForHost {
         dl.startDownload();
     }
 
-    public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
-        final boolean is_this_plugin = link.getHost().equalsIgnoreCase(plugin.getHost());
-        if (is_this_plugin) {
-            /* The original plugin is always allowed to download. */
-            return true;
-        } else {
-            /* Multihost download impossible. */
-            return false;
-        }
-    }
-
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account != null && account.getType() == AccountType.PREMIUM) {

@@ -41,7 +41,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youku.com" }, urls = { "https?://k\\.youku\\.com/player/getFlvPath/.*?fileid/[A-F0-9\\-]+.+|https?://[A-Za-z0-9\\-]+\\.youku\\.com/playlist/m3u8.*?psid=[a-f0-9]{32}.+" })
 public class YoukuCom extends antiDDoSForHost {
@@ -282,16 +281,6 @@ public class YoukuCom extends antiDDoSForHost {
     public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         // return account != null;
         return true;
-    }
-
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        /* Only original plugin is always allowed to download. */
-        final boolean is_this_plugin = downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
-        if (is_this_plugin) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     public static String getURLName(final String inputurl) {
