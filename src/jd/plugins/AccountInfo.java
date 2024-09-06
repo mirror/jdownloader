@@ -719,6 +719,20 @@ public class AccountInfo extends Property implements AccountTrafficView {
         return mhosts;
     }
 
+    /** Returns information about host if it is supported. */
+    public MultiHostHost getMultihostSupportedHost(final String domain) {
+        final List<MultiHostHost> mhosts = getMultiHostSupport2();
+        if (mhosts == null || mhosts.size() == 0) {
+            return null;
+        }
+        for (final MultiHostHost mhost : mhosts) {
+            if (mhost.supportsDomain(domain)) {
+                return mhost;
+            }
+        }
+        return null;
+    }
+
     public static long getTimestampInServerContext(final Browser br, final long timestamp) {
         final long serverTime = br.getCurrentServerTime(-1);
         if (serverTime > 0) {

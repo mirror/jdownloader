@@ -6,16 +6,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
-
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.hosterrule.AccountGroup.Rules;
 import org.jdownloader.controlling.hosterrule.CachedAccountGroup;
+
+import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
+import jd.plugins.MultiHostHost;
+import jd.plugins.PluginForHost;
 
 public class AccountCache implements Iterable<CachedAccount> {
     public static enum ACCOUNTTYPE {
@@ -78,17 +80,43 @@ public class AccountCache implements Iterable<CachedAccount> {
             }
             final PluginForHost linkPlugin = link.getDefaultPlugin();
             boolean canHandle = linkPlugin == null ? true : linkPlugin.allowHandle(link, plugin);
-            if (canHandle) {
-                canHandle = plugin.canHandle(link, account) && plugin.enoughTrafficFor(link, account);
+            if (!canHandle) {
+                return false;
             }
+            canHandle = plugin.canHandle(link, account) && plugin.enoughTrafficFor(link, account);
             if (canHandle && ACCOUNTTYPE.MULTI.equals(getType()) && getAccount() != null) {
                 final AccountInfo ai = getAccount().getAccountInfo();
-                /* verify again because plugins can modify list on runtime */
-                if (ai != null) {
-                    final List<String> supported = ai.getMultiHostSupport();
-                    if (supported != null) {
-                        canHandle = supported.contains(link.getHost());
+                if (ai == null) {
+                    /* Multihoster account without accountInfo -> That should never happen */
+                    return false;
+                }
+                /* Verify again because plugins can modify list on runtime */
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    final MultiHostHost hostinfo = ai.getMultihostSupportedHost(link.getHost());
+                    if (hostinfo == null) {
+                        /* Not supported */
+                        return false;
                     }
+                    // TODO: Implement more limit checks
+                    final long trafficCalcFactor = hostinfo.getTrafficCalculationFactorPercent();
+                    if (trafficCalcFactor != 100) {
+                        // TODO
+                        final long neededTraffic = (link.getView().getBytesTotal() * trafficCalcFactor) / 100;
+                    }
+                    if (!hostinfo.isUnlimitedLinks() && hostinfo.getLinksLeft() <= 0) {
+                        /* Max limits link is reached -> Cannot download */
+                        return false;
+                    } else if (!hostinfo.isUnlimitedTraffic() && link.getView().getBytesTotal() != -1 && hostinfo.getTrafficLeft() < link.getView().getBytesTotal()) {
+                        /* Not enough traffic to download this link */
+                        return false;
+                    } else if (!hostinfo.canDownload(link)) {
+                        /* Convenience method */
+                        return false;
+                    }
+                }
+                final List<String> supported = ai.getMultiHostSupport();
+                if (supported != null) {
+                    canHandle = supported.contains(link.getHost());
                 }
             }
             return canHandle;
@@ -139,25 +167,25 @@ public class AccountCache implements Iterable<CachedAccount> {
     }
 
     protected final static AccountCache      NA = new AccountCache(null) {
-        public java.util.Iterator<CachedAccount> iterator() {
-            return new Iterator<AccountCache.CachedAccount>() {
-                @Override
-                public boolean hasNext() {
-                    return false;
-                }
+                                                    public java.util.Iterator<CachedAccount> iterator() {
+                                                        return new Iterator<AccountCache.CachedAccount>() {
+                                                                                                        @Override
+                                                                                                        public boolean hasNext() {
+                                                                                                            return false;
+                                                                                                        }
 
-                @Override
-                public CachedAccount next() {
-                    return null;
-                }
+                                                                                                        @Override
+                                                                                                        public CachedAccount next() {
+                                                                                                            return null;
+                                                                                                        }
 
-                @Override
-                public void remove() {
-                    throw new UnsupportedOperationException();
-                }
-            };
-        };
-    };
+                                                                                                        @Override
+                                                                                                        public void remove() {
+                                                                                                            throw new UnsupportedOperationException();
+                                                                                                        }
+                                                                                                    };
+                                                    };
+                                                };
     protected final List<CachedAccountGroup> cache;
 
     public boolean isCustomizedCache() {
