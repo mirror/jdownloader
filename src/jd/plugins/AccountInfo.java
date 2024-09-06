@@ -376,7 +376,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
         final HashSet<String> nonTldHosts = new HashSet<String>();
         final HashSet<String> skippedOfflineEntries = new HashSet<String>();
         // lets do some preConfiguring, and match hosts which do not contain tld
-        final Pattern patternInvalid = Pattern.compile("http|https|file|up|upload|video|torrent|ftp", Pattern.CASE_INSENSITIVE);
+        final Pattern patternInvalid = Pattern.compile("http|directhttp|https|file|up|upload|video|torrent|ftp", Pattern.CASE_INSENSITIVE);
         for (final String host : multiHostSupportList) {
             if (host == null) {
                 continue;
@@ -499,25 +499,25 @@ public class AccountInfo extends Property implements AccountTrafficView {
         unassignedMultiHostSupport.addAll(nonTldHosts);
         final Iterator<String> assignedMultiHostPluginsIterator = assignedMultiHostPlugins.iterator();
         while (assignedMultiHostPluginsIterator.hasNext()) {
-            final String host = assignedMultiHostPluginsIterator.next();
-            if (host == null) {
+            final String hostCleaned = assignedMultiHostPluginsIterator.next();
+            if (hostCleaned == null) {
                 continue;
             }
-            final LazyHostPlugin lazyPlugin = pluginFinder._assignHost(host);
+            final LazyHostPlugin lazyPlugin = pluginFinder._assignHost(hostCleaned);
             if (lazyPlugin == null) {
-                unassignedMultiHostSupport.add(host);
+                unassignedMultiHostSupport.add(hostCleaned);
                 continue;
             }
             if (assignedMultiHostPlugins.contains(lazyPlugin.getHost())) {
-                Set<LazyHostPlugin> plugins = mapping.get(host);
+                Set<LazyHostPlugin> plugins = mapping.get(hostCleaned);
                 if (plugins == null) {
                     plugins = new HashSet<LazyHostPlugin>();
-                    mapping.put(host, plugins);
+                    mapping.put(hostCleaned, plugins);
                 }
                 plugins.add(lazyPlugin);
             } else {
                 if (lazyPlugin.isOfflinePlugin()) {
-                    skippedOfflineEntries.add(host);
+                    skippedOfflineEntries.add(hostCleaned);
                     continue;
                 } else if (!lazyPlugin.isFallbackPlugin()) {
                     continue;
@@ -525,10 +525,10 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 try {
                     if (!lazyPlugin.isHasAllowHandle()) {
                         assignedMultiHostPlugins.add(lazyPlugin.getHost());
-                        Set<LazyHostPlugin> plugins = mapping.get(host);
+                        Set<LazyHostPlugin> plugins = mapping.get(hostCleaned);
                         if (plugins == null) {
                             plugins = new HashSet<LazyHostPlugin>();
-                            mapping.put(host, plugins);
+                            mapping.put(hostCleaned, plugins);
                         }
                         plugins.add(lazyPlugin);
                     } else {
@@ -536,10 +536,10 @@ public class AccountInfo extends Property implements AccountTrafficView {
                         final PluginForHost plg = pluginFinder.getPlugin(lazyPlugin);
                         if (plg.allowHandle(link, multiHostPlugin)) {
                             assignedMultiHostPlugins.add(lazyPlugin.getHost());
-                            Set<LazyHostPlugin> plugins = mapping.get(host);
+                            Set<LazyHostPlugin> plugins = mapping.get(hostCleaned);
                             if (plugins == null) {
                                 plugins = new HashSet<LazyHostPlugin>();
-                                mapping.put(host, plugins);
+                                mapping.put(hostCleaned, plugins);
                             }
                             plugins.add(lazyPlugin);
                         }
@@ -563,12 +563,16 @@ public class AccountInfo extends Property implements AccountTrafficView {
             final String matcher2 = ".*" + Pattern.quote("\\Q" + host + "\\E") + ".*" + Pattern.quote("\\E") + "\\)/.*";
             boolean foundFlag = false;
             for (final LazyHostPlugin lazyHostPlugin : hpc.list()) {
-                if (lazyHostPlugin.isFallbackPlugin() || lazyHostPlugin.isOfflinePlugin()) {
+                if (lazyHostPlugin.isFallbackPlugin()) {
                     /* Skip invalid entries */
                     continue;
                 }
                 final String pattern = lazyHostPlugin.getPatternSource();
                 if (StringUtils.containsIgnoreCase(pattern, host) || pattern.matches(matcher) || pattern.matches(matcher2)) {
+                    if (lazyHostPlugin.isOfflinePlugin()) {
+                        skippedOfflineEntries.add(lazyHostPlugin.getHost());
+                        continue;
+                    }
                     assignedMultiHostPlugins.add(lazyHostPlugin.getHost());
                     Set<LazyHostPlugin> plugins = mapping.get(host);
                     if (plugins == null) {
@@ -649,7 +653,8 @@ public class AccountInfo extends Property implements AccountTrafficView {
             }
         }
         Collections.sort(list, new NaturalOrderComparator());
-        if (logger != null) {
+        final boolean logValidResults = false;
+        if (logger != null && logValidResults) {
             logger.info("Found real hosts: " + list.size());
             for (final String host : list) {
                 logger.finest("Found host: " + host);

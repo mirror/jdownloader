@@ -1,10 +1,12 @@
 package jd.plugins;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.appwork.storage.Storable;
 import org.appwork.utils.formatter.SizeFormatter;
 
-public class MultiHostHost {
+public class MultiHostHost implements Storable {
     /** How long shall we block this host if a limit gets reached? Until the next day/hour? */
     // public enum LimitResetMode {
     // DAILY;
@@ -20,9 +22,9 @@ public class MultiHostHost {
     }
 
     private String                name                      = null;
-    private HashSet<String>       domains                   = new HashSet<String>();
-    private boolean               isUnlimitedTraffic        = true;
-    private boolean               isUnlimitedLinks          = true;
+    private List<String>          domains                   = new ArrayList<String>();
+    private Boolean               isUnlimitedTraffic        = true;
+    private Boolean               isUnlimitedLinks          = true;
     private int                   linksLeft                 = -1;
     private int                   linksMax                  = -1;
     private long                  trafficLeft               = -1;
@@ -40,7 +42,9 @@ public class MultiHostHost {
     }
 
     private void addDomain(String domain) {
-        this.domains.add(domain);
+        if (!this.domains.contains(domain)) {
+            this.domains.add(domain);
+        }
     }
 
     protected int getLinksLeft() {
@@ -49,6 +53,7 @@ public class MultiHostHost {
 
     protected void setLinksLeft(int num) {
         this.linksLeft = num;
+        this.isUnlimitedLinks = false;
     }
 
     protected int getLinksMax() {
@@ -57,11 +62,13 @@ public class MultiHostHost {
 
     protected void setLinksMax(int num) {
         this.linksMax = num;
+        this.isUnlimitedLinks = false;
     }
 
     /** Only do this when linksMax is given. */
     protected void setLinksUsed(int num) {
         this.linksLeft = this.linksMax - num;
+        this.isUnlimitedLinks = false;
     }
 
     protected long getTrafficLeft() {
@@ -70,6 +77,7 @@ public class MultiHostHost {
 
     protected void setTrafficLeft(long trafficLeft) {
         this.trafficLeft = trafficLeft;
+        this.isUnlimitedTraffic = false;
     }
 
     protected long getTrafficMax() {
@@ -78,10 +86,12 @@ public class MultiHostHost {
 
     protected void setTrafficMax(long bytes) {
         this.trafficMax = bytes;
+        this.isUnlimitedTraffic = false;
     }
 
     protected void setTrafficUsed(long bytes) {
         this.trafficLeft = this.trafficMax - bytes;
+        this.isUnlimitedTraffic = false;
     }
 
     protected long getTimestampTrafficReset() {
@@ -107,6 +117,22 @@ public class MultiHostHost {
     /** Traffic usage factor e.g. 3 -> 300%. */
     protected void setTrafficUsageFactor(short num) {
         this.trafficUsageFactorPercent = (short) (100 * num);
+    }
+
+    protected boolean isUnlimitedLinks() {
+        if (this.isUnlimitedLinks == null) {
+            return true;
+        } else {
+            return this.isUnlimitedLinks;
+        }
+    }
+
+    protected boolean isUnlimitedTraffic() {
+        if (this.isUnlimitedTraffic == null) {
+            return true;
+        } else {
+            return this.isUnlimitedTraffic;
+        }
     }
 
     protected boolean canDownload(final DownloadLink link) {
