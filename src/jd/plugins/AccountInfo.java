@@ -44,22 +44,23 @@ import jd.nutils.NaturalOrderComparator;
 import jd.parser.Regex;
 
 public class AccountInfo extends Property implements AccountTrafficView {
-    private static final long serialVersionUID       = 1825140346023286206L;
-    private volatile long     account_validUntil     = -1;
-    private volatile long     account_LastValidUntil = -1;
-    private volatile long     account_trafficLeft    = -1;
-    private volatile long     account_trafficMax     = -1;
-    private long              account_filesNum       = -1;
-    private long              account_premiumPoints  = -1;
-    private long              account_accountBalance = -1;
-    private long              account_usedSpace      = -1;
-    private volatile String   account_status;
-    private long              account_createTime     = 0;
+    private static final long   serialVersionUID           = 1825140346023286206L;
+    private volatile long       account_validUntil         = -1;
+    private volatile long       account_LastValidUntil     = -1;
+    private volatile long       account_trafficLeft        = -1;
+    private volatile long       account_trafficMax         = -1;
+    private long                account_filesNum           = -1;
+    private long                account_premiumPoints      = -1;
+    private long                account_accountBalance     = -1;
+    private long                account_usedSpace          = -1;
+    private volatile String     account_status;
+    private long                account_createTime         = 0;
+    private static final String PROPERTY_MULTIHOST_SUPPORT = "multiHostSupport";
     /**
      * indicator that host, account has special traffic handling, do not temp disable if traffic =0
      */
-    private volatile boolean  specialTraffic         = false;
-    private volatile boolean  account_trafficRefill  = true;
+    private volatile boolean    specialTraffic             = false;
+    private volatile boolean    account_trafficRefill      = true;
 
     public boolean isTrafficRefill() {
         return account_trafficRefill;
@@ -363,9 +364,8 @@ public class AccountInfo extends Property implements AccountTrafficView {
     }
 
     public List<String> setMultiHostSupport(final PluginForHost multiHostPlugin, final List<String> multiHostSupportList, final PluginFinder pluginFinder) {
-        final String propertyKey = "multiHostSupport";
         if (multiHostSupportList == null || multiHostSupportList.size() == 0) {
-            this.removeProperty(propertyKey);
+            this.removeProperty(PROPERTY_MULTIHOST_SUPPORT);
             return null;
         }
         final LogInterface logger = (multiHostPlugin != null && multiHostPlugin.getLogger() != null) ? multiHostPlugin.getLogger() : LogController.CL();
@@ -604,7 +604,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
             if (logger != null) {
                 logger.info("Failed to find ANY usable results");
             }
-            this.removeProperty(propertyKey);
+            this.removeProperty(PROPERTY_MULTIHOST_SUPPORT);
             return null;
         }
         // sorting will now work properly since they are all pre-corrected to lowercase.
@@ -660,44 +660,63 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 logger.finest("Found host: " + host);
             }
         }
-        this.setProperty(propertyKey, new CopyOnWriteArrayList<String>(list));
+        this.setProperty(PROPERTY_MULTIHOST_SUPPORT, new CopyOnWriteArrayList<String>(list));
         return ret;
     }
 
     /** Removes host from list of supported hosts. */
     public boolean removeMultiHostSupport(final String host) {
-        final Object ret = getProperty("multiHostSupport", null);
-        if (ret == null || !(ret instanceof List)) {
+        final List<String> supportedhosts = this.getMultiHostSupport();
+        if (supportedhosts == null) {
+            return false;
+        } else if (supportedhosts.isEmpty()) {
+            return false;
+        } else if (!supportedhosts.contains(host)) {
             return false;
         }
-        final List<String> list = (List<String>) ret;
-        if (!list.contains(host)) {
-            return false;
-        }
-        if (list.size() > 1) {
-            final List<String> newList = new CopyOnWriteArrayList<String>(list);
+        if (supportedhosts.size() > 1) {
+            final List<String> newList = new CopyOnWriteArrayList<String>(supportedhosts);
             if (newList.remove(host)) {
-                this.setProperty("multiHostSupport", newList);
+                this.setProperty(PROPERTY_MULTIHOST_SUPPORT, newList);
                 return true;
             } else {
                 return false;
             }
         } else {
             /* This was the only supported host -> Remove property */
-            this.setProperty("multiHostSupport", Property.NULL);
+            this.setProperty(PROPERTY_MULTIHOST_SUPPORT, Property.NULL);
             return true;
         }
     }
 
     public List<String> getMultiHostSupport() {
-        final Object ret = getProperty("multiHostSupport", null);
-        if (ret != null && ret instanceof List) {
-            final List<String> list = (List<String>) ret;
-            if (list.size() > 0) {
-                return list;
-            }
+        final Object ret = getProperty(PROPERTY_MULTIHOST_SUPPORT, null);
+        if (ret == null) {
+            return null;
+        } else if (!(ret instanceof List)) {
+            return null;
+        }
+        final List<String> list = (List<String>) ret;
+        if (list.size() > 0) {
+            return list;
         }
         return null;
+    }
+
+    /** 2024-09-06: wrapper function */
+    public List<MultiHostHost> getMultiHostSupport2() {
+        final List<String> domains = getMultiHostSupport();
+        if (domains == null) {
+            return null;
+        } else if (domains.isEmpty()) {
+            return null;
+        }
+        final List<MultiHostHost> mhosts = new ArrayList<MultiHostHost>();
+        for (final String domain : domains) {
+            final MultiHostHost mhost = new MultiHostHost(domain);
+            mhosts.add(mhost);
+        }
+        return mhosts;
     }
 
     public static long getTimestampInServerContext(final Browser br, final long timestamp) {
