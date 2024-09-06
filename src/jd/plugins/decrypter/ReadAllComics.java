@@ -18,10 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +28,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "readallcomics.com" }, urls = { "https?://(?:www\\.)?readallcomics\\.com/(?:category/)?[^/]+/?" })
 public class ReadAllComics extends antiDDoSForDecrypt {
@@ -75,7 +75,7 @@ public class ReadAllComics extends antiDDoSForDecrypt {
             String[] images = br.getRegex("<img[^<]*src=\"(https?://[^\"]+\\d{2,}\\.jpg)").getColumn(0);
             if (images == null || images.length == 0) {
                 /* 2nd type */
-                images = br.getRegex("src=\"(https?://[^\"]+)\"\s*alt=\"[^\"]* Page \\d+\"").getColumn(0);
+                images = br.getRegex("src=\"(https?://[^\"]+)\"\\s*alt=\"[^\"]* Page \\d+\"").getColumn(0);
                 if (images == null || images.length == 0) {
                     /* 3rd type / wider attempt */
                     images = br.getRegex("<img[^<]*src=\"(https?://[^\"]+)").getColumn(0);
