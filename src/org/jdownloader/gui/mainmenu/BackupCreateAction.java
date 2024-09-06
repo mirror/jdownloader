@@ -19,8 +19,9 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.OutputStream;
 import java.util.zip.ZipEntry;
 
 import javax.swing.filechooser.FileFilter;
@@ -30,7 +31,6 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.utils.Application;
-import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -90,28 +90,22 @@ public class BackupCreateAction extends CustomizableAppAction {
                         /* File already exists -> Ask user to confirm deletion of that file. */
                         Dialog.getInstance().showConfirmDialog(0, _GUI.T.lit_overwrite(), _GUI.T.file_exists_want_to_overwrite_question(file.getName()));
                         file.delete();
-                    } else {
-                        /**
-                         * Try to write the file. </br>
-                         * If we can't write it, it doesn't make sense to initiate an application restart.
-                         */
-                        try {
-                            final RandomAccessFile filewrite = IO.open(file, "rw");
-                            filewrite.close();
-                            file.delete();
-                            // I've removed the errorhandling down below since that should be an edge case.
-                            // if (!file.delete()) {
-                            // /* This should never happen! */
-                            // // TODO: Add translation
-                            // Dialog.getInstance().showMessageDialog("Failed to delete test-written file " + file.getName());
-                            // return;
-                            // }
-                        } catch (final IOException e) {
-                            // TODO: Add translation
-                            final String titleAndMsg = "Failed to write file " + file.getName();
-                            Dialog.getInstance().showExceptionDialog(titleAndMsg, titleAndMsg, e);
-                            return;
+                    }
+                    /**
+                     * Try to write the file. <br>
+                     * If we can't write it, it doesn't make sense to initiate an application restart.
+                     */
+                    final FileOutputStream backupOutputStream;
+                    try {
+                        if (!file.getParentFile().exists()) {
+                            file.getParentFile().mkdirs();
                         }
+                        backupOutputStream = new FileOutputStream(file);
+                    } catch (final IOException e) {
+                        // TODO: Add translation
+                        final String titleAndMsg = "Failed to write file " + file.getName();
+                        Dialog.getInstance().showExceptionDialog(titleAndMsg, titleAndMsg, e);
+                        return;
                     }
                     final File backupFile = file;
                     ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
@@ -132,10 +126,18 @@ public class BackupCreateAction extends CustomizableAppAction {
                         @Override
                         public void onShutdown(ShutdownRequest shutdownRequest) {
                             try {
-                                create(backupFile);
+                                create(backupOutputStream);
                             } catch (Throwable e) {
-                                LogV3.defaultLogger().log(e);
-                                backupFile.delete();
+                                try {
+                                    try {
+                                        backupOutputStream.close();
+                                    } catch (IOException ignore) {
+                                        LogV3.defaultLogger().log(e);
+                                    }
+                                    LogV3.defaultLogger().log(e);
+                                } finally {
+                                    backupFile.delete();
+                                }
                             }
                         }
                     });
@@ -149,15 +151,27 @@ public class BackupCreateAction extends CustomizableAppAction {
         }.start();
     }
 
-    public static void create(File auto) throws IOException {
-        ZipIOWriter zipper = null;
-        boolean bad = true;
+    protected static void create(final File file) throws IOException {
+        if (!file.getParentFile().exists()) {
+            file.getParentFile().mkdirs();
+        }
+        final FileOutputStream fos = new FileOutputStream(file);
         try {
-            if (!auto.getParentFile().exists()) {
-                auto.getParentFile().mkdirs();
-            }
+            create(fos);
+        } catch (IOException e) {
+            fos.close();
+            file.delete();
+            throw e;
+        } finally {
+            fos.close();
+        }
+    }
+
+    protected static void create(final OutputStream fos) throws IOException {
+        ZipIOWriter zipper = null;
+        try {
             final StringBuilder backupErrors = new StringBuilder();
-            zipper = new ZipIOWriter(auto) {
+            zipper = new ZipIOWriter(fos) {
                 @Override
                 protected void addDirectoryInternal(File addDirectory, boolean compress, String path) throws ZipIOException, IOException {
                     super.addDirectoryInternal(addDirectory, compress, path);
@@ -273,14 +287,10 @@ public class BackupCreateAction extends CustomizableAppAction {
             if (backupErrors.length() > 0) {
                 zipper.addByteArry(backupErrors.toString().getBytes("UTF-8"), true, "cfg", "BackupErrors.txt");
             }
-            bad = false;
         } finally {
             try {
                 zipper.close();
             } catch (Throwable e) {
-            }
-            if (bad) {
-                auto.delete();
             }
         }
     }
