@@ -254,7 +254,6 @@ public class TransloadMe extends PluginForHost {
                 ai = new AccountInfo();
             }
             ai.setTrafficLeft(0);
-            ai.setProperty("multiHostSupport", Property.NULL);
             account.setAccountInfo(ai);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account balance 0.00 USD!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }

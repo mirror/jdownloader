@@ -95,7 +95,6 @@ public class SimplyDebridCom extends PluginForHost {
         String pw = Encoding.urlEncode(account.getPass());
         String page = "";
         String hosts[] = null;
-        ac.setProperty("multiHostSupport", Property.NULL);
         if (!createSession(account)) {
             // account is invalid
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

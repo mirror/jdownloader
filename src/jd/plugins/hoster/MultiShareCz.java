@@ -81,12 +81,7 @@ public class MultiShareCz extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account);
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            ai.setProperty("multiHostSupport", Property.NULL);
-            throw e;
-        }
+        login(account);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
         final String trafficleftStr = PluginJSonUtils.getJsonValue(br, "credit");
@@ -103,17 +98,13 @@ public class MultiShareCz extends antiDDoSForHost {
             ai.setStatus("Free account");
             account.setType(AccountType.FREE);
         }
-        try {
-            getPage("https://www." + account.getHoster() + "/api/?sub=supported-hosters");
-            final String[] hosts = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(br, "server"));
-            final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-            /*
-             * set ArrayList<String> with all supported multiHosts of this service
-             */
-            ai.setMultiHostSupport(this, supportedHosts);
-        } catch (Throwable e) {
-            logger.info("Could not fetch ServerList from Multishare: " + e.toString());
-        }
+        getPage("https://www." + account.getHoster() + "/api/?sub=supported-hosters");
+        final String[] hosts = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(br, "server"));
+        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+        /*
+         * set ArrayList<String> with all supported multiHosts of this service
+         */
+        ai.setMultiHostSupport(this, supportedHosts);
         return ai;
     }
 

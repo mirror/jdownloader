@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -24,6 +25,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -162,7 +164,7 @@ public class UnknownPornScript5 extends PluginForHost {
             }
         }
         /* 2022-11-21: Disabled this as their servers will return wrong results when checking multiple items in a short time. */
-        final boolean checkFilesize = false;
+        final boolean checkFilesize = true;
         if (!inValidateDllink(dllink) && checkFilesize && !isDownload) {
             basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, link.getFinalFileName(), default_Extension);
         }
@@ -171,22 +173,17 @@ public class UnknownPornScript5 extends PluginForHost {
 
     private void getDllink() throws Exception {
         /* Find correct js-source, then find dllink inside of it. */
-        String jwplayer_source = null;
         final String[] scripts = br.getRegex("<script[^>]*?>(.*?)</script>").getColumn(0);
         for (final String script : scripts) {
-            if (script.contains("jwplayer")) {
-                dllink = searchDllinkInsideJWPLAYERSource(script);
-                if (dllink != null) {
-                    dllink = dllink.replace("\\", "");
-                    jwplayer_source = script;
-                    break;
-                }
+            dllink = searchDllinkInsideJWPLAYERSource(script);
+            if (dllink != null) {
+                break;
             }
         }
         if (dllink == null) {
             dllink = br.getRegex("<(?:source|video)[^<>]*? src=(?:'|\")([^<>'\"]+)(?:'|\")").getMatch(0);
         }
-        if (jwplayer_source == null && dllink == null && !requiresAccount(br)) {
+        if (dllink == null && !requiresAccount(br)) {
             /*
              * No player found --> Chances are high that there is no playable content --> Video offline
              *
@@ -197,7 +194,7 @@ public class UnknownPornScript5 extends PluginForHost {
         }
     }
 
-    public static String searchDllinkInsideJWPLAYERSource(final String jwplayer_source) {
+    private String searchDllinkInsideJWPLAYERSource(final String jwplayer_source) {
         /* Source #1 */
         String dllink = new Regex(jwplayer_source, "('|\")file\\1:\\s*('|\")(http.*?)\\2").getMatch(2);
         if (inValidateDllink(dllink)) {
@@ -213,23 +210,128 @@ public class UnknownPornScript5 extends PluginForHost {
         }
         if (inValidateDllink(dllink)) {
             /* Check for multiple videoqualities --> Find highest quality */
-            int maxquality = 0;
-            String sources_source = new Regex(jwplayer_source, "(?:\")?sources(?:\")?\\s*?:\\s*?\\[(.*?)\\]").getMatch(0);
+            final String sources_source = new Regex(jwplayer_source, "sources:\\s*\"?\\s*(\\[[^\\]]+\\])").getMatch(0);
             if (sources_source != null) {
-                sources_source = sources_source.replace("\\", "");
-                final String[] qualities = new Regex(sources_source, "(file: \".*?)\n").getColumn(0);
-                for (final String quality_info : qualities) {
-                    final String p = new Regex(quality_info, "label:\"(\\d+)p").getMatch(0);
-                    int pint = 0;
-                    if (p != null) {
-                        pint = Integer.parseInt(p);
+                logger.info("Found video json source");
+                /*
+                 * Different services store the values we want under different names. E.g. vidoza.net uses 'res', most providers use
+                 * 'label'.
+                 */
+                final String[] possibleQualityObjectNames = new String[] { "desc", "label", "res" };
+                /*
+                 * Different services store the values we want under different names. E.g. vidoza.net uses 'src', most providers use 'file'.
+                 */
+                final String[] possibleStreamURLObjectNames = new String[] { "file", "src" };
+                try {
+                    /*
+                     * Important: Default is -1 so that even if only one quality is available without quality-identifier, it will be used!
+                     */
+                    long quality_picked = -1;
+                    String dllink_temp = null;
+                    /*
+                     * Important: Do not use "Plugin.restoreFromString" here as the input of this can also be js structure and not only
+                     * json!!
+                     */
+                    final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(sources_source);
+                    final boolean onlyOneQualityAvailable = ressourcelist.size() == 1;
+                    final int userSelectedQuality = -1;
+                    if (userSelectedQuality == -1) {
+                        logger.info("Looking for BEST video stream");
+                    } else {
+                        logger.info("Looking for user selected video stream quality: " + userSelectedQuality);
                     }
-                    if (pint > maxquality) {
-                        maxquality = pint;
-                        dllink = new Regex(quality_info, "file[\t\n\r ]*?:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
+                    boolean foundUserSelectedQuality = false;
+                    for (final Object videoo : ressourcelist) {
+                        /* Check for single URL without any quality information e.g. uqload.com */
+                        if (videoo instanceof String && onlyOneQualityAvailable) {
+                            logger.info("Only one quality available --> Returning that");
+                            dllink_temp = (String) videoo;
+                            if (dllink_temp.startsWith("http")) {
+                                dllink = dllink_temp;
+                                break;
+                            }
+                        }
+                        final Map<String, Object> entries;
+                        if (videoo instanceof Map) {
+                            entries = (Map<String, Object>) videoo;
+                            for (final String possibleStreamURLObjectName : possibleStreamURLObjectNames) {
+                                if (entries.containsKey(possibleStreamURLObjectName)) {
+                                    dllink_temp = (String) entries.get(possibleStreamURLObjectName);
+                                    break;
+                                }
+                            }
+                        } else {
+                            entries = null;
+                        }
+                        if (StringUtils.isEmpty(dllink_temp)) {
+                            /* No downloadurl found --> Continue */
+                            continue;
+                        } else if (dllink_temp.contains(".mpd")) {
+                            /* 2020-05-20: This plugin cannot yet handle DASH stream downloads */
+                            logger.info("Skipping DASH stream: " + dllink_temp);
+                            continue;
+                        }
+                        /* Find quality + downloadurl */
+                        long quality_temp = 0;
+                        for (final String possibleQualityObjectName : possibleQualityObjectNames) {
+                            try {
+                                final Object quality_temp_o = entries.get(possibleQualityObjectName);
+                                if (quality_temp_o != null && quality_temp_o instanceof Number) {
+                                    quality_temp = ((Number) quality_temp_o).intValue();
+                                } else if (quality_temp_o != null && quality_temp_o instanceof String) {
+                                    /* E.g. '360p' */
+                                    final String res = new Regex((String) quality_temp_o, "(\\d+)p?$").getMatch(0);
+                                    if (res != null) {
+                                        quality_temp = (int) Long.parseLong(res);
+                                    }
+                                }
+                                if (quality_temp > 0) {
+                                    break;
+                                }
+                            } catch (final Throwable e) {
+                                /* This should never happen */
+                                logger.log(e);
+                                logger.info("Failed to find quality via key '" + possibleQualityObjectName + "' for current downloadurl candidate: " + dllink_temp);
+                                if (!onlyOneQualityAvailable) {
+                                    continue;
+                                }
+                            }
+                        }
+                        if (StringUtils.isEmpty(dllink_temp)) {
+                            continue;
+                        } else if (quality_temp == userSelectedQuality) {
+                            /* Found user selected quality */
+                            logger.info("Found user selected quality: " + userSelectedQuality);
+                            foundUserSelectedQuality = true;
+                            quality_picked = quality_temp;
+                            dllink = dllink_temp;
+                            break;
+                        } else {
+                            /* Look for best quality */
+                            if (quality_temp > quality_picked) {
+                                quality_picked = quality_temp;
+                                dllink = dllink_temp;
+                            }
+                        }
                     }
+                    if (!StringUtils.isEmpty(dllink)) {
+                        logger.info("Quality handling for multiple video stream sources succeeded - picked quality is: " + quality_picked);
+                        if (foundUserSelectedQuality) {
+                            logger.info("Successfully found user selected quality: " + userSelectedQuality);
+                        } else {
+                            logger.info("Successfully found BEST quality: " + quality_picked);
+                        }
+                    } else {
+                        logger.info("Failed to find any stream downloadurl");
+                    }
+                } catch (final Throwable e) {
+                    logger.log(e);
+                    logger.info("BEST handling for multiple video source failed");
                 }
             }
+        }
+        if (dllink != null) {
+            dllink = dllink.replace("\\", "");
         }
         return dllink;
     }

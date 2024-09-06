@@ -21,6 +21,13 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,13 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "https?://\\w+\\.debriditalia\\.com/dl/\\d+/.+" })
 public class DebridItaliaCom extends antiDDoSForHost {
@@ -89,7 +89,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
             accountInvalid();
         }
         final AccountInfo ac = new AccountInfo();
-        ac.setProperty("multiHostSupport", Property.NULL);
         ac.setUnlimitedTraffic();
         if (!loginAPI(account)) {
             accountInvalid();

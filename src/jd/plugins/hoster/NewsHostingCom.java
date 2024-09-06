@@ -5,6 +5,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.usenet.InvalidAuthException;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -17,14 +25,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.usenet.InvalidAuthException;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newshosting.com" }, urls = { "" })
 public class NewsHostingCom extends UseNet {
@@ -65,7 +65,7 @@ public class NewsHostingCom extends UseNet {
             try {
                 verifyUseNetLogins(account);
                 account.setRefreshTimeout(5 * 60 * 60 * 1000l);
-                ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
+                ai.setMultiHostSupport(this, Arrays.asList(new String[] { "usenet" }));
                 return ai;
             } catch (InvalidAuthException e2) {
                 account.removeProperty(USENET_USERNAME);
@@ -85,6 +85,7 @@ public class NewsHostingCom extends UseNet {
             } else {
                 ai = new AccountInfo();
             }
+            ai.setMultiHostSupport(this, Arrays.asList(new String[] { "usenet" }));
             br.setFollowRedirects(true);
             final Cookies cookies = account.loadCookies("");
             try {
@@ -140,7 +141,7 @@ public class NewsHostingCom extends UseNet {
                 }
                 account.saveCookies(br.getCookies(getHost()), "");
                 final String userName = br.getRegex(">\\s*Username\\s*</div>\\s*<div[^>]+>\\s*(.*?)\\s*<").getMatch(0);
-                final String customerID = br.getRegex("(?:Customer|User)\\s*ID\\s*:\\s*(?:</strong>)?\\s*(\\d+)").getMatch(0);
+                // final String customerID = br.getRegex("(?:Customer|User)\\s*ID\\s*:\\s*(?:</strong>)?\\s*(\\d+)").getMatch(0);
                 if (StringUtils.isEmpty(userName)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
@@ -198,7 +199,6 @@ public class NewsHostingCom extends UseNet {
                 try {
                     verifyUseNetLogins(account);
                     account.setRefreshTimeout(5 * 60 * 60 * 1000l);
-                    ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
                     return ai;
                 } catch (InvalidAuthException e2) {
                     if (account.getProperty(USENET_USERNAME) != null) {
@@ -210,7 +210,6 @@ public class NewsHostingCom extends UseNet {
                 }
             }
             account.setRefreshTimeout(5 * 60 * 60 * 1000l);
-            ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
             return ai;
         }
     }

@@ -7,15 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.requests.PostRequest;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -24,6 +15,15 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.requests.PostRequest;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "astraweb.com" }, urls = { "" })
 public class NewsAstraWebCom extends UseNet {
@@ -83,6 +83,7 @@ public class NewsAstraWebCom extends UseNet {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         synchronized (account) {
             final AccountInfo ai = new AccountInfo();
+            ai.setMultiHostSupport(this, Arrays.asList(new String[] { "usenet" }));
             final AccountInfo previousai = account.getAccountInfo();
             br.setFollowRedirects(true);
             String jwtToken = account.getStringProperty(jwtTokenProperty, null);
@@ -96,7 +97,6 @@ public class NewsAstraWebCom extends UseNet {
                                 ai.setStatus(previousai.getStatus());
                             }
                             ai.setUnlimitedTraffic();
-                            ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
                             // https://www.astraweb.com/, 50
                             account.setMaxSimultanDownloads(50);
                             account.setRefreshTimeout(5 * 60 * 60 * 1000l);
@@ -200,10 +200,10 @@ public class NewsAstraWebCom extends UseNet {
                 } else {
                     // TODO: expire date
                     // https://middleware.astraweb.com/billing/getBillingEventsForUser?XDEBUG_SESSION_START=PHPSTORM
-                    // [{"billing_event_id":xyz,"billing_method_name":"Creditcard","currency_code":"USD","amount":35.88,"created_at":"2020-09-09T10:01:31+00:00","status":"success","description":"12 Months"}
+                    // [{"billing_event_id":xyz,"billing_method_name":"Creditcard","currency_code":"USD","amount":35.88,"created_at":"2020-09-09T10:01:31+00:00","status":"success","description":"12
+                    // Months"}
                 }
                 account.setRefreshTimeout(5 * 60 * 60 * 1000l);
-                ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
                 return ai;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {

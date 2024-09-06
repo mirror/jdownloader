@@ -160,7 +160,7 @@ public class NewsTweaknewsEu extends UseNet {
         } else {
             account.setMaxSimultanDownloads(40);
         }
-        ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
+        ai.setMultiHostSupport(this, Arrays.asList(new String[] { "usenet" }));
         return ai;
     }
 

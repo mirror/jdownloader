@@ -5,6 +5,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.usenet.InvalidAuthException;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -16,13 +23,6 @@ import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.usenet.InvalidAuthException;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xsusenet.com" }, urls = { "" })
 public class XSUseNetCom extends UseNet {
@@ -193,7 +193,7 @@ public class XSUseNetCom extends UseNet {
                     account.setMaxSimultanDownloads(5);
                 }
             }
-            ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
+            ai.setMultiHostSupport(this, Arrays.asList(new String[] { "usenet" }));
             account.setRefreshTimeout(5 * 60 * 60 * 1000l);
             try {
                 verifyUseNetLogins(account);

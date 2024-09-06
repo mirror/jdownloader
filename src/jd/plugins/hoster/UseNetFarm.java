@@ -8,7 +8,6 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
@@ -216,7 +215,7 @@ public class UseNetFarm extends UseNet {
                             account.setConcurrentUsePossible(true);
                             account.setMaxSimultanDownloads(conns.intValue());
                         }
-                        ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
+                        ai.setMultiHostSupport(this, Arrays.asList(new String[] { "usenet" }));
                         account.setRefreshTimeout(2 * 60 * 60 * 1000l);
                         return ai;
                     }

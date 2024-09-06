@@ -103,7 +103,7 @@ public class UseNetEwekaNl extends UseNet {
             account.setType(AccountType.FREE);
             ai.setTrafficLeft(0);
         }
-        ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
+        ai.setMultiHostSupport(this, Arrays.asList(new String[] { "usenet" }));
         return ai;
     }
 

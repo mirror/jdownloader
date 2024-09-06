@@ -115,7 +115,7 @@ public class NewsDemonCom extends UseNet {
             throw e;
         }
         account.setRefreshTimeout(2 * 60 * 60 * 1000l);
-        ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
+        ai.setMultiHostSupport(this, Arrays.asList(new String[] { "usenet" }));
         return ai;
     }
 

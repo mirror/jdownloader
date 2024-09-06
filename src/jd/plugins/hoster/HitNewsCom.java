@@ -5,6 +5,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -16,12 +22,6 @@ import jd.plugins.AccountUnavailableException;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitnews.com" }, urls = { "" })
 public class HitNewsCom extends UseNet {
@@ -139,7 +139,7 @@ public class HitNewsCom extends UseNet {
             }
             throw e;
         }
-        ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
+        ai.setMultiHostSupport(this, Arrays.asList(new String[] { "usenet" }));
         return ai;
     }
 

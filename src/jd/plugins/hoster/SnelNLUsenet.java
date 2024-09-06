@@ -165,7 +165,7 @@ public class SnelNLUsenet extends UseNet {
             }
             throw e;
         }
-        ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
+        ai.setMultiHostSupport(this, Arrays.asList(new String[] { "usenet" }));
         return ai;
     }
 

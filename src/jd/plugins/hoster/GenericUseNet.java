@@ -95,7 +95,7 @@ public class GenericUseNet extends UseNet {
         try {
             verifyUseNetLogins(convertNNTPLoginURI(account));
             final AccountInfo ai = new AccountInfo();
-            ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
+            ai.setMultiHostSupport(this, Arrays.asList(new String[] { "usenet" }));
             ai.setStatus("Generic usenet:maxDownloads(current)=" + account.getMaxSimultanDownloads());
             account.setRefreshTimeout(2 * 60 * 60 * 1000l);
             return ai;

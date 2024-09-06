@@ -66,6 +66,7 @@ public class XsNewsNl extends UseNet {
         synchronized (account) {
             setBrowserExclusive();
             final AccountInfo ai = new AccountInfo();
+            ai.setMultiHostSupport(this, Arrays.asList(new String[] { "usenet" }));
             br.setFollowRedirects(true);
             final Cookies cookies = account.loadCookies("");
             final Cookies userCookies = account.loadUserCookies();
@@ -96,7 +97,6 @@ public class XsNewsNl extends UseNet {
                             verifyUseNetLogins(account);
                             ai.setStatus(oldai.getStatus());
                             ai.setValidUntil(oldai.getLastValidUntil());
-                            ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
                             return ai;
                         } catch (InvalidAuthException e2) {
                         }
@@ -167,7 +167,6 @@ public class XsNewsNl extends UseNet {
                         ai.setValidUntil(date + (12 * 60 * 60 * 1000l));
                     }
                 }
-                ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
                 account.setRefreshTimeout(5 * 60 * 60 * 1000l);
                 return ai;
             } catch (final PluginException e) {
