@@ -261,64 +261,53 @@ public class PremiumTo extends UseNet {
         final String userid = this.getUserID(account);
         final ArrayList<String> supported_hosts_regular = new ArrayList<String>();
         final ArrayList<String> supported_hosts_storage = new ArrayList<String>();
-        try {
-            br.getPage(API_BASE + "/hosts.php?userid=" + userid + "&apikey=" + apikey);
-            final Map<String, Object> entries = this.handleErrorsAPI(null, account, false);
-            final List<Object> ressourcelist = (List<Object>) entries.get("hosts");
-            for (final Object hostO : ressourcelist) {
-                if (hostO instanceof String) {
-                    supported_hosts_regular.add((String) hostO);
-                }
+        br.getPage(API_BASE + "/hosts.php?userid=" + userid + "&apikey=" + apikey);
+        final Map<String, Object> entries = this.handleErrorsAPI(null, account, false);
+        final List<Object> ressourcelist = (List<Object>) entries.get("hosts");
+        for (final Object hostO : ressourcelist) {
+            if (hostO instanceof String) {
+                supported_hosts_regular.add((String) hostO);
             }
-        } catch (final Throwable ignore) {
-            logger.log(ignore);
-            logger.warning("Failure to find regular supported hosts");
         }
         supported_hosts_regular.add("usenet");
         supported_hosts_regular.addAll(supported_hosts_regular);
         account.setType(AccountType.PREMIUM);
         /* Find storage hosts and add them to array of supported hosts */
-        try {
-            /*
-             * 2019-12-05: They're having server issues with the server that handles this request --> Catch errors and in the worst case,
-             * continue without adding any Storage hosts!
-             */
-            br.getPage(API_BASE_STORAGE + "/hosts.php?userid=" + userid + "&apikey=" + apikey);
-            /* We expect a comma separated array */
-            final String supported_hosts_storage_serverside[] = br.getRequest().getHtmlCode().toLowerCase().split(";|\\s+");
-            for (final String tmp_supported_host_storage : supported_hosts_storage_serverside) {
-                if (!supported_hosts_regular.contains(tmp_supported_host_storage)) {
-                    /*
-                     * Make sure to add only "storage-only" hosts to storage Array as some hosts can be used via both ways - we prefer
-                     * direct downloads!
-                     */
-                    if (plugin_supports_storage_download) {
-                        logger.info("Found Storage-only host: " + tmp_supported_host_storage);
-                        supported_hosts_storage.add(tmp_supported_host_storage);
-                    } else {
-                        logger.info("Storage functionality disabled: Skipping Storage-only host: " + tmp_supported_host_storage);
-                    }
-                }
+        br.getPage(API_BASE_STORAGE + "/hosts.php?userid=" + userid + "&apikey=" + apikey);
+        /* We expect a comma separated array */
+        final String supported_hosts_storage_serverside[] = br.getRequest().getHtmlCode().toLowerCase().split(";|\\s+");
+        for (final String tmp_supported_host_storage : supported_hosts_storage_serverside) {
+            if (supported_hosts_regular.contains(tmp_supported_host_storage)) {
+                continue;
             }
-        } catch (final Throwable e) {
-            logger.log(e);
-            logger.warning("Failed to find Storage hosts");
+            /*
+             * Make sure to add only "storage-only" hosts to storage Array as some hosts can be used via both ways - we prefer direct
+             * downloads!
+             */
+            if (plugin_supports_storage_download) {
+                logger.info("Found Storage-only host: " + tmp_supported_host_storage);
+                supported_hosts_storage.add(tmp_supported_host_storage);
+            } else {
+                logger.info("Storage functionality disabled: Skipping Storage-only host: " + tmp_supported_host_storage);
+            }
         }
         /*
          * Now we've found all supported hosts - let's get the REAL list of supported hosts via a workaround (important for user-settings
          * below).
          */
-        List<String> real_supported_hosts_regular = null;
-        List<String> real_supported_hosts_storage = null;
-        List<String> user_whitelisted_hosts_storage = new ArrayList<String>();
-        List<String> real_user_whitelisted_hosts_storage = null;
-        List<String> final_real_user_whitelisted_hosts_storage = new ArrayList<String>();
-        ai.setMultiHostSupport(this, supported_hosts_regular);
-        real_supported_hosts_regular = ai.getMultiHostSupport();
-        ai.setMultiHostSupport(this, supported_hosts_storage);
-        real_supported_hosts_storage = ai.getMultiHostSupport();
-        {
+        List<String> real_supported_hosts_regular = ai.setMultiHostSupport(null, supported_hosts_regular);
+        if (real_supported_hosts_regular == null) {
+            real_supported_hosts_regular = new ArrayList<String>();
+        }
+        List<String> real_supported_hosts_storage = ai.setMultiHostSupport(null, supported_hosts_storage);
+        if (real_supported_hosts_storage == null) {
+            real_supported_hosts_storage = new ArrayList<String>();
+        }
+        whitelistedStorageHostsHandling: if (true) {
             /* Handling for Storage hosts based on users' plugin settings. */
+            List<String> user_whitelisted_hosts_storage = new ArrayList<String>();
+            List<String> final_real_user_whitelisted_hosts_storage = new ArrayList<String>();
+            List<String> real_user_whitelisted_hosts_storage = null;
             boolean onlyAllowWhitelistedStorageHosts = false;
             String whitelistedStorageHostsCommaSeparated = null;
             try {
@@ -329,73 +318,63 @@ public class PremiumTo extends UseNet {
             } catch (final Throwable e) {
                 logger.warning("Error while trying to load user-settings --> Using default settings");
             }
-            if (onlyAllowWhitelistedStorageHosts) {
-                logger.info("User enabled whitelisting of Storage hosts");
-                if (!StringUtils.isEmpty(whitelistedStorageHostsCommaSeparated)) {
-                    final String[] whitelistedHosts = whitelistedStorageHostsCommaSeparated.split(",");
-                    for (final String whitelistedHost : whitelistedHosts) {
-                        user_whitelisted_hosts_storage.add(whitelistedHost);
-                    }
-                    ai.setMultiHostSupport(this, user_whitelisted_hosts_storage);
-                    real_user_whitelisted_hosts_storage = ai.getMultiHostSupport();
-                }
-                /*
-                 * Only allow verified entries e.g. user enters "examplehost4.com" but real_supported_hosts_storage does not even contain
-                 * this --> Ignore that. Don't let the user add random hosts which the multihost does not even support!
-                 */
-                if (real_user_whitelisted_hosts_storage != null) {
-                    for (final String real_user_whitelisted_storage_host : real_user_whitelisted_hosts_storage) {
-                        if (real_supported_hosts_storage != null && real_supported_hosts_storage.contains(real_user_whitelisted_storage_host)) {
-                            final_real_user_whitelisted_hosts_storage.add(real_user_whitelisted_storage_host);
-                        }
-                    }
-                }
-                /* Clear list of Storage hosts to fill it again with whitelisted entries of user */
-                if (real_supported_hosts_storage != null) {
-                    real_supported_hosts_storage.clear();
-                }
-                if (final_real_user_whitelisted_hosts_storage.isEmpty()) {
-                    logger.info("User whitelisted nothing or entered invalid values (e.g. non-Storage hosts) --> Adding no Storage hosts at all");
-                    additionalAccountStatus += " | Whitelisted Storage hosts: None [All disabled]";
-                } else {
-                    logger.info("User whitelisted the following Storage hosts:");
-                    additionalAccountStatus += " | Whitelisted Storage hosts: ";
-                    int counter = 0;
-                    for (final String final_real_user_whitelisted_storage_host : final_real_user_whitelisted_hosts_storage) {
-                        logger.info("WhitelistedStorageHost: " + final_real_user_whitelisted_storage_host);
-                        real_supported_hosts_storage.add(final_real_user_whitelisted_storage_host);
-                        additionalAccountStatus += final_real_user_whitelisted_storage_host;
-                        if (counter < final_real_user_whitelisted_hosts_storage.size() - 1) {
-                            additionalAccountStatus += ", ";
-                        }
-                        counter++;
-                    }
-                }
-            } else {
+            if (!onlyAllowWhitelistedStorageHosts) {
                 logger.info("User disabled whitelisting of Storage hosts (= add all Storage hosts to list)");
+                break whitelistedStorageHostsHandling;
             }
-            /* Finally, add Storage hosts to regular host array to be able to use them and display the list of supported hosts. */
-            if (real_supported_hosts_storage == null || real_supported_hosts_storage.isEmpty()) {
-                logger.info("Storage host array is empty");
-            } else {
-                logger.info("Adding final active storage hosts to list of supported hosts: " + real_supported_hosts_storage);
-                real_supported_hosts_regular.addAll(real_supported_hosts_storage);
+            logger.info("User enabled whitelisting of Storage hosts");
+            if (!StringUtils.isEmpty(whitelistedStorageHostsCommaSeparated)) {
+                final String[] whitelistedHosts = whitelistedStorageHostsCommaSeparated.split(",");
+                for (final String whitelistedHost : whitelistedHosts) {
+                    user_whitelisted_hosts_storage.add(whitelistedHost);
+                }
+                real_user_whitelisted_hosts_storage = ai.setMultiHostSupport(null, user_whitelisted_hosts_storage);
             }
-            /* Update cache */
-            synchronized (PremiumTo.supported_hosts_storage) {
-                PremiumTo.supported_hosts_storage.clear();
-                if (real_supported_hosts_storage != null) {
-                    /* Add host to special Array of Storage hosts */
-                    PremiumTo.supported_hosts_storage.addAll(real_supported_hosts_storage);
+            /*
+             * Only allow verified entries e.g. user enters "examplehost4.com" but real_supported_hosts_storage does not even contain this
+             * --> Ignore that. Don't let the user add random hosts which the multihost does not even support!
+             */
+            if (real_user_whitelisted_hosts_storage != null) {
+                for (final String real_user_whitelisted_storage_host : real_user_whitelisted_hosts_storage) {
+                    if (real_supported_hosts_storage.contains(real_user_whitelisted_storage_host)) {
+                        final_real_user_whitelisted_hosts_storage.add(real_user_whitelisted_storage_host);
+                    }
                 }
             }
+            /* Clear list of Storage hosts to fill it again with whitelisted entries of user */
+            real_supported_hosts_storage.clear();
+            if (final_real_user_whitelisted_hosts_storage.isEmpty()) {
+                logger.info("User whitelisted nothing or entered invalid values (e.g. non-Storage hosts) --> Adding no Storage hosts at all");
+                additionalAccountStatus += " | Whitelisted Storage hosts: None [All disabled]";
+            } else {
+                logger.info("User whitelisted the following Storage hosts:");
+                additionalAccountStatus += " | Whitelisted Storage hosts: ";
+                int counter = 0;
+                for (final String final_real_user_whitelisted_storage_host : final_real_user_whitelisted_hosts_storage) {
+                    logger.info("WhitelistedStorageHost: " + final_real_user_whitelisted_storage_host);
+                    real_supported_hosts_storage.add(final_real_user_whitelisted_storage_host);
+                    additionalAccountStatus += final_real_user_whitelisted_storage_host;
+                    if (counter < final_real_user_whitelisted_hosts_storage.size() - 1) {
+                        additionalAccountStatus += ", ";
+                    }
+                    counter++;
+                }
+            }
+        }
+        /* Finally, add Storage hosts to regular host array to be able to use them and display the list of supported hosts. */
+        real_supported_hosts_regular.addAll(real_supported_hosts_storage);
+        /* Update cache */
+        synchronized (PremiumTo.supported_hosts_storage) {
+            PremiumTo.supported_hosts_storage.clear();
+            /* Add host to special Array of Storage hosts */
+            PremiumTo.supported_hosts_storage.addAll(real_supported_hosts_storage);
         }
         final List<String[]> defaultServersideDeactivatedWebsites = new ArrayList<String[]>();
         defaultServersideDeactivatedWebsites.add(new String[] { "mega.nz", "mega.co.nz" });
         final Iterator<String[]> it = defaultServersideDeactivatedWebsites.iterator();
         while (it.hasNext()) {
             final String[] domains = it.next();
-            for (String domain : domains) {
+            for (final String domain : domains) {
                 if (real_supported_hosts_regular.contains(domain)) {
                     it.remove();
                     break;
@@ -417,51 +396,50 @@ public class PremiumTo extends UseNet {
      */
     private Thread showServersideDeactivatedHostInformation(final Account account, final String exampleHost) {
         final boolean userConfirmedDialogAlready = account.getBooleanProperty(PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED, false);
-        if (!userConfirmedDialogAlready) {
-            final String host = getHost();
-            final Thread thread = new Thread() {
-                public void run() {
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = host + " - Informationen zu serverseitig standardmäßig für Downloadmanager deaktivierten Hostern";
-                        message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
-                        message += host + " hat einige Filehoster wie z.B. '" + exampleHost + "' standardmäßig für Downloadmanager deaktiviert, um deinen Traffic nicht zu verschwenden.\r\n";
-                        message += "Falls du " + exampleHost + " oder andere standardmäßig für Downloadmanager deaktivierte Hoster über " + host + " in JD nutzen möchtest, musst du folgendes tun:\t\r\n";
-                        message += "1. Öffne " + host + " im Browser und logge dich ein.\r\n";
-                        message += "2. Klicke auf das tab 'DLM' -> Setze das Häckchen bei allen Hostern, die in der Hosterliste in JD erscheinen sollen und klicke auf den Button 'update'.\r\n";
-                        message += "3. In JD: Rechtsklick auf deinen " + host + " Account in JDownloader -> Aktualisieren\r\n";
-                        message += "Nun sollten Hoster, die vorher ggf. fehlten z.B. '" + exampleHost + "' in der Liste der unterstützten Hoster in JD aufgeführt werden.\r\n";
-                    } else {
-                        title = host + " - Information about filehosters, deactivated for downloadmanagers by default serverside by " + host;
-                        message += "Hello dear " + host + " user\r\n";
-                        message += host + " deactivated some filehosts like '" + exampleHost + "' by default for downloadmanagers in order to not waste any of your traffic.\r\n";
-                        message += "If you want to use " + exampleHost + " or other filehosts in JD which are disabled by " + host + " for downloadmanagers by default, follow these instructions:\r\n";
-                        message += "1. Open " + host + " in your browser and login.\r\n";
-                        message += "2. Click on the tab 'DLM' and enable the checkboxes for all filehosts you wish to use in JDownloader and click on the button 'update'.\r\n";
-                        message += "3. In JDownloader, rightclick on your " + host + " account -> Refresh\r\n";
-                        message += "Now all hosts, which might have been missing before e.g. '" + exampleHost + "' should be visible in the list of supported hosts in JDownloader.\r\n";
-                    }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(5 * 60 * 1000);
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    try {
-                        ret.throwCloseExceptions();
-                        account.setProperty(PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED, true);
-                    } catch (DialogNoAnswerException e) {
-                        getLogger().log(e);
-                        if (!e.isCausedByTimeout()) {
-                            account.setProperty(PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED, true);
-                        }
-                    }
-                };
-            };
-            thread.setDaemon(true);
-            thread.start();
-            return thread;
-        } else {
+        if (userConfirmedDialogAlready) {
             return null;
         }
+        final String host = getHost();
+        final Thread thread = new Thread() {
+            public void run() {
+                String message = "";
+                final String title;
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    title = host + " - Informationen zu serverseitig standardmäßig für Downloadmanager deaktivierten Hostern";
+                    message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
+                    message += host + " hat einige Filehoster wie z.B. '" + exampleHost + "' standardmäßig für Downloadmanager deaktiviert, um deinen Traffic nicht zu verschwenden.\r\n";
+                    message += "Falls du " + exampleHost + " oder andere standardmäßig für Downloadmanager deaktivierte Hoster über " + host + " in JD nutzen möchtest, musst du folgendes tun:\t\r\n";
+                    message += "1. Öffne " + host + " im Browser und logge dich ein.\r\n";
+                    message += "2. Klicke auf das tab 'DLM' -> Setze das Häckchen bei allen Hostern, die in der Hosterliste in JD erscheinen sollen und klicke auf den Button 'update'.\r\n";
+                    message += "3. In JD: Rechtsklick auf deinen " + host + " Account in JDownloader -> Aktualisieren\r\n";
+                    message += "Nun sollten Hoster, die vorher ggf. fehlten z.B. '" + exampleHost + "' in der Liste der unterstützten Hoster in JD aufgeführt werden.\r\n";
+                } else {
+                    title = host + " - Information about filehosters, deactivated for downloadmanagers by default serverside by " + host;
+                    message += "Hello dear " + host + " user\r\n";
+                    message += host + " deactivated some filehosts like '" + exampleHost + "' by default for downloadmanagers in order to not waste any of your traffic.\r\n";
+                    message += "If you want to use " + exampleHost + " or other filehosts in JD which are disabled by " + host + " for downloadmanagers by default, follow these instructions:\r\n";
+                    message += "1. Open " + host + " in your browser and login.\r\n";
+                    message += "2. Click on the tab 'DLM' and enable the checkboxes for all filehosts you wish to use in JDownloader and click on the button 'update'.\r\n";
+                    message += "3. In JDownloader, rightclick on your " + host + " account -> Refresh\r\n";
+                    message += "Now all hosts, which might have been missing before e.g. '" + exampleHost + "' should be visible in the list of supported hosts in JDownloader.\r\n";
+                }
+                final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                dialog.setTimeout(5 * 60 * 1000);
+                final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                try {
+                    ret.throwCloseExceptions();
+                    account.setProperty(PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED, true);
+                } catch (DialogNoAnswerException e) {
+                    getLogger().log(e);
+                    if (!e.isCausedByTimeout()) {
+                        account.setProperty(PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED, true);
+                    }
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     private String getUserID(final Account account) {

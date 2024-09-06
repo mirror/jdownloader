@@ -193,12 +193,6 @@ public class ProLeechLink extends antiDDoSForHost {
         loginAPI(account, true);
         final AccountInfo ai = new AccountInfo();
         List<String> filehosts_premium_onlineArray = new ArrayList<String>();
-        List<String> old_list_of_supported_hosts = null;
-        try {
-            old_list_of_supported_hosts = account.getAccountInfo().getMultiHostSupport();
-        } catch (final NullPointerException e) {
-            logger.log(e);
-        }
         String trafficmaxDailyStr = null;
         if (useAPILoginWorkaround()) {
             /* 2020-06-04: Only premium users can get/see their apikey on the proleech website */
@@ -214,7 +208,7 @@ public class ProLeechLink extends antiDDoSForHost {
             }
             ai.setUnlimitedTraffic();
         } else {
-            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             /* Small workaround: Use website to find daily max traffic value as API doesn't provide that information. */
             try {
                 final Browser brc = br.cloneBrowser();
@@ -260,7 +254,7 @@ public class ProLeechLink extends antiDDoSForHost {
         }
         /* Host specific traffic limits would be here: http://proleech.link/dl/debrid/deb_api.php?limits */
         this.getPage(API_BASE + "?hosts");
-        final String[] supportedhostsAPI = restoreFromString(br.toString(), TypeRef.STRING_ARRAY);
+        final String[] supportedhostsAPI = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.STRING_ARRAY);
         for (final String filehost_premium_online : supportedhostsAPI) {
             if (filehost_premium_online.contains("/")) {
                 /* 2019-11-11: WTF They sometimes display multiple domains of one filehost in one entry, separated by ' / ' */
@@ -273,10 +267,6 @@ public class ProLeechLink extends antiDDoSForHost {
             } else {
                 filehosts_premium_onlineArray.add(filehost_premium_online);
             }
-        }
-        if (filehosts_premium_onlineArray.isEmpty() && old_list_of_supported_hosts != null && !old_list_of_supported_hosts.isEmpty()) {
-            /* Fallback - try to re-use old list of supported hosts if available */
-            filehosts_premium_onlineArray = old_list_of_supported_hosts;
         }
         ai.setMultiHostSupport(this, filehosts_premium_onlineArray);
         return ai;
@@ -310,7 +300,7 @@ public class ProLeechLink extends antiDDoSForHost {
             query.add("link", "null");
             this.getPage(API_BASE + "?" + query.toString());
             /* 2020-06-04: We expect this - otherwise probably wrong logindata: {"error":1,"message":"Link not supported or empty link."} */
-            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Number error = (Number) entries.get("error");
             if (error.intValue() != 1) {
                 apiAccountInvalid(account);
@@ -739,99 +729,97 @@ public class ProLeechLink extends antiDDoSForHost {
 
     /** Deletes entries from serverside download history if: File is successfully downloaded or file is older than X days. */
     private void clearDownloadHistoryWebsite(final Account account, final boolean isLoggedIN) {
+        if (!PluginJsonConfig.get(this.getConfigInterface()).isClearDownloadHistoryAfterEachDownload()) {
+            logger.info("Not deleting download history - used has disabled this setting");
+            return;
+        } else if (this.useAPIOnly()) {
+            logger.info("User wants download history cleared but: Cannot clear download history in API only mode!");
+            return;
+        }
         synchronized (account) {
             try {
                 /* Only clear download history if user wants it AND if we're logged-in! */
-                if (PluginJsonConfig.get(this.getConfigInterface()).isClearDownloadHistoryAfterEachDownload()) {
-                    logger.info("Trying to clear download history");
-                    if (this.useAPIOnly()) {
-                        logger.info("User wants download history cleared but: Cannot clear download history in API only mode!");
-                        return;
+                logger.info("Trying to clear download history");
+                /*
+                 * Do not use Cloudflare browser here - we do not want to get any captchas here! Rather fail than having to enter a captcha!
+                 */
+                if (br.getURL() == null || !br.getURL().contains("/mydownloads")) {
+                    /* Only access this URL if it has not been accessed before! */
+                    getPage("https://" + this.getHost() + "/mydownloads");
+                }
+                final String[] cloudDownloadRows = getDownloadHistoryRowsWebsite();
+                final ArrayList<String> filename_entries_to_delete = new ArrayList<String>();
+                /* First, let's check for old/dead entries and add them to our list of items we will remove later. */
+                for (final String filenameToCheck : deleteDownloadHistoryFilenameWhitelist) {
+                    if (!br.toString().contains(filenameToCheck)) {
+                        filename_entries_to_delete.add(filenameToCheck);
+                    }
+                }
+                if (cloudDownloadRows != null && cloudDownloadRows.length > 0) {
+                    logger.info("Found " + cloudDownloadRows.length + " possible download_ids in history to delete");
+                    String postData = "delete=Delete+selected";
+                    int numberofDownloadIdsToDelete = 0;
+                    for (final String cloudDownloadRow : cloudDownloadRows) {
+                        final String download_id = new Regex(cloudDownloadRow, "id=\"checkbox\\[\\]\" value=\"(\\d+)\"").getMatch(0);
+                        if (download_id == null) {
+                            /* Skip invalid entries */
+                            continue;
+                        }
+                        final String date_when_entry_was_addedStr = new Regex(cloudDownloadRow, ">\\s*(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})\\s*<").getMatch(0);
+                        final long delete_after_x_days = 1;
+                        boolean isOldEntry = false;
+                        final boolean isStillDownloadingToCloud = new Regex(cloudDownloadRow, "Transfering \\d{1,3}\\.\\d{1,2} ").matches();
+                        boolean deletionAllowedByFilename = false;
+                        String filename_of_current_entry = null;
+                        for (final String deletionAllowedFilename : deleteDownloadHistoryFilenameWhitelist) {
+                            if (cloudDownloadRow.contains(deletionAllowedFilename)) {
+                                deletionAllowedByFilename = true;
+                                filename_of_current_entry = deletionAllowedFilename;
+                                filename_entries_to_delete.add(deletionAllowedFilename);
+                                break;
+                            }
+                        }
+                        if (date_when_entry_was_addedStr != null) {
+                            final long current_time = getCurrentServerTime(br, System.currentTimeMillis());
+                            final long date_when_entry_was_added = TimeFormatter.getMilliSeconds(date_when_entry_was_addedStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+                            final long time_passed = current_time - date_when_entry_was_added;
+                            if (time_passed > delete_after_x_days * 24 * 60 * 60 * 1000l) {
+                                isOldEntry = true;
+                            }
+                        }
+                        if (isStillDownloadingToCloud) {
+                            logger.info("NOT deleting the following download_id because cloud download is still in progress: " + download_id);
+                            continue;
+                        } else if (!deletionAllowedByFilename && !isOldEntry) {
+                            logger.info("NOT deleting the following download_id because its' filename is not allowed for deletion and it is not old enough: " + download_id);
+                            continue;
+                        }
+                        if (isOldEntry) {
+                            logger.info("Deleting the following entry as it is older than " + delete_after_x_days + " days: " + download_id);
+                        } else {
+                            logger.info("Deleting the following entry as deletion is allowed by filename: " + download_id + " | " + filename_of_current_entry);
+                        }
+                        postData += "&checkbox%5B%5D=" + download_id;
+                        numberofDownloadIdsToDelete++;
+                    }
+                    if (numberofDownloadIdsToDelete == 0) {
+                        /* This is unlikely but possible! */
+                        logger.info("Found no download_ids to delete --> Probably all existing download_ids are download_ids with serverside cloud download in progress or they were added via website or via another JD instance and are not yet old enough to get deleted");
+                    } else {
+                        logger.info("Deleting " + numberofDownloadIdsToDelete + " of " + cloudDownloadRows.length + " download_ids");
+                        br.postPage(br.getURL(), postData);
+                        logger.info("Successfully cleared download history");
                     }
                     /*
-                     * Do not use Cloudflare browser here - we do not want to get any captchas here! Rather fail than having to enter a
-                     * captcha!
+                     * Cleanup deleteDownloadHistoryFilenameWhitelist - remove supposedly deleted elements from that list. And also elements
+                     * which do not exist at all in the website list e.g. automatically deleted or deleted by other user in case people
+                     * share accounts and download the same files.
                      */
-                    if (br.getURL() == null || !br.getURL().contains("/mydownloads")) {
-                        /* Only access this URL if it has not been accessed before! */
-                        getPage("https://" + this.getHost() + "/mydownloads");
+                    for (final String deleted_filename : filename_entries_to_delete) {
+                        deleteDownloadHistoryFilenameWhitelist.remove(deleted_filename);
                     }
-                    final String[] cloudDownloadRows = getDownloadHistoryRowsWebsite();
-                    final ArrayList<String> filename_entries_to_delete = new ArrayList<String>();
-                    /* First, let's check for old/dead entries and add them to our list of items we will remove later. */
-                    for (final String filenameToCheck : deleteDownloadHistoryFilenameWhitelist) {
-                        if (!br.toString().contains(filenameToCheck)) {
-                            filename_entries_to_delete.add(filenameToCheck);
-                        }
-                    }
-                    if (cloudDownloadRows != null && cloudDownloadRows.length > 0) {
-                        logger.info("Found " + cloudDownloadRows.length + " possible download_ids in history to delete");
-                        String postData = "delete=Delete+selected";
-                        int numberofDownloadIdsToDelete = 0;
-                        for (final String cloudDownloadRow : cloudDownloadRows) {
-                            final String download_id = new Regex(cloudDownloadRow, "id=\"checkbox\\[\\]\" value=\"(\\d+)\"").getMatch(0);
-                            if (download_id == null) {
-                                /* Skip invalid entries */
-                                continue;
-                            }
-                            final String date_when_entry_was_addedStr = new Regex(cloudDownloadRow, ">\\s*(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})\\s*<").getMatch(0);
-                            final long delete_after_x_days = 1;
-                            boolean isOldEntry = false;
-                            final boolean isStillDownloadingToCloud = new Regex(cloudDownloadRow, "Transfering \\d{1,3}\\.\\d{1,2} ").matches();
-                            boolean deletionAllowedByFilename = false;
-                            String filename_of_current_entry = null;
-                            for (final String deletionAllowedFilename : deleteDownloadHistoryFilenameWhitelist) {
-                                if (cloudDownloadRow.contains(deletionAllowedFilename)) {
-                                    deletionAllowedByFilename = true;
-                                    filename_of_current_entry = deletionAllowedFilename;
-                                    filename_entries_to_delete.add(deletionAllowedFilename);
-                                    break;
-                                }
-                            }
-                            if (date_when_entry_was_addedStr != null) {
-                                final long current_time = getCurrentServerTime(br, System.currentTimeMillis());
-                                final long date_when_entry_was_added = TimeFormatter.getMilliSeconds(date_when_entry_was_addedStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
-                                final long time_passed = current_time - date_when_entry_was_added;
-                                if (time_passed > delete_after_x_days * 24 * 60 * 60 * 1000l) {
-                                    isOldEntry = true;
-                                }
-                            }
-                            if (isStillDownloadingToCloud) {
-                                logger.info("NOT deleting the following download_id because cloud download is still in progress: " + download_id);
-                                continue;
-                            } else if (!deletionAllowedByFilename && !isOldEntry) {
-                                logger.info("NOT deleting the following download_id because its' filename is not allowed for deletion and it is not old enough: " + download_id);
-                                continue;
-                            }
-                            if (isOldEntry) {
-                                logger.info("Deleting the following entry as it is older than " + delete_after_x_days + " days: " + download_id);
-                            } else {
-                                logger.info("Deleting the following entry as deletion is allowed by filename: " + download_id + " | " + filename_of_current_entry);
-                            }
-                            postData += "&checkbox%5B%5D=" + download_id;
-                            numberofDownloadIdsToDelete++;
-                        }
-                        if (numberofDownloadIdsToDelete == 0) {
-                            /* This is unlikely but possible! */
-                            logger.info("Found no download_ids to delete --> Probably all existing download_ids are download_ids with serverside cloud download in progress or they were added via website or via another JD instance and are not yet old enough to get deleted");
-                        } else {
-                            logger.info("Deleting " + numberofDownloadIdsToDelete + " of " + cloudDownloadRows.length + " download_ids");
-                            br.postPage(br.getURL(), postData);
-                            logger.info("Successfully cleared download history");
-                        }
-                        /*
-                         * Cleanup deleteDownloadHistoryFilenameWhitelist - remove supposedly deleted elements from that list. And also
-                         * elements which do not exist at all in the website list e.g. automatically deleted or deleted by other user in
-                         * case people share accounts and download the same files.
-                         */
-                        for (final String deleted_filename : filename_entries_to_delete) {
-                            deleteDownloadHistoryFilenameWhitelist.remove(deleted_filename);
-                        }
-                    }
-                } else {
-                    logger.info("Not deleting download history - used has disabled this setting");
                 }
-            } catch (final Exception e) {
+            } catch (final Throwable e) {
                 e.printStackTrace();
                 logger.info("Error occured in delete-download-history handling");
             }
@@ -1025,7 +1013,7 @@ public class ProLeechLink extends antiDDoSForHost {
         /*
          * 2020-06-04: E.g. success response: {"error":0,"message":"OK","hoster":"http:CENSORED","link":"http:CENSORED","size":"10.15 MB"}
          */
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Number max_chunks = (Number) entries.get("max_chunks");
         if (max_chunks != null && max_chunks.intValue() > 0) {
             link.setProperty(PROPERTY_MAXCHUNKS, max_chunks);
@@ -1047,7 +1035,7 @@ public class ProLeechLink extends antiDDoSForHost {
 
     private void checkErrorsAPI(final DownloadLink link, final Account account) throws Exception {
         try {
-            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Number errorcode = (Number) entries.get("error");
             final String message = (String) entries.get("message");
             if (errorcode != null && message != null) {

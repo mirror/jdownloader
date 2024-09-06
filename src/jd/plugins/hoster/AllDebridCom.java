@@ -141,18 +141,18 @@ public class AllDebridCom extends PluginForHost {
     private final String                                 PROPERTY_maxchunks                 = "alldebrid_maxchunks";
     private static final String                          ERROR_CODE_LINK_PASSWORD_PROTECTED = "LINK_PASS_PROTECTED";
 
-    public String login(final Account account, final AccountInfo accountInfo, final boolean validateApikey) throws Exception {
+    private Map<String, Object> login(final Account account, final AccountInfo accountInfo, final boolean validateApikey) throws Exception {
         synchronized (account) {
             String apikey = getStoredApiKey(account);
             if (apikey != null) {
                 if (!validateApikey) {
                     setAuthHeader(br, apikey);
-                    return apikey;
+                    return null;
                 }
                 logger.info("Attempting login with existing apikey");
-                getAccountInfo(account, accountInfo, apikey);
+                final Map<String, Object> userinfo = getAccountInfo(account, accountInfo, apikey);
                 logger.info("Apikey login successful");
-                return apikey;
+                return userinfo;
             }
             /* Full login */
             logger.info("Performing full login");
@@ -209,13 +209,13 @@ public class AllDebridCom extends PluginForHost {
             account.setProperty(PROPERTY_apikey, apikey);
             /* Save this property - it might be useful in the future. */
             account.setProperty(PROPERTY_APIKEY_CREATED_TIMESTAMP, System.currentTimeMillis());
-            getAccountInfo(account, accountInfo, apikey);
             setAuthHeader(br, apikey);
-            return apikey;
+            final Map<String, Object> userinfo = getAccountInfo(account, accountInfo, apikey);
+            return userinfo;
         }
     }
 
-    private void getAccountInfo(final Account account, final AccountInfo ai, final String apikey) throws Exception {
+    private Map<String, Object> getAccountInfo(final Account account, final AccountInfo ai, final String apikey) throws Exception {
         synchronized (account) {
             setAuthHeader(br, apikey);
             br.getPage(api_base + "/user?" + agent);
@@ -264,6 +264,7 @@ public class AllDebridCom extends PluginForHost {
                 ai.setPremiumPoints(fidelityPoints.longValue());
             }
             account.setType(AccountType.PREMIUM);
+            return user;
         }
     }
 
@@ -278,30 +279,34 @@ public class AllDebridCom extends PluginForHost {
         final Iterator<Entry<String, Object>> iterator = supportedHostsInfo.entrySet().iterator();
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         while (iterator.hasNext()) {
-            final Entry<String, Object> hostO = iterator.next();
-            final Map<String, Object> entry = (Map<String, Object>) hostO.getValue();
-            String host_without_tld = (String) entry.get("name");
+            final Entry<String, Object> entry = iterator.next();
+            final String hosterKey = entry.getKey();
+            final Map<String, Object> hosterinfos = (Map<String, Object>) entry.getValue();
+            String host_without_tld = (String) hosterinfos.get("name");
+            final Number quota = (Number) hosterinfos.get("quota");
+            final String quotaType = (String) hosterinfos.get("quotaType");
             if (StringUtils.isEmpty(host_without_tld)) {
-                host_without_tld = hostO.getKey();
+                host_without_tld = hosterKey;
             }
+            final List<String> domains = (List<String>) hosterinfos.get("domains");
             /*
              * 2020-04-01: This check will most likely never be required as free accounts officially cannot be used via API at all and JD
              * also does not accept them but we're doing this check nevertheless.
              */
-            final String type = (String) entry.get("type");
-            final Boolean status = (Boolean) entry.get("status"); // optional field
+            final String type = (String) hosterinfos.get("type");
+            final Boolean status = (Boolean) hosterinfos.get("status"); // optional field
             // final Number quota = (Number) entry.get("quota");
             if (account.getType() == AccountType.FREE && !"free".equalsIgnoreCase(type)) {
                 logger.info("Skipping host because it cannot be used with free accounts: " + host_without_tld);
                 continue;
+            } else if (quota != null && quota.longValue() <= 0) {
+                logger.info("Skipping host because there is no quota left: " + host_without_tld);
+                continue;
+            } else if (domains.isEmpty()) {
+                /* This should never happen */
+                logger.info("Skipping entry with empty domains field: " + host_without_tld);
+                continue;
             }
-            /*
-             * Most hosts either have no limit or traffic limit ("traffic"). Some have a 'max downloads per day' limit instead -->
-             * "nb_download". We cannot handle this and thus ignore it. Also ignore trafficlimit because they could always deliver cached
-             * content for which the user will not be charged traffic at all!
-             */
-            // final String quotaType = (String) entries.get("quotaType");
-            // final long quotaLeft = JavaScriptEngineFactory.toLong(entries.get("quota"), -1);
             /* Skip currently disabled hosts --> 2020-03-26: Do not skip any hosts anymore, display all in JD RE: admin */
             if (Boolean.FALSE.equals(status)) {
                 /* Log hosts which look to be non working according to API. */
@@ -310,19 +315,16 @@ public class AllDebridCom extends PluginForHost {
                 // continue;
             }
             /* Add all domains of host */
-            final List<String> domains = (List<String>) entry.get("domains");
-            if (domains == null && StringUtils.isEmpty(host_without_tld)) {
-                logger.info("WTF, unexpected format of field 'domains': " + host_without_tld);
-                continue;
-            }
-            if (domains != null) {
-                for (final String domain : domains) {
-                    supportedHosts.add(domain);
-                }
+            // TODO: Make use of this quota information
+            if (StringUtils.equalsIgnoreCase(quotaType, "traffic")) {
+                // quota is traffic in MB
+            } else if (StringUtils.equalsIgnoreCase(quotaType, "nb_download")) {
+                // quota is number of links left to download
             } else {
-                /* Fallback - this should usually not happen */
-                logger.info("Adding host_without_tld: " + host_without_tld);
-                supportedHosts.add(host_without_tld);
+                // No limit
+            }
+            for (final String domain : domains) {
+                supportedHosts.add(domain);
             }
         }
         accountInfo.setMultiHostSupport(this, supportedHosts);
