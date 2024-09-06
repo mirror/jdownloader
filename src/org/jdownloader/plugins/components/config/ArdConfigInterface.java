@@ -40,6 +40,7 @@ public interface ArdConfigInterface extends PluginConfigInterface {
         public String getOnlyBestVideoQualityOfSelectedQualitiesEnabled_label() {
             return _JDT.T.lit_add_only_the_best_video_quality_within_user_selected_formats();
         }
+
         // public String getAddUnknownQualitiesEnabled_label() {
         // return _JDT.T.lit_add_unknown_formats();
         // }
@@ -278,7 +279,7 @@ public interface ArdConfigInterface extends PluginConfigInterface {
     }
 
     @AboutConfig
-    @DefaultEnumValue("WEBVTT")
+    @DefaultEnumValue("AUTO")
     @Order(200)
     HlsCrawlMode getHlsCrawlMode();
 

@@ -89,10 +89,11 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
             }
             sb.append(_GUI.T.lit_speedtotext());
         }
+        final Locale locale = getGenericInfo()._getLocale();
         if (sb.length() == 0) {
-            return _GUI.T.YoutubeDash_getName_subtitles_(getGenericInfo()._getLocale() == null ? getGenericInfo().getLanguage() : getGenericInfo()._getLocale().getDisplayName());
+            return _GUI.T.YoutubeDash_getName_subtitles_(locale == null ? getGenericInfo().getLanguage() : locale.getDisplayName());
         } else {
-            return _GUI.T.YoutubeDash_getName_subtitles_annotated(getGenericInfo()._getLocale() == null ? getGenericInfo().getLanguage() : getGenericInfo()._getLocale().getDisplayName(), sb.toString());
+            return _GUI.T.YoutubeDash_getName_subtitles_annotated(locale == null ? getGenericInfo().getLanguage() : locale.getDisplayName(), sb.toString());
         }
     }
 
@@ -137,12 +138,16 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
     }
 
     public String getDisplayLanguage() {
-        return getGenericInfo()._getLocale().getDisplayLanguage();
+        final Locale locale = getGenericInfo()._getLocale();
+        if (locale != null) {
+            return locale.getDisplayLanguage();
+        }
+        return null;
     }
 
     @Override
     public String getFileNameQualityTag() {
-        return getGenericInfo()._getLocale().getDisplayLanguage();
+        return getDisplayLanguage();
     }
 
     @Override
@@ -151,6 +156,10 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
     }
 
     public String getLanguageCode() {
-        return getGenericInfo()._getLocale().getLanguage();
+        final Locale locale = getGenericInfo()._getLocale();
+        if (locale != null) {
+            return locale.getLanguage();
+        }
+        return null;
     }
 }
