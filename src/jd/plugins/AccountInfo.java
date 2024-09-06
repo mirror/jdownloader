@@ -375,7 +375,6 @@ public class AccountInfo extends Property implements AccountTrafficView {
         final HashMap<String, Set<LazyHostPlugin>> mapping = new HashMap<String, Set<LazyHostPlugin>>();
         final HashSet<String> nonTldHosts = new HashSet<String>();
         final HashSet<String> skippedOfflineEntries = new HashSet<String>();
-        final HashSet<String> unassignedMultiHostSupport = new HashSet<String>();
         // lets do some preConfiguring, and match hosts which do not contain tld
         final Pattern patternInvalid = Pattern.compile("http|https|file|up|upload|video|torrent|ftp", Pattern.CASE_INSENSITIVE);
         for (final String host : multiHostSupportList) {
@@ -390,7 +389,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
             } else if (new Regex(hostCleaned, patternInvalid).patternMatches()) {
                 // we need to ignore/blacklist common phrases, else we get too many false positives
                 continue;
-            } else if ("usenet".equals(hostCleaned)) {
+            } else if (hostCleaned.equals("usenet")) {
                 // special cases
                 assignedMultiHostPlugins.add(hostCleaned);
             } else if (hostCleaned.indexOf('.') == -1) {
@@ -416,7 +415,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                         final String nonTldHost = it.next();
                         for (final String siteSupportedName : siteSupportedNames) {
                             if (StringUtils.equalsIgnoreCase(siteSupportedName, nonTldHost)) {
-                                /* Exact match */
+                                /* Perfect match */
                                 final HashSet<LazyHostPlugin> list = new HashSet<LazyHostPlugin>();
                                 map.put(nonTldHost, list);
                                 list.add(lazyHostPlugin);
@@ -431,8 +430,6 @@ public class AccountInfo extends Property implements AccountTrafficView {
                                 } else if (!list.contains(lazyHostPlugin)) {
                                     list.add(lazyHostPlugin);
                                 }
-                                // it.remove();
-                                // continue pluginloop;
                             }
                         }
                     }
@@ -453,7 +450,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 }
             }
             for (final Entry<String, HashSet<LazyHostPlugin>> entry : map.entrySet()) {
-                final String host = entry.getKey();
+                final String nonTldHost = entry.getKey();
                 final HashSet<LazyHostPlugin> list = entry.getValue();
                 LazyHostPlugin lazyPlugin = null;
                 if (list.size() == 1) {
@@ -464,14 +461,15 @@ public class AccountInfo extends Property implements AccountTrafficView {
                     /* More than one item */
                     for (final LazyHostPlugin lazyHostPlugin : list) {
                         if (lazyHostPlugin.isOfflinePlugin()) {
-                            skippedOfflineEntries.add(host);
+                            /* Ignore offline items but collect them. */
+                            skippedOfflineEntries.add(nonTldHost);
                             continue;
                         }
                         if (lazyPlugin == null) {
                             lazyPlugin = lazyHostPlugin;
                         } else {
-                            final boolean a = StringUtils.containsIgnoreCase(lazyPlugin.getHost(), host + ".");
-                            final boolean b = StringUtils.containsIgnoreCase(lazyHostPlugin.getHost(), host + ".");
+                            final boolean a = StringUtils.containsIgnoreCase(lazyPlugin.getHost(), nonTldHost + ".");
+                            final boolean b = StringUtils.containsIgnoreCase(lazyHostPlugin.getHost(), nonTldHost + ".");
                             if (a && !b) {
                                 continue;
                             } else if (!a && b) {
@@ -489,18 +487,19 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 }
                 // update mapping
                 assignedMultiHostPlugins.add(lazyPlugin.getHost());
-                Set<LazyHostPlugin> plugins = mapping.get(host);
+                Set<LazyHostPlugin> plugins = mapping.get(nonTldHost);
                 if (plugins == null) {
                     plugins = new HashSet<LazyHostPlugin>();
-                    mapping.put(host, plugins);
+                    mapping.put(nonTldHost, plugins);
                 }
                 plugins.add(lazyPlugin);
             }
-            unassignedMultiHostSupport.addAll(nonTldHosts);
         }
-        final Iterator<String> it = assignedMultiHostPlugins.iterator();
-        while (it.hasNext()) {
-            final String host = it.next();
+        final HashSet<String> unassignedMultiHostSupport = new HashSet<String>();
+        unassignedMultiHostSupport.addAll(nonTldHosts);
+        final Iterator<String> assignedMultiHostPluginsIterator = assignedMultiHostPlugins.iterator();
+        while (assignedMultiHostPluginsIterator.hasNext()) {
+            final String host = assignedMultiHostPluginsIterator.next();
             if (host == null) {
                 continue;
             }
@@ -551,9 +550,9 @@ public class AccountInfo extends Property implements AccountTrafficView {
             }
         }
         /* Last resort handling for items which we still couldn't match. */
-        final Iterator<String> it2 = unassignedMultiHostSupport.iterator();
-        while (it2.hasNext()) {
-            final String host = it2.next();
+        final Iterator<String> unassignedMultiHostSupportIterator = unassignedMultiHostSupport.iterator();
+        while (unassignedMultiHostSupportIterator.hasNext()) {
+            final String host = unassignedMultiHostSupportIterator.next();
             final String hostParts[] = host.split("\\.");
             if (hostParts.length < 2) {
                 continue;
@@ -581,7 +580,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 }
             }
             if (foundFlag) {
-                it2.remove();
+                unassignedMultiHostSupportIterator.remove();
             }
         }
         /* Log items without result */
