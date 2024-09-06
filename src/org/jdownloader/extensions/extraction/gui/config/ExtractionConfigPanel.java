@@ -307,7 +307,15 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                     protected void runInEDT() {
                         CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.setValue(toggleDefaultEnabled.getComponent().isSelected());
                         s.setCustomExtractionPathEnabled(toggleCustomizedPath.getComponent().isSelected());
-                        s.setCustomExtractionPath(customPath.getComponent().getText());
+                        if (toggleCustomizedPath.getComponent().isSelected()) {
+                            s.setCustomExtractionPath(customPath.getComponent().getText());
+                        } else {
+                            /*
+                             * Custom path may be changed but it is disabled -> Do not validate it as this might ask the user if the
+                             * path/older should be created.
+                             */
+                            s.setCustomExtractionPath(customPath.getComponent().getText(false));
+                        }
                         s.setDeleteArchiveFilesAfterExtractionAction(toggleDeleteArchives.getComponent().getSelectedItem());
                         s.setDeleteArchiveDownloadlinksAfterExtraction(toggleDeleteArchiveDownloadLinks.getComponent().isSelected());
                         s.setIfFileExistsAction(toggleOverwriteExisting.getComponent().getSelectedItem());

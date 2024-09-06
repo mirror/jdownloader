@@ -10,11 +10,6 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
-import jd.controlling.downloadcontroller.BadDestinationException;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.PathTooLongException;
-import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
-
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.pathchooser.PathChooser;
 import org.appwork.uio.UIOManager;
@@ -27,6 +22,11 @@ import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.downloadcontroller.BadDestinationException;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.PathTooLongException;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
 
 public class FolderChooser extends PathChooser implements SettingsComponent {
     /**
@@ -130,9 +130,15 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
     }
 
     public String getText() {
+        return getText(true);
+    }
+
+    public String getText(final Boolean checkPath) {
         File file = getFile();
         if (file == null) {
             return null;
+        } else if (Boolean.FALSE.equals(checkPath)) {
+            return file.getAbsolutePath();
         }
         file = checkPath(file, originalPath == null ? null : new File(originalPath));
         if (file == null) {
