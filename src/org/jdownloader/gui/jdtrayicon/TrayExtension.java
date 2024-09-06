@@ -45,6 +45,12 @@ import javax.swing.Icon;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
+import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.MainFrameClosingHandler;
+import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
+import jd.plugins.AddonPanel;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -54,6 +60,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.os.CrossSystem;
@@ -82,12 +89,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
-
-import jd.SecondLevelLaunch;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.MainFrameClosingHandler;
-import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
-import jd.plugins.AddonPanel;
 
 public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements TrayMouseListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry, GenericConfigEventListener<Boolean> {
     @Override
@@ -280,7 +281,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             trayIcon = new TrayIcon(img, "JDownloader");
                             trayIcon.setImageAutoSize(true);
                             trayIcon.addActionListener(TrayExtension.this);
-                            ma = new TrayMouseAdapter(TrayExtension.this, trayIcon);
+                            final TrayMouseAdapter ma = new TrayMouseAdapter(TrayExtension.this, trayIcon);
+                            TrayExtension.this.ma = ma;
                             LogController.CL(TrayExtension.class).info("JDLightTrayIcon Init complete");
                             if (guiFrame == null) {
                                 guiFrame = JDGui.getInstance().getMainFrame();
@@ -343,11 +345,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             /*
                              * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
                              * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
-                             *
+                             * 
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
-                             *
+                             * 
                              * also see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7103610
-                             *
+                             * 
                              * TODO: maybe add dialog to inform user
                              */
                             LogController.CL().log(e);
@@ -476,7 +478,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         }
         Rectangle bounds = ((TrayMouseAdapter) e.getSource()).getUnscaledBounds();
         Point target = new Point(bounds.x, bounds.y);
-        target = SwingUtils.convertToScaled(target, null);
+        target = SwingUtils.convertToScaled(target, SwingUtils.getScreenByBounds(bounds));
         trayIconTooltip.showTooltip(target);
     }
 
@@ -486,6 +488,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             if (trayIcon != null) {
                 trayIcon.removeActionListener(this);
                 final TrayMouseAdapter ma = this.ma;
+                this.ma = null;
                 if (ma != null) {
                     ma.stopListener();
                 }
@@ -512,7 +515,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     public void windowStateChanged(WindowEvent evt) {
         int oldState = evt.getOldState();
         int newState = evt.getNewState();
-        if (System.currentTimeMillis() - lastCloseRequest < 1000 || asking) {
+        if (Time.systemIndependentCurrentJVMTimeMillis() - lastCloseRequest < 1000 || asking) {
             return;
         }
         if ((oldState & JFrame.ICONIFIED) == 0 && (newState & JFrame.ICONIFIED) != 0) {
@@ -639,7 +642,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     public void windowClosing(WindowEvent e) {
         final AtomicBoolean asked = new AtomicBoolean(false);
         try {
-            lastCloseRequest = System.currentTimeMillis();
+            lastCloseRequest = Time.systemIndependentCurrentJVMTimeMillis();
             main: if (isEnabled()) {
                 switch (getSettings().getOnCloseAction()) {
                 case ASK:

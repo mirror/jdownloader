@@ -19,6 +19,7 @@ import java.awt.Color;
 import java.awt.Image;
 import java.awt.TrayIcon;
 import java.awt.event.MouseEvent;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.ImageIcon;
 
@@ -36,6 +37,7 @@ public class TrayMouseAdapter extends org.appwork.swing.trayicon.TrayMouseAdapte
     private final TrayIcon                            trayIcon;
     private final Image                               image;
     private final GenericConfigEventListener<Boolean> clipboardToggle;
+    private final AtomicBoolean                       listenerFlag = new AtomicBoolean(false);
 
     public TrayMouseAdapter(TrayExtension lightTray, TrayIcon trayIcon) {
         super(lightTray, trayIcon);
@@ -59,9 +61,11 @@ public class TrayMouseAdapter extends org.appwork.swing.trayicon.TrayMouseAdapte
         new EDTRunner() {
             @Override
             protected void runInEDT() {
-                trayIcon.addMouseListener(TrayMouseAdapter.this);
-                trayIcon.addMouseMotionListener(TrayMouseAdapter.this);
-                trayIcon.setImage(getCurrentTrayIconImage());
+                if (listenerFlag.compareAndSet(false, true)) {
+                    trayIcon.addMouseListener(TrayMouseAdapter.this);
+                    trayIcon.addMouseMotionListener(TrayMouseAdapter.this);
+                    trayIcon.setImage(getCurrentTrayIconImage());
+                }
             }
         };
     }
@@ -80,9 +84,11 @@ public class TrayMouseAdapter extends org.appwork.swing.trayicon.TrayMouseAdapte
         new EDTRunner() {
             @Override
             protected void runInEDT() {
-                trayIcon.removeMouseListener(TrayMouseAdapter.this);
-                trayIcon.removeMouseMotionListener(TrayMouseAdapter.this);
-                trayIcon.setImage(getCurrentTrayIconImage());
+                if (listenerFlag.compareAndSet(true, false)) {
+                    trayIcon.removeMouseListener(TrayMouseAdapter.this);
+                    trayIcon.removeMouseMotionListener(TrayMouseAdapter.this);
+                    trayIcon.setImage(getCurrentTrayIconImage());
+                }
             }
         };
     }

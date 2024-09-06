@@ -1567,6 +1567,11 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         public void run() {
                             boolean reInitNeeded = false;
                             while (Thread.currentThread() == trayIconChecker) {
+                                try {
+                                    Thread.sleep(15000);
+                                } catch (InterruptedException e) {
+                                    break;
+                                }
                                 boolean reInitTrayIcon = false;
                                 try {
                                     reInitTrayIcon = 0 == SystemTray.getSystemTray().getTrayIcons().length;
@@ -1585,11 +1590,6 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                                         }
                                     } catch (UnsupportedOperationException e) {
                                     }
-                                }
-                                try {
-                                    Thread.sleep(15000);
-                                } catch (InterruptedException e) {
-                                    break;
                                 }
                             }
                         }
