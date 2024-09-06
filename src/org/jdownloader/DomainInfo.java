@@ -9,19 +9,19 @@ import java.util.Locale;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-import org.appwork.swing.components.IDIcon;
-import org.appwork.swing.components.IconIdentifier;
-import org.appwork.utils.images.IconIO;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.NewTheme;
-
 import jd.config.Property;
 import jd.controlling.faviconcontroller.FavIconRequestor;
 import jd.controlling.faviconcontroller.FavIcons;
 import jd.http.Browser;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.swing.components.IDIcon;
+import org.appwork.swing.components.IconIdentifier;
+import org.appwork.utils.images.IconIO;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.NewTheme;
 
 public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Icon, IDIcon {
     private static final HashMap<String, String> HARDCODEDFAVICONS = new HashMap<String, String>();
@@ -38,10 +38,10 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
         HARDCODEDFAVICONS.put("usenet", IconKey.ICON_LOGO_NZB);
         HARDCODEDFAVICONS.put("genericusenet", IconKey.ICON_LOGO_NZB);
     }
-    private static final int     WIDTH  = 16;
-    private static final int     HEIGHT = 16;
-    private final String         domain;
-    private final IconIdentifier iconIdentifier;
+    private static final int                     WIDTH             = 16;
+    private static final int                     HEIGHT            = 16;
+    private final String                         domain;
+    private final IconIdentifier                 iconIdentifier;
 
     private DomainInfo(String tld, String domain) {
         this.tld = Property.dedupeString(tld);
@@ -106,7 +106,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
                 }
             }
             if (ret != null) {
-                ret = new ImageIcon(IconIO.getCroppedImage(IconIO.toBufferedImage(ret)));
+                ret = new ImageIcon(FavIcons.getCroppedImage(IconIO.toBufferedImage(ret), false));
             }
         }
         if (ret != null) {

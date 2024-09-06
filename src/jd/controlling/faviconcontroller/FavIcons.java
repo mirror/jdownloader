@@ -10,6 +10,7 @@ import java.awt.Transparency;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.Raster;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -504,7 +505,7 @@ public class FavIcons {
                 /*
                  * remove transparent area
                  */
-                final BufferedImage croppedImage = IconIO.getCroppedImage(img);
+                final BufferedImage croppedImage = getCroppedImage(img, false);
                 /*
                  * loop through all available images to find best resolution
                  */
@@ -521,6 +522,68 @@ public class FavIcons {
             }
         }
         return null;
+    }
+
+    public static BufferedImage getCroppedImage(final BufferedImage source, final boolean keepAspectRation) {
+        if (source != null) {
+            try {
+                final Raster alphaRaster = source.getAlphaRaster();
+                if (alphaRaster != null) {
+                    int[] alphaPixel = new int[alphaRaster.getNumBands()];
+                    final int width = alphaRaster.getWidth();
+                    final int height = alphaRaster.getHeight();
+                    int i;
+                    int j;
+                    leftLoop: for (i = 0; i < width; i++) {
+                        for (j = 0; j < height; j++) {
+                            if (alphaRaster.getPixel(i, j, alphaPixel)[0] != 0) {
+                                break leftLoop;
+                            }
+                        }
+                    }
+                    int x0 = i;
+                    topLoop: for (j = 0; j < height; j++) {
+                        for (i = 0; i < width; i++) {
+                            if (alphaRaster.getPixel(i, j, alphaPixel)[0] != 0) {
+                                break topLoop;
+                            }
+                        }
+                    }
+                    int y0 = j;
+                    rightLoop: for (i = width - 1; i >= 0; i--) {
+                        for (j = 0; j < height; j++) {
+                            if (alphaRaster.getPixel(i, j, alphaPixel)[0] != 0) {
+                                break rightLoop;
+                            }
+                        }
+                    }
+                    int x1 = i + 1;
+                    bottomLoop: for (j = height - 1; j >= 0; j--) {
+                        for (i = 0; i < width; i++) {
+                            if (alphaRaster.getPixel(i, j, alphaPixel)[0] != 0) {
+                                break bottomLoop;
+                            }
+                        }
+                    }
+                    int y1 = j + 1;
+                    if (x0 == 0 && y0 == 0 && (x1 - x0) == width && (y1 - y0) == height) {
+                        return source;
+                    } else {
+                        final boolean sameAspectRatio = Math.abs(((double) width / height) - ((double) (x1 - x0) / (y1 - y0))) < 0.00001d;
+                        if (!keepAspectRation || sameAspectRatio) {
+                            return source.getSubimage(x0, y0, x1 - x0, y1 - y0);
+                        } else {
+                            // IDEA: adapt region to have same aspect ratio
+                            return source;
+                        }
+                    }
+                }
+            } catch (Throwable e) {
+                LogController.CL().log(e);
+            }
+
+        }
+        return source;
     }
 
     private static boolean isSameDomain(final Browser br, String host, String[] siteSupportedNames) throws IOException {
