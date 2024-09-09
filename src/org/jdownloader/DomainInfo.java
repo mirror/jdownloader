@@ -9,19 +9,19 @@ import java.util.Locale;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-import jd.config.Property;
-import jd.controlling.faviconcontroller.FavIconRequestor;
-import jd.controlling.faviconcontroller.FavIcons;
-import jd.http.Browser;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-
 import org.appwork.swing.components.IDIcon;
 import org.appwork.swing.components.IconIdentifier;
 import org.appwork.utils.images.IconIO;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
+
+import jd.config.Property;
+import jd.controlling.faviconcontroller.FavIconRequestor;
+import jd.controlling.faviconcontroller.FavIcons;
+import jd.http.Browser;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Icon, IDIcon {
     private static final HashMap<String, String> HARDCODEDFAVICONS = new HashMap<String, String>();
@@ -38,10 +38,10 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
         HARDCODEDFAVICONS.put("usenet", IconKey.ICON_LOGO_NZB);
         HARDCODEDFAVICONS.put("genericusenet", IconKey.ICON_LOGO_NZB);
     }
-    private static final int                     WIDTH             = 16;
-    private static final int                     HEIGHT            = 16;
-    private final String                         domain;
-    private final IconIdentifier                 iconIdentifier;
+    private static final int     WIDTH  = 16;
+    private static final int     HEIGHT = 16;
+    private final String         domain;
+    private final IconIdentifier iconIdentifier;
 
     private DomainInfo(String tld, String domain) {
         this.tld = Property.dedupeString(tld);
@@ -140,7 +140,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
         String ret = domain.toLowerCase(Locale.ENGLISH);
         int index = ret.indexOf(" ");
         if (index > 0) {
-            // for examle recaptcha.com (google)
+            // for example recaptcha.com (google)
             ret = ret.substring(0, index);
         }
         index = ret.indexOf("/");
@@ -152,19 +152,19 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
     }
 
     public static DomainInfo getInstance(final String domain) {
-        if (domain != null) {
-            final String lcaseTld = getCacheID(domain);
-            synchronized (CACHE) {
-                DomainInfo ret = null;
-                WeakReference<DomainInfo> domainInfo = CACHE.get(lcaseTld);
-                if (domainInfo == null || (ret = domainInfo.get()) == null) {
-                    ret = new DomainInfo(Browser.getHost(lcaseTld), lcaseTld);
-                    CACHE.put(lcaseTld, new WeakReference<DomainInfo>(ret));
-                }
-                return ret;
-            }
+        if (domain == null) {
+            return null;
         }
-        return null;
+        final String lcaseTld = getCacheID(domain);
+        synchronized (CACHE) {
+            DomainInfo ret = null;
+            WeakReference<DomainInfo> domainInfo = CACHE.get(lcaseTld);
+            if (domainInfo == null || (ret = domainInfo.get()) == null) {
+                ret = new DomainInfo(Browser.getHost(lcaseTld), lcaseTld);
+                CACHE.put(lcaseTld, new WeakReference<DomainInfo>(ret));
+            }
+            return ret;
+        }
     }
 
     /**
