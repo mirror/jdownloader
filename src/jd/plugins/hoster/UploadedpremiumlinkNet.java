@@ -162,8 +162,9 @@ public class UploadedpremiumlinkNet extends PluginForHost {
             account.setType(AccountType.FREE);
             ai.setExpired(true);
         }
-        ai.setStatus(user.get("type").toString() + " | Total traffic left: " + user.get("traffic_left") + " | Daily links generated: " + user.get("daily_links_generated") + "/" + user.get("daily_links_limit"));
-        ai.setTrafficLeft(((Number) user.get("daily_traffic_left")).longValue());
+        final int daily_links_generated = ((Number) user.get("daily_links_generated")).intValue();
+        final int daily_links_limit = ((Number) user.get("daily_links_limit")).intValue();
+        ai.setStatus(user.get("type").toString() + " | Total traffic left: " + user.get("traffic_left") + " | Daily links generated: " + daily_links_generated + "/" + daily_links_limit);
         ai.setTrafficMax(((Number) user.get("daily_traffic_limit")).longValue());
         final ArrayList<String> supportedhosts = new ArrayList<String>();
         final List<Map<String, Object>> hosters = (List<Map<String, Object>>) user.get("hosters");
@@ -178,6 +179,10 @@ public class UploadedpremiumlinkNet extends PluginForHost {
         }
         ai.setMultiHostSupport(this, supportedhosts);
         account.setConcurrentUsePossible(true);
+        if (daily_links_generated >= daily_links_limit) {
+            /* Account cannot be used for downloading. */
+            throw new AccountUnavailableException("Account has reached daily max links limit", 5 * 60 * 1000);
+        }
         return ai;
     }
 
@@ -188,9 +193,6 @@ public class UploadedpremiumlinkNet extends PluginForHost {
             return entries;
         }
     }
-    // private Object accessAPI(final Account account, final DownloadLink link, final String path) {
-    // return null;
-    // }
 
     private Object accessAPI(final Account account, final DownloadLink link, final String path, final UrlQuery postdata) throws IOException, PluginException, InterruptedException {
         postdata.add("api_key", Encoding.urlEncode(account.getPass()));
@@ -265,10 +267,10 @@ public class UploadedpremiumlinkNet extends PluginForHost {
         final String errorcode = entries.get("category_error").toString();
         if (accountErrorsPermanent.contains(errorcode)) {
             throw new AccountInvalidException(message);
-        } else if (downloadErrorsFileUnavailable.contains(errorcode)) {
+        } else if (accountErrorsTemporary.contains(errorcode)) {
             throw new AccountUnavailableException(message, 5 * 60 * 1000);
         } else if (downloadErrorsHostUnavailable.contains(errorcode)) {
-            mhm.putError(accountErrorsTemporary, link, 5 * 60 * 1000l, message);
+            mhm.putError(account, link, 5 * 60 * 1000l, message);
         } else if (downloadErrorsFileUnavailable.contains(errorcode)) {
             mhm.handleErrorGeneric(account, link, message, 20);
         } else if (errorcode.equalsIgnoreCase("FILE_NOT_FOUND")) {

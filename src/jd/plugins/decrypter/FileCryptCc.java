@@ -384,6 +384,8 @@ public class FileCryptCc extends PluginForDecrypt {
         final FileCryptConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
         final int cutCaptchaAvoidanceMaxRetries = cfg.getMaxCutCaptchaAvoidanceRetries();
         final HashSet<String> usedWrongPasswords = new HashSet<String>();
+        boolean captchaSuccess = false;
+        boolean cutCaptchaNeeded = false;
         cutcaptchaAvoidanceLoop: while (cutCaptchaRetryIndex++ <= cutCaptchaAvoidanceMaxRetries && !this.isAbort()) {
             logger.info("cutcaptchaAvoidanceLoop " + (cutCaptchaRetryIndex + 1) + " / " + (cutCaptchaAvoidanceMaxRetries + 1));
             /* Website has no language selection as it auto-chooses based on IP and/or URL but we can force English language. */
@@ -491,11 +493,13 @@ public class FileCryptCc extends PluginForDecrypt {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "passwordFieldKey can't be empty");
                     }
                     String passCode = null;
+                    /* Get next password of which we know that it isn't wrong. */
                     while (passwords.size() > 0) {
                         /* List of previously used passwords */
                         final String pw = passwords.remove(0);
                         if (!usedWrongPasswords.contains(pw)) {
                             passCode = pw;
+                            break;
                         } else {
                             // no need to submit password that has already been tried!
                             logger.info("Skipping already tried wrong password: " + pw);
@@ -525,6 +529,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     } else {
                         logger.info("Password failure | Wrong password: " + passCode);
                         usedWrongPasswords.add(passCode);
+                        continue passwordLoop;
                     }
                 }
                 if (passwordCounter >= maxPasswordRetries && containsPassword()) {
@@ -536,11 +541,11 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
                 this.getPluginConfig().setProperty(PROPERTY_PLUGIN_LAST_USED_PASSWORD, successfullyUsedFolderPassword);
             }
+            cutCaptchaNeeded = false;
             if (containsCaptcha()) {
                 /* Process captcha */
                 int captchaCounter = -1;
                 final int maxCaptchaRetries = 10;
-                boolean captchaSuccess = false;
                 captchaLoop: while (captchaCounter++ < maxCaptchaRetries && !this.isAbort()) {
                     logger.info("Captcha loop: " + captchaCounter + "/" + maxCaptchaRetries);
                     final boolean isLastLoop = captchaCounter >= maxCaptchaRetries;
@@ -598,7 +603,8 @@ public class FileCryptCc extends PluginForDecrypt {
                             continue;
                         }
                     } else if (StringUtils.containsIgnoreCase(captchaURL, "cutcaptcha")) {
-                        final boolean tryCutCaptchaInDevMode = true;
+                        cutCaptchaNeeded = true;
+                        final boolean tryCutCaptchaInDevMode = false;
                         if (!Application.isHeadless() && DebugMode.TRUE_IN_IDE_ELSE_FALSE && tryCutCaptchaInDevMode) {
                             // current implementation via localhost no longer working
                             final String cutcaptchaToken = new CaptchaHelperCrawlerPluginCutCaptcha(this, br, null).getToken();
@@ -634,17 +640,19 @@ public class FileCryptCc extends PluginForDecrypt {
                         break captchaLoop;
                     }
                 }
-                if (!captchaSuccess) {
-                    if (cutCaptchaRetryIndex >= cutCaptchaAvoidanceMaxRetries) {
-                        throw new DecrypterRetryException(RetryReason.CAPTCHA, "CUTCAPTCHA_IS_NOT_SUPPORTED_" + folderID, "Cutcaptcha is not supported! Please read: support.jdownloader.org/Knowledgebase/Article/View/cutcaptcha-not-supported");
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                }
+            } else {
+                captchaSuccess = true;
             }
             /* Dead end: No reason to continue this loop here. */
             logger.info("Stepping out of cutCaptchaAvoidanceLoop");
             break cutcaptchaAvoidanceLoop;
+        }
+        if (!captchaSuccess) {
+            if (cutCaptchaRetryIndex >= cutCaptchaAvoidanceMaxRetries && cutCaptchaNeeded) {
+                throw new DecrypterRetryException(RetryReason.CAPTCHA, "CUTCAPTCHA_IS_NOT_SUPPORTED_" + folderID, "Cutcaptcha is not supported! Please read: support.jdownloader.org/Knowledgebase/Article/View/cutcaptcha-not-supported");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
         }
     }
 

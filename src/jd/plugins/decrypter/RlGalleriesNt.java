@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -132,7 +133,12 @@ public class RlGalleriesNt extends PluginForDecrypt {
                 /* Website */
                 final String url = URLHelper.getUrlWithoutParams(contenturl);
                 /* Display as many items as possible to avoid having to deal with pagination. */
-                br.getPage(url + "?a=10000");
+                final UrlQuery query = UrlQuery.parse(contenturl);
+                /* Display all images on one page */
+                query.addAndReplace("a", "10000");
+                /* Start from page 1 else we may get an empty page (website is buggy). */
+                query.addAndReplace("p", "1");
+                br.getPage(url + "?" + query.toString());
                 if (isOffline(br)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -159,23 +165,24 @@ public class RlGalleriesNt extends PluginForDecrypt {
                     final ArrayList<DownloadLink> newitems = new ArrayList<DownloadLink>();
                     final String[] redirecturls = br.getRegex("rel='nofollow noopener' href='(/[^/\\']+)' target='_blank'").getColumn(0);
                     /*
-                     * Check for imagevenue thumbnails that our imagevenue host plugin will change to the original URLs without needing to
-                     * crawl the individual urlgalleries.net URLs -> Saves a lot of time
+                     * Check for special thumbnails that our host plugins will change to the original URLs without needing to crawl the
+                     * individual urlgalleries.net URLs -> Speeds up things a lot!
                      */
-                    final String[] thumbnailurls = br.getRegex("class='gallery' src='(https?://[^/]*\\.(imagevenue\\.com|fappic\\.com)/[^<>\"\\']+)'").getColumn(0);
+                    final String[] thumbnailurls = br.getRegex("class='gallery' src='(https?://[^/]*\\.(imagevenue\\.com|fappic\\.com|imagetwist\\.com)/[^<>\"\\']+)'").getColumn(0);
                     for (final String thumbnailurl : thumbnailurls) {
                         if (dupes.add(thumbnailurl)) {
                             final DownloadLink link = this.createDownloadlink(thumbnailurl);
                             newitems.add(link);
                         }
                     }
-                    if (redirecturls.length > thumbnailurls.length) {
+                    if (redirecturls != null && thumbnailurls != null && redirecturls.length > thumbnailurls.length) {
                         for (String redirecturl : redirecturls) {
-                            if (dupes.add(redirecturl)) {
-                                redirecturl = br.getURL(redirecturl).toExternalForm();
-                                final DownloadLink link = this.createDownloadlink(redirecturl);
-                                newitems.add(link);
+                            if (!dupes.add(redirecturl)) {
+                                continue;
                             }
+                            redirecturl = br.getURL(redirecturl).toExternalForm();
+                            final DownloadLink link = this.createDownloadlink(redirecturl);
+                            newitems.add(link);
                         }
                     } else {
                         logger.info("Thumbnail crawling was successful");
@@ -202,6 +209,9 @@ public class RlGalleriesNt extends PluginForDecrypt {
                         page++;
                     }
                 } while (!this.isAbort());
+            }
+            if (ret.isEmpty()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             return ret;
         } else {

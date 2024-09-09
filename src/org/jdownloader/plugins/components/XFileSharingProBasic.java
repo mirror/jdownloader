@@ -3241,7 +3241,12 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             final Request request = br.getRequest();
             String correctedBR = correctedBrowserRequestMap.get(request);
             if (correctedBR == null) {
-                correctedBR = br.getRequest().getHtmlCode();
+                try {
+                    correctedBR = br.getRequest().getHtmlCode();
+                } catch (final Throwable e) {
+                    /* E.g. image content */
+                    correctedBR = "";
+                }
                 final ArrayList<String> regexStuff = getCleanupHTMLRegexes();
                 // remove custom rules first!!! As html can change because of generic cleanup rules.
                 /* generic cleanup */

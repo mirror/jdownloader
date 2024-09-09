@@ -29,6 +29,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RmzCr extends antiDDoSForDecrypt {
@@ -67,9 +69,12 @@ public class RmzCr extends antiDDoSForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.getCryptedUrl();
+        final String contenturl = param.getCryptedUrl();
         br.setFollowRedirects(true);
-        getPage(parameter);
+        getPage(contenturl);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String fpName = br.getRegex("<div id=\"title_release_before_title\"></div>\\s*<h2>([^<>\"]+)<").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<title>RapidMoviez\\s+-\\s+([^<]+)</title>").getMatch(0);
@@ -116,6 +121,9 @@ public class RmzCr extends antiDDoSForDecrypt {
                     ret.add(createDownloadlink(link2));
                 }
             }
+        }
+        if (ret.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
