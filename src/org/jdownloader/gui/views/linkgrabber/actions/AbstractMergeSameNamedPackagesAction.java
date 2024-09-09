@@ -106,7 +106,7 @@ public abstract class AbstractMergeSameNamedPackagesAction<PackageType extends A
     @Override
     public boolean isEnabled() {
         final SelectionInfo<PackageType, ChildrenType> sel = getSelection();
-        if (sel == null || sel.isEmpty()) {
+        if (sel == null) {
             /* This shall never happen. */
             return false;
         }
