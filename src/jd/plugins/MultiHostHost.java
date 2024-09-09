@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.appwork.storage.Storable;
+import org.appwork.utils.Time;
 import org.appwork.utils.formatter.SizeFormatter;
 
 public class MultiHostHost implements Storable {
@@ -19,24 +20,26 @@ public class MultiHostHost implements Storable {
         DEACTIVATED_JDOWNLOADER,
         DEACTIVATED_MULTIHOST,
         DEACTIVATED_MULTIHOST_NOT_FOR_THIS_ACCOUNT_TYPE,
+        DEACTIVATED_MULTIHOST_LIMIT_REACHED,
         UNSUPPORTED_JDOWNLOADER;
     }
 
-    private String                name                      = null;
-    private List<String>          domains                   = new ArrayList<String>();
-    private Boolean               isUnlimitedTraffic        = true;
-    private Boolean               isUnlimitedLinks          = true;
-    private int                   linksLeft                 = -1;
-    private int                   linksMax                  = -1;
-    private long                  trafficLeft               = -1;
-    private long                  trafficMax                = -1;
+    private String                name                            = null;
+    private List<String>          domains                         = new ArrayList<String>();
+    private Boolean               isUnlimitedTraffic              = true;
+    private Boolean               isUnlimitedLinks                = true;
+    private int                   linksLeft                       = -1;
+    private int                   linksMax                        = -1;
+    private long                  trafficLeft                     = -1;
+    private long                  trafficMax                      = -1;
     // TODO: Maybe remove this? I didn't see such an information used anywhere.
-    private long                  timestampLimitReset       = -1;
+    private long                  timestampLimitReset             = -1;
+    private long                  unavailableUntilTimestamp       = -1;
     private short                 trafficCalculationFactorPercent = 100;
-    private int                   maxChunks                 = 0;
-    private Boolean               resume                    = null;
-    private String                statusText                = null;
-    private MultihosterHostStatus status                    = MultihosterHostStatus.WORKING;
+    private int                   maxChunks                       = 0;
+    private Boolean               resume                          = null;
+    private String                statusText                      = null;
+    private MultihosterHostStatus status                          = null;
 
     public MultiHostHost(final String domain) {
         this.addDomain(domain);
@@ -166,7 +169,13 @@ public class MultiHostHost implements Storable {
     }
 
     public MultihosterHostStatus getStatus() {
-        return status;
+        if (this.unavailableUntilTimestamp > Time.systemIndependentCurrentJVMTimeMillis()) {
+            return MultihosterHostStatus.DEACTIVATED_JDOWNLOADER;
+        } else if (status == null) {
+            return MultihosterHostStatus.WORKING;
+        } else {
+            return status;
+        }
     }
 
     public void setStatus(MultihosterHostStatus status) {
@@ -203,6 +212,15 @@ public class MultiHostHost implements Storable {
         } else {
             return false;
         }
+    }
+
+    public long getUnavailableUntilTimestamp() {
+        return unavailableUntilTimestamp;
+    }
+
+    public void setUnavailableTime(long milliseconds) {
+        milliseconds = Math.min(milliseconds, 5 * 60 * 1000);
+        this.unavailableUntilTimestamp = Time.systemIndependentCurrentJVMTimeMillis() + milliseconds;
     }
 
     @Override

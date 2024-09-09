@@ -8,8 +8,10 @@ import org.appwork.utils.Time;
 
 import jd.config.Property;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.MultiHostHost;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
@@ -67,6 +69,20 @@ public class MultiHosterManagement {
                 db.put(account, unavailableMap);
             }
             unavailableMap.put(downloadLink.getHost(), nue);
+            setLimitOnAccount: if (account != null && account instanceof Account) {
+                /* Set limit on account so it is aware of current state of that host. */
+                final Account acc = (Account) account;
+                final AccountInfo ai = acc.getAccountInfo();
+                if (ai == null) {
+                    break setLimitOnAccount;
+                }
+                final MultiHostHost mhost = ai.getMultihostSupportedHost(downloadLink.getHost());
+                if (mhost == null) {
+                    break setLimitOnAccount;
+                }
+                mhost.setUnavailableTime(timeout);
+                ai.updateMultihostSupportedHost(mhost);
+            }
         }
         throw new PluginException(LinkStatus.ERROR_RETRY, reason);
     }

@@ -753,6 +753,16 @@ public class AccountInfo extends Property implements AccountTrafficView {
         return null;
     }
 
+    public void updateMultihostSupportedHost(final MultiHostHost mhost) {
+        final List<MultiHostHost> mhosts = getMultiHostSupport2();
+        if (mhosts == null || mhosts.size() == 0) {
+            return;
+        }
+        mhosts.remove(mhost);
+        mhosts.add(mhost);
+        // this.setProperty(PROPERTY_MULTIHOST_SUPPORT, Property.NULL);
+    }
+
     public static long getTimestampInServerContext(final Browser br, final long timestamp) {
         final long serverTime = br.getCurrentServerTime(-1);
         if (serverTime > 0) {
