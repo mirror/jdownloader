@@ -32,8 +32,6 @@ public class MultiHostHost implements Storable {
     private int                   linksMax                        = -1;
     private long                  trafficLeft                     = -1;
     private long                  trafficMax                      = -1;
-    // TODO: Maybe remove this? I didn't see such an information used anywhere.
-    private long                  timestampLimitReset             = -1;
     private long                  unavailableUntilTimestamp       = -1;
     private short                 trafficCalculationFactorPercent = 100;
     private int                   maxChunks                       = 0;
@@ -96,14 +94,6 @@ public class MultiHostHost implements Storable {
     public void setTrafficUsed(long bytes) {
         this.trafficLeft = this.trafficMax - bytes;
         this.isUnlimitedTraffic = false;
-    }
-
-    public long getTimestampTrafficReset() {
-        return timestampLimitReset;
-    }
-
-    public void setTimestampTrafficReset(long timestampTrafficReset) {
-        this.timestampLimitReset = timestampTrafficReset;
     }
 
     /**

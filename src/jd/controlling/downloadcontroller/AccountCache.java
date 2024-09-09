@@ -17,6 +17,7 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.MultiHostHost;
+import jd.plugins.MultiHostHost.MultihosterHostStatus;
 import jd.plugins.PluginForHost;
 
 public class AccountCache implements Iterable<CachedAccount> {
@@ -103,7 +104,11 @@ public class AccountCache implements Iterable<CachedAccount> {
                         // TODO
                         final long neededTraffic = (link.getView().getBytesTotal() * trafficCalcFactor) / 100;
                     }
-                    if (!hostinfo.isUnlimitedLinks() && hostinfo.getLinksLeft() <= 0) {
+                    final MultihosterHostStatus status = hostinfo.getStatus();
+                    if (status != MultihosterHostStatus.WORKING && status != MultihosterHostStatus.WORKING_UNSTABLE) {
+                        /* Download of that host is currently not possible. */
+                        return false;
+                    } else if (!hostinfo.isUnlimitedLinks() && hostinfo.getLinksLeft() <= 0) {
                         /* Max limits link is reached -> Cannot download */
                         return false;
                     } else if (!hostinfo.isUnlimitedTraffic() && link.getView().getBytesTotal() != -1 && hostinfo.getTrafficLeft() < link.getView().getBytesTotal()) {
