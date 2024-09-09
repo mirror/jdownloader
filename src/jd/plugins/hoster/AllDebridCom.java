@@ -572,10 +572,10 @@ public class AllDebridCom extends PluginForHost {
             /* This is the only error which allows us to remove the apikey and re-login. */
             account.removeProperty(PROPERTY_apikey);
             throw new AccountInvalidException(message);
-        } else if (downloadErrorsFileUnavailable.contains(errorcode)) {
+        } else if (accountErrorsTemporary.contains(errorcode)) {
             throw new AccountUnavailableException(message, 5 * 60 * 1000);
         } else if (downloadErrorsHostUnavailable.contains(errorcode)) {
-            mhm.putError(accountErrorsTemporary, link, 5 * 60 * 1000l, message);
+            mhm.putError(account, link, 5 * 60 * 1000l, message);
         } else if (downloadErrorsFileUnavailable.contains(errorcode)) {
             mhm.handleErrorGeneric(account, link, message, 20);
         } else {
