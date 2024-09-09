@@ -496,18 +496,19 @@ public class AccountInfo extends Property implements AccountTrafficView {
             }
         }
         final HashSet<String> unassignedMultiHostSupport = new HashSet<String>();
-        unassignedMultiHostSupport.addAll(nonTldHosts);
-        final Iterator<String> assignedMultiHostPluginsIterator = assignedMultiHostPlugins.iterator();
-        while (assignedMultiHostPluginsIterator.hasNext()) {
-            final String hostCleaned = assignedMultiHostPluginsIterator.next();
+        unassignedMultiHostSupport.addAll(assignedMultiHostPlugins);
+        final Iterator<String> unassignedMultiHostPluginsIterator = unassignedMultiHostSupport.iterator();
+        while (unassignedMultiHostPluginsIterator.hasNext()) {
+            final String hostCleaned = unassignedMultiHostPluginsIterator.next();
             if (hostCleaned == null) {
+                unassignedMultiHostPluginsIterator.remove();
                 continue;
             }
             final LazyHostPlugin lazyPlugin = pluginFinder._assignHost(hostCleaned);
             if (lazyPlugin == null) {
-                unassignedMultiHostSupport.add(hostCleaned);
                 continue;
             }
+            unassignedMultiHostPluginsIterator.remove();
             if (assignedMultiHostPlugins.contains(lazyPlugin.getHost())) {
                 Set<LazyHostPlugin> plugins = mapping.get(hostCleaned);
                 if (plugins == null) {
@@ -519,7 +520,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 if (lazyPlugin.isOfflinePlugin()) {
                     skippedOfflineEntries.add(hostCleaned);
                     continue;
-                } else if (!lazyPlugin.isFallbackPlugin()) {
+                } else if (lazyPlugin.isFallbackPlugin()) {
                     continue;
                 }
                 try {
@@ -549,10 +550,29 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 }
             }
         }
+        if (unassignedMultiHostSupport.size() > 0) {
+            /**
+             * Remove all "double" entries from remaining list of unmatched entries to avoid wrong log output. </br>
+             * If a multihost provides multiple domains of one host e.g. "rg.to" and "rapidgator.net", the main one may have been matched
+             * but "rg.to" may remain on the list of unassigned hosts.
+             */
+            for (final Entry<String, Set<LazyHostPlugin>> entry : mapping.entrySet()) {
+                final Set<LazyHostPlugin> set = entry.getValue();
+                for (final LazyHostPlugin plg : set) {
+                    final String[] siteSupportedNames = plg.getSitesSupported();
+                    if (siteSupportedNames == null) {
+                        continue;
+                    }
+                    for (final String siteSupportedName : siteSupportedNames) {
+                        unassignedMultiHostSupport.remove(siteSupportedName);
+                    }
+                }
+            }
+        }
         /* Last resort handling for items which we still couldn't match. */
-        final Iterator<String> unassignedMultiHostSupportIterator = unassignedMultiHostSupport.iterator();
-        while (unassignedMultiHostSupportIterator.hasNext()) {
-            final String host = unassignedMultiHostSupportIterator.next();
+        final Iterator<String> unassignedMultiHostPluginsIterator2 = unassignedMultiHostSupport.iterator();
+        while (unassignedMultiHostPluginsIterator2.hasNext()) {
+            final String host = unassignedMultiHostPluginsIterator2.next();
             final String hostParts[] = host.split("\\.");
             if (hostParts.length < 2) {
                 continue;
@@ -584,7 +604,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 }
             }
             if (foundFlag) {
-                unassignedMultiHostSupportIterator.remove();
+                unassignedMultiHostPluginsIterator2.remove();
             }
         }
         /* Log items without result */
