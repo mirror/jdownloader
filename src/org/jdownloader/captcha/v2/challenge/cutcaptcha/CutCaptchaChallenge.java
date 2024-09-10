@@ -70,7 +70,7 @@ public abstract class CutCaptchaChallenge extends AbstractBrowserChallenge {
 
     @Override
     public boolean onGetRequest(BrowserReference browserReference, GetRequest request, HttpResponse response) throws IOException, RemoteAPIException {
-        String parameter = request.getParameterbyKey("response");
+        final String parameter = request.getParameterbyKey("response");
         if (StringUtils.isNotEmpty(parameter)) {
             browserReference.onResponse(parameter);
             response.setResponseCode(ResponseCode.SUCCESS_OK);
