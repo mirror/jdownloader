@@ -574,7 +574,7 @@ public abstract class Plugin implements ActionListener {
             return filenameWithoutExtension + newExtension;
         } else {
             return filenameOrg;
-        }f
+        }
     }
 
     protected boolean allowFileNameExtension(String filenameOrg, CompiledFiletypeExtension filetypeOld, CompiledFiletypeExtension filetypeNew) {
