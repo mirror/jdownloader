@@ -43,9 +43,18 @@ public class MultiHostHost implements Storable {
         this.addDomain(domain);
     }
 
-    public void addDomain(String domain) {
+    public void addDomain(final String domain) {
+        if (domain == null) {
+            throw new IllegalArgumentException();
+        }
         if (!this.domains.contains(domain)) {
             this.domains.add(domain);
+        }
+    }
+
+    public void addDomains(final ArrayList<String> domains) {
+        for (final String domain : domains) {
+            this.addDomain(domain);
         }
     }
 
@@ -202,6 +211,10 @@ public class MultiHostHost implements Storable {
         } else {
             return false;
         }
+    }
+
+    public List<String> getDomains() {
+        return this.domains;
     }
 
     public long getUnavailableUntilTimestamp() {

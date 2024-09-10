@@ -709,6 +709,271 @@ public class AccountInfo extends Property implements AccountTrafficView {
         }
     }
 
+    public List<String> setMultiHostSupportV2(final PluginForHost multiHostPlugin, final List<MultiHostHost> multiHostSupportList, final PluginFinder pluginFinder) {
+        if (multiHostSupportList == null || multiHostSupportList.size() == 0) {
+            this.removeProperty(PROPERTY_MULTIHOST_SUPPORT);
+            return null;
+        }
+        final LogInterface logger = (multiHostPlugin != null && multiHostPlugin.getLogger() != null) ? multiHostPlugin.getLogger() : LogController.CL();
+        final HostPluginController hpc = HostPluginController.getInstance();
+        final HashSet<String> assignedMultiHostPlugins = new HashSet<String>();
+        final HashMap<String, MultiHostHost> cleanList = new HashMap<String, MultiHostHost>();
+        final HashMap<String, Set<LazyHostPlugin>> mapping = new HashMap<String, Set<LazyHostPlugin>>();
+        final HashSet<String> nonTldHosts = new HashSet<String>();
+        final HashSet<String> skippedOfflineEntries = new HashSet<String>();
+        final HashSet<String> skippedInvalidEntries = new HashSet<String>();
+        final HashSet<String> otherIgnoreEntries = new HashSet<String>();
+        // lets do some preConfiguring, and match hosts which do not contain tld
+        final Pattern patternInvalid = Pattern.compile("http|directhttp|https|file|up|upload|video|torrent|ftp", Pattern.CASE_INSENSITIVE);
+        mhostLoop: for (final MultiHostHost mhost : multiHostSupportList) {
+            final List<String> domains = mhost.getDomains();
+            final String maindomain = domains.get(0);
+            if (maindomain == null) {
+                continue;
+            }
+            cleanList.put(maindomain, mhost);
+            final List<String> cleanedDomains = new ArrayList<String>();
+            final HashSet<String> thisNonTldHosts = new HashSet<String>();
+            for (final String domain : domains) {
+                if (domain == null) {
+                    continue;
+                }
+                final String domainCleaned = domain.toLowerCase(Locale.ENGLISH).replaceAll("\\s+", "");
+                if (new Regex(domainCleaned, patternInvalid).patternMatches()) {
+                    // we need to ignore/blacklist common phrases, else we get too many false positives
+                    skippedInvalidEntries.add(domainCleaned);
+                    continue;
+                } else if (domainCleaned.equals("usenet")) {
+                    /* special case: Usenet */
+                    assignedMultiHostPlugins.add(domainCleaned);
+                    continue mhostLoop;
+                }
+                cleanedDomains.add(domainCleaned);
+                if (domainCleaned.indexOf('.') == -1) {
+                    /*
+                     * If the multihoster doesn't include full host name with tld, we can search- and add all partial matches!
+                     */
+                    thisNonTldHosts.add(domainCleaned);
+                }
+            }
+            LazyHostPlugin hit = null;
+            pluginloop: for (final LazyHostPlugin lazyHostPlugin : hpc.list()) {
+                for (final String domain : cleanedDomains) {
+                    if (domain.equals(lazyHostPlugin.getHost())) {
+                        /* Exact match */
+                        hit = lazyHostPlugin;
+                        break pluginloop;
+                    }
+                }
+                final String[] siteSupportedNames = lazyHostPlugin.getSitesSupported();
+                if (siteSupportedNames != null) {
+                    siteSupportedNamesLoop: for (final String siteSupportedName : siteSupportedNames) {
+                        if (cleanedDomains.contains(siteSupportedName)) {
+                            hit = lazyHostPlugin;
+                            break siteSupportedNamesLoop;
+                        }
+                    }
+                    if (hit != null) {
+                        if (siteSupportedNames != null) {
+                            for (final String siteSupportedName : siteSupportedNames) {
+                                otherIgnoreEntries.add(siteSupportedName);
+                            }
+                        }
+                        break pluginloop;
+                    }
+                }
+            }
+            if (hit == null) {
+                // TODO: Check if we really need this
+                nonTldHosts.addAll(thisNonTldHosts);
+                continue;
+            }
+            assignedMultiHostPlugins.add(hit.getHost());
+        }
+        final HashSet<String> unassignedMultiHostSupport = new HashSet<String>();
+        unassignedMultiHostSupport.addAll(assignedMultiHostPlugins);
+        final Iterator<String> unassignedMultiHostPluginsIterator = unassignedMultiHostSupport.iterator();
+        while (unassignedMultiHostPluginsIterator.hasNext()) {
+            final String hostCleaned = unassignedMultiHostPluginsIterator.next();
+            if (hostCleaned == null) {
+                unassignedMultiHostPluginsIterator.remove();
+                continue;
+            }
+            final LazyHostPlugin lazyPlugin = pluginFinder._assignHost(hostCleaned);
+            if (lazyPlugin == null) {
+                continue;
+            }
+            unassignedMultiHostPluginsIterator.remove();
+            if (assignedMultiHostPlugins.contains(lazyPlugin.getHost())) {
+                Set<LazyHostPlugin> plugins = mapping.get(hostCleaned);
+                if (plugins == null) {
+                    plugins = new HashSet<LazyHostPlugin>();
+                    mapping.put(hostCleaned, plugins);
+                }
+                plugins.add(lazyPlugin);
+            } else {
+                if (lazyPlugin.isOfflinePlugin()) {
+                    skippedOfflineEntries.add(hostCleaned);
+                    continue;
+                } else if (lazyPlugin.isFallbackPlugin()) {
+                    continue;
+                }
+                try {
+                    if (!lazyPlugin.isHasAllowHandle()) {
+                        assignedMultiHostPlugins.add(lazyPlugin.getHost());
+                        Set<LazyHostPlugin> plugins = mapping.get(hostCleaned);
+                        if (plugins == null) {
+                            plugins = new HashSet<LazyHostPlugin>();
+                            mapping.put(hostCleaned, plugins);
+                        }
+                        plugins.add(lazyPlugin);
+                    } else {
+                        final DownloadLink link = new DownloadLink(null, "", lazyPlugin.getHost(), "", false);
+                        final PluginForHost plg = pluginFinder.getPlugin(lazyPlugin);
+                        if (plg.allowHandle(link, multiHostPlugin)) {
+                            assignedMultiHostPlugins.add(lazyPlugin.getHost());
+                            Set<LazyHostPlugin> plugins = mapping.get(hostCleaned);
+                            if (plugins == null) {
+                                plugins = new HashSet<LazyHostPlugin>();
+                                mapping.put(hostCleaned, plugins);
+                            }
+                            plugins.add(lazyPlugin);
+                        }
+                    }
+                } catch (final Throwable e) {
+                    logger.log(e);
+                }
+            }
+        }
+        /* Last resort handling for items which we still couldn't match. */
+        if (unassignedMultiHostSupport.size() > 0) {
+            /**
+             * Remove all "double" entries from remaining list of unmatched entries to avoid wrong log output. </br>
+             * If a multihost provides multiple domains of one host e.g. "rg.to" and "rapidgator.net", the main one may have been matched
+             * but "rg.to" may remain on the list of unassigned hosts.
+             */
+            for (final String item : otherIgnoreEntries) {
+                unassignedMultiHostSupport.remove(item);
+            }
+            final Iterator<String> unassignedMultiHostPluginsIterator2 = unassignedMultiHostSupport.iterator();
+            while (unassignedMultiHostPluginsIterator2.hasNext()) {
+                final String host = unassignedMultiHostPluginsIterator2.next();
+                final String hostParts[] = host.split("\\.");
+                if (hostParts.length < 2) {
+                    continue;
+                }
+                final String tld = hostParts[hostParts.length - 1];
+                final String domain = hostParts[hostParts.length - 2];
+                final String matcher = ".*(\\\\.|/|\\?:?|\\(|\\||\\\\Q|)" + domain.replaceAll("(-(.+))", "(-$2|\\\\(\\\\?:-$2\\\\)\\\\?|\\\\(-$2\\\\)\\\\?)") + "(\\|[^/]*?)?(\\\\)?.(" + tld + "|[^\\/)]*" + tld + "|[^\\)/]*[a-zA-Z\\.]+\\)[\\?\\.]*" + tld + ").*";
+                final String matcher2 = ".*" + Pattern.quote("\\Q" + host + "\\E") + ".*" + Pattern.quote("\\E") + "\\)/.*";
+                boolean foundFlag = false;
+                for (final LazyHostPlugin lazyHostPlugin : hpc.list()) {
+                    if (lazyHostPlugin.isFallbackPlugin()) {
+                        /* Skip invalid entries */
+                        continue;
+                    }
+                    final String pattern = lazyHostPlugin.getPatternSource();
+                    if (StringUtils.containsIgnoreCase(pattern, host) || pattern.matches(matcher) || pattern.matches(matcher2)) {
+                        if (lazyHostPlugin.isOfflinePlugin()) {
+                            skippedOfflineEntries.add(lazyHostPlugin.getHost());
+                            continue;
+                        }
+                        assignedMultiHostPlugins.add(lazyHostPlugin.getHost());
+                        Set<LazyHostPlugin> plugins = mapping.get(host);
+                        if (plugins == null) {
+                            plugins = new HashSet<LazyHostPlugin>();
+                            mapping.put(host, plugins);
+                        }
+                        plugins.add(lazyHostPlugin);
+                        foundFlag = true;
+                    }
+                }
+                if (foundFlag) {
+                    unassignedMultiHostPluginsIterator2.remove();
+                }
+            }
+        }
+        /* Log items without result */
+        if (unassignedMultiHostSupport.size() > 0 && logger != null) {
+            logger.info("Found " + unassignedMultiHostSupport.size() + " unassigned entries");
+            for (final String host : unassignedMultiHostSupport) {
+                logger.info("Could not assign any host for: " + host);
+            }
+        }
+        if (skippedOfflineEntries.size() > 0 && logger != null) {
+            logger.info("Found " + skippedOfflineEntries.size() + " offline entries");
+            for (final String host : skippedOfflineEntries) {
+                logger.info("Offline entry: " + host);
+            }
+        }
+        if (assignedMultiHostPlugins.size() == 0) {
+            if (logger != null) {
+                logger.info("Failed to find ANY usable results");
+            }
+            this.removeProperty(PROPERTY_MULTIHOST_SUPPORT);
+            return null;
+        }
+        /* sorting will now work properly since they are all pre-corrected to lowercase. */
+        final List<String> list = new ArrayList<String>();
+        final List<String> ret = new ArrayList<String>();
+        for (final Entry<String, MultiHostHost> entry : cleanList.entrySet()) {
+            final String cleanHost = entry.getKey();
+            final MultiHostHost mhost = entry.getValue();
+            final Set<LazyHostPlugin> plugins = mapping.get(cleanHost);
+            if (plugins == null) {
+                ret.add(null);
+                continue;
+            }
+            LazyHostPlugin finalplugin = null;
+            if (plugins.size() == 1) {
+                finalplugin = plugins.iterator().next();
+            } else {
+                final List<LazyHostPlugin> best = new ArrayList<LazyHostPlugin>();
+                for (final LazyHostPlugin plugin : plugins) {
+                    try {
+                        final PluginForHost plg = pluginFinder.getPlugin(plugin);
+                        final String[] siteSupportedNames = plg.siteSupportedNames();
+                        if (siteSupportedNames == null) {
+                            continue;
+                        }
+                        if (Arrays.asList(siteSupportedNames).contains(cleanHost)) {
+                            best.add(plugin);
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                    }
+                }
+                if (best.size() == 1) {
+                    finalplugin = best.get(0);
+                }
+                logger.log(new Exception("DEBUG: " + cleanHost));
+            }
+            if (finalplugin == null) {
+                continue;
+            }
+            // if(finalplugin.isOfflinePlugin()) {
+            // mhost.setStatus(MultihosterHostStatus.UNSUPPORTED_JDOWNLOADER);
+            // }
+            final String pluginHost = finalplugin.getHost();
+            ret.add(pluginHost);
+            if (!list.contains(pluginHost)) {
+                list.add(pluginHost);
+            }
+            mhost.getDomains().clear();
+            mhost.addDomain(pluginHost);
+        }
+        Collections.sort(list, new NaturalOrderComparator());
+        final boolean logValidResults = false;
+        if (logger != null && logValidResults) {
+            logger.info("Found real hosts: " + list.size());
+            for (final String host : list) {
+                logger.finest("Found host: " + host);
+            }
+        }
+        this.setProperty(PROPERTY_MULTIHOST_SUPPORT, new CopyOnWriteArrayList<String>(list));
+        return ret;
+    }
+
     public List<String> getMultiHostSupport() {
         final Object ret = getProperty(PROPERTY_MULTIHOST_SUPPORT, null);
         if (ret == null) {
