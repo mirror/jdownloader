@@ -722,6 +722,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
         final HashSet<String> nonTldHosts = new HashSet<String>();
         final HashSet<String> skippedOfflineEntries = new HashSet<String>();
         final HashSet<String> skippedInvalidEntries = new HashSet<String>();
+        final HashSet<String> skippedPluginDisabledEntries = new HashSet<String>();
         final HashSet<String> otherIgnoreEntries = new HashSet<String>();
         // lets do some preConfiguring, and match hosts which do not contain tld
         final Pattern patternInvalid = Pattern.compile("http|directhttp|https|file|up|upload|video|torrent|ftp", Pattern.CASE_INSENSITIVE);
@@ -818,31 +819,30 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 } else if (lazyPlugin.isFallbackPlugin()) {
                     continue;
                 }
+                LazyHostPlugin finalLazyPlugin = null;
                 try {
-                    if (!lazyPlugin.isHasAllowHandle()) {
-                        assignedMultiHostPlugins.add(lazyPlugin.getHost());
-                        Set<LazyHostPlugin> plugins = mapping.get(hostCleaned);
-                        if (plugins == null) {
-                            plugins = new HashSet<LazyHostPlugin>();
-                            mapping.put(hostCleaned, plugins);
-                        }
-                        plugins.add(lazyPlugin);
-                    } else {
+                    if (lazyPlugin.isHasAllowHandle()) {
                         final DownloadLink link = new DownloadLink(null, "", lazyPlugin.getHost(), "", false);
                         final PluginForHost plg = pluginFinder.getPlugin(lazyPlugin);
-                        if (plg.allowHandle(link, multiHostPlugin)) {
-                            assignedMultiHostPlugins.add(lazyPlugin.getHost());
-                            Set<LazyHostPlugin> plugins = mapping.get(hostCleaned);
-                            if (plugins == null) {
-                                plugins = new HashSet<LazyHostPlugin>();
-                                mapping.put(hostCleaned, plugins);
-                            }
-                            plugins.add(lazyPlugin);
+                        if (!plg.allowHandle(link, multiHostPlugin)) {
+                            skippedPluginDisabledEntries.add(lazyPlugin.getHost());
+                            continue;
                         }
+                        finalLazyPlugin = lazyPlugin;
+                    } else {
+                        finalLazyPlugin = lazyPlugin;
                     }
                 } catch (final Throwable e) {
                     logger.log(e);
+                    continue;
                 }
+                assignedMultiHostPlugins.add(finalLazyPlugin.getHost());
+                Set<LazyHostPlugin> plugins = mapping.get(hostCleaned);
+                if (plugins == null) {
+                    plugins = new HashSet<LazyHostPlugin>();
+                    mapping.put(hostCleaned, plugins);
+                }
+                plugins.add(finalLazyPlugin);
             }
         }
         /* Last resort handling for items which we still couldn't match. */
