@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonMapperException;
@@ -67,6 +68,40 @@ public class XHamsterCom extends PluginForHost {
         /* Actually only free accounts are supported */
         this.enablePremium("https://faphouse.com/join");
         setConfigElements();
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        prepBr(this, br);
+        return br;
+    }
+
+    public static void prepBr(final Plugin plugin, final Browser br) {
+        /* Set some cookies on all supporte free domains. */
+        for (final String[] domains : getPluginDomains()) {
+            for (final String domain : domains) {
+                final String dummyURL = "https://" + domain + "/";
+                if (!dummyURL.matches(dummyURL)) {
+                    br.setCookie(domain, "lang", "en");
+                    br.setCookie(domain, "playerVer", "old");
+                }
+            }
+        }
+        /**
+         * 2022-07-22: Workaround for possible serverside bug: </br>
+         * In some countries, xhamster seems to redirect users to xhamster2.com. </br>
+         * If those users send an Accept-Language header of "de,en-gb;q=0.7,en;q=0.3" they can get stuck in a redirect-loop between
+         * deu.xhamster3.com and deu.xhamster3.com. </br>
+         * See initial report: https://board.jdownloader.org/showthread.php?t=91170
+         */
+        final String acceptLanguage = "en-gb;q=0.7,en;q=0.3";
+        br.setAcceptLanguage(acceptLanguage);
+        br.getHeaders().put("Accept-Language", acceptLanguage);
+        /* 2023-08-29: They've started to block older user agents. */
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36");
+        br.setAllowedResponseCodes(new int[] { 400, 410, 423, 452 });
+        br.setFollowRedirects(true);
     }
 
     @Override
@@ -168,7 +203,7 @@ public class XHamsterCom extends PluginForHost {
     public static final String  TYPE_EMBED     = "(?i)^https?://[^/]+/(?:x?embed\\.php\\?video=|embed/)([A-Za-z0-9\\-]+)";
     private static final String TYPE_PREMIUM   = "(?i).+(xhamsterpremium\\.com|faphouse\\.com).+";
     private static final String NORESUME       = "NORESUME";
-    private final String        recaptchav2    = "<div class=\"text\">In order to watch this video please prove you are a human\\.\\s*<br> Click on checkbox\\.</div>";
+    private final String        recaptchav2    = "<div class=\"text\">\\s*In order to watch this video please prove you are a human";
     private String              dllink         = null;
     private String              vq             = null;
     public static final String  DOMAIN_CURRENT = "xhamster.com";
@@ -198,6 +233,7 @@ public class XHamsterCom extends PluginForHost {
         return url;
     }
 
+    /** Returns true if the full content behind the given URL can only be viewed with a paid account. */
     private boolean isPremiumURL(final String url) {
         if (url == null) {
             return false;
@@ -298,7 +334,7 @@ public class XHamsterCom extends PluginForHost {
         final ArrayList<Account> accounts = AccountController.getInstance().getValidAccounts(this.getHost());
         if (accounts != null && accounts.size() > 0) {
             for (final Account acc : accounts) {
-                if (AccountType.PREMIUM.equals(acc.getType()) || AccountType.LIFETIME.equals(acc.getType())) {
+                if (isPremiumAccount(acc)) {
                     premiumAccount = acc;
                     break;
                 }
@@ -321,8 +357,6 @@ public class XHamsterCom extends PluginForHost {
         if (!link.isNameSet()) {
             link.setName(getFallbackFileTitle(contentURL) + extDefault);
         }
-        br.setFollowRedirects(true);
-        prepBr(this, br);
         String title = null;
         if (account != null) {
             login(account, contentURL, true);
@@ -374,66 +408,38 @@ public class XHamsterCom extends PluginForHost {
         }
         /* Set some Packagizer properties */
         String username = br.getRegex("class=\"entity-author-container__name\"[^>]*href=\"https?://[^/]+/users/([^<>\"]+)\"").getMatch(0);
-        if (username == null) {
-            /* 2023-04-26: faphouse.com */
-            username = br.getRegex("class=\"fh-studio-avatar video-info-details__studio-avatar fh-studio-avatar_large\"[^>]*title=\"([^\"]+)").getMatch(0);
-        }
         String datePublished = br.getRegex("\"datePublished\":\"(\\d{4}-\\d{2}-\\d{2})\"").getMatch(0);
-        if (datePublished == null) {
-            /* 2023-04-26: faphouse.com */
-            datePublished = br.getRegex("class=\"video-info-details__video-publish-date\"[^>]*>(\\d+[^<]+)</span>").getMatch(0);
-        }
-        if (username != null) {
-            link.setProperty(PROPERTY_USERNAME, Encoding.htmlDecode(username).trim());
-        } else {
-            logger.warning("Failed to find tag: " + PROPERTY_USERNAME);
-        }
-        if (datePublished != null) {
-            link.setProperty(PROPERTY_DATE, datePublished);
-        } else {
-            logger.warning("Failed to find tag: " + PROPERTY_DATE);
-        }
-        final String[] tagsList = br.getRegex("<a class=\"categories-container__item\"[^>]*href=\"https?://[^/]+/tags/([^\"]+)\"").getColumn(0);
-        if (tagsList.length > 0) {
-            final StringBuilder sb = new StringBuilder();
-            for (String tag : tagsList) {
-                tag = Encoding.htmlDecode(tag).trim();
-                if (StringUtils.isNotEmpty(tag)) {
-                    if (sb.length() > 0) {
-                        sb.append(",");
-                    }
-                    sb.append(tag);
-                }
-            }
-            if (sb.length() > 0) {
-                link.setProperty(PROPERTY_TAGS, sb.toString());
-            }
-        }
+        String filename = null;
         if (this.isPremiumURL(contentURL)) {
             /* Premium content */
             title = br.getRegex("class=\"video__title\">([^<]+)</h1>").getMatch(0);
             if (title == null) {
                 title = br.getRegex("property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
             }
-            final boolean isPremiumAccount = account != null && (account.getType() == AccountType.PREMIUM || account.getType() == AccountType.LIFETIME);
-            if (isPremiumAccount) {
+            if (this.isPremiumAccount(account)) {
                 /* Premium users can download the full videos in different qualities. */
                 if (isDownload) {
-                    dllink = getDllinkPremium(true);
+                    dllink = getDllinkPremium(link, true);
                 } else {
-                    final String filesizeStr = getDllinkPremium(false);
+                    final String filesizeStr = getDllinkPremium(link, false);
                     if (filesizeStr != null) {
                         link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
                     }
                 }
             } else {
                 /* Free / Free-Account users can only download trailers. */
-                dllink = br.getRegex("<video id=\"video-trailer\"[^<]*src=\"(http[^<>\"]+)\"").getMatch(0);
+                dllink = br.getRegex("id=\"video-trailer\"[^<]*data-fallback=\"(http[^<>\"]+)\"").getMatch(0); // Progressive
+                if (dllink == null) {
+                    dllink = br.getRegex("id=\"video-trailer\"[^<]*src=\"(http[^<>\"]+)\"").getMatch(0); // HLS
+                }
             }
             if (title != null) {
                 title = Encoding.htmlDecode(title).trim();
-                link.setFinalFileName(title + extDefault);
+                filename = title + extDefault;
+                link.setFinalFileName(filename);
             }
+            datePublished = br.getRegex("class=\"video-publish-date\"[^>]*>[^0-9]*([0-9\\.]+)\\s*</span>").getMatch(0);
+            username = br.getRegex("class=\"video-info-details__row\">\\s*<a href=\"/(?:[a-z]{2}/)?studios/([\\w-]+)\"").getMatch(0);
         } else {
             /* Free content */
             // embeded correction --> Usually not needed
@@ -465,13 +471,6 @@ public class XHamsterCom extends PluginForHost {
             if (br.containsHTML("(?i)(403 Forbidden|>\\s*This video was deleted\\s*<)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String onlyforFriendsWithThisName = isVideoOnlyForFriendsOf(br);
-            if (onlyforFriendsWithThisName != null) {
-                link.getLinkStatus().setStatusText("Only downloadable for friends of " + onlyforFriendsWithThisName);
-                return AvailableStatus.TRUE;
-            } else if (isPasswordProtected(br)) {
-                return AvailableStatus.TRUE;
-            }
             dllink = this.getDllink(br);
             final String fid = getFID(link);
             title = br.getRegex("\"videoEntity\"\\s*:\\s*\\{[^\\}\\{]*\"title\"\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
@@ -496,7 +495,7 @@ public class XHamsterCom extends PluginForHost {
                 }
             }
             String ext;
-            if (!StringUtils.isEmpty(dllink) && dllink.contains(".m3u8")) {
+            if (StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
                 ext = extDefault;
             } else if (!StringUtils.isEmpty(dllink)) {
                 ext = getFileNameExtensionFromString(dllink, extDefault);
@@ -505,45 +504,69 @@ public class XHamsterCom extends PluginForHost {
             }
             if (title != null) {
                 if (getPluginConfig().getBooleanProperty("Filename_id", true)) {
-                    title += "_" + fid;
+                    filename += "_" + fid;
                 } else {
-                    title = fid + "_" + title;
+                    filename = fid + "_" + title;
                 }
                 if (vq != null) {
-                    title = Encoding.htmlDecode(title.trim() + "_" + vq).trim();
+                    filename = Encoding.htmlDecode(title.trim() + "_" + vq).trim();
                 } else {
-                    title = Encoding.htmlDecode(title).trim();
+                    filename = Encoding.htmlDecode(title).trim();
                 }
-                title += ext;
-                link.setFinalFileName(title);
+                filename += ext;
+                link.setFinalFileName(filename);
             }
-            if (dllink == null && isPaidContent(br)) {
-                link.getLinkStatus().setStatusText("To download, you have to buy this video");
-                return AvailableStatus.TRUE;
+        }
+        if (username != null) {
+            link.setProperty(PROPERTY_USERNAME, Encoding.htmlDecode(username).trim());
+        } else {
+            logger.warning("Failed to find tag: " + PROPERTY_USERNAME);
+        }
+        final String[] tagsList = br.getRegex("<a class=\"categories-container__item\"[^>]*href=\"https?://[^/]+/tags/([^\"]+)\"").getColumn(0);
+        if (tagsList.length > 0) {
+            final StringBuilder sb = new StringBuilder();
+            for (String tag : tagsList) {
+                tag = Encoding.htmlDecode(tag).trim();
+                if (StringUtils.isNotEmpty(tag)) {
+                    if (sb.length() > 0) {
+                        sb.append(",");
+                    }
+                    sb.append(tag);
+                }
             }
+            if (sb.length() > 0) {
+                link.setProperty(PROPERTY_TAGS, sb.toString());
+            }
+        }
+        if (datePublished != null) {
+            link.setProperty(PROPERTY_DATE, datePublished);
+        } else {
+            logger.warning("Failed to find tag: " + PROPERTY_DATE);
         }
         /* 2020-01-31: Do not check filesize if we're currently in download mode as directurl may expire then. */
         if (!StringUtils.isEmpty(dllink) && !link.isSizeSet() && !StringUtils.containsIgnoreCase(dllink, ".m3u8") && !isDownload) {
             final Browser brc = br.cloneBrowser();
-            brc.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            try {
-                con = brc.openHeadConnection(dllink);
-                if (looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
+            this.basicLinkCheck(brc, br.createHeadRequest(this.dllink), link, filename, extDefault);
         }
         return AvailableStatus.TRUE;
+    }
+
+    private boolean isPremiumAccount(final Account account) {
+        if (account == null || account.getType() == null) {
+            return false;
+        } else if (account.getType().equals(AccountType.PREMIUM) || account.getType().equals(AccountType.LIFETIME)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    protected void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+        }
     }
 
     /** Looks for normal video URL in html code and accesses it if necessary. */
@@ -623,60 +646,108 @@ public class XHamsterCom extends PluginForHost {
      *
      * @throws Exception
      */
-    private String getDllinkPremium(final boolean isDownload) throws Exception {
-        final String[] htmls = br.getRegex("(<a[^<>]*class\\s*=\\s*\"list__item[^\"]*\".*?</a>)").getColumn(0);
-        int foundHighestQualityHeight = -1;
-        int foundUserPreferredHeight = -1;
-        String internalVideoID = null;
-        String filesizeHighestStr = null;
-        String filesizeUserPreferredStr = null;
+    private String getDllinkPremium(final DownloadLink link, final boolean isDownload) throws Exception {
+        final boolean allowOldWay = false;
         final int userPreferredQualityHeight = getPreferredQualityHeight();
-        for (final String html : htmls) {
-            final String qualityIdentifierStr = new Regex(html, "(\\d+)p").getMatch(0);
-            final String qualityFilesizeStr = new Regex(html, "\\((\\d+ (MB|GB))\\)").getMatch(0);
-            if (qualityIdentifierStr == null || qualityFilesizeStr == null) {
-                /* Skip invalid items */
-                continue;
-            }
-            if (internalVideoID == null) {
-                /* This id is the same for every quality. */
-                internalVideoID = new Regex(html, "data\\-el\\-item\\-id\\s*=\\s*\"(\\d+)\"").getMatch(0);
-            }
-            final int heightTmp = Integer.parseInt(qualityIdentifierStr);
-            if (heightTmp == userPreferredQualityHeight) {
-                foundUserPreferredHeight = heightTmp;
-                filesizeUserPreferredStr = qualityFilesizeStr;
-                break;
-            }
-            if (heightTmp > foundHighestQualityHeight || foundHighestQualityHeight == -1) {
-                foundHighestQualityHeight = heightTmp;
-                filesizeHighestStr = qualityFilesizeStr;
+        if (allowOldWay) {
+            final String[] htmls = br.getRegex("(<a[^<>]*class\\s*=\\s*\"list__item[^\"]*\".*?</a>)").getColumn(0);
+            if (htmls != null && htmls.length > 0) {
+                int foundHighestQualityHeight = -1;
+                int foundUserPreferredHeight = -1;
+                String internalVideoID = null;
+                String filesizeHighestStr = null;
+                String filesizeUserPreferredStr = null;
+                for (final String html : htmls) {
+                    final String qualityIdentifierStr = new Regex(html, "(\\d+)p").getMatch(0);
+                    final String qualityFilesizeStr = new Regex(html, "\\((\\d+ (MB|GB))\\)").getMatch(0);
+                    if (qualityIdentifierStr == null || qualityFilesizeStr == null) {
+                        /* Skip invalid items */
+                        continue;
+                    }
+                    if (internalVideoID == null) {
+                        /* This id is the same for every quality. */
+                        internalVideoID = new Regex(html, "data\\-el\\-item\\-id\\s*=\\s*\"(\\d+)\"").getMatch(0);
+                    }
+                    final int heightTmp = Integer.parseInt(qualityIdentifierStr);
+                    if (heightTmp == userPreferredQualityHeight) {
+                        foundUserPreferredHeight = heightTmp;
+                        filesizeUserPreferredStr = qualityFilesizeStr;
+                        break;
+                    }
+                    if (heightTmp > foundHighestQualityHeight || foundHighestQualityHeight == -1) {
+                        foundHighestQualityHeight = heightTmp;
+                        filesizeHighestStr = qualityFilesizeStr;
+                    }
+                }
+                final int chosenQualityHeight;
+                final String chosenQualityFilesizeStr;
+                if (filesizeUserPreferredStr != null) {
+                    /* Found user preferred quality */
+                    chosenQualityFilesizeStr = filesizeUserPreferredStr;
+                    chosenQualityHeight = foundUserPreferredHeight;
+                } else {
+                    /* Highest quality */
+                    chosenQualityFilesizeStr = filesizeHighestStr;
+                    chosenQualityHeight = foundHighestQualityHeight;
+                }
+                if (!isDownload) {
+                    /* Return filesize as string */
+                    return chosenQualityFilesizeStr;
+                }
             }
         }
-        final int chosenQualityHeight;
-        final String chosenQualityFilesizeStr;
-        if (filesizeUserPreferredStr != null) {
-            /* Found user preferred quality */
-            chosenQualityFilesizeStr = filesizeUserPreferredStr;
-            chosenQualityHeight = foundUserPreferredHeight;
-        } else {
-            /* Highest quality */
-            chosenQualityFilesizeStr = filesizeHighestStr;
-            chosenQualityHeight = foundHighestQualityHeight;
+        final String internalVideoID = br.getRegex("data\\-el\\-item\\-id\\s*=\\s*\"(\\d+)\"").getMatch(0);
+        if (internalVideoID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!isDownload) {
-            /* Return filesize */
-            return chosenQualityFilesizeStr;
-        } else {
-            /* Return downloadurl */
-            if (internalVideoID == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getPage(String.format(api_base_premium + "/videos/%s/original-video-config", internalVideoID));
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
-            final Map<String, Object> downloadFormats = (Map<String, Object>) entries.get("downloadFormats");
-            return (String) downloadFormats.get(Integer.toString(chosenQualityHeight));
+            /* Do not perform http request now to speed up linkcheck */
+            return null;
         }
+        br.getPage(String.format(api_base_premium + "/videos/%s/original-video-config", internalVideoID));
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String username = (String) entries.get("username");
+        if (username != null) {
+            /* Set Packagizer property */
+            link.setProperty(PROPERTY_USERNAME, username);
+        }
+        /* If this is empty, it is an Array instead of a map (wtf) */
+        final Object downloadFormatsO = entries.get("downloadFormats");
+        Map<String, Object> downloadFormats = null;
+        if (downloadFormatsO instanceof Map) {
+            downloadFormats = (Map<String, Object>) downloadFormatsO;
+        }
+        final Map<String, Object> streamFormats = (Map<String, Object>) entries.get("streamFormats");
+        if ((downloadFormats == null || downloadFormats.isEmpty()) && (streamFormats == null || streamFormats.isEmpty())) {
+            logger.warning("Zero downloadable formats available");
+            return null;
+        }
+        final Map<String, Object> downloadMap;
+        if (downloadFormats != null && downloadFormats.size() > 0) {
+            downloadMap = downloadFormats;
+        } else {
+            downloadMap = streamFormats;
+        }
+        final String preferredFormat = (String) downloadMap.get(Integer.toString(userPreferredQualityHeight));
+        if (preferredFormat != null) {
+            return preferredFormat;
+        }
+        final int originalHeight = ((Number) entries.get("originalHeight")).intValue();
+        final String originalFormat = (String) downloadMap.get(Integer.toString(originalHeight));
+        if (originalFormat != null) {
+            return originalFormat;
+        }
+        /* Return best */
+        int heightMax = -1;
+        String dllinkMax = null;
+        for (final Entry<String, Object> entry : downloadMap.entrySet()) {
+            final int thisHeight = Integer.parseInt(entry.getKey());
+            if (dllinkMax == null || thisHeight > heightMax) {
+                heightMax = thisHeight;
+                dllinkMax = entry.getValue().toString();
+            }
+        }
+        return dllinkMax;
     }
 
     private int getPreferredQualityHeight() {
@@ -919,7 +990,6 @@ public class XHamsterCom extends PluginForHost {
     public boolean verifyURL(String url) throws IOException, PluginException {
         URLConnectionAdapter con = null;
         final Browser br2 = br.cloneBrowser();
-        br2.setFollowRedirects(true);
         try {
             con = br2.openHeadConnection(url);
             if (looksLikeDownloadableContent(con)) {
@@ -956,12 +1026,12 @@ public class XHamsterCom extends PluginForHost {
         final boolean isPremiumURL = this.isPremiumURL(contentURL);
         if (StringUtils.isEmpty(dllink) && !isPremiumURL) {
             // Access the page again to get a new direct link because by checking the availability the first linkisn't valid anymore
-            String passCode = link.getDownloadPassword();
             if (isPasswordProtected(br)) {
                 final boolean passwordHandlingBroken = true;
                 if (passwordHandlingBroken) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Password-protected handling broken svn.jdownloader.org/issues/88690");
                 }
+                String passCode = link.getDownloadPassword();
                 if (passCode == null) {
                     passCode = getUserInput("Password?", link);
                 }
@@ -1008,10 +1078,11 @@ public class XHamsterCom extends PluginForHost {
             }
         }
         if (StringUtils.isEmpty(dllink)) {
-            if (this.isVideoOnlyForFriends(br)) {
-                throw new AccountRequiredException("You need to be friends with uploader");
-            } else if (isVideoOnlyForFriendsOf(br) != null) {
-                throw new AccountRequiredException("You need to be friends with uploader");
+            final String onlyforFriendsWithThisName = isVideoOnlyForFriendsOf(br);
+            if (onlyforFriendsWithThisName != null) {
+                throw new AccountRequiredException("You need to be friends with " + onlyforFriendsWithThisName + " to access this contents");
+            } else if (this.isVideoOnlyForFriends(br)) {
+                throw new AccountRequiredException("You need to be friends with the uploader to access this content");
             } else if (isPaidContent(br)) {
                 throw new AccountRequiredException("Paid content");
             } else if (isPremiumURL) {
@@ -1058,8 +1129,6 @@ public class XHamsterCom extends PluginForHost {
             final boolean frd = br.isFollowingRedirects();
             try {
                 br.setCookiesExclusive(true);
-                prepBr(this, br);
-                br.setFollowRedirects(true);
                 /**
                  * 2020-01-31: They got their free page xhamster.com and paid faphouse.com. This plugin will always try *to login into both.
                  * Free users can also login via their premium page but they just cannot watch anything or only trailers. </br>
@@ -1461,32 +1530,6 @@ public class XHamsterCom extends PluginForHost {
         } else {
             return accountInfoFromLoginProcess;
         }
-    }
-
-    public static void prepBr(final Plugin plugin, final Browser br) {
-        /* Set some cookies on all supporte free domains. */
-        for (final String[] domains : getPluginDomains()) {
-            for (final String domain : domains) {
-                final String dummyURL = "https://" + domain + "/";
-                if (!dummyURL.matches(dummyURL)) {
-                    br.setCookie(domain, "lang", "en");
-                    br.setCookie(domain, "playerVer", "old");
-                }
-            }
-        }
-        /**
-         * 2022-07-22: Workaround for possible serverside bug: </br>
-         * In some countries, xhamster seems to redirect users to xhamster2.com. </br>
-         * If those users send an Accept-Language header of "de,en-gb;q=0.7,en;q=0.3" they can get stuck in a redirect-loop between
-         * deu.xhamster3.com and deu.xhamster3.com. </br>
-         * See initial report: https://board.jdownloader.org/showthread.php?t=91170
-         */
-        final String acceptLanguage = "en-gb;q=0.7,en;q=0.3";
-        br.setAcceptLanguage(acceptLanguage);
-        br.getHeaders().put("Accept-Language", acceptLanguage);
-        /* 2023-08-29: They've started to block older user agents. */
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36");
-        br.setAllowedResponseCodes(new int[] { 400, 410, 423, 452 });
     }
 
     @Override
