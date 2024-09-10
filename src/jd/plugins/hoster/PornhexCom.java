@@ -118,11 +118,15 @@ public class PornhexCom extends PluginForHost {
         dllink = null;
         final String extDefault = ".mp4";
         final String fid = this.getFID(link);
+        final Regex embed = new Regex(link.getPluginPatternMatcher(), TYPE_EMBED);
         if (!link.isNameSet()) {
             link.setName(fid + extDefault);
         }
+        if (!embed.patternFind() && !fid.contains("-")) {
+            /* Invalid link e.g. https://pornhex.com/video/trending */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String urlSlug = null;
-        final Regex embed = new Regex(link.getPluginPatternMatcher(), TYPE_EMBED);
         this.setBrowserExclusive();
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {

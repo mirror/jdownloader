@@ -88,7 +88,7 @@ public class BiqleRuCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:watch|video)/(?:-)?\\d+_\\d+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:watch|video)/-?\\d+_\\d+");
         }
         return ret.toArray(new String[0]);
     }

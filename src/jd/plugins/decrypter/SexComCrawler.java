@@ -91,7 +91,7 @@ public class SexComCrawler extends PornEmbedParser {
         String externID;
         String title;
         br.setAllowedResponseCodes(502);
-        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        final String contenturl = param.getCryptedUrl().replaceFirst("^(?i)http://", "https://");
         String redirect = null;
         if (contenturl.matches(PATTERN_RELATIVE_EXTERN_REDIRECT)) {
             /* Single link which redirects to another website */

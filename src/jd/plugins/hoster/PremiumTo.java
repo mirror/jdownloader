@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -49,6 +50,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -79,7 +81,7 @@ public class PremiumTo extends UseNet {
     /* storage.premium.to --> Extract remote URLs */
     private final String type_storage_remote                                               = "(?i)https?://storage\\.[^/]+/(?:remote|r)/[A-Z0-9]+/[A-Z0-9]+/([A-Z0-9]+)/.+";
     // private static final String type_torrent = "https?://torrent.+";
-    private final String API_BASE                                                          = "https://api.premium.to/api/2";
+    private final String API_BASE                                                          = "https://api.premium.to/api";
     private final String API_BASE_STORAGE                                                  = "https://storage.premium.to/api/2";
     private final String API_BASE_TORRENT                                                  = "https://torrent.premium.to/api/2";
     private final String PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED = "deactivated_filehosts_dialog_shown_and_confirmed";
@@ -90,7 +92,9 @@ public class PremiumTo extends UseNet {
     }
 
     private boolean requiresAccount(final DownloadLink link) {
-        if (link != null && link.getPluginPatternMatcher() != null && (link.getPluginPatternMatcher().matches(type_torrent_remote) || link.getPluginPatternMatcher().matches(type_storage_remote))) {
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return false;
+        } else if (link.getPluginPatternMatcher().matches(type_torrent_remote) || link.getPluginPatternMatcher().matches(type_storage_remote)) {
             return false;
         } else {
             return true;
@@ -106,7 +110,12 @@ public class PremiumTo extends UseNet {
 
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://premium.to/");
+        this.enablePremium("https://" + getHost() + "/");
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "https://" + getHost() + "/";
     }
 
     @Override
@@ -114,8 +123,8 @@ public class PremiumTo extends UseNet {
         final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
         br.setAcceptLanguage("en, en-gb;q=0.8");
-        br.setConnectTimeout(getConnectTimeout());
-        br.setReadTimeout(getReadTimeout());
+        br.setConnectTimeout(300 * 1000);
+        br.setReadTimeout(300 * 1000);
         br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, "JDownloader");
         return br;
     }
@@ -217,25 +226,46 @@ public class PremiumTo extends UseNet {
         return (PremiumDotToConfigInterface) super.getAccountJsonConfig(acc);
     }
 
-    private static int getReadTimeout() {
-        return 300 * 1000;
+    public enum AuthType {
+        HEADER,
+        PARAMETER;
     }
 
-    private static int getConnectTimeout() {
-        return 300 * 1000;
+    private GetRequest getAPIRequest(final String url, final Account account, final AuthType authtype) throws IOException {
+        return getAPIRequest(url, new UrlQuery(), account, authtype);
+    }
+
+    private GetRequest getAPIRequest(final String url, final UrlQuery query, final Account account, final AuthType authtype) throws IOException {
+        final GetRequest req;
+        if (authtype == AuthType.HEADER) {
+            req = br.createGetRequest(url + "?" + query.toString());
+            req.getHeaders().put("API", this.getUserID(account) + this.getAPIKey(account)); // 2024-07-30
+        } else {
+            query.addAndReplace("userid", Encoding.urlEncode(this.getUserID(account)));
+            query.addAndReplace("apikey", Encoding.urlEncode(this.getAPIKey(account)));
+            req = br.createGetRequest(url + "?" + query.toString());
+        }
+        return req;
+    }
+
+    private String callAPI(final String url, final Account account, final AuthType authtype) throws IOException {
+        return callAPI(url, new UrlQuery(), account, authtype);
+    }
+
+    /** Performs http API requests. Uses this plugins' public browser instance. */
+    private String callAPI(final String url, final UrlQuery query, final Account account, final AuthType authtype) throws IOException {
+        final GetRequest req = getAPIRequest(url, query, account, authtype);
+        return br.getPage(req);
     }
 
     private Map<String, Object> login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             br.setCookiesExclusive(true);
-            final String userid = this.getUserID(account);
-            final String apikey = this.getAPIKey(account);
-            br.getHeaders().put("API", this.getUserID(account) + this.getAPIKey(account)); // 2024-07-30
             if (!force) {
                 /* Trust existing login-data without check */
                 return null;
             }
-            br.getPage(API_BASE + "/traffic.php?userid=" + userid + "&apikey=" + apikey);
+            this.callAPI(API_BASE + "/traffic.php", account, AuthType.HEADER);
             return this.handleErrorsAPI(null, account, false);
         }
     }
@@ -257,23 +287,16 @@ public class PremiumTo extends UseNet {
             final SIZEUNIT maxSizeUnit = (SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue();
             additionalAccountStatus = String.format(" | Normal Traffic: %s Special Traffic: %s", SIZEUNIT.formatValue(maxSizeUnit, nT), SIZEUNIT.formatValue(maxSizeUnit, spT));
         }
-        final String apikey = this.getAPIKey(account);
-        final String userid = this.getUserID(account);
         final ArrayList<String> supported_hosts_regular = new ArrayList<String>();
         final ArrayList<String> supported_hosts_storage = new ArrayList<String>();
-        br.getPage(API_BASE + "/hosts.php?userid=" + userid + "&apikey=" + apikey);
+        this.callAPI(API_BASE + "/hosts.php", account, AuthType.HEADER);
         final Map<String, Object> entries = this.handleErrorsAPI(null, account, false);
-        final List<Object> ressourcelist = (List<Object>) entries.get("hosts");
-        for (final Object hostO : ressourcelist) {
-            if (hostO instanceof String) {
-                supported_hosts_regular.add((String) hostO);
-            }
-        }
+        final List<String> ressourcelist = (List<String>) entries.get("hosts");
+        supported_hosts_regular.addAll(ressourcelist);
         supported_hosts_regular.add("usenet");
-        supported_hosts_regular.addAll(supported_hosts_regular);
         account.setType(AccountType.PREMIUM);
         /* Find storage hosts and add them to array of supported hosts */
-        br.getPage(API_BASE_STORAGE + "/hosts.php?userid=" + userid + "&apikey=" + apikey);
+        this.callAPI(API_BASE_STORAGE + "/hosts.php", account, AuthType.PARAMETER);
         /* We expect a comma separated array */
         final String supported_hosts_storage_serverside[] = br.getRequest().getHtmlCode().toLowerCase().split(";|\\s+");
         for (final String tmp_supported_host_storage : supported_hosts_storage_serverside) {
@@ -451,11 +474,6 @@ public class PremiumTo extends UseNet {
     }
 
     @Override
-    public String getAGBLink() {
-        return "https://" + getHost() + "/";
-    }
-
-    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 0;
     }
@@ -520,8 +538,6 @@ public class PremiumTo extends UseNet {
             }
             String serverside_filename = link.getStringProperty("serverside_filename");
             this.dl = null;
-            final String apikey = this.getAPIKey(account);
-            final String userid = this.getUserID(account);
             final String urlUrlEncoded = Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
             /*
              * 2019-04-15: URLs of some hosts can only be downloaded via storage (= have to be fully downloaded top the servers of this
@@ -537,8 +553,6 @@ public class PremiumTo extends UseNet {
                 }
             }
             final UrlQuery query = new UrlQuery();
-            query.appendEncoded("userid", userid);
-            query.appendEncoded("apikey", apikey);
             if (link.getSha1Hash() != null) {
                 query.appendEncoded("hash_sha1", link.getSha1Hash());
             }
@@ -548,8 +562,10 @@ public class PremiumTo extends UseNet {
             if (link.getSha256Hash() != null) {
                 query.appendEncoded("hash_sha256", link.getSha256Hash());
             }
+            query.add("url", urlUrlEncoded); // check.php and download.php
+            query.add("link", urlUrlEncoded); // getfile.php
             login(account, false);
-            String finalURL = null;
+            final GetRequest req;
             if (requiresStorageDownload) {
                 /* Storage download */
                 logger.info("Attempting STORAGE download: " + link.getHost());
@@ -558,40 +574,31 @@ public class PremiumTo extends UseNet {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Storage download is not yet supported via API");
                 }
                 /* Check if that URL has already been downloaded to their cloud. */
-                br.getPage(API_BASE_STORAGE + "/check.php?" + query.toString() + "&url=" + urlUrlEncoded);
+                this.callAPI(API_BASE_STORAGE + "/check.php", query, account, AuthType.PARAMETER);
                 final Map<String, Object> resp = handleErrorsAPI(link, account, true);
                 final String status = (String) resp.get("Status");
                 /* 2019-11-11: "Canceled" = URL has been added to Storage before but was deleted e.g. by user --> Add it again */
                 if ("Not in queue".equalsIgnoreCase(status) || "Canceled".equalsIgnoreCase(status)) {
                     /* Not on their servers? Add to download-queue! */
-                    br.getPage(API_BASE_STORAGE + "/add.php?" + query.toString() + "&url=" + urlUrlEncoded);
+                    this.callAPI(API_BASE_STORAGE + "/add.php", query, account, AuthType.PARAMETER);
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Added URL to premium.to Storage: Storage download pending", 1 * 60 * 1000);
                 } else if ("completed".equalsIgnoreCase(status)) {
                     /* File has been downloaded to their servers and download should be possible now. */
-                    finalURL = API_BASE_STORAGE + "/download.php?" + query.toString() + "&url=" + urlUrlEncoded;
+                    req = this.getAPIRequest(API_BASE_STORAGE + "/download.php", query, account, AuthType.PARAMETER);
                 } else {
                     /* WTF this should never happen */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown storage status");
                 }
                 /* We might need this later */
                 serverside_filename = (String) resp.get("Filename");
+                if (!StringUtils.isEmpty(serverside_filename)) {
+                    /* We might need this information later */
+                    link.setProperty("serverside_filename", serverside_filename);
+                }
             } else {
                 /* Normal (direct) download */
                 logger.info("Attempting DIRECT download: " + link.getHost());
-                finalURL = API_BASE + "/getfile.php?" + query.toString() + "&link=" + urlUrlEncoded;
-            }
-            final Browser brc = br.cloneBrowser();
-            final URLConnectionAdapter con = brc.openGetConnection(finalURL);
-            try {
-                if (con.isOK() && this.looksLikeDownloadableContent(con) && con.getCompleteContentLength() > 0) {
-                    finalURL = con.getRequest().getUrl();
-                    if (link.getVerifiedFileSize() != -1 && link.getVerifiedFileSize() != con.getCompleteContentLength()) {
-                        logger.info("Workaround for size missmatch(rar padding?!)!");
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-            } finally {
-                con.disconnect();
+                req = this.getAPIRequest(API_BASE + "/getfile.php", query, account, AuthType.HEADER);
             }
             final DownloadLinkDownloadable downloadable = new DownloadLinkDownloadable(link) {
                 @Override
@@ -599,11 +606,7 @@ public class PremiumTo extends UseNet {
                     return false;
                 }
             };
-            if (!StringUtils.isEmpty(serverside_filename)) {
-                /* We might need this information later */
-                link.setProperty("serverside_filename", serverside_filename);
-            }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadable, br.createGetRequest(finalURL), true, -10);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadable, req, true, -10);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
                 if (dl.getConnection().getResponseCode() == 404) {
@@ -613,6 +616,12 @@ public class PremiumTo extends UseNet {
                 } else {
                     this.handleErrorsAPI(link, account, true);
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error", 3 * 60 * 1000);
+                }
+            }
+            if (dl.getConnection().getCompleteContentLength() > 0) {
+                if (link.getVerifiedFileSize() != -1 && link.getVerifiedFileSize() != dl.getConnection().getCompleteContentLength()) {
+                    logger.info("Workaround for size missmatch(rar padding?!)!");
+                    link.setVerifiedFileSize(dl.getConnection().getCompleteContentLength());
                 }
             }
             /* Check if the download is successful && user wants JD to delete the file in his premium.to account afterwards. */

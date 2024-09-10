@@ -53,18 +53,16 @@ public class BiqleRu extends PluginForHost {
     private static final boolean free_resume    = true;
     private static final int     free_maxchunks = 0;
     private String               dllink         = null;
-    private boolean              server_issues  = false;
 
     @Override
     public String getAGBLink() {
-        return "https://biqle.ru/legal/";
+        return "https://" + getHost() + "/legal/";
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = link.getPluginPatternMatcher();
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (StringUtils.isEmpty(dllink)) {
@@ -132,9 +130,7 @@ public class BiqleRu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(DirectHTTP.PROPERTY_ServerComaptibleForByteRangeRequest, true);
