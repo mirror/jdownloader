@@ -1057,7 +1057,7 @@ public abstract class Plugin implements ActionListener {
      * @return
      */
     public String[] siteSupportedNames() {
-        return null;
+        return new String[] { getHost() };
     }
 
     /**

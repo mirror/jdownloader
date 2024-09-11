@@ -2,6 +2,7 @@ package org.jdownloader.plugins.controller.host;
 
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
@@ -72,11 +73,22 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     private String[] sitesSupported = null;
 
     public String[] getSitesSupported() {
-        return sitesSupported;
+        final String[] sitesSupported = this.sitesSupported;
+        if (sitesSupported != null) {
+            return sitesSupported;
+        } else {
+            return new String[] { getHost() };
+        }
     }
 
-    protected void setSitesSupported(String[] sitesSupported) {
-        this.sitesSupported = sitesSupported;
+    protected void setSitesSupported(final String[] sitesSupported) {
+        if (sitesSupported == null || sitesSupported.length == 0) {
+            this.sitesSupported = null;
+        } else if (sitesSupported.length == 1 && getHost().equals(sitesSupported[0])) {
+            this.sitesSupported = null;
+        } else {
+            this.sitesSupported = sitesSupported;
+        }
     }
 
     protected synchronized final void setProperty(final boolean b, final PROPERTY property) {

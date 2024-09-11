@@ -32,6 +32,10 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
         return hasConfig;
     }
 
+    public String getHost() {
+        return getDisplayName();
+    }
+
     @Override
     protected void setFeatures(LazyPlugin.FEATURE[] features) {
         super.setFeatures(features);
@@ -61,11 +65,22 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
     private String[] sitesSupported = null;
 
     public String[] getSitesSupported() {
-        return sitesSupported;
+        final String[] sitesSupported = this.sitesSupported;
+        if (sitesSupported != null) {
+            return sitesSupported;
+        } else {
+            return new String[] { getHost() };
+        }
     }
 
-    protected void setSitesSupported(String[] sitesSupported) {
-        this.sitesSupported = sitesSupported;
+    protected void setSitesSupported(final String[] sitesSupported) {
+        if (sitesSupported == null || sitesSupported.length == 0) {
+            this.sitesSupported = null;
+        } else if (sitesSupported.length == 1 && getHost().equals(sitesSupported[0])) {
+            this.sitesSupported = null;
+        } else {
+            this.sitesSupported = sitesSupported;
+        }
     }
 
     public void updateCrawlRuntime(long r) {

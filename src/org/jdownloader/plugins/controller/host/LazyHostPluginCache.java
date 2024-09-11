@@ -211,7 +211,11 @@ public class LazyHostPluginCache {
                     if (plugin.isHasConfig() && plugin.getConfigInterface() != null) {
                         os.writeString(plugin.getConfigInterface());
                     }
-                    final String[] sitesSupported = plugin.getSitesSupported();
+                    String[] sitesSupported = plugin.getSitesSupported();
+                    if (sitesSupported != null && sitesSupported.length == 1 && plugin.getHost().equals(sitesSupported[0])) {
+                        // memory optimization to avoid storing of default value
+                        sitesSupported = null;
+                    }
                     os.writeShort(sitesSupported == null ? 0 : sitesSupported.length);
                     if (sitesSupported != null) {
                         for (String siteSupported : sitesSupported) {
