@@ -613,39 +613,41 @@ public class AccountInfo extends Property implements AccountTrafficView {
                         logger.log(new Exception("DEBUG: " + host));
                     }
                 }
-                boolean somethingImportantHappened = false;
-                List<String> newResults = setMultiHostSupportV2TempWrapper(multiHostPlugin, multiHostSupportList, pluginFinder);
-                if (newResults == null && list != null) {
-                    /* Avoid NPE for loggin stuff down below */
-                    newResults = new ArrayList<String>();
-                }
-                for (final String oldResult : list) {
-                    if (oldResult == null) {
-                        continue;
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    boolean somethingImportantHappened = false;
+                    List<String> newResults = setMultiHostSupportV2TempWrapper(multiHostPlugin, multiHostSupportList, pluginFinder);
+                    if (newResults == null && list != null) {
+                        /* Avoid NPE for loggin stuff down below */
+                        newResults = new ArrayList<String>();
                     }
-                    if (!newResults.contains(oldResult)) {
-                        if (logger != null) {
-                            logger.warning("Old result missing in new results: " + oldResult);
+                    for (final String oldResult : list) {
+                        if (oldResult == null) {
+                            continue;
                         }
-                        somethingImportantHappened = true;
-                    }
-                }
-                if (somethingImportantHappened) {
-                    System.out.print("-------------------------------------------------");
-                }
-                for (final String newResult : newResults) {
-                    if (newResult == null) {
-                        continue;
-                    }
-                    if (!list.contains(newResult)) {
-                        if (logger != null) {
-                            logger.warning("New result missing in old results: " + newResult);
+                        if (!newResults.contains(oldResult)) {
+                            if (logger != null) {
+                                logger.warning("Old result missing in new results: " + oldResult);
+                            }
+                            somethingImportantHappened = true;
                         }
-                        somethingImportantHappened = true;
                     }
-                }
-                if (somethingImportantHappened) {
-                    System.out.print("-------------------------------------------------");
+                    if (somethingImportantHappened) {
+                        System.out.print("-------------------------------------------------");
+                    }
+                    for (final String newResult : newResults) {
+                        if (newResult == null) {
+                            continue;
+                        }
+                        if (!list.contains(newResult)) {
+                            if (logger != null) {
+                                logger.warning("New result missing in old results: " + newResult);
+                            }
+                            somethingImportantHappened = true;
+                        }
+                    }
+                    if (somethingImportantHappened) {
+                        System.out.print("-------------------------------------------------");
+                    }
                 }
                 Collections.sort(list, new NaturalOrderComparator());
                 this.setProperty("multiHostSupport", new CopyOnWriteArrayList<String>(list));
