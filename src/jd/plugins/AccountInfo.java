@@ -670,10 +670,25 @@ public class AccountInfo extends Property implements AccountTrafficView {
         return setMultiHostSupportV2(multiHostPlugin, mhosts, pluginFinder);
     }
 
+    /** Temp legacy method */
+    public List<String> setMultiHostSupporLegacy(final PluginForHost multiHostPlugin, final List<MultiHostHost> multiHostSupportList, final PluginFinder pluginFinder) {
+        final List<String> domains = new ArrayList<String>();
+        for (final MultiHostHost mhost : multiHostSupportList) {
+            if (mhost.getDomains() == null) {
+                continue;
+            }
+            domains.addAll(mhost.getDomains());
+        }
+        return setMultiHostSupport(multiHostPlugin, domains, pluginFinder);
+    }
+
     public List<String> setMultiHostSupportV2(final PluginForHost multiHostPlugin, final List<MultiHostHost> multiHostSupportList, final PluginFinder pluginFinder) {
         if (multiHostSupportList == null || multiHostSupportList.size() == 0) {
             this.removeProperty(PROPERTY_MULTIHOST_SUPPORT);
             return null;
+        }
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            return setMultiHostSupporLegacy(multiHostPlugin, multiHostSupportList, pluginFinder);
         }
         final LogInterface logger = (multiHostPlugin != null && multiHostPlugin.getLogger() != null) ? multiHostPlugin.getLogger() : LogController.CL();
         final HostPluginController hpc = HostPluginController.getInstance();
@@ -693,7 +708,8 @@ public class AccountInfo extends Property implements AccountTrafficView {
             final List<String> cleanedDomains = new ArrayList<String>();
             final HashSet<String> thisNonTldHosts = new HashSet<String>();
             String maindomainCleaned = null;
-            domainLoop: for (final String domain : domains) {
+            /* Clean domain entries and collect non tld items */
+            for (final String domain : domains) {
                 if (domain == null) {
                     continue;
                 }
@@ -715,78 +731,76 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 }
             }
             cleanList.put(maindomainCleaned, mhost);
-            LazyHostPlugin hit = null;
+            LazyHostPlugin safeHit = null;
+            final List<LazyHostPlugin> hits = new ArrayList<LazyHostPlugin>();
             pluginloop: for (final LazyHostPlugin lazyHostPlugin : hpc.list()) {
                 for (final String domain : cleanedDomains) {
                     if (domain.equals(lazyHostPlugin.getHost())) {
                         /* Exact match */
-                        hit = lazyHostPlugin;
+                        safeHit = lazyHostPlugin;
                         break pluginloop;
                     }
                 }
                 final String[] siteSupportedNames = lazyHostPlugin.getSitesSupported();
                 if (siteSupportedNames != null) {
-                    siteSupportedNamesLoop: for (final String siteSupportedName : siteSupportedNames) {
+                    for (final String siteSupportedName : siteSupportedNames) {
                         if (cleanedDomains.contains(siteSupportedName)) {
-                            hit = lazyHostPlugin;
-                            break siteSupportedNamesLoop;
+                            /* Clear previous possible */
+                            safeHit = lazyHostPlugin;
+                            /* Safe hit! Quit loop. */
+                            break pluginloop;
                         }
                     }
-                    if (hit != null) {
-                        if (siteSupportedNames != null) {
-                            for (final String siteSupportedName : siteSupportedNames) {
-                                otherIgnoreEntries.add(siteSupportedName);
+                    /* Look for unsafe hits */
+                    for (final String domain : cleanedDomains) {
+                        for (final String siteSupportedName : siteSupportedNames) {
+                            /* E.g. domain "uptobox" and full domain is "uptobox.com" */
+                            if (siteSupportedName.startsWith(domain)) {
+                                // hit = lazyHostPlugin;
+                                hits.add(lazyHostPlugin);
+                                continue pluginloop;
                             }
                         }
-                        break pluginloop;
                     }
                 }
             }
-            if (hit == null) {
+            if (safeHit != null) {
+                hits.clear();
+                hits.add(safeHit);
+            }
+            if (hits.size() > 1) {
+                System.out.print("Unsafe hits: " + hits.size());
+                System.out.print("Unsafe hits: " + hits);
+            }
+            if (hits.isEmpty()) {
                 /* Collect entries without TLD */
                 nonTldHosts.addAll(thisNonTldHosts);
                 unassignedMultiHostSupport.addAll(cleanedDomains);
                 continue;
             }
-            if (assignedMultiHostPlugins.contains(hit.getHost())) {
-                Set<LazyHostPlugin> plugins = mapping.get(maindomainCleaned);
-                if (plugins == null) {
-                    plugins = new HashSet<LazyHostPlugin>();
-                    mapping.put(maindomainCleaned, plugins);
-                }
-                plugins.add(hit);
-            } else {
-                if (hit.isOfflinePlugin()) {
-                    skippedOfflineEntries.add(maindomainCleaned);
-                    continue;
-                } else if (hit.isFallbackPlugin()) {
-                    otherIgnoreEntries.add(maindomainCleaned);
-                    continue;
-                }
-                LazyHostPlugin finalLazyPlugin = null;
-                try {
-                    if (hit.isHasAllowHandle()) {
-                        final DownloadLink link = new DownloadLink(null, "", hit.getHost(), "", false);
-                        final PluginForHost plg = pluginFinder.getPlugin(hit);
-                        if (!plg.allowHandle(link, multiHostPlugin)) {
-                            skippedPluginDisabledEntries.add(hit.getHost());
-                            continue;
-                        }
-                        finalLazyPlugin = hit;
-                    } else {
-                        finalLazyPlugin = hit;
+            for (final LazyHostPlugin hit : hits) {
+                final String[] siteSupportedNames = hit.getSitesSupported();
+                if (siteSupportedNames != null) {
+                    for (final String siteSupportedName : siteSupportedNames) {
+                        otherIgnoreEntries.add(siteSupportedName);
                     }
-                } catch (final Throwable e) {
-                    logger.log(e);
-                    continue;
                 }
-                assignedMultiHostPlugins.add(finalLazyPlugin.getHost());
-                Set<LazyHostPlugin> plugins = mapping.get(maindomainCleaned);
-                if (plugins == null) {
-                    plugins = new HashSet<LazyHostPlugin>();
-                    mapping.put(maindomainCleaned, plugins);
+                if (assignedMultiHostPlugins.contains(hit.getHost())) {
+                    Set<LazyHostPlugin> plugins = mapping.get(maindomainCleaned);
+                    if (plugins == null) {
+                        plugins = new HashSet<LazyHostPlugin>();
+                        mapping.put(maindomainCleaned, plugins);
+                    }
+                    plugins.add(hit);
+                } else {
+                    assignedMultiHostPlugins.add(hit.getHost());
+                    Set<LazyHostPlugin> plugins = mapping.get(maindomainCleaned);
+                    if (plugins == null) {
+                        plugins = new HashSet<LazyHostPlugin>();
+                        mapping.put(maindomainCleaned, plugins);
+                    }
+                    plugins.add(hit);
                 }
-                plugins.add(finalLazyPlugin);
             }
         }
         /**
@@ -830,58 +844,43 @@ public class AccountInfo extends Property implements AccountTrafficView {
             if (plugins == null) {
                 continue;
             }
-            LazyHostPlugin finalplugin = null;
-            if (plugins.size() == 1) {
-                finalplugin = plugins.iterator().next();
-            } else {
-                /* Multiple possible results */
-                final List<LazyHostPlugin> best = new ArrayList<LazyHostPlugin>();
-                for (final LazyHostPlugin plugin : plugins) {
-                    try {
+            /* Multiple possible results -> Evaluate what's the best */
+            // TODO: Add check for multihost plugin and ignore it
+            final List<LazyHostPlugin> best = new ArrayList<LazyHostPlugin>();
+            for (final LazyHostPlugin plugin : plugins) {
+                if (plugin.isOfflinePlugin()) {
+                    skippedOfflineEntries.add(maindomainCleaned);
+                    continue;
+                } else if (plugin.isFallbackPlugin()) {
+                    otherIgnoreEntries.add(maindomainCleaned);
+                    continue;
+                }
+                try {
+                    if (plugin.isHasAllowHandle()) {
+                        final DownloadLink link = new DownloadLink(null, "", plugin.getHost(), "", false);
                         final PluginForHost plg = pluginFinder.getPlugin(plugin);
-                        final String[] siteSupportedNames = plg.siteSupportedNames();
-                        if (siteSupportedNames == null) {
+                        if (!plg.allowHandle(link, multiHostPlugin)) {
+                            skippedPluginDisabledEntries.add(plugin.getHost());
                             continue;
                         }
-                        if (Arrays.asList(siteSupportedNames).contains(maindomainCleaned)) {
-                            best.add(plugin);
-                        }
-                    } catch (final Throwable e) {
-                        logger.log(e);
                     }
+                } catch (final Throwable e) {
+                    logger.log(e);
+                    otherIgnoreEntries.add(maindomainCleaned);
+                    continue;
                 }
-                if (best.size() == 1) {
-                    finalplugin = best.get(0);
-                } else {
-                    logger.warning("Found two possible plugins for one domain: " + maindomainCleaned);
-                    logger.log(new Exception("DEBUG: " + maindomainCleaned));
-                }
+                best.add(plugin);
             }
-            if (finalplugin == null) {
-                // otherIgnoreEntries.add(maindomainCleaned);
+            if (best.size() == 0) {
+                // TODO
+                logger.info("Ignore entry because of invalid/offline/multihost: " + maindomainCleaned);
+                continue;
+            } else if (best.size() > 1) {
+                logger.warning("Found more than one possible plugins for one domain: " + maindomainCleaned);
+                logger.log(new Exception("DEBUG: " + maindomainCleaned));
                 continue;
             }
-            if (finalplugin.isOfflinePlugin()) {
-                skippedOfflineEntries.add(maindomainCleaned);
-                continue;
-            } else if (finalplugin.isFallbackPlugin()) {
-                otherIgnoreEntries.add(maindomainCleaned);
-                continue;
-            }
-            try {
-                if (finalplugin.isHasAllowHandle()) {
-                    final DownloadLink link = new DownloadLink(null, "", finalplugin.getHost(), "", false);
-                    final PluginForHost plg = pluginFinder.getPlugin(finalplugin);
-                    if (!plg.allowHandle(link, multiHostPlugin)) {
-                        skippedPluginDisabledEntries.add(finalplugin.getHost());
-                        continue;
-                    }
-                }
-            } catch (final Throwable e) {
-                logger.log(e);
-                otherIgnoreEntries.add(maindomainCleaned);
-                continue;
-            }
+            final LazyHostPlugin finalplugin = best.get(0);
             final String pluginHost = finalplugin.getHost();
             ret.add(pluginHost);
             if (!list.contains(pluginHost)) {
