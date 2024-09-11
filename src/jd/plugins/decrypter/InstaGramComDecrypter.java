@@ -111,7 +111,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             regex += "|explore/tags/[^/]+/?";
             regex += "|(?:p|tv|reel)/[A-Za-z0-9_-]+";
             /* 2024-09-10: New style reel links: /username/reel/<postID> */
-            regex += "|[A-Za-z0-9_-]+/reel/[A-Za-z0-9_-]+";
+            regex += "|[^/]+/reel/[A-Za-z0-9_-]+";
             regex += "|(?!explore)[^/]+(?:/(saved|tagged|reels)/)?";
             regex += "|p/[A-Za-z0-9_-]+";
             regex += ")";

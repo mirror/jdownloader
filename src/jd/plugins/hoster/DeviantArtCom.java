@@ -156,84 +156,86 @@ public class DeviantArtCom extends PluginForHost {
         link.setProperty(PROPERTY_TYPE, deviation.get("type"));
         final Map<String, Object> ret = new HashMap<String, Object>();
         final Map<String, Object> media = (Map<String, Object>) deviation.get("media");
-        if (media != null) {
-            String displayedImageURL = null;
-            Number unlimitedImageSize = null;
-            String displayedVideoURL = null;
-            Number displayedVideoSize = null;
-            final boolean isImage = isImage(link);
-            final boolean isVideo = isVideo(link);
-            try {
-                final String baseUri = (String) media.get("baseUri");
-                final String prettyName = (String) media.get("prettyName");
-                final List<Map<String, Object>> types = (List<Map<String, Object>>) media.get("types");
-                if (types != null && StringUtils.isAllNotEmpty(baseUri, prettyName)) {
-                    Map<String, Object> bestType = null;
-                    final List<String> bestTypesList;
-                    if (isImage) {
-                        bestTypesList = Arrays.asList(new String[] { "fullview" });
-                    } else if (isVideo) {
-                        bestTypesList = Arrays.asList(new String[] { "video" });
-                    } else {
-                        bestTypesList = new ArrayList<String>(0);
-                    }
-                    typeStringLoop: for (final String typeString : bestTypesList) {
-                        for (final Map<String, Object> type : types) {
-                            if (typeString.equals(type.get("t"))) {
-                                if (isImage) {
+        if (media == null) {
+            plugin.getLogger().warning("Failed to find field 'media'");
+            return ret;
+        }
+        String displayedImageURL = null;
+        Number unlimitedImageSize = null;
+        String displayedVideoURL = null;
+        Number displayedVideoSize = null;
+        final boolean isImage = isImage(link);
+        final boolean isVideo = isVideo(link);
+        try {
+            final String baseUri = (String) media.get("baseUri");
+            final String prettyName = (String) media.get("prettyName");
+            final List<Map<String, Object>> types = (List<Map<String, Object>>) media.get("types");
+            if (types != null && StringUtils.isAllNotEmpty(baseUri, prettyName)) {
+                Map<String, Object> bestType = null;
+                final List<String> bestTypesList;
+                if (isImage) {
+                    bestTypesList = Arrays.asList(new String[] { "fullview" });
+                } else if (isVideo) {
+                    bestTypesList = Arrays.asList(new String[] { "video" });
+                } else {
+                    bestTypesList = new ArrayList<String>(0);
+                }
+                typeStringLoop: for (final String typeString : bestTypesList) {
+                    for (final Map<String, Object> type : types) {
+                        if (typeString.equals(type.get("t"))) {
+                            if (isImage) {
+                                bestType = type;
+                                break typeStringLoop;
+                            } else if (isVideo) {
+                                if (bestType == null || ((Number) type.get("h")).intValue() > ((Number) bestType.get("h")).intValue()) {
                                     bestType = type;
-                                    break typeStringLoop;
-                                } else if (isVideo) {
-                                    if (bestType == null || ((Number) type.get("h")).intValue() > ((Number) bestType.get("h")).intValue()) {
-                                        bestType = type;
-                                    }
                                 }
                             }
-                        }
-                    }
-                    if (bestType != null) {
-                        if (isImage) {
-                            String c = (String) bestType.get("c");
-                            if (c == null) {
-                                if ("fullview".equals(bestType.get("t"))) {
-                                    // r=1? o=true??(maybe original)
-                                    c = "";// raw image without any processing?
-                                } else {
-                                    final Number h = (Number) bestType.get("h");
-                                    final Number w = (Number) bestType.get("w");
-                                    if (h != null && w != null) {
-                                        c = "/v1/fit/w_" + w + ",h_" + h + "/";
-                                    }
-                                }
-                            }
-                            if (c != null) {
-                                c = c.replaceFirst(",q_\\d+(,strp)?", "");
-                                final List<String> tokens = (List<String>) media.get("token");
-                                displayedImageURL = baseUri + c.replaceFirst("<prettyName>", Matcher.quoteReplacement(prettyName));
-                                if (tokens != null) {
-                                    displayedImageURL = displayedImageURL + "?token=" + tokens.get(0);
-                                }
-                            }
-                        } else if (isVideo) {
-                            displayedVideoURL = (String) bestType.get("b");
-                            displayedVideoSize = (Number) bestType.get("f");
                         }
                     }
                 }
-            } catch (Exception e) {
-                plugin.getLogger().log(e);
+                if (bestType != null) {
+                    if (isImage) {
+                        String c = (String) bestType.get("c");
+                        if (c == null) {
+                            if ("fullview".equals(bestType.get("t"))) {
+                                // r=1? o=true??(maybe original)
+                                c = "";// raw image without any processing?
+                            } else {
+                                final Number h = (Number) bestType.get("h");
+                                final Number w = (Number) bestType.get("w");
+                                if (h != null && w != null) {
+                                    c = "/v1/fit/w_" + w + ",h_" + h + "/";
+                                }
+                            }
+                        }
+                        if (c != null) {
+                            c = c.replaceFirst(",q_\\d+(,strp)?", "");
+                            final List<String> tokens = (List<String>) media.get("token");
+                            displayedImageURL = baseUri + c.replaceFirst("<prettyName>", Matcher.quoteReplacement(prettyName));
+                            if (tokens != null) {
+                                displayedImageURL = displayedImageURL + "?token=" + tokens.get(0);
+                            }
+                        }
+                    } else if (isVideo) {
+                        displayedVideoURL = (String) bestType.get("b");
+                        displayedVideoSize = (Number) bestType.get("f");
+                    }
+                }
             }
-            if (displayedImageURL != null && isImage) {
-                link.setProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL, displayedImageURL);
-            }
-            if (displayedVideoURL != null && isVideo) {
-                link.setProperty(PROPERTY_VIDEO_DISPLAY_OR_PREVIEW_URL, displayedVideoURL);
-            }
-            ret.put("displayedImageURL", displayedImageURL);
-            ret.put("unlimitedImageSize", unlimitedImageSize);
-            ret.put("displayedVideoURL", displayedVideoURL);
-            ret.put("displayedVideoSize", displayedVideoSize);
+        } catch (Exception e) {
+            plugin.getLogger().log(e);
         }
+        if (displayedImageURL != null && isImage) {
+            link.setProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL, displayedImageURL);
+        }
+        if (displayedVideoURL != null && isVideo) {
+            link.setProperty(PROPERTY_VIDEO_DISPLAY_OR_PREVIEW_URL, displayedVideoURL);
+        }
+        ret.put("displayedImageURL", displayedImageURL);
+        ret.put("unlimitedImageSize", unlimitedImageSize);
+        ret.put("displayedVideoURL", displayedVideoURL);
+        ret.put("displayedVideoSize", displayedVideoSize);
         return ret;
     }
 
@@ -260,7 +262,9 @@ public class DeviantArtCom extends PluginForHost {
         }
         final String fid = getFID(link);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.containsHTML("/error\\-title\\-oops\\.png\\)") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("/error\\-title\\-oops\\.png\\)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.canHandle(br.getURL()) && !br.getURL().contains(fid)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -290,12 +294,13 @@ public class DeviantArtCom extends PluginForHost {
             if (thisArt == null) {
                 /* E.g. https://www.deviantart.com/shinysmeargle/status-update/12312835 */
                 final Iterator<Entry<String, Object>> iterator = deviation.entrySet().iterator();
-                while (iterator.hasNext()) {
+                iteratorLoop: while (iterator.hasNext()) {
                     final Entry<String, Object> entry = iterator.next();
                     final String key = entry.getKey();
                     if (key.matches("^\\d+-" + fid + "$")) {
                         alternativeDeviationID = key;
                         thisArt = (Map<String, Object>) entry.getValue();
+                        break iteratorLoop;
                     }
                 }
             }
@@ -324,35 +329,39 @@ public class DeviantArtCom extends PluginForHost {
                 title = fid + " by " + username;
             }
             premiumFolderData = (Map<String, Object>) thisArt.get("premiumFolderData");
-            if (StringUtils.isEmpty(officialDownloadurl)) {
+            deviationExtendedHandling: if (StringUtils.isEmpty(officialDownloadurl)) {
                 final Map<String, Object> deviationExtended = (Map<String, Object>) entities.get("deviationExtended");
-                if (deviationExtended != null) {
-                    Map<String, Object> deviationExtendedThisArt = (Map<String, Object>) deviationExtended.get(fid);
-                    if (deviationExtendedThisArt == null && alternativeDeviationID != null) {
-                        /*
-                         * PATTERN_STATUS might be listed with key <someNumbers>-<fid> also typically deviationExtended will only contain
-                         * one item.
-                         */
-                        deviationExtendedThisArt = (Map<String, Object>) deviationExtended.get(alternativeDeviationID);
-                    }
-                    if (deviationExtendedThisArt != null) {
-                        final Map<String, Object> download = (Map<String, Object>) deviationExtendedThisArt.get("download");
-                        final Map<String, Object> originalFile = (Map<String, Object>) deviationExtendedThisArt.get("originalFile");
-                        if (download != null) {
-                            officialDownloadurl = download.get("url").toString();
-                            officialDownloadPossible = true;
-                            officialDownloadsizeBytes = (Number) download.get("filesize");
-                        }
-                        if (originalFile != null) {
-                            originalFileSizeBytes = (Number) originalFile.get("filesize");
-                        }
-                        final Map<String, Object> descriptionText = (Map<String, Object>) deviationExtendedThisArt.get("descriptionText");
-                        if (descriptionText != null) {
-                            final String rawText = (String) descriptionText.get("excerpt");
-                            if (!StringUtils.isEmpty(rawText) && StringUtils.isEmpty(link.getComment())) {
-                                link.setComment(rawText);
-                            }
-                        }
+                if (deviationExtended == null) {
+                    logger.warning("Failed to find 'deviationExtended'");
+                    break deviationExtendedHandling;
+                }
+                Map<String, Object> deviationExtendedThisArt = (Map<String, Object>) deviationExtended.get(fid);
+                if (deviationExtendedThisArt == null && alternativeDeviationID != null) {
+                    /*
+                     * PATTERN_STATUS might be listed with key <someNumbers>-<fid> also typically deviationExtended will only contain one
+                     * item.
+                     */
+                    deviationExtendedThisArt = (Map<String, Object>) deviationExtended.get(alternativeDeviationID);
+                }
+                if (deviationExtendedThisArt == null) {
+                    logger.warning("Failed to find 'deviationExtendedThisArt'");
+                    break deviationExtendedHandling;
+                }
+                final Map<String, Object> download = (Map<String, Object>) deviationExtendedThisArt.get("download");
+                final Map<String, Object> originalFile = (Map<String, Object>) deviationExtendedThisArt.get("originalFile");
+                if (download != null) {
+                    officialDownloadurl = download.get("url").toString();
+                    officialDownloadPossible = true;
+                    officialDownloadsizeBytes = (Number) download.get("filesize");
+                }
+                if (originalFile != null) {
+                    originalFileSizeBytes = (Number) originalFile.get("filesize");
+                }
+                final Map<String, Object> descriptionText = (Map<String, Object>) deviationExtendedThisArt.get("descriptionText");
+                if (descriptionText != null) {
+                    final String rawText = (String) descriptionText.get("excerpt");
+                    if (!StringUtils.isEmpty(rawText) && StringUtils.isEmpty(link.getComment())) {
+                        link.setComment(rawText);
                     }
                 }
             }
@@ -829,89 +838,85 @@ public class DeviantArtCom extends PluginForHost {
 
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                br.setFollowRedirects(true);
-                final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = account.loadUserCookies();
-                if (userCookies == null && allowCookieLoginOnly) {
-                    showCookieLoginInfo();
-                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
-                }
-                if (userCookies != null) {
-                    br.setCookies(this.getHost(), userCookies);
-                    if (!force) {
-                        /* Do not validate cookies */
-                        return;
-                    }
-                    br.getPage("https://www." + this.getHost());
-                    if (this.isLoggedIN(br)) {
-                        logger.info("User cookie login successful");
-                        return;
-                    } else {
-                        logger.info("User cookie login failed");
-                        if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                        } else {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                        }
-                    }
-                } else if (cookies != null) {
-                    br.setCookies(this.getHost(), cookies);
-                    if (!force) {
-                        /* Do not validate cookies */
-                        return;
-                    }
-                    br.getPage("https://www. " + this.getHost());
-                    if (this.isLoggedIN(br)) {
-                        logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(br.getHost()), "");
-                        return;
-                    } else {
-                        logger.info("Cookie login failed");
-                        br.clearCookies(br.getHost());
-                    }
-                }
-                logger.info("Performing full login");
-                br.getHeaders().put("Referer", "https://www." + this.getHost());
-                br.getPage("https://www." + this.getHost() + "/users/login"); // Not allowed to go directly to /users/login/
-                if (br.containsHTML("Please confirm you are human")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
-                final boolean allowCaptcha = false;
-                if (allowCaptcha && (br.containsHTML("Please confirm you are human") || (br.containsHTML("px-blocked") && br.containsHTML("g-recaptcha")))) {
-                    // disabled because perimeterx code is incomplete
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
-                    final DownloadLink odl = this.getDownloadLink();
-                    this.setDownloadLink(dummyLink);
-                    final CaptchaHelperHostPluginRecaptchaV2 captcha = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lcj-R8TAAAAABs3FrRPuQhLMbp5QrHsHufzLf7b");
-                    if (odl != null) {
-                        this.setDownloadLink(odl);
-                    }
-                    final String uuid = new Regex(br.getURL(), "uuid=(.*?)($|&)").getMatch(0);
-                    String vid = new Regex(br.getURL(), "vid=(.*?)($|&)").getMatch(0);
-                    if (StringUtils.isEmpty(vid)) {
-                        vid = "null";
-                    }
-                    br.setCookie(getHost(), "_pxCaptcha", URLEncoder.encode(captcha.getToken(), "UTF-8") + ":" + uuid + ":" + vid);
-                    br.getPage("https://www.deviantart.com/users/login");
-                }
-                final Form loginform = br.getFormbyActionRegex("(?i).*do/signin");
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.put("username", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("remember", "on");
-                br.submitForm(loginform);
-                if (!isLoggedIN(br)) {
-                    throw new AccountInvalidException();
-                }
-                account.saveCookies(br.getCookies(br.getHost()), "");
-            } catch (final AccountInvalidException e) {
-                account.clearCookies("");
-                throw e;
+            br.setCookiesExclusive(true);
+            br.setFollowRedirects(true);
+            final Cookies cookies = account.loadCookies("");
+            final Cookies userCookies = account.loadUserCookies();
+            if (userCookies == null && allowCookieLoginOnly) {
+                showCookieLoginInfo();
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
             }
+            if (userCookies != null) {
+                br.setCookies(this.getHost(), userCookies);
+                if (!force) {
+                    /* Do not validate cookies */
+                    return;
+                }
+                br.getPage("https://www." + this.getHost());
+                if (this.isLoggedIN(br)) {
+                    logger.info("User cookie login successful");
+                    return;
+                } else {
+                    logger.info("User cookie login failed");
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                    } else {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                    }
+                }
+            } else if (cookies != null) {
+                br.setCookies(this.getHost(), cookies);
+                if (!force) {
+                    /* Do not validate cookies */
+                    return;
+                }
+                br.getPage("https://www. " + this.getHost());
+                if (this.isLoggedIN(br)) {
+                    logger.info("Cookie login successful");
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(br.getHost());
+                    account.clearCookies("");
+                }
+            }
+            logger.info("Performing full login");
+            br.getHeaders().put("Referer", "https://www." + this.getHost());
+            br.getPage("https://www." + this.getHost() + "/users/login"); // Not allowed to go directly to /users/login/
+            if (br.containsHTML("Please confirm you are human")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            final boolean allowCaptcha = false;
+            if (allowCaptcha && (br.containsHTML("Please confirm you are human") || (br.containsHTML("px-blocked") && br.containsHTML("g-recaptcha")))) {
+                // disabled because perimeterx code is incomplete
+                final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
+                final DownloadLink odl = this.getDownloadLink();
+                this.setDownloadLink(dummyLink);
+                final CaptchaHelperHostPluginRecaptchaV2 captcha = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lcj-R8TAAAAABs3FrRPuQhLMbp5QrHsHufzLf7b");
+                if (odl != null) {
+                    this.setDownloadLink(odl);
+                }
+                final String uuid = new Regex(br.getURL(), "uuid=(.*?)($|&)").getMatch(0);
+                String vid = new Regex(br.getURL(), "vid=(.*?)($|&)").getMatch(0);
+                if (StringUtils.isEmpty(vid)) {
+                    vid = "null";
+                }
+                br.setCookie(getHost(), "_pxCaptcha", URLEncoder.encode(captcha.getToken(), "UTF-8") + ":" + uuid + ":" + vid);
+                br.getPage("https://www.deviantart.com/users/login");
+            }
+            final Form loginform = br.getFormbyActionRegex("(?i).*do/signin");
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("username", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            loginform.put("remember", "on");
+            br.submitForm(loginform);
+            if (!isLoggedIN(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 

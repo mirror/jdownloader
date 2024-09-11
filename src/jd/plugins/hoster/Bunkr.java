@@ -219,10 +219,11 @@ public class Bunkr extends PluginForHost {
         return "https://" + getHost() + "/v/" + filename;
     }
 
-    private final String       PROPERTY_LAST_GRABBED_DIRECTURL    = "last_grabbed_directurl";
-    private final String       PROPERTY_LAST_USED_SINGLE_FILE_URL = "last_used_single_file_url";
-    public static final String PROPERTY_FILENAME_FROM_ALBUM       = "filename_from_album";
-    public static final String PROPERTY_PARSED_FILESIZE           = "parsed_filesize";
+    private static final String PROPERTY_LAST_GRABBED_DIRECTURL              = "last_grabbed_directurl";
+    private static final String PROPERTY_LAST_GRABBED_VIDEO_STREAM_DIRECTURL = "last_grabbed_video_stream_directurl";
+    private static final String PROPERTY_LAST_USED_SINGLE_FILE_URL           = "last_used_single_file_url";
+    public static final String  PROPERTY_FILENAME_FROM_ALBUM                 = "filename_from_album";
+    public static final String  PROPERTY_PARSED_FILESIZE                     = "parsed_filesize";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -237,23 +238,23 @@ public class Bunkr extends PluginForHost {
             /* Set unsafe filename */
             setFilename(link, filenameFromURL, true, false);
         }
-        final String lastCachedDirecturl = link.getStringProperty(PROPERTY_LAST_GRABBED_DIRECTURL);
+        final String lastGrabbedDirecturl = link.getStringProperty(PROPERTY_LAST_GRABBED_DIRECTURL);
         final String lastUsedSingleFileURL = link.getStringProperty(PROPERTY_LAST_USED_SINGLE_FILE_URL);
         Exception exceptionFromDirecturlCheck = null;
-        if (lastCachedDirecturl != null && lastUsedSingleFileURL != null) {
-            logger.info("Trying to re-use last cached directurl: " + lastCachedDirecturl);
+        if (lastGrabbedDirecturl != null && lastUsedSingleFileURL != null) {
+            logger.info("Trying to re-use last cached directurl: " + lastGrabbedDirecturl);
             br.getHeaders().put("Referer", lastUsedSingleFileURL);
             URLConnectionAdapter con = null;
             try {
                 if (isDownload) {
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, lastCachedDirecturl, isResumeable(link, null), this.getMaxChunks(null));
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, lastGrabbedDirecturl, isResumeable(link, null), this.getMaxChunks(null));
                     con = dl.getConnection();
                 } else {
-                    con = br.openGetConnection(lastCachedDirecturl);
+                    con = br.openGetConnection(lastGrabbedDirecturl);
                 }
                 handleConnectionErrors(link, br, con);
                 final String filenameFromHeader = Plugin.getFileNameFromDispositionHeader(con);
-                final String filenameFromDirecturl = Plugin.getFileNameFromURL(new URL(lastCachedDirecturl));
+                final String filenameFromDirecturl = Plugin.getFileNameFromURL(new URL(lastGrabbedDirecturl));
                 if (filenameFromHeader != null) {
                     setFilename(link, filenameFromHeader, true, true);
                 } else if (filenameFromDirecturl != null) {
@@ -286,82 +287,114 @@ public class Bunkr extends PluginForHost {
                 }
             }
         }
-        String directurl;
+        String officialDownloadurl;
+        String preDownloadRefererHeader = null;
         if (new Regex(link.getPluginPatternMatcher(), BunkrAlbum.PATTERN_SINGLE_FILE).patternFind()) {
-            directurl = getDirecturlFromSingleFileAvailablecheck(link, contenturl, true, isDownload);
+            officialDownloadurl = getDirecturlFromSingleFileAvailablecheck(link, contenturl, true, isDownload);
             if (!isDownload) {
                 return AvailableStatus.TRUE;
-            } else if (!StringUtils.isEmpty(directurl)) {
+            } else if (!StringUtils.isEmpty(officialDownloadurl)) {
                 this.sleep(1000, link);
             }
         } else {
-            directurl = contenturl;
+            officialDownloadurl = contenturl;
             /* Set referer for download */
             final String containerURL = link.getContainerUrl();
             if (containerURL != null) {
-                br.getHeaders().put("Referer", containerURL);
+                preDownloadRefererHeader = containerURL;
             } else {
-                br.getHeaders().put("Referer", "https://" + Browser.getHost(directurl, false) + "/");
+                preDownloadRefererHeader = "https://" + Browser.getHost(officialDownloadurl, false) + "/";
             }
         }
-        if (StringUtils.isEmpty(directurl)) {
+        final List<String> directurls = new ArrayList<String>();
+        if (officialDownloadurl != null) {
+            directurls.add(officialDownloadurl);
+        }
+        final String lastGrabbedVideoStreamDirecturl = link.getStringProperty(PROPERTY_LAST_GRABBED_VIDEO_STREAM_DIRECTURL);
+        if (lastGrabbedVideoStreamDirecturl != null && !directurls.contains(lastGrabbedVideoStreamDirecturl)) {
+            directurls.add(lastGrabbedVideoStreamDirecturl);
+        }
+        if (directurls.isEmpty()) {
             handleHTMLErrors(link, br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         URLConnectionAdapter con = null;
+        PluginException firstException = null;
         try {
-            if (isDownload) {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, isResumeable(link, null), this.getMaxChunks(null));
-                con = dl.getConnection();
-            } else {
-                con = br.openGetConnection(directurl);
-            }
-            try {
-                handleConnectionErrors(link, br, con);
-            } catch (final PluginException firstException) {
-                /* E.g. redirect from cdn8.bunkr.ru/... to bukrr.su/v/... resulting in new final URL media-files8.bunkr.ru/... */
-                if (firstException.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                    /* Dead end */
-                    throw firstException;
-                } else if (new Regex(br.getURL(), BunkrAlbum.PATTERN_SINGLE_FILE).patternFind()) {
-                    /* Unknown URL format -> We most likely won't be able to refresh directurl from this format. */
-                    logger.info("Directurl redirected to URL with unknown format -> We most likely won't be able to refresh directurl from this format. URL: " + br.getURL());
-                    throw firstException;
+            directurlsLoop: for (int i = 0; i < directurls.size(); i++) {
+                final boolean isLastItem = (i == directurls.size() - 1);
+                final String directurl = directurls.get(i);
+                logger.info("Attempting download of URL " + (i + 1) + "/" + directurls.size() + " | " + directurl);
+                if (preDownloadRefererHeader != null) {
+                    br.getHeaders().put("Referer", preDownloadRefererHeader);
+                }
+                if (isDownload) {
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, isResumeable(link, null), this.getMaxChunks(null));
+                    con = dl.getConnection();
                 } else {
+                    con = br.openGetConnection(directurl);
+                }
+                try {
+                    handleConnectionErrors(link, br, con);
+                } catch (final PluginException exception1) {
+                    /* E.g. redirect from cdn8.bunkr.ru/... to bukrr.su/v/... resulting in new final URL media-files8.bunkr.ru/... */
                     try {
-                        final String singleFileURL = br.getURL();
-                        try {
-                            con.disconnect();
-                        } catch (final Throwable ignore) {
-                        }
-                        if (br.getHttpConnection().getResponseCode() == 416) {
-                            /* E.g. resume of download which does not work at this stage -> Access URL to get HTML code. */
-                            br.getPage(singleFileURL);
-                        }
-                        final String freshDirecturl = getDirecturlFromSingleFileAvailablecheck(link, br.getURL(), false, isDownload);
-                        /* Avoid trying again with the same directurl if we already know the result. */
-                        if (StringUtils.equals(freshDirecturl, lastCachedDirecturl) && exceptionFromDirecturlCheck != null) {
-                            throw exceptionFromDirecturlCheck;
-                        }
-                        br.getHeaders().put("Referer", singleFileURL); // Important!
-                        if (isDownload) {
-                            dl = jd.plugins.BrowserAdapter.openDownload(br, link, freshDirecturl, isResumeable(link, null), this.getMaxChunks(null));
-                            con = dl.getConnection();
+                        if (exception1.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                            /* Dead end */
+                            throw exception1;
+                        } else if (new Regex(br.getURL(), BunkrAlbum.PATTERN_SINGLE_FILE).patternFind()) {
+                            /* Unknown URL format -> We most likely won't be able to refresh directurl from this format. */
+                            logger.info("Directurl redirected to URL with unknown format -> We most likely won't be able to refresh directurl from this format. URL: " + br.getURL());
+                            throw exception1;
                         } else {
-                            con = br.openGetConnection(freshDirecturl);
+                            try {
+                                final String singleFileURL = br.getURL();
+                                try {
+                                    con.disconnect();
+                                } catch (final Throwable ignore) {
+                                }
+                                if (br.getHttpConnection().getResponseCode() == 416) {
+                                    /* E.g. resume of download which does not work at this stage -> Access URL to get HTML code. */
+                                    br.getPage(singleFileURL);
+                                }
+                                final String freshDirecturl = getDirecturlFromSingleFileAvailablecheck(link, br.getURL(), false, isDownload);
+                                /* Avoid trying again with the same directurl if we already know the result. */
+                                if (StringUtils.equals(freshDirecturl, lastGrabbedDirecturl) && exceptionFromDirecturlCheck != null) {
+                                    throw exceptionFromDirecturlCheck;
+                                }
+                                br.getHeaders().put("Referer", singleFileURL); // Important!
+                                if (isDownload) {
+                                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, freshDirecturl, isResumeable(link, null), this.getMaxChunks(null));
+                                    con = dl.getConnection();
+                                } else {
+                                    con = br.openGetConnection(freshDirecturl);
+                                }
+                                handleConnectionErrors(link, br, con);
+                            } catch (final Exception exception2) {
+                                throw exception1;
+                            }
                         }
-                        handleConnectionErrors(link, br, con);
-                    } catch (final Exception secondaryException) {
-                        throw firstException;
+                    } catch (final PluginException exception3) {
+                        if (firstException == null) {
+                            firstException = exception3;
+                        }
+                        if (isLastItem) {
+                            /* Throw first exception since first try = official download and 2nd is usually stream download */
+                            throw firstException;
+                        } else {
+                            continue directurlsLoop;
+                        }
                     }
                 }
-            }
-            if (con.getCompleteContentLength() > 0) {
-                link.setVerifiedFileSize(con.getCompleteContentLength());
-            }
-            final String filenameFromHeader = Plugin.getFileNameFromConnection(con);
-            if (!StringUtils.isEmpty(filenameFromHeader)) {
-                setFilename(link, filenameFromHeader, true, true);
+                /* Success! */
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final String filenameFromHeader = Plugin.getFileNameFromConnection(con);
+                if (!StringUtils.isEmpty(filenameFromHeader)) {
+                    setFilename(link, filenameFromHeader, true, true);
+                }
+                break directurlsLoop;
             }
         } catch (final Exception e) {
             try {
@@ -388,13 +421,23 @@ public class Bunkr extends PluginForHost {
         handleResponsecodeErrors(br.getHttpConnection());
         final String filenameFromURL = Plugin.getFileNameFromURL(br._getURL());
         String filenameFromHTML = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+        if (filenameFromHTML == null) {
+            /* 2024-09-11 */
+            filenameFromHTML = br.getRegex("data-v=\"([^\"]+)").getMatch(0);
+        }
         if (filenameFromHTML != null) {
             filenameFromHTML = Encoding.htmlDecode(filenameFromHTML).trim();
             filenameFromHTML = filenameFromHTML.replaceAll("(?i)\\s*\\|\\s*Bunkr\\s*", "");
         }
         if (filenameFromHTML != null) {
             /* Unsafe name */
-            setFilename(link, filenameFromHTML, false, false);
+            final boolean canContainFileID;
+            if (StringUtils.equalsIgnoreCase(filenameFromHTML, filenameFromURL)) {
+                canContainFileID = true;
+            } else {
+                canContainFileID = false;
+            }
+            setFilename(link, filenameFromHTML, canContainFileID, false);
         }
         String filesize = br.getRegex("Download\\s*(\\d+[^<]+)</a>").getMatch(0);
         if (filesize == null) {
@@ -405,7 +448,11 @@ public class Bunkr extends PluginForHost {
             link.setDownloadSize(parsedFilesize);
             link.setProperty(PROPERTY_PARSED_FILESIZE, parsedFilesize);
         }
-        /* 2024-02-16: New: Additional step required */
+        final String videoStreamDirecturl = br.getRegex("<source src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=.video/mp4").getMatch(0);
+        if (videoStreamDirecturl != null) {
+            link.setProperty(PROPERTY_LAST_GRABBED_VIDEO_STREAM_DIRECTURL, videoStreamDirecturl);
+        }
+        /* 2024-02-16: New: Additional step required to find official downloadurl */
         final String nextStepURL = br.getRegex("(https?://get\\.[^/]+/file/\\d+)").getMatch(0);
         if (nextStepURL != null) {
             br.getPage(nextStepURL);
@@ -413,49 +460,44 @@ public class Bunkr extends PluginForHost {
         String directurl = br.getRegex("(?i)href\\s*=\\s*\"(https?://[^\"]+)[^>]*>\\s*Download").getMatch(0);
         if (directurl == null) {
             /* Video stream (For "/v/ URLs."URL is usually the same as downloadurl.) */
-            directurl = br.getRegex("<source src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=.video/mp4").getMatch(0);
             if (directurl == null) {
-                /* Video stream (URL is usually the same as downloadurl) */
-                directurl = br.getRegex("<source src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=.video/mp4").getMatch(0);
-                if (directurl == null) {
-                    String unsafeDirecturlResultForFileWithoutExtOrUnknownExt = null;
-                    String unsafeDirecturlResult = null;
-                    final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
-                    for (final String url : urls) {
-                        if (url.matches(BunkrAlbum.TYPE_MEDIA_FILES_WITH_EXT) || url.matches(BunkrAlbum.TYPE_CDN_WITH_EXT)) {
-                            /* Safe result */
-                            directurl = url;
-                            break;
-                        } else if (url.matches(BunkrAlbum.TYPE_MEDIA_FILES_WITHOUT_EXT) || new Regex(url, BunkrAlbum.PATTERN_CDN_WITHOUT_EXT).patternFind()) {
-                            unsafeDirecturlResultForFileWithoutExtOrUnknownExt = url;
-                        } else if (StringUtils.containsIgnoreCase(url, "download=true")) {
-                            /* Image URLs: bunkr.bla/i/... */
-                            directurl = url;
-                            break;
-                        } else if (!url.equals(br.getURL()) && (StringUtils.contains(url, filenameFromURL) || StringUtils.contains(url, filenameFromHTML))) {
-                            unsafeDirecturlResult = url;
-                        }
-                    }
-                    if (directurl == null && unsafeDirecturlResult != null) {
-                        logger.info("Using unsafeDirecturlResult as directurl");
-                        directurl = unsafeDirecturlResult;
-                    } else if (directurl == null && unsafeDirecturlResultForFileWithoutExtOrUnknownExt != null) {
-                        /* File without extension or extension we don't know. */
-                        logger.info("Using unsafeDirecturlResultForFileWithoutExtOrUnknownExt as directurl");
-                        directurl = unsafeDirecturlResultForFileWithoutExtOrUnknownExt;
+                String unsafeDirecturlResultForFileWithoutExtOrUnknownExt = null;
+                String unsafeDirecturlResult = null;
+                final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+                for (final String url : urls) {
+                    if (url.matches(BunkrAlbum.TYPE_MEDIA_FILES_WITH_EXT) || url.matches(BunkrAlbum.TYPE_CDN_WITH_EXT)) {
+                        /* Safe result */
+                        directurl = url;
+                        break;
+                    } else if (url.matches(BunkrAlbum.TYPE_MEDIA_FILES_WITHOUT_EXT) || new Regex(url, BunkrAlbum.PATTERN_CDN_WITHOUT_EXT).patternFind()) {
+                        unsafeDirecturlResultForFileWithoutExtOrUnknownExt = url;
+                    } else if (StringUtils.containsIgnoreCase(url, "download=true")) {
+                        /* Image URLs: bunkr.bla/i/... */
+                        directurl = url;
+                        break;
+                    } else if (!url.equals(br.getURL()) && (StringUtils.contains(url, filenameFromURL) || StringUtils.contains(url, filenameFromHTML))) {
+                        unsafeDirecturlResult = url;
                     }
                 }
-                /* Last chance */
-                if (directurl == null) {
-                    directurl = br.getRegex("class=\"text-white hover:[^\"]*justify-center rounded[^\"]*\" href=\"(https?://[^\"]+)\">").getMatch(0);
-                    if (directurl == null && filenameFromURL != null) {
-                        /* 2023-10-06 e.g. burger.bunkr.ru/... or pizza.bunkr.ru/... */
-                        directurl = br.getRegex("(https?://[a-z0-9\\-]+\\.[^/]+/" + Pattern.quote(filenameFromURL) + ")").getMatch(0);
-                    }
-                    if (directurl == null && filenameFromHTML != null) {
-                        /* 2023-10-06 e.g. burger.bunkr.ru/... or pizza.bunkr.ru/... */
-                        directurl = br.getRegex("(https?://[a-z0-9\\-]+\\.[^/]+/" + Pattern.quote(filenameFromHTML) + ")").getMatch(0);
-                    }
+                if (directurl == null && unsafeDirecturlResult != null) {
+                    logger.info("Using unsafeDirecturlResult as directurl");
+                    directurl = unsafeDirecturlResult;
+                } else if (directurl == null && unsafeDirecturlResultForFileWithoutExtOrUnknownExt != null) {
+                    /* File without extension or extension we don't know. */
+                    logger.info("Using unsafeDirecturlResultForFileWithoutExtOrUnknownExt as directurl");
+                    directurl = unsafeDirecturlResultForFileWithoutExtOrUnknownExt;
+                }
+            }
+            /* Last chance */
+            if (directurl == null) {
+                directurl = br.getRegex("class=\"text-white hover:[^\"]*justify-center rounded[^\"]*\" href=\"(https?://[^\"]+)\">").getMatch(0);
+                if (directurl == null && filenameFromURL != null) {
+                    /* 2023-10-06 e.g. burger.bunkr.ru/... or pizza.bunkr.ru/... */
+                    directurl = br.getRegex("(https?://[a-z0-9\\-]+\\.[^/]+/" + Pattern.quote(filenameFromURL) + ")").getMatch(0);
+                }
+                if (directurl == null && filenameFromHTML != null) {
+                    /* 2023-10-06 e.g. burger.bunkr.ru/... or pizza.bunkr.ru/... */
+                    directurl = br.getRegex("(https?://[a-z0-9\\-]+\\.[^/]+/" + Pattern.quote(filenameFromHTML) + ")").getMatch(0);
                 }
             }
         }
@@ -467,7 +509,10 @@ public class Bunkr extends PluginForHost {
             }
             link.setProperty(PROPERTY_LAST_GRABBED_DIRECTURL, directurl);
         } else {
-            logger.warning("Failed to find directurl");
+            logger.warning("Failed to find download directurl");
+        }
+        if (directurl == null && videoStreamDirecturl == null) {
+            logger.warning("Failed to find any directurl");
         }
         link.setProperty(PROPERTY_LAST_USED_SINGLE_FILE_URL, singleFileURL);
         return directurl;

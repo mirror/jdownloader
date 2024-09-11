@@ -32,7 +32,6 @@ import org.jdownloader.plugins.components.config.BiqleRuConfig.QualitySelectionM
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -108,32 +107,25 @@ public class BiqleRuCrawler extends PluginForDecrypt {
             final String id = urlinfo.getMatch(1);
             /* Check if content is also hosted on vk and if so, return only vk.com URLs. */
             final CryptedLink vklink = new CryptedLink(VKontakteRu.generateContentURLVideo(oid, id), param);
-            final List<LazyCrawlerPlugin> plugins = findNextLazyCrawlerPlugins(vklink.getCryptedUrl());
-            if (plugins.size() == 1) {
-                final VKontakteRu vkPlugin = this.getNewPluginInstance(plugins.get(0));
-                /* Try to use same "preferred quality selection mode" setting for vk.com as use has set for biqle.ru plugin. */
+            final VKontakteRu vkPlugin = (VKontakteRu) this.getNewPluginForDecryptInstance("vk.com");
+            /* Try to use same "preferred quality selection mode" setting for vk.com as use has set for biqle.ru plugin. */
+            try {
                 try {
-                    try {
-                        final QualitySelectionMode mode = PluginJsonConfig.get(BiqleRuConfig.class).getQualitySelectionMode();
-                        vkPlugin.setQualitySelectionMode(jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode.valueOf(mode.name()));
-                    } catch (Throwable e) {
-                        logger.log(e);
-                    }
-                    vkPlugin.setPreferredQualityString(getUserPreferredqualityStr());
-                    final ArrayList<DownloadLink> vkResults = vkPlugin.decryptIt(vklink, null);
-                    if (vkResults != null && !vkResults.isEmpty()) {
-                        /* Looks like video is hosted on vk.com --> Prefer this as our final result. */
-                        return vkResults;
-                    }
+                    final QualitySelectionMode mode = PluginJsonConfig.get(BiqleRuConfig.class).getQualitySelectionMode();
+                    vkPlugin.setQualitySelectionMode(jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode.valueOf(mode.name()));
                 } catch (final Throwable e) {
                     logger.log(e);
-                    logger.info("vk handling failed");
+                    logger.warning("Failed to set Biqle quality settings on vkontakte plugin");
                 }
-            } else if (plugins.size() > 1) {
-                logger.info("more than one decrypter plugin?!:" + plugins);
-            } else {
-                /* This should never happen */
-                logger.info("missing vk.com decrypter plugin?!");
+                vkPlugin.setPreferredQualityString(getUserPreferredqualityStr());
+                final ArrayList<DownloadLink> vkResults = vkPlugin.decryptIt(vklink, null);
+                if (vkResults != null && !vkResults.isEmpty()) {
+                    /* Looks like video is hosted on vk.com --> Prefer this as our final result. */
+                    return vkResults;
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
+                logger.info("vk handling failed");
             }
             if (isNoodleMagazin(getHost())) {
                 return handleNoodleMagazin(param);

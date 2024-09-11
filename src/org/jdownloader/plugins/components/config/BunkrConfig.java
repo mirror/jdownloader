@@ -8,7 +8,7 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.Type;
 
-@PluginHost(host = "bunkr.la", type = Type.HOSTER)
+@PluginHost(host = "bunkrr.su", type = Type.HOSTER)
 public interface BunkrConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)

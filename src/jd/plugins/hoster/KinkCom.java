@@ -55,7 +55,7 @@ import jd.plugins.PluginForHost;
 public class KinkCom extends PluginForHost {
     public KinkCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.kink.com/join/kink");
+        this.enablePremium("https://www." + getHost() + "/join/kink");
     }
 
     @Override
@@ -355,7 +355,7 @@ public class KinkCom extends PluginForHost {
                 logger.warning("Failed to find username");
             }
         }
-        boolean isAutoRebillIfAccountIsValid = false;
+        Boolean isAutoRebill = null;
         long highestExpireTimestamp = -1;
         /* User can own multiple premium packages --> Use the expire date that is farthest away to set in JD! */
         final String[] possibleExpireDates = br.getRegex("([A-Z][a-z]{2} \\d{2}, \\d{4} \\d{2}:\\d{2} [A-Z]{3})").getColumn(0);
@@ -376,10 +376,12 @@ public class KinkCom extends PluginForHost {
                         highestExpireTimestamp = expireTimestampTmp;
                     }
                 }
-                isAutoRebillIfAccountIsValid = true;
+                isAutoRebill = true;
             }
         }
-        if (highestExpireTimestamp == -1) {
+        /* 2024-09-11: Running subscriptions do not have an end date */
+        boolean isRunningSubscription = br.containsHTML("id=\"cancelSub\"");
+        if (highestExpireTimestamp == -1 && !isRunningSubscription) {
             ai.setExpired(true);
             logger.info("Failed to find any expiredate -> Account is expired or plugin is broken");
             return ai;
@@ -388,15 +390,19 @@ public class KinkCom extends PluginForHost {
          * Always set expire-date. Free/expired premium accounts are unsupported and will get displayed as expired automatically --> Do NOT
          * accept those!
          */
-        ai.setValidUntil(highestExpireTimestamp, br);
+        if (highestExpireTimestamp != -1) {
+            ai.setValidUntil(highestExpireTimestamp, br);
+        }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.PREMIUM);
         account.setConcurrentUsePossible(true);
         String statusText = account.getType().getLabel();
-        if (isAutoRebillIfAccountIsValid) {
-            statusText += " | Auto rebill: Yes";
-        } else {
-            statusText += " | Auto rebill: No";
+        if (isAutoRebill != null) {
+            if (Boolean.TRUE.equals(isAutoRebill)) {
+                statusText += " | Auto rebill: Yes";
+            } else {
+                statusText += " | Auto rebill: No";
+            }
         }
         /* Try to let user know when login session will expire */
         final Cookies allCookies = br.getCookies(br.getHost());

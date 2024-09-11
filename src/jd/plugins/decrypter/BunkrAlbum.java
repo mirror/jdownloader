@@ -29,7 +29,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -57,6 +56,7 @@ public class BunkrAlbum extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /** DEVELOPER: When changing this, do not forget to update the domain also in BunkrConfig.class!!! */
     public final static String MAIN_BUNKR_DOMAIN = "bunkrr.su";
 
     public static List<String[]> getPluginDomains() {
@@ -206,6 +206,7 @@ public class BunkrAlbum extends PluginForDecrypt {
                 }
             }
             if (ret.isEmpty()) {
+                /* Check for empty album */
                 if (numberofFiles == 0 || br.containsHTML("(?i)There are no files in the album")) {
                     throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
                 } else {
@@ -235,11 +236,11 @@ public class BunkrAlbum extends PluginForDecrypt {
         return ret;
     }
 
-    private DownloadLink add(final List<DownloadLink> ret, Set<String> dups, final String directurl, String filename, final String filesizeBytesStr, final String filesizeStr, final Boolean setOnlineStatus) throws Exception {
-        if (dups != null && !dups.add(directurl)) {
+    private DownloadLink add(final List<DownloadLink> ret, final Set<String> dups, final String url, String filename, final String filesizeBytesStr, final String filesizeStr, final Boolean setOnlineStatus) throws Exception {
+        if (dups != null && !dups.add(url)) {
             return null;
         }
-        final DownloadLink dl = this.createDownloadlink(directurl);
+        final DownloadLink dl = this.createDownloadlink(url);
         if (plugin == null) {
             try {
                 final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(getHost());
@@ -248,7 +249,7 @@ public class BunkrAlbum extends PluginForDecrypt {
                 } else {
                     plugin = lazyHostPlugin.getPrototype(null, false);
                 }
-            } catch (UpdateRequiredClassNotFoundException e) {
+            } catch (final Throwable e) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
             }
         }
@@ -256,10 +257,28 @@ public class BunkrAlbum extends PluginForDecrypt {
             dl.setAvailable(setOnlineStatus.booleanValue());
         }
         dl.setDefaultPlugin(plugin);
+        final String filenameFromURL = getFileNameFromURL(new URL(url));
         if (filename != null) {
+            if (!filename.endsWith(".mp4")) {
+                logger.warning("WTF");
+            }
             filename = Encoding.htmlDecode(filename).trim();
+            /* Add file extension if it is missing */
+            String betterFileExtension = null;
+            if (filenameFromURL != null) {
+                betterFileExtension = getFileNameExtensionFromString(filenameFromURL, null);
+            }
+            if (betterFileExtension == null && url.matches("(?i)https?://[^/]+/v/.+")) {
+                betterFileExtension = ".mp4";
+            }
+            if (betterFileExtension != null) {
+                filename = this.correctOrApplyFileNameExtension(filename, betterFileExtension, null);
+            }
             dl.setProperty(Bunkr.PROPERTY_FILENAME_FROM_ALBUM, filename);
             Bunkr.setFilename(dl, filename, false, false);
+        } else if (filenameFromURL != null) {
+            /* Fallback */
+            dl.setName(filenameFromURL);
         }
         long parsedFilesize = -1;
         if (filesizeBytesStr != null) {

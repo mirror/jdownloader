@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
-import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
@@ -374,10 +373,6 @@ public class FileCryptCc extends PluginForDecrypt {
     }
 
     private void handlePasswordAndCaptcha(final CryptedLink param, final String folderID, final String url) throws Exception {
-        // final ChallengeResponseController crc = ChallengeResponseController.getInstance();
-        // final boolean canHandleCutCaptchaChallenge = false;
-        // TODO: Find out beforehand if there is a CutCaptcha solver available and evaluate this information -> Try to avoid CutCaptcha if
-        // we know that no solver is available.
         /* Prepare browser */
         br.addAllowedResponseCodes(500);// submit captcha responds with 500 code
         int cutCaptchaRetryIndex = -1;
@@ -385,7 +380,8 @@ public class FileCryptCc extends PluginForDecrypt {
         final int cutCaptchaAvoidanceMaxRetries = cfg.getMaxCutCaptchaAvoidanceRetries();
         final HashSet<String> usedWrongPasswords = new HashSet<String>();
         boolean captchaSuccess = false;
-        boolean cutCaptchaNeeded = false;
+        boolean lastCaptchaIsCutCaptcha = false;
+        boolean tryToSolveCutCaptcha = false;
         cutcaptchaAvoidanceLoop: while (cutCaptchaRetryIndex++ <= cutCaptchaAvoidanceMaxRetries && !this.isAbort()) {
             logger.info("cutcaptchaAvoidanceLoop " + (cutCaptchaRetryIndex + 1) + " / " + (cutCaptchaAvoidanceMaxRetries + 1));
             /* Website has no language selection as it auto-chooses based on IP and/or URL but we can force English language. */
@@ -541,7 +537,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
                 this.getPluginConfig().setProperty(PROPERTY_PLUGIN_LAST_USED_PASSWORD, successfullyUsedFolderPassword);
             }
-            cutCaptchaNeeded = false;
+            lastCaptchaIsCutCaptcha = false;
             if (containsCaptcha()) {
                 /* Process captcha */
                 int captchaCounter = -1;
@@ -603,13 +599,26 @@ public class FileCryptCc extends PluginForDecrypt {
                             continue;
                         }
                     } else if (StringUtils.containsIgnoreCase(captchaURL, "cutcaptcha")) {
-                        cutCaptchaNeeded = true;
-                        final boolean tryCutCaptchaInDevMode = false;
-                        if (!Application.isHeadless() && DebugMode.TRUE_IN_IDE_ELSE_FALSE && tryCutCaptchaInDevMode) {
-                            // current implementation via localhost no longer working
-                            final String cutcaptchaToken = new CaptchaHelperCrawlerPluginCutCaptcha(this, br, null).getToken();
-                            captchaForm.put("cap_token", Encoding.urlEncode(cutcaptchaToken));
-                        } else {
+                        lastCaptchaIsCutCaptcha = true;
+                        if (cutCaptchaRetryIndex == 0 || tryToSolveCutCaptcha) {
+                            logger.info("Attempting to solve CutCaptcha");
+                            try {
+                                // current implementation via localhost no longer working
+                                final String cutcaptchaToken = new CaptchaHelperCrawlerPluginCutCaptcha(this, br, null).getToken();
+                                captchaForm.put("cap_token", Encoding.urlEncode(cutcaptchaToken));
+                                tryToSolveCutCaptcha = true;
+                            } catch (final Throwable e) {
+                                if (tryToSolveCutCaptcha) {
+                                    /* Handling worked before and failed now -> Throw exception */
+                                    throw e;
+                                }
+                                logger.log(e);
+                                logger.info("CutCaptcha failed");
+                                /* Don't try again! */
+                                tryToSolveCutCaptcha = false;
+                            }
+                        }
+                        if (!tryToSolveCutCaptcha) {
                             logger.info("Trying to avoid cutcaptcha | cutCaptchaRetryIndex = " + cutCaptchaRetryIndex);
                             /* Clear cookies to increase the chances of getting a different captcha type than cutcaptcha. */
                             br.clearCookies(null);
@@ -648,7 +657,7 @@ public class FileCryptCc extends PluginForDecrypt {
             break cutcaptchaAvoidanceLoop;
         }
         if (!captchaSuccess) {
-            if (cutCaptchaRetryIndex >= cutCaptchaAvoidanceMaxRetries && cutCaptchaNeeded) {
+            if (cutCaptchaRetryIndex >= cutCaptchaAvoidanceMaxRetries && lastCaptchaIsCutCaptcha) {
                 throw new DecrypterRetryException(RetryReason.CAPTCHA, "CUTCAPTCHA_IS_NOT_SUPPORTED_" + folderID, "Cutcaptcha is not supported! Please read: support.jdownloader.org/Knowledgebase/Article/View/cutcaptcha-not-supported");
             } else {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
