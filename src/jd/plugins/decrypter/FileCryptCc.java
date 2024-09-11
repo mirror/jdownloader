@@ -603,7 +603,6 @@ public class FileCryptCc extends PluginForDecrypt {
                         if (cutCaptchaRetryIndex == 0 || tryToSolveCutCaptcha) {
                             logger.info("Attempting to solve CutCaptcha");
                             try {
-                                // current implementation via localhost no longer working
                                 final String cutcaptchaToken = new CaptchaHelperCrawlerPluginCutCaptcha(this, br, null).getToken();
                                 captchaForm.put("cap_token", Encoding.urlEncode(cutcaptchaToken));
                                 tryToSolveCutCaptcha = true;
@@ -613,7 +612,7 @@ public class FileCryptCc extends PluginForDecrypt {
                                     throw e;
                                 }
                                 logger.log(e);
-                                logger.info("CutCaptcha failed");
+                                logger.info("CutCaptcha failed - most likely no CutCaptcha solver is available");
                                 /* Don't try again! */
                                 tryToSolveCutCaptcha = false;
                             }

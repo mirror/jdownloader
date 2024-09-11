@@ -381,6 +381,9 @@ public class KinkCom extends PluginForHost {
         }
         /* 2024-09-11: Running subscriptions do not have an end date */
         boolean isRunningSubscription = br.containsHTML("id=\"cancelSub\"");
+        if (!isRunningSubscription) {
+            isRunningSubscription = br.containsHTML("class=\"subscription-status\"[^>]*>\\s*active");
+        }
         if (highestExpireTimestamp == -1 && !isRunningSubscription) {
             ai.setExpired(true);
             logger.info("Failed to find any expiredate -> Account is expired or plugin is broken");

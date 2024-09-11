@@ -259,9 +259,6 @@ public class BunkrAlbum extends PluginForDecrypt {
         dl.setDefaultPlugin(plugin);
         final String filenameFromURL = getFileNameFromURL(new URL(url));
         if (filename != null) {
-            if (!filename.endsWith(".mp4")) {
-                logger.warning("WTF");
-            }
             filename = Encoding.htmlDecode(filename).trim();
             /* Add file extension if it is missing */
             String betterFileExtension = null;
