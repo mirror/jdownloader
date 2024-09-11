@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import jd.http.Browser;
+import jd.http.requests.PostRequest;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
@@ -28,9 +30,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_TWO_CAPTCHA;
-
-import jd.http.Browser;
-import jd.http.requests.PostRequest;
 
 public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
     private static final TwoCaptchaSolver INSTANCE = new TwoCaptchaSolver();
@@ -58,7 +57,7 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
     protected boolean isChallengeSupported(final Challenge<?> c) {
         if (c instanceof RecaptchaV2Challenge || c instanceof HCaptchaChallenge || c instanceof BasicCaptchaChallenge) {
             return true;
-        } else if (c instanceof CutCaptchaChallenge && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        } else if (c instanceof CutCaptchaChallenge) {
             return true;
         } else {
             return false;
@@ -196,8 +195,7 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
     }
 
     /**
-     * https://2captcha.com/2captcha-api#solving_recaptchav2_new </br>
-     * https://2captcha.com/2captcha-api#solving_recaptchav3
+     * https://2captcha.com/2captcha-api#solving_recaptchav2_new </br> https://2captcha.com/2captcha-api#solving_recaptchav3
      */
     private void handleRecaptchaV2(CESSolverJob<String> job) throws InterruptedException {
         final RecaptchaV2Challenge challenge = (RecaptchaV2Challenge) job.getChallenge();
