@@ -37,44 +37,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import jd.config.Property;
-import jd.controlling.TaskQueue;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkchecker.LinkCheckerHandler;
-import jd.controlling.linkcollector.autostart.AutoStartManager;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.CrawledLinkProperty;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackage.TYPE;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
-import jd.controlling.linkcrawler.LinkCrawlerFilter;
-import jd.controlling.linkcrawler.LinkCrawlerHandler;
-import jd.controlling.linkcrawler.LinkCrawlerRule;
-import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.packagecontroller.PackageController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
-import jd.plugins.CrawledLinkStorable;
-import jd.plugins.CrawledPackageStorable;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
@@ -149,6 +111,44 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
+
+import jd.config.Property;
+import jd.controlling.TaskQueue;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkchecker.LinkCheckerHandler;
+import jd.controlling.linkcollector.autostart.AutoStartManager;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledLinkProperty;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackage.TYPE;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
+import jd.controlling.linkcrawler.LinkCrawlerFilter;
+import jd.controlling.linkcrawler.LinkCrawlerHandler;
+import jd.controlling.linkcrawler.LinkCrawlerRule;
+import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.packagecontroller.PackageController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
+import jd.plugins.CrawledLinkStorable;
+import jd.plugins.CrawledPackageStorable;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink>, LinkCrawlerHandler, ShutdownVetoListener {
     public static final String                        SOURCE_VARIANT_ID = "SOURCE_VARIANT_ID";
@@ -2692,10 +2692,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     /**
-     * This class describes, how a "move links to downloadlist" action shall behave. </br> Examples of what it can influence: </br> - define
-     * specific properties that should be set on the items to move e.g. set highest priority </br> - define what should happen afterwards
-     * such as "force download-start of added items" </br> - define what happens in linkgrabber afterwards such as
-     * "clean all remaining items in linkgrabber"
+     * This class describes, how a "move links to downloadlist" action shall behave. </br>
+     * Examples of what it can influence: </br>
+     * - define specific properties that should be set on the items to move e.g. set highest priority </br>
+     * - define what should happen afterwards such as "force download-start of added items" </br>
+     * - define what happens in linkgrabber afterwards such as "clean all remaining items in linkgrabber"
      */
     public final static class ConfirmLinksSettings {
         public final MoveLinksMode getMoveLinksMode() {
@@ -2890,37 +2891,26 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
 
         private final MoveLinksMode              moveLinksMode;
-
         private final boolean                    defaultAutoStartDownloads                     = getDefaultAutoStartDownloads();
         private Boolean                          autoStartDownloads                            = null;
-
         private final boolean                    defaultForceDownloads                         = getDefaultForceDownloads();
         private Boolean                          forceDownloads                                = null;
-
         private final boolean                    defaultClearLinkgrabberlistOnConfirm          = getDefaultClearLinkgrabberlistOnConfirm();
         private Boolean                          clearLinkgrabberlistOnConfirm                 = null;
-
         private final Priority                   defaultPriority                               = getDefaultPriority();
         private Priority                         priority                                      = null;
-
         private final boolean                    defaultSwitchToDownloadlistOnConfirm          = getDefaultSwitchToDownloadlistOnConfirm();
         private Boolean                          switchToDownloadlistOnConfirm                 = null;
-
         private final OnOfflineLinksAction       defaultHandleOffline                          = getDefaultHandleOffline();
         private OnOfflineLinksAction             handleOffline                                 = null;
-
         private final OnDupesLinksAction         defaultHandleDupes                            = getDefaultHandleDupes();
         private OnDupesLinksAction               handleDupes                                   = null;
-
         private final PackageExpandBehavior      defaultPackageExpandBehavior                  = getDefaultPackageExpandBehavior();
         private PackageExpandBehavior            packageExpandBehavior                         = null;
-
         private final ConfirmationDialogBehavior defaultConfirmationDialogBehavior             = getDefaultConfirmationDialogBehavior();
         private ConfirmationDialogBehavior       confirmationDialogBehavior                    = null;
-
         private final int                        defaultConfirmationDialogThresholdMinPackages = getDefaultcConfirmationDialogThresholdMinPackages();
         private Integer                          confirmationDialogThresholdMinPackages        = 1;
-
         private final int                        defaultConfirmationDialogThresholdMinLinks    = getDefaultConfirmationDialogThresholdMinLinks();
         private Integer                          confirmationDialogThresholdMinLinks           = null;
 
@@ -2997,7 +2987,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
             return false;
         }
-
     }
 
     public void moveLinksToDownloadList(final SelectionInfo<CrawledPackage, CrawledLink> selection, final ConfirmLinksSettings moveLinksSettings) {
@@ -3113,100 +3102,106 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if (lcReference != null) {
                     lcReference.set(lc);
                 }
-                if (lc != null) {
-                    lc.waitForCrawling();
-                    if (!job.isDeepAnalyse() && lc.getProcessedLinksCounter() == 0 && lc.getUnhandledLinksFoundCounter() > 0) {
-                        final List<CrawledLink> unhandledLinks = new ArrayList<CrawledLink>(lc.getUnhandledLinks());
-                        final LinkOrigin origin = job.getOrigin().getOrigin();
-                        for (CrawledLink unhandledLink : unhandledLinks) {
-                            unhandledLink.setCrawlDeep(true);
-                        }
-                        final String[] origins = LinkCrawler.getConfig().getAutoLearnExtensionOrigins();
-                        final boolean autoExtensionLearning;
-                        if (origins != null && unhandledLinks.size() == 1) {
-                            autoExtensionLearning = Arrays.asList(origins).contains(origin.name());
-                        } else {
-                            autoExtensionLearning = false;
-                        }
-                        if (!autoExtensionLearning) {
-                            try {
-                                final ConfirmDialog dialog = new ConfirmDialog(0, _GUI.T.AddLinksAction_actionPerformed_deep_title(), _GUI.T.AddLinksAction_actionPerformed_deep_msg(), null, _GUI.T.literally_yes(), _GUI.T.literall_no());
-                                dialog.show().throwCloseExceptions();
-                            } catch (DialogNoAnswerException e) {
-                                e.printStackTrace();
-                                if (!e.isCausedByDontShowAgain()) {
-                                    return;
-                                }
+                if (lc == null) {
+                    return;
+                }
+                lc.waitForCrawling();
+                if (job.isDeepAnalyse()) {
+                    return;
+                }
+                if (lc.getProcessedLinksCounter() == 0 && lc.getUnhandledLinksFoundCounter() > 0) {
+                    final List<CrawledLink> unhandledLinks = new ArrayList<CrawledLink>(lc.getUnhandledLinks());
+                    final LinkOrigin origin = job.getOrigin().getOrigin();
+                    for (CrawledLink unhandledLink : unhandledLinks) {
+                        unhandledLink.setCrawlDeep(true);
+                    }
+                    final String[] origins = LinkCrawler.getConfig().getAutoLearnExtensionOrigins();
+                    final boolean autoExtensionLearning;
+                    if (origins != null && unhandledLinks.size() == 1) {
+                        autoExtensionLearning = Arrays.asList(origins).contains(origin.name());
+                    } else {
+                        autoExtensionLearning = false;
+                    }
+                    if (!autoExtensionLearning) {
+                        try {
+                            final ConfirmDialog dialog = new ConfirmDialog(0, _GUI.T.AddLinksAction_actionPerformed_deep_title(), _GUI.T.AddLinksAction_actionPerformed_deep_msg(), null, _GUI.T.literally_yes(), _GUI.T.literall_no());
+                            dialog.show().throwCloseExceptions();
+                        } catch (DialogNoAnswerException e) {
+                            e.printStackTrace();
+                            if (!e.isCausedByDontShowAgain()) {
+                                return;
                             }
-                        }
-                        lc = LinkCollector.getInstance().addCrawlerJob(unhandledLinks, job);
-                        if (lcReference != null) {
-                            lcReference.set(lc);
-                        }
-                        if (lc != null) {
-                            if (autoExtensionLearning) {
-                                final LinkCrawlerDeepInspector defaultDeepInspector = lc.defaultDeepInspector();
-                                lc.setDeepInspector(new LinkCrawlerDeepInspector() {
-                                    private final LinkCrawlerRule getDirectHTTPRule(LinkCrawler lc, final URLConnectionAdapter urlConnection) {
-                                        final List<LinkCrawlerRule> rules = lc.getLinkCrawlerRules();
-                                        if (rules != null) {
-                                            final String url = urlConnection.getURL().toString();
-                                            for (final LinkCrawlerRule rule : rules) {
-                                                if (RULE.DIRECTHTTP.equals(rule.getRule()) && rule.matches(url)) {
-                                                    return rule;
-                                                }
-                                            }
-                                        }
-                                        return null;
-                                    }
-
-                                    @Override
-                                    public List<CrawledLink> deepInspect(LinkCrawler lc, final LinkCrawler.LinkCrawlerGeneration generation, Browser br, URLConnectionAdapter urlConnection, CrawledLink link) throws Exception {
-                                        if (urlConnection.getResponseCode() == 200 && urlConnection.getRequest().getLocation() == null) {
-                                            final LinkCrawlerRule matchingRule = link.getMatchingRule();
-                                            if (matchingRule == null && looksLikeDownloadableContent(urlConnection)) {
-                                                LinkCrawlerRule rule = null;
-                                                final URL url = urlConnection.getURL();
-                                                if (url.getPath() != null && url.getPath().matches(".*\\.(php|aspx)$") && url.getQuery() != null) {
-                                                    // hoster.domain/script.php?somevalue=somekey.....->Download
-                                                    if ((rule = getDirectHTTPRule(lc, urlConnection)) == null) {
-                                                        final String domain = Browser.getHost(url, false);
-                                                        rule = new LinkCrawlerRule();
-                                                        rule.setName("Learned php script download: " + domain + url.getPath());
-                                                        rule.setPattern("(?i)https?://.*?" + Pattern.quote(domain) + Pattern.quote(url.getPath()) + "\\?.+");
-                                                        rule.setRule(RULE.DIRECTHTTP);
-                                                        lc.addLinkCrawlerRule(rule);
-                                                    }
-                                                } else {
-                                                    final String fileName = Plugin.getFileNameFromURL(url);
-                                                    final String fileExtension = Files.getExtension(fileName);
-                                                    if (StringUtils.isNotEmpty(fileExtension) && !autoExtensionLearnBlackList.contains(fileExtension)) {
-                                                        if ((rule = getDirectHTTPRule(lc, urlConnection)) == null) {
-                                                            rule = new LinkCrawlerRule();
-                                                            rule.setName("Learned file extension: " + fileExtension);
-                                                            rule.setPattern("(?i)https?://.*\\." + fileExtension + "($|\\?.*$)");
-                                                            rule.setRule(RULE.DIRECTHTTP);
-                                                            lc.addLinkCrawlerRule(rule);
-                                                        }
-                                                    }
-                                                }
-                                                urlConnection.disconnect();
-                                                final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
-                                                final CrawledLink direct = lc.createDirectHTTPCrawledLink(link, null, urlConnection);
-                                                if (direct != null) {
-                                                    direct.setMatchingRule(rule);
-                                                    ret.add(direct);
-                                                }
-                                                return ret;
-                                            }
-                                        }
-                                        return defaultDeepInspector.deepInspect(lc, generation, br, urlConnection, link);
-                                    }
-                                });
-                            }
-                            lc.waitForCrawling();
                         }
                     }
+                    lc = LinkCollector.getInstance().addCrawlerJob(unhandledLinks, job);
+                    if (lcReference != null) {
+                        lcReference.set(lc);
+                    }
+                    if (lc == null) {
+                        return;
+                    }
+                    if (autoExtensionLearning) {
+                        final LinkCrawlerDeepInspector defaultDeepInspector = lc.defaultDeepInspector();
+                        lc.setDeepInspector(new LinkCrawlerDeepInspector() {
+                            private final LinkCrawlerRule getDirectHTTPRule(LinkCrawler lc, final URLConnectionAdapter urlConnection) {
+                                final List<LinkCrawlerRule> rules = lc.getLinkCrawlerRules();
+                                if (rules == null) {
+                                    return null;
+                                }
+                                final String url = urlConnection.getURL().toString();
+                                for (final LinkCrawlerRule rule : rules) {
+                                    if (RULE.DIRECTHTTP.equals(rule.getRule()) && rule.matches(url)) {
+                                        return rule;
+                                    }
+                                }
+                                return null;
+                            }
+
+                            @Override
+                            public List<CrawledLink> deepInspect(LinkCrawler lc, final LinkCrawler.LinkCrawlerGeneration generation, Browser br, URLConnectionAdapter urlConnection, CrawledLink link) throws Exception {
+                                if (urlConnection.getResponseCode() == 200 && urlConnection.getRequest().getLocation() == null) {
+                                    final LinkCrawlerRule matchingRule = link.getMatchingRule();
+                                    if (matchingRule == null && looksLikeDownloadableContent(urlConnection)) {
+                                        LinkCrawlerRule rule = null;
+                                        final URL url = urlConnection.getURL();
+                                        if (url.getPath() != null && url.getPath().matches(".*\\.(php|aspx)$") && url.getQuery() != null) {
+                                            // hoster.domain/script.php?somevalue=somekey.....->Download
+                                            if ((rule = getDirectHTTPRule(lc, urlConnection)) == null) {
+                                                final String domain = Browser.getHost(url, false);
+                                                rule = new LinkCrawlerRule();
+                                                rule.setName("Learned php script download: " + domain + url.getPath());
+                                                rule.setPattern("(?i)https?://.*?" + Pattern.quote(domain) + Pattern.quote(url.getPath()) + "\\?.+");
+                                                rule.setRule(RULE.DIRECTHTTP);
+                                                lc.addLinkCrawlerRule(rule);
+                                            }
+                                        } else {
+                                            final String fileName = Plugin.getFileNameFromURL(url);
+                                            final String fileExtension = Files.getExtension(fileName);
+                                            if (StringUtils.isNotEmpty(fileExtension) && !autoExtensionLearnBlackList.contains(fileExtension)) {
+                                                if ((rule = getDirectHTTPRule(lc, urlConnection)) == null) {
+                                                    rule = new LinkCrawlerRule();
+                                                    rule.setName("Learned file extension: " + fileExtension);
+                                                    rule.setPattern("(?i)https?://.*\\." + fileExtension + "($|\\?.*$)");
+                                                    rule.setRule(RULE.DIRECTHTTP);
+                                                    lc.addLinkCrawlerRule(rule);
+                                                }
+                                            }
+                                        }
+                                        urlConnection.disconnect();
+                                        final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
+                                        final CrawledLink direct = lc.createDirectHTTPCrawledLink(link, null, urlConnection);
+                                        if (direct != null) {
+                                            direct.setMatchingRule(rule);
+                                            ret.add(direct);
+                                        }
+                                        return ret;
+                                    }
+                                }
+                                return defaultDeepInspector.deepInspect(lc, generation, br, urlConnection, link);
+                            }
+                        });
+                    }
+                    lc.waitForCrawling();
                 }
             }
         };
@@ -3386,26 +3381,29 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     private CrawledLink putCrawledLinkByLinkID(final String linkID, final CrawledLink link) {
-        if (isDupeManagerEnabled) {
-            final WeakReference<CrawledLink> item = dupeCheckMap.put(linkID, new WeakReference<CrawledLink>(link));
-            if (item != null) {
-                final CrawledLink itemLink = item.get();
-                if (itemLink != null) {
-                    final String itemLinkID = itemLink.getLinkID();
-                    if (itemLink == link) {
-                        return null;
-                    } else if (StringUtils.equals(itemLinkID, linkID)) {
-                        return itemLink;
-                    } else {
-                        logger.warning("DupeCheckMap pollution detected: " + linkID);
-                        if (putCrawledLinkByLinkID(itemLinkID, itemLink) != null) {
-                            logger.warning("Failed to clean DupeCheckMap pollution: " + itemLinkID);
-                        }
-                    }
-                }
-            }
+        if (!isDupeManagerEnabled) {
+            return null;
         }
-        return null;
+        final WeakReference<CrawledLink> item = dupeCheckMap.put(linkID, new WeakReference<CrawledLink>(link));
+        if (item == null) {
+            return null;
+        }
+        final CrawledLink itemLink = item.get();
+        if (itemLink == null) {
+            return null;
+        }
+        final String itemLinkID = itemLink.getLinkID();
+        if (itemLink == link) {
+            return null;
+        } else if (StringUtils.equals(itemLinkID, linkID)) {
+            return itemLink;
+        } else {
+            logger.warning("DupeCheckMap pollution detected: " + linkID);
+            if (putCrawledLinkByLinkID(itemLinkID, itemLink) != null) {
+                logger.warning("Failed to clean DupeCheckMap pollution: " + itemLinkID);
+            }
+            return null;
+        }
     }
 
     public boolean containsLinkId(final String linkID) {
