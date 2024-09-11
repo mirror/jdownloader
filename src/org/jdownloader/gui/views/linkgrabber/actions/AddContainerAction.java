@@ -44,6 +44,7 @@ public class AddContainerAction extends CustomizableAppAction {
             final FileFilter[] fileFilter = ContainerPluginController.getInstance().getContainerFileFilter(null);
             ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.AddContainerAction_actionPerformed_(), null, null);
             d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
+            d.setAcceptAllFileFilterUsed(false);
             d.setFileFilter(fileFilter);
             d.setType(FileChooserType.OPEN_DIALOG);
             d.setMultiSelection(true);

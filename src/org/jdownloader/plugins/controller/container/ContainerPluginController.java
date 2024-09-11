@@ -8,12 +8,12 @@ import java.util.regex.PatternSyntaxException;
 
 import javax.swing.filechooser.FileFilter;
 
+import jd.nutils.io.JDFileFilter;
+import jd.plugins.PluginsC;
+
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.jdownloader.logging.LogController;
-
-import jd.nutils.io.JDFileFilter;
-import jd.plugins.PluginsC;
 
 public class ContainerPluginController {
     private static final ContainerPluginController INSTANCE = new ContainerPluginController();
@@ -150,14 +150,14 @@ public class ContainerPluginController {
     public FileFilter[] getContainerFileFilter(final String filter) {
         final List<FileFilter> ret = new ArrayList<FileFilter>();
         final StringBuilder sb = new StringBuilder();
-        sb.append("(");
+        sb.append(".*(");
         for (final PluginsC act : list()) {
             if (filter != null && !new Regex(act.getName(), filter).matches()) {
                 continue;
             } else {
                 final String match = new Regex(act.getSupportedLinks().pattern(), "file:/\\.\\+(.+?)\\$").getMatch(0);
                 if (match != null) {
-                    ret.add(new JDFileFilter(act.getName(), Pattern.compile(".*" + match + "$"), true));
+                    ret.add(new JDFileFilter(act.getName(), Pattern.compile(".*" + match + "$", Pattern.CASE_INSENSITIVE), true));
                     sb.append(match);
                     sb.append("|");
                 }
@@ -166,7 +166,7 @@ public class ContainerPluginController {
         sb.setLength(sb.length() - 1);
         sb.append(")");
         try {
-            ret.add(0, new JDFileFilter(null, Pattern.compile(sb.toString()), true));
+            ret.add(0, new JDFileFilter(null, Pattern.compile(sb.toString(), Pattern.CASE_INSENSITIVE), true));
         } catch (final PatternSyntaxException e) {
             LogController.CL().log(e);
         }
