@@ -10,6 +10,17 @@ import javax.swing.Icon;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
+import jd.plugins.FilePackageView.PluginState;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.PluginStateCollection;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.components.tooltips.ExtTooltip;
@@ -34,16 +45,6 @@ import org.jdownloader.plugins.WaitWhileWaitingSkipReasonIsSet;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 import org.jdownloader.premium.PremiumInfoDialog;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
-import jd.plugins.FilePackageView.PluginState;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.PluginStateCollection;
 
 public class TaskColumn extends ExtTextColumn<AbstractNode> {
     public static class ColumnHelper {
@@ -80,7 +81,9 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     private final String       finishedText     = _GUI.T.TaskColumn_getStringValue_finished_();
     private final String       runningText      = _GUI.T.TaskColumn_getStringValue_running_();
     private final String       startingString;
+    private final String       finalizingString;
     private final Icon         startingIcon;
+    private final Icon         finalizingIcon;
     private final Icon         okIconExtracted;
     private final Icon         trueOrangaIconExtracted;
     private final Icon         falseIconExtracted;
@@ -108,6 +111,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         this.trueIcon = NewTheme.I().getIcon(IconKey.ICON_TRUE, 16);
         this.extracting = NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_EXTRACT, 16);
         startingIcon = NewTheme.I().getIcon(IconKey.ICON_RUN, 16);
+        finalizingIcon = NewTheme.I().getIcon(IconKey.ICON_WAIT, 16);
         trueIconExtracted = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_TRUE, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_OK, 16), 16, 0);
         falseIconExtracted = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_FALSE, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_OK, 16), 16, 0);
         okIconExtracted = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_OK, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_OK, 16), 16, 0);
@@ -117,6 +121,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         okIconExtractedFailed = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_OK, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_ERROR, 16), 16, 0);
         trueOrangaIconExtractedFailed = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_TRUE_ORANGE, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_ERROR, 16), 16, 0);
         startingString = _GUI.T.TaskColumn_fillColumnHelper_starting();
+        finalizingString = _GUI.T.TaskColumn_fillColumnHelper_finalizing();
         setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
             @Override
             public int compare(final AbstractNode o1, final AbstractNode o2) {
@@ -233,22 +238,22 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
     public void fillColumnHelper(ColumnHelper columnHelper, AbstractNode value) {
         if (value instanceof DownloadLink) {
-            DownloadLink link = (DownloadLink) value;
-            PluginProgress prog = link.getPluginProgress();
+            final DownloadLink link = (DownloadLink) value;
+            final PluginProgress prog = link.getPluginProgress();
             if (prog != null) {
                 columnHelper.icon = prog.getIcon(this);
                 columnHelper.string = prog.getMessage(this);
                 columnHelper.tooltip = null;
                 return;
             }
-            ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
+            final ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
             if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
                 columnHelper.icon = conditionalSkipReason.getIcon(this, null);
                 columnHelper.string = conditionalSkipReason.getMessage(this, null);
                 columnHelper.tooltip = null;
                 return;
             }
-            SkipReason skipReason = link.getSkipReason();
+            final SkipReason skipReason = link.getSkipReason();
             if (skipReason != null) {
                 columnHelper.icon = skipReason.getIcon(this, 18);
                 columnHelper.string = skipReason.getExplanation(this, link);
@@ -313,15 +318,24 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                 columnHelper.tooltip = null;
                 return;
             }
-            if (link.getDownloadLinkController() != null) {
+            final SingleDownloadController controller = link.getDownloadLinkController();
+            if (controller == null) {
+                columnHelper.icon = null;
+                columnHelper.tooltip = null;
+                columnHelper.string = "";
+            } else if (!controller.isAlive()) {
+                columnHelper.icon = finalizingIcon;
+                columnHelper.string = finalizingString;
+                columnHelper.tooltip = null;
+            } else if (controller.getStartTimestamp() != -1) {
+                columnHelper.icon = startingIcon;
+                columnHelper.string = runningText;
+                columnHelper.tooltip = null;
+            } else {
                 columnHelper.icon = startingIcon;
                 columnHelper.string = startingString;
                 columnHelper.tooltip = null;
-                return;
             }
-            columnHelper.icon = null;
-            columnHelper.tooltip = null;
-            columnHelper.string = "";
         } else {
             FilePackage fp = (FilePackage) value;
             FilePackageView view = fp.getView();

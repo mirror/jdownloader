@@ -2,11 +2,11 @@ package jd.controlling.linkcrawler;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jdownloader.plugins.controller.PluginClassLoader;
-
 import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
 import jd.http.BrowserSettingsThread;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.plugins.controller.PluginClassLoader;
 
 public class LinkCrawlerThread extends BrowserSettingsThread {
     private static AtomicInteger linkCrawlerThread = new AtomicInteger(0);
@@ -30,6 +30,7 @@ public class LinkCrawlerThread extends BrowserSettingsThread {
     }
 
     public LinkCrawlerGeneration getLinkCrawlerGeneration() {
+        final LinkCrawler crawler = getCurrentLinkCrawler();
         return crawler != null ? crawler.getCurrentLinkCrawlerGeneration() : null;
     }
 

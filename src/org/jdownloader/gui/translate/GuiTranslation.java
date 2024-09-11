@@ -3982,6 +3982,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Starting..." })
     String TaskColumn_fillColumnHelper_starting();
 
+    @Default(lngs = { "en" }, values = { "Finalizing..." })
+    String TaskColumn_fillColumnHelper_finalizing();
+
     @Default(lngs = { "en" }, values = { "Keep only selected Links" })
     String GenericDeleteSelectedToolbarAction_updateName_object_keep_selected_all();
 
