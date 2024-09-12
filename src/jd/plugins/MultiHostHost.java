@@ -28,8 +28,8 @@ public class MultiHostHost implements Storable {
     private List<String>          domains                         = new ArrayList<String>();
     private Boolean               isUnlimitedTraffic              = true;
     private Boolean               isUnlimitedLinks                = true;
-    private int                   linksLeft                       = -1;
-    private int                   linksMax                        = -1;
+    private long                  linksLeft                       = -1;
+    private long                  linksMax                        = -1;
     private long                  trafficLeft                     = -1;
     private long                  trafficMax                      = -1;
     private long                  unavailableUntilTimestamp       = -1;
@@ -39,8 +39,27 @@ public class MultiHostHost implements Storable {
     private String                statusText                      = null;
     private MultihosterHostStatus status                          = null;
 
+    public MultiHostHost() {
+    }
+
     public MultiHostHost(final String domain) {
         this.addDomain(domain);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDomain(final String domain) {
+        if (domain == null) {
+            throw new IllegalArgumentException();
+        }
+        this.domains.clear();
+        this.domains.add(domain);
     }
 
     public void addDomain(final String domain) {
@@ -52,32 +71,42 @@ public class MultiHostHost implements Storable {
         }
     }
 
-    public void addDomains(final ArrayList<String> domains) {
+    public void addDomains(final List<String> domains) {
+        if (domains == null) {
+            throw new IllegalArgumentException();
+        }
         for (final String domain : domains) {
             this.addDomain(domain);
         }
     }
 
-    public int getLinksLeft() {
+    public void setDomains(final List<String> domains) {
+        if (domains == null) {
+            throw new IllegalArgumentException();
+        }
+        this.domains = domains;
+    }
+
+    public long getLinksLeft() {
         return linksLeft;
     }
 
-    public void setLinksLeft(int num) {
+    public void setLinksLeft(long num) {
         this.linksLeft = num;
         this.isUnlimitedLinks = false;
     }
 
-    public int getLinksMax() {
+    public long getLinksMax() {
         return linksMax;
     }
 
-    public void setLinksMax(int num) {
+    public void setLinksMax(long num) {
         this.linksMax = num;
         this.isUnlimitedLinks = false;
     }
 
     /** Only do this when linksMax is given. */
-    public void setLinksUsed(int num) {
+    public void setLinksUsed(long num) {
         this.linksLeft = this.linksMax - num;
         this.isUnlimitedLinks = false;
     }
