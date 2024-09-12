@@ -92,28 +92,29 @@ public class DownmagazNet extends PluginForDecrypt {
                     final String url = "/out.php?f=" + mirrorID + "&down=" + downValue;
                     ret.add(this.createDownloadlink(br.getURL(url).toString()));
                 }
+            }
+            /* New 2023-09-05 */
+            final String[] b64Strings = br.getRegex("url=([a-zA-Z0-9_/\\+\\=\\-%]+)").getColumn(0);
+            if (b64Strings != null && b64Strings.length > 0) {
+                for (final String b64String : b64Strings) {
+                    final String url = Encoding.Base64Decode(Encoding.htmlDecode(b64String));
+                    ret.add(this.createDownloadlink(url));
+                }
             } else {
-                /* New 2023-09-05 */
-                final String[] b64Strings = br.getRegex("url=([a-zA-Z0-9_/\\+\\=\\-%]+)").getColumn(0);
-                if (b64Strings != null && b64Strings.length > 0) {
-                    for (final String b64String : b64Strings) {
-                        final String url = Encoding.Base64Decode(Encoding.htmlDecode(b64String));
-                        ret.add(this.createDownloadlink(url));
-                    }
-                } else {
-                    /* 2023-12-19 */
-                    final String htmlWithPlaintextLinks = br.getRegex(">\\s*Download Links:\\s*</div><br/>(.*?)<br/></div>").getMatch(0);
-                    if (htmlWithPlaintextLinks == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final String[] urls = new Regex(htmlWithPlaintextLinks, "<a href=\"(http?://[^\"]+)").getColumn(0);
-                    if (urls == null || urls.length == 0) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
+                /* 2023-12-19 */
+                String htmlWithPlaintextLinks = br.getRegex(">\\s*Download Links:\\s*</div><br/>(.*?)<br/></div>").getMatch(0);
+                if (htmlWithPlaintextLinks == null) {
+                    htmlWithPlaintextLinks = br.getRequest().getHtmlCode();
+                }
+                final String[] urls = new Regex(htmlWithPlaintextLinks, "<a href=\"(https?://[^\"]+)\"[^>]*target=\"_blank\"").getColumn(0);
+                if (urls != null && urls.length > 0) {
                     for (final String url : urls) {
                         ret.add(this.createDownloadlink(url));
                     }
                 }
+            }
+            if (ret.isEmpty()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
             br.setFollowRedirects(false);

@@ -39,6 +39,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -55,7 +56,6 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
     private String               mp4dllink         = null;
     private String               m3u8dllink        = null;
     private boolean              server_issues     = false;
@@ -355,7 +355,7 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -384,6 +384,12 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
         } else {
             return super.getHost(link, account, includeSubdomain);
         }
+    }
+
+    @Override
+    public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
+        /* Allow only downloads with original plugin. */
+        return link.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
     @Override

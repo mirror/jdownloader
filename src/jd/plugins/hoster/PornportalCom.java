@@ -119,6 +119,7 @@ public class PornportalCom extends PluginForHost {
         ret.add(new String[] { "seancody.com" });
         ret.add(new String[] { "dancingbear.com" });
         ret.add(new String[] { "adultmobile.com" });
+        ret.add(new String[] { "mygf.com" });
         return ret;
     }
 

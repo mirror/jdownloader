@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
 
@@ -42,7 +41,6 @@ import jd.utils.JDUtilities;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "baixarpremium.net" }, urls = { "" })
 public class BaixarPremiumNet extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
     private static final String                            NICE_HOST          = "baixarpremium.net";
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private Account                                        currAcc            = null;
@@ -51,17 +49,17 @@ public class BaixarPremiumNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     public BaixarPremiumNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://baixarpremium.net/");
+        this.enablePremium("http://" + getHost() + "/");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://baixarpremium.net/contato/";
+        return "http://" + getHost() + "/contato/";
     }
 
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
-        return maxPrem.get();
+        return Integer.MAX_VALUE;
     }
 
     private void setConstants(final Account acc, final DownloadLink dl) {
@@ -115,8 +113,6 @@ public class BaixarPremiumNet extends PluginForHost {
             crippledhost = crippledhost.toLowerCase(Locale.ENGLISH);
             if (crippledhost.equals("icerbox")) {
                 supportedHosts.add("icerbox.com");
-            } else if (crippledhost.equals("bangbros")) {
-                supportedHosts.add("bangbros.com");
             } else {
                 supportedHosts.add(crippledhost);
             }

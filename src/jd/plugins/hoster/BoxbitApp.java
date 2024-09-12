@@ -68,12 +68,12 @@ public class BoxbitApp extends PluginForHost {
     @SuppressWarnings("deprecation")
     public BoxbitApp(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://boxbit.app/!/register");
+        this.enablePremium("https://" + getHost() + "/!/register");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://boxbit.app/";
+        return "https://" + getHost() + "/";
     }
 
     @Override

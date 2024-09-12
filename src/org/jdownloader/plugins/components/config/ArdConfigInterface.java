@@ -40,7 +40,6 @@ public interface ArdConfigInterface extends PluginConfigInterface {
         public String getOnlyBestVideoQualityOfSelectedQualitiesEnabled_label() {
             return _JDT.T.lit_add_only_the_best_video_quality_within_user_selected_formats();
         }
-
         // public String getAddUnknownQualitiesEnabled_label() {
         // return _JDT.T.lit_add_unknown_formats();
         // }
@@ -273,7 +272,7 @@ public interface ArdConfigInterface extends PluginConfigInterface {
         ALWAYS_WHEN_HLS_IS_SELECTED {
             @Override
             public String getLabel() {
-                return "Return HLS streams if any are selected";
+                return "Always return HLS streams if selected";
             }
         };
     }
