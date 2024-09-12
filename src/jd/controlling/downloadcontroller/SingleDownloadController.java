@@ -28,24 +28,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.NullsafeAtomicReference;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.NetworkInterfaceException;
-import org.jdownloader.controlling.download.DownloadControllerListener;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
-import org.jdownloader.plugins.tasks.PluginProgressTask;
-import org.jdownloader.plugins.tasks.PluginSubTask;
-import org.jdownloader.translate._JDT;
-
 import jd.controlling.downloadcontroller.BadFilePathException.PathFailureReason;
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogEvent;
@@ -75,6 +57,24 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.HashResult;
+
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.NullsafeAtomicReference;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.NetworkInterfaceException;
+import org.jdownloader.controlling.download.DownloadControllerListener;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.tasks.PluginProgressTask;
+import org.jdownloader.plugins.tasks.PluginSubTask;
+import org.jdownloader.translate._JDT;
 
 public class SingleDownloadController extends BrowserSettingsThread implements DownloadControllerListener {
     /**
@@ -321,12 +321,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
 
     private SingleDownloadReturnState download(final LogSource downloadLogger) {
         PluginForHost handlePlugin = null;
-        boolean isMultihoster = false;
         try {
             downloadLogger.info("DownloadCandidate: " + candidate);
             PluginForHost linkPlugin = null;
             if (AccountCache.ACCOUNTTYPE.MULTI.equals(candidate.getCachedAccount().getType())) {
-                isMultihoster = true;
                 final PluginClassLoaderChild defaultCL = session.getPluginClassLoaderChild(downloadLink.getDefaultPlugin());
                 PluginClassLoader.setThreadPluginClassLoaderChild(defaultCL, defaultCL);
                 // this.setContextClassLoader(defaultCL);
@@ -465,9 +463,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             return ret;
         } catch (Throwable throwable) {
             final PluginForHost lastPlugin = finalizeProcessingPlugin();
-            if (isMultihoster) {
-                throwable = this.getMultihosterError(downloadLink, lastPlugin, throwable);
-            }
             try {
                 throw throwable;
             } catch (final InterruptedIOException e) {
@@ -542,26 +537,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 downloadLogger.log(e);
             }
         }
-    }
-
-    /**
-     * Execute this on download failure. </br>
-     * This may return a different Throwable than the one that was initially thrown for example if a multihoster claims that a file is
-     * offline but we know that it is online.
-     */
-    private Throwable getMultihosterError(final DownloadLink link, final PluginForHost multihosterplugin, final Throwable e) {
-        if (link == null || multihosterplugin == null || e == null) {
-            throw new IllegalArgumentException();
-        }
-        if (e instanceof PluginException) {
-            final PluginException eplg = (PluginException) e;
-            if (eplg.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && AvailableStatus.TRUE.equals(link.getAvailableStatus())) {
-                /* File is online according to original filehoster -> Do not trust offline status from multihoster. */
-                // TODO: Add translation-string
-                return new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Multihoster " + multihosterplugin.getHost() + " claims that this file is offline");
-            }
-        }
-        return e;
     }
 
     public PluginForHost getProcessingPlugin() {

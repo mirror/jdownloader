@@ -54,6 +54,7 @@ import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
+import jd.controlling.downloadcontroller.AccountCache.ACCOUNTTYPE;
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.DownloadSession;
@@ -202,9 +203,9 @@ public abstract class PluginForHost extends Plugin {
                                                    * point)
                                                    */
                                                   // multipart rar archives
-        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-        // normal files with extension
-        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+            // normal files with extension
+            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
     private LazyHostPlugin         lazyP          = null;
     /**
      * Is true if the user has answered a captcha challenge. Does not say anything whether or not the answer was correct.
@@ -1255,21 +1256,27 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void handle(final DownloadLink downloadLink, final Account account) throws Exception {
+        ACCOUNTTYPE accountType = null;
         try {
-            preHandle(downloadLink, account, this);
             waitForNextStartAllowed(downloadLink, account);
             if (account != null) {
                 /* with account */
                 if (StringUtils.equalsIgnoreCase(account.getHoster(), downloadLink.getHost())) {
+                    accountType = ACCOUNTTYPE.ORIGINAL;
                     handlePremium(downloadLink, account);
                 } else {
+                    accountType = ACCOUNTTYPE.MULTI;
                     handleMultiHost(downloadLink, account);
                 }
             } else {
                 /* without account */
+                accountType = ACCOUNTTYPE.NONE;
                 handleFree(downloadLink);
             }
             postHandle(downloadLink, account, this);
+        } catch (final Exception e) {
+            handleException(downloadLink, accountType, account, e);
+            throw e;
         } finally {
             try {
                 if (dl != null) {
@@ -1279,6 +1286,18 @@ public abstract class PluginForHost extends Plugin {
                 e.printStackTrace();
             }
             finalHandle(downloadLink, account, this);
+        }
+    }
+
+    protected void handleException(final DownloadLink downloadLink, final ACCOUNTTYPE accountType, final Account account, final Exception e) throws Exception {
+        if (ACCOUNTTYPE.MULTI.equals(accountType) && e instanceof PluginException) {
+            if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && AvailableStatus.TRUE.equals(link.getAvailableStatus())) {
+
+                /* File is online according to original filehoster -> Do not trust offline status from multihoster. */
+
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Multihoster " + getHost() + " claims that this file is offline", e);
+            }
+
         }
     }
 
