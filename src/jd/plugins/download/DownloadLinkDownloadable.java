@@ -54,10 +54,16 @@ public class DownloadLinkDownloadable implements Downloadable {
      */
     private final DownloadLink      downloadLink;
     private final PluginForHost     plugin;
+    private final Browser           contextBrowser;
 
     public DownloadLinkDownloadable(DownloadLink downloadLink) {
+        this(downloadLink, null);
+    }
+
+    public DownloadLinkDownloadable(DownloadLink downloadLink, final Browser br) {
         this.downloadLink = downloadLink;
         plugin = downloadLink.getLivePlugin();
+        this.contextBrowser = br;
     }
 
     public DownloadLink getDownloadLink() {
@@ -71,7 +77,11 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public Browser getContextBrowser() {
-        return getPlugin().getBrowser().cloneBrowser();
+        if (contextBrowser != null) {
+            return contextBrowser.cloneBrowser();
+        } else {
+            return getPlugin().getBrowser().cloneBrowser();
+        }
     }
 
     @Override
@@ -212,7 +222,21 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public boolean isHashCheckEnabled() {
-        return getDownloadLink().getBooleanProperty("ALLOW_HASHCHECK", true);
+        if (!getDownloadLink().getBooleanProperty("ALLOW_HASHCHECK", true)) {
+            return false;
+        }
+        if (getClass() == DownloadLinkDownloadable.class) {
+            // default implementation checks for isValidHashInfo
+            final HashInfo hashInfo = getHashInfo();
+            if (!isValidHashInfo(hashInfo)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected boolean isValidHashInfo(HashInfo hashInfo) {
+        return hashInfo != null && !TYPE.NONE.equals(hashInfo.getType());
     }
 
     @Override
@@ -231,7 +255,7 @@ public class DownloadLinkDownloadable implements Downloadable {
     }
 
     public HashResult getHashResult(HashInfo hashInfo, File outputPartFile) {
-        if (hashInfo == null || TYPE.NONE.equals(hashInfo.getType())) {
+        if (!isValidHashInfo(hashInfo)) {
             return null;
         }
         final TYPE type = hashInfo.getType();

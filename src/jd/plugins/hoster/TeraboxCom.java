@@ -15,18 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -51,6 +45,14 @@ import jd.plugins.decrypter.TeraboxComFolder;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashResult;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { TeraboxComFolder.class })
@@ -396,6 +398,16 @@ public class TeraboxCom extends PluginForHost {
         final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
             @Override
             public HashInfo getHashInfo() {
+                return null;
+            }
+
+            @Override
+            public boolean isHashCheckEnabled() {
+                return false;
+            }
+
+            @Override
+            public HashResult getHashResult(HashInfo hashInfo, File outputPartFile) {
                 return null;
             }
 

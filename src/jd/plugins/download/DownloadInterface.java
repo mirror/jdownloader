@@ -99,28 +99,29 @@ abstract public class DownloadInterface {
                 waitLock.set(HASHCHECK_QEUEU.indexOf(waitLock) > nextWaitIndex);
             }
             try {
-                if (waitLock.get()) {
-                    synchronized (waitLock) {
-                        if (waitLock.get()) {
-                            final PluginProgress hashProgress = new HashCheckPluginProgress(null, Color.YELLOW.darker().darker(), null);
-                            try {
-                                downloadable.addPluginProgress(hashProgress);
+                final PluginProgress hashWait = new HashCheckPluginProgress(null, Color.YELLOW.darker().darker(), null);
+                try {
+                    downloadable.addPluginProgress(hashWait);
+                    if (waitLock.get()) {
+                        synchronized (waitLock) {
+                            if (waitLock.get()) {
                                 waitLock.wait();
-                            } finally {
-                                downloadable.removePluginProgress(hashProgress);
                             }
                         }
                     }
-                }
-                final HashInfo hashInfo = downloadable.getHashInfo();
-                final HashResult hashResult = downloadable.getHashResult(hashInfo, file);
-                if (hashResult != null) {
-                    downloadable.getLogger().info(hashResult.toString());
-                    if (hashResult.getFinalLinkState().isFinished()) {
-                        downloadable.setHashInfo(hashResult.getHashInfo());
+                    final HashInfo hashInfo = downloadable.getHashInfo();
+                    downloadable.removePluginProgress(hashWait);
+                    final HashResult hashResult = downloadable.getHashResult(hashInfo, file);
+                    if (hashResult != null) {
+                        downloadable.getLogger().info(hashResult.toString());
+                        if (hashResult.getFinalLinkState().isFinished()) {
+                            downloadable.setHashInfo(hashResult.getHashInfo());
+                        }
                     }
+                    return hashResult;
+                } finally {
+                    downloadable.removePluginProgress(hashWait);
                 }
-                return hashResult;
             } finally {
                 synchronized (HASHCHECK_QEUEU) {
                     final boolean callNext = HASHCHECK_QEUEU.indexOf(waitLock) <= nextWaitIndex;
