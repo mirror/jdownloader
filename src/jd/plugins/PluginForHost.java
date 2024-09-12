@@ -1130,7 +1130,7 @@ public abstract class PluginForHost extends Plugin {
         return account.getAccountInfo();
     }
 
-    public boolean enoughTrafficFor(final DownloadLink downloadLink, final Account account) throws Exception {
+    public boolean enoughTrafficFor(final DownloadLink link, final Account account) throws Exception {
         final AccountTrafficView accountTrafficView = getAccountTrafficView(account);
         if (accountTrafficView == null) {
             return true;
@@ -1142,10 +1142,10 @@ public abstract class PluginForHost extends Plugin {
         final long minimum = 1024;
         if (trafficLeft == 0) {
             if (accountTrafficView.isTrafficRefill()) {
-                final long downloadSize = downloadLink.getView().getBytesTotalEstimated();
+                final long downloadSize = link.getView().getBytesTotalEstimated();
                 final long downloadLeft;
                 if (downloadSize >= 0) {
-                    downloadLeft = Math.max(minimum, downloadSize - downloadLink.getView().getBytesLoaded());
+                    downloadLeft = Math.max(minimum, downloadSize - link.getView().getBytesLoaded());
                 } else {
                     downloadLeft = minimum;
                 }
@@ -1154,12 +1154,12 @@ public abstract class PluginForHost extends Plugin {
                 return false;
             }
         } else {
-            final long downloadSize = downloadLink.getView().getBytesTotalEstimated();
+            final long downloadSize = link.getView().getBytesTotalEstimated();
             if (downloadSize <= 0) {
                 /* File size is unknown */
                 return true;
             }
-            final long downloadLeft = Math.max(0, downloadSize - downloadLink.getView().getBytesLoaded());
+            final long downloadLeft = Math.max(0, downloadSize - link.getView().getBytesLoaded());
             if (trafficLeft - downloadLeft <= 0) {
                 if (accountTrafficView.isTrafficRefill()) {
                     final long required = Math.max(minimum, downloadLeft - trafficLeft);

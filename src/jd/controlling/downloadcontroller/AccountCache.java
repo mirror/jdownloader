@@ -93,30 +93,39 @@ public class AccountCache implements Iterable<CachedAccount> {
                 }
                 /* Verify again because plugins can modify list on runtime */
                 if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    /* Check for domain specific limits of multihost items. */
                     final MultiHostHost hostinfo = ai.getMultihostSupportedHost(link.getHost());
                     if (hostinfo == null) {
                         /* Not supported */
                         return false;
                     }
-                    // TODO: Implement more limit checks
-                    final long trafficCalcFactor = hostinfo.getTrafficCalculationFactorPercent();
-                    if (trafficCalcFactor != 100) {
-                        // TODO
-                        final long neededTraffic = (link.getView().getBytesTotal() * trafficCalcFactor) / 100;
-                    }
                     final MultihosterHostStatus status = hostinfo.getStatus();
+                    final long totalBytes = link.getView().getBytesTotal();
                     if (status != MultihosterHostStatus.WORKING && status != MultihosterHostStatus.WORKING_UNSTABLE) {
                         /* Download of that host is currently not possible. */
                         return false;
                     } else if (!hostinfo.isUnlimitedLinks() && hostinfo.getLinksLeft() <= 0) {
                         /* Max limits link is reached -> Cannot download */
                         return false;
-                    } else if (!hostinfo.isUnlimitedTraffic() && link.getView().getBytesTotal() != -1 && hostinfo.getTrafficLeft() < link.getView().getBytesTotal()) {
+                    } else if (!hostinfo.isUnlimitedTraffic() && totalBytes != -1 && hostinfo.getTrafficLeft() < totalBytes) {
                         /* Not enough traffic to download this link */
                         return false;
-                    } else if (!hostinfo.canDownload(link)) {
-                        /* Convenience method */
-                        return false;
+                    }
+                    // TODO: Refactor this
+                    final long trafficCalcFactor = hostinfo.getTrafficCalculationFactorPercent();
+                    if (trafficCalcFactor != 100) {
+                        final long neededTraffic = (link.getView().getBytesTotal() * trafficCalcFactor) / 100;
+                        final long downloadSize = link.getView().getBytesTotalEstimated();
+                        final long minimum = 1024;
+                        final long downloadLeft;
+                        if (downloadSize >= 0) {
+                            downloadLeft = Math.max(minimum, downloadSize - link.getView().getBytesLoaded());
+                        } else {
+                            downloadLeft = minimum;
+                        }
+                        if (downloadLeft > neededTraffic) {
+                            return false;
+                        }
                     }
                 }
                 final List<String> supported = ai.getMultiHostSupport();

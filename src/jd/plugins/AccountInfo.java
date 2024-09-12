@@ -42,6 +42,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.nutils.NaturalOrderComparator;
 import jd.parser.Regex;
+import jd.plugins.MultiHostHost.MultihosterHostStatus;
 
 public class AccountInfo extends Property implements AccountTrafficView {
     private static final long   serialVersionUID           = 1825140346023286206L;
@@ -626,7 +627,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                         }
                         if (!newResults.contains(oldResult)) {
                             if (logger != null) {
-                                logger.warning("Old result missing in new results: " + oldResult);
+                                System.out.print("Old result missing in new results: " + oldResult);
                             }
                             somethingImportantHappened = true;
                         }
@@ -640,7 +641,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                         }
                         if (!list.contains(newResult)) {
                             if (logger != null) {
-                                logger.warning("New result missing in old results: " + newResult);
+                                System.out.print("New result missing in old results: " + newResult);
                             }
                             somethingImportantHappened = true;
                         }
@@ -670,7 +671,8 @@ public class AccountInfo extends Property implements AccountTrafficView {
         return setMultiHostSupportV2(multiHostPlugin, mhosts, pluginFinder);
     }
 
-    /** Temp legacy method */
+    /** Temp legacy/testing method */
+    @Deprecated
     public List<String> setMultiHostSupporLegacy(final PluginForHost multiHostPlugin, final List<MultiHostHost> multiHostSupportList, final PluginFinder pluginFinder) {
         final List<String> domains = new ArrayList<String>();
         for (final MultiHostHost mhost : multiHostSupportList) {
@@ -695,18 +697,15 @@ public class AccountInfo extends Property implements AccountTrafficView {
         final HashSet<String> assignedMultiHostPlugins = new HashSet<String>();
         final HashMap<String, MultiHostHost> cleanList = new HashMap<String, MultiHostHost>();
         final HashMap<String, Set<LazyHostPlugin>> mapping = new HashMap<String, Set<LazyHostPlugin>>();
-        final HashSet<String> nonTldHosts = new HashSet<String>();
         final HashSet<String> skippedOfflineEntries = new HashSet<String>();
         final HashSet<String> skippedInvalidEntries = new HashSet<String>();
-        final HashSet<String> skippedPluginDisabledEntries = new HashSet<String>();
+        final HashSet<String> skippedbyPluginAllowHandleEntries = new HashSet<String>();
         final HashSet<String> otherIgnoreEntries = new HashSet<String>();
         // lets do some preConfiguring, and match hosts which do not contain tld
         final Pattern patternInvalid = Pattern.compile("http|directhttp|https|file|up|upload|video|torrent|ftp", Pattern.CASE_INSENSITIVE);
-        final HashSet<String> unassignedMultiHostSupport = new HashSet<String>();
         mhostLoop: for (final MultiHostHost mhost : multiHostSupportList) {
             final List<String> domains = mhost.getDomains();
             final List<String> cleanedDomains = new ArrayList<String>();
-            final HashSet<String> thisNonTldHosts = new HashSet<String>();
             String maindomainCleaned = null;
             /* Clean domain entries and collect non tld items */
             for (final String domain : domains) {
@@ -714,21 +713,22 @@ public class AccountInfo extends Property implements AccountTrafficView {
                     continue;
                 }
                 final String domainCleaned = domain.toLowerCase(Locale.ENGLISH).replaceAll("\\s+", "");
-                if (maindomainCleaned == null) {
-                    maindomainCleaned = domainCleaned;
-                }
-                if (new Regex(domainCleaned, patternInvalid).patternMatches()) {
+                if (StringUtils.isEmpty(domainCleaned)) {
+                    /* Skip null/empty values */
+                    continue;
+                } else if (new Regex(domainCleaned, patternInvalid).patternMatches()) {
                     /* ignore/blacklist/skip common phrases, else we get too many false positives */
                     skippedInvalidEntries.add(domainCleaned);
                     continue;
                 }
-                cleanedDomains.add(domainCleaned);
-                if (domainCleaned.indexOf('.') == -1) {
-                    /*
-                     * If the multihoster doesn't include full host name with tld, we can search- and add all partial matches!
-                     */
-                    thisNonTldHosts.add(domainCleaned);
+                if (maindomainCleaned == null) {
+                    maindomainCleaned = domainCleaned;
                 }
+                cleanedDomains.add(domainCleaned);
+            }
+            if (maindomainCleaned == null) {
+                /* List of domain contained only useless stuff -> Skip */
+                continue mhostLoop;
             }
             cleanList.put(maindomainCleaned, mhost);
             LazyHostPlugin safeHit = null;
@@ -736,7 +736,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
             pluginloop: for (final LazyHostPlugin lazyHostPlugin : hpc.list()) {
                 for (final String domain : cleanedDomains) {
                     if (domain.equals(lazyHostPlugin.getHost())) {
-                        /* Exact match */
+                        /* Exact match -> Safe hit -> Quit loop. */
                         safeHit = lazyHostPlugin;
                         break pluginloop;
                     }
@@ -747,7 +747,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                         if (cleanedDomains.contains(siteSupportedName)) {
                             /* Clear previous possible */
                             safeHit = lazyHostPlugin;
-                            /* Safe hit! Quit loop. */
+                            /* Safe hit -> Quit loop. */
                             break pluginloop;
                         }
                     }
@@ -765,18 +765,12 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 }
             }
             if (safeHit != null) {
+                /* Safe result -> Ignore other results */
                 hits.clear();
                 hits.add(safeHit);
             }
-            if (hits.size() > 1) {
-                System.out.print("Unsafe hits: " + hits.size());
-                System.out.print("Unsafe hits: " + hits);
-            }
             if (hits.isEmpty()) {
-                /* Collect entries without TLD */
-                nonTldHosts.addAll(thisNonTldHosts);
-                unassignedMultiHostSupport.addAll(cleanedDomains);
-                continue;
+                continue mhostLoop;
             }
             for (final LazyHostPlugin hit : hits) {
                 final String[] siteSupportedNames = hit.getSitesSupported();
@@ -803,49 +797,19 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 }
             }
         }
-        /**
-         * Remove all "double" entries from remaining list of unmatched entries to avoid wrong log output. </br>
-         * If a multihost provides multiple domains of one host e.g. "rg.to" and "rapidgator.net", the main one may have been matched but
-         * "rg.to" may remain on the list of unassigned hosts.
-         */
-        for (final String item : otherIgnoreEntries) {
-            unassignedMultiHostSupport.remove(item);
-        }
-        if (nonTldHosts.size() > 0) {
-            // TODO
-        }
-        /* Log items without result */
-        if (unassignedMultiHostSupport.size() > 0 && logger != null) {
-            logger.info("Found " + unassignedMultiHostSupport.size() + " unassigned entries");
-            for (final String host : unassignedMultiHostSupport) {
-                logger.info("Could not assign any host for: " + host);
-            }
-        }
-        if (skippedOfflineEntries.size() > 0 && logger != null) {
-            logger.info("Found " + skippedOfflineEntries.size() + " offline entries");
-            for (final String host : skippedOfflineEntries) {
-                logger.info("Offline entry: " + host);
-            }
-        }
-        if (assignedMultiHostPlugins.size() == 0) {
-            if (logger != null) {
-                logger.info("Failed to find ANY usable results");
-            }
-            this.removeProperty(PROPERTY_MULTIHOST_SUPPORT);
-            return null;
-        }
-        /* sorting will now work properly since they are all pre-corrected to lowercase. */
-        final List<String> list = new ArrayList<String>();
-        final List<String> ret = new ArrayList<String>();
-        for (final Entry<String, MultiHostHost> entry : cleanList.entrySet()) {
+        final List<String> finalresults = new ArrayList<String>();
+        // final List<String> ret = new ArrayList<String>();
+        final HashSet<String> unassignedMultiHostSupport = new HashSet<String>();
+        cleanListLoop: for (final Entry<String, MultiHostHost> entry : cleanList.entrySet()) {
             final String maindomainCleaned = entry.getKey();
             final MultiHostHost mhost = entry.getValue();
             final Set<LazyHostPlugin> plugins = mapping.get(maindomainCleaned);
             if (plugins == null) {
-                continue;
+                mhost.setStatus(MultihosterHostStatus.DEACTIVATED_JDOWNLOADER_UNSUPPORTED);
+                unassignedMultiHostSupport.add(maindomainCleaned);
+                continue cleanListLoop;
             }
             /* Multiple possible results -> Evaluate what's the best */
-            // TODO: Add check for multihost plugin and ignore it
             final List<LazyHostPlugin> best = new ArrayList<LazyHostPlugin>();
             for (final LazyHostPlugin plugin : plugins) {
                 if (plugin.isOfflinePlugin()) {
@@ -860,7 +824,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                         final DownloadLink link = new DownloadLink(null, "", plugin.getHost(), "", false);
                         final PluginForHost plg = pluginFinder.getPlugin(plugin);
                         if (!plg.allowHandle(link, multiHostPlugin)) {
-                            skippedPluginDisabledEntries.add(plugin.getHost());
+                            skippedbyPluginAllowHandleEntries.add(plugin.getHost());
                             continue;
                         }
                     }
@@ -872,34 +836,75 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 best.add(plugin);
             }
             if (best.size() == 0) {
-                // TODO
-                logger.info("Ignore entry because of invalid/offline/multihost: " + maindomainCleaned);
-                continue;
+                unassignedMultiHostSupport.add(maindomainCleaned);
+                continue cleanListLoop;
             } else if (best.size() > 1) {
+                unassignedMultiHostSupport.add(maindomainCleaned);
                 logger.warning("Found more than one possible plugins for one domain: " + maindomainCleaned);
                 logger.log(new Exception("DEBUG: " + maindomainCleaned));
-                continue;
+                continue cleanListLoop;
             }
             final LazyHostPlugin finalplugin = best.get(0);
             final String pluginHost = finalplugin.getHost();
-            ret.add(pluginHost);
-            if (!list.contains(pluginHost)) {
-                list.add(pluginHost);
+            if (!finalresults.contains(pluginHost)) {
+                finalresults.add(pluginHost);
             }
             // TODO: Improve this
             mhost.getDomains().clear();
             mhost.addDomain(pluginHost);
         }
-        Collections.sort(list, new NaturalOrderComparator());
+        /**
+         * Remove all "double" entries from remaining list of unmatched entries to avoid wrong log output. </br>
+         * If a multihost provides multiple domains of one host e.g. "rg.to" and "rapidgator.net", the main one may have been matched but
+         * "rg.to" may remain on the list of unassigned hosts.
+         */
+        for (final String item : otherIgnoreEntries) {
+            unassignedMultiHostSupport.remove(item);
+        }
+        if (skippedOfflineEntries.size() > 0 && logger != null) {
+            logger.info("Found " + skippedOfflineEntries.size() + " offline entries");
+            for (final String host : skippedOfflineEntries) {
+                logger.info("Skipped offline entry: " + host);
+            }
+        }
+        if (skippedbyPluginAllowHandleEntries.size() > 0 && logger != null) {
+            logger.info("Found " + skippedbyPluginAllowHandleEntries.size() + " skippedbyPluginAllowHandle entries");
+            for (final String host : skippedbyPluginAllowHandleEntries) {
+                logger.info("Skipped by allowHandle entry: " + host);
+            }
+        }
+        if (skippedInvalidEntries.size() > 0 && logger != null) {
+            logger.info("Found " + skippedInvalidEntries.size() + " skippedInvalid entries");
+            for (final String host : skippedInvalidEntries) {
+                logger.info("Skipped invalid entry: " + host);
+            }
+        }
+        /* Most importantly: Log items without result */
+        if (unassignedMultiHostSupport.size() > 0 && logger != null) {
+            logger.info("Found " + unassignedMultiHostSupport.size() + " unassigned entries");
+            for (final String host : unassignedMultiHostSupport) {
+                logger.info("Could not assign any host for: " + host);
+            }
+        }
+        if (finalresults.isEmpty()) {
+            if (logger != null) {
+                logger.info("Failed to find ANY usable results");
+            }
+            this.removeProperty(PROPERTY_MULTIHOST_SUPPORT);
+            return null;
+        }
+        /* Log final results if wanted. */
         final boolean logValidResults = false;
         if (logger != null && logValidResults) {
-            logger.info("Found real hosts: " + list.size());
-            for (final String host : list) {
+            logger.info("Found real hosts: " + finalresults.size());
+            for (final String host : finalresults) {
                 logger.finest("Found host: " + host);
             }
         }
-        this.setProperty(PROPERTY_MULTIHOST_SUPPORT, new CopyOnWriteArrayList<String>(list));
-        return ret;
+        /* sorting will now work properly since they are all pre-corrected to lowercase. */
+        Collections.sort(finalresults, new NaturalOrderComparator());
+        this.setProperty(PROPERTY_MULTIHOST_SUPPORT, new CopyOnWriteArrayList<String>(finalresults));
+        return finalresults;
     }
 
     public List<String> getMultiHostSupport() {
