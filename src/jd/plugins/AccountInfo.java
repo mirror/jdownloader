@@ -798,7 +798,6 @@ public class AccountInfo extends Property implements AccountTrafficView {
             }
         }
         final List<String> finalresults = new ArrayList<String>();
-        // final List<String> ret = new ArrayList<String>();
         final HashSet<String> unassignedMultiHostSupport = new HashSet<String>();
         cleanListLoop: for (final Entry<String, MultiHostHost> entry : cleanList.entrySet()) {
             final String maindomainCleaned = entry.getKey();
