@@ -18,13 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.config.XvideosComConfig;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginDependencies;
-
-import org.jdownloader.plugins.components.config.XvideosComConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { jd.plugins.decrypter.XvideosComProfile.class })
@@ -72,7 +72,14 @@ public class XvideosCom extends XvideosCore {
 
     @Override
     public String[] siteSupportedNames() {
-        return buildSupportedNames(getPluginDomains());
+        final String[] domains = buildSupportedNames(getPluginDomains());
+        String[] supportedNames = new String[domains.length + 1];
+        for (int i = 0; i < domains.length; i++) {
+            supportedNames[i] = domains[i];
+        }
+        /* Add additional names here */
+        supportedNames[supportedNames.length - 1] = "xvideos";
+        return supportedNames;
     }
 
     public static String[] getAnnotationUrls() {

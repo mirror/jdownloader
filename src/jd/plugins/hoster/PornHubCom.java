@@ -163,7 +163,14 @@ public class PornHubCom extends PluginForHost {
 
     @Override
     public String[] siteSupportedNames() {
-        return buildSupportedNames(getPluginDomains());
+        final String[] domains = buildSupportedNames(getPluginDomains());
+        String[] supportedNames = new String[domains.length + 1];
+        for (int i = 0; i < domains.length; i++) {
+            supportedNames[i] = domains[i];
+        }
+        /* Add additional names here */
+        supportedNames[supportedNames.length - 1] = "pornhub";
+        return supportedNames;
     }
 
     public static String[] getAnnotationUrls() {

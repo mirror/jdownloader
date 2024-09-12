@@ -31,6 +31,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
@@ -62,6 +63,7 @@ public class LeechallIo extends PluginForHost {
     private final String                 PROPERTY_ACCOUNT_ACCESS_TOKEN      = "access_token";
     private final String                 PROPERTY_ACCOUNT_RECAPTCHA_SITEKEY = "recaptchasitekey";
     private final String                 RECAPTCHA_SITEKEY_STATIC           = "6LdqV7AiAAAAAK50kHwrESPTEwVuBpAX0MCrVI0e"; /* 2023-06-27 */
+    private final String                 H_CAPTCHA_SITEKEY_STATIC           = "b858042e-5b84-454c-8eda-5b3e670486d4";     /* 2024-09-12 */
     /* Don't touch the following! */
     private static final AtomicInteger   runningDls                         = new AtomicInteger(0);
 
@@ -302,21 +304,34 @@ public class LeechallIo extends PluginForHost {
                         br.clearCookies(null);
                     }
                 }
-                /* Get reCaptcha siteKey */
+                final Map<String, Object> postdata = new HashMap<String, Object>();
+                postdata.put("email", account.getUser());
+                postdata.put("password", account.getPass());
+                /* Get captcha siteKey */
                 final String websiteloginurl = "https://" + this.getHost() + "/login";
                 final Browser brc = br.cloneBrowser();
                 brc.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, websiteloginurl);
                 brc.getPage("https://" + this.getHost() + "/js/chunk-06b4b5f5.38692513.js");
-                String reCaptchaSitekey = brc.getRegex("sitekey\\s*:\"([^\"]+)").getMatch(0);
-                if (reCaptchaSitekey == null) {
-                    logger.warning("Failed to find reCaptchaSitekey --> Fallback to hardcoded value");
-                    reCaptchaSitekey = RECAPTCHA_SITEKEY_STATIC;
+                final boolean isHCaptcha = true;
+                if (isHCaptcha) {
+                    /* 2024-09-12 */
+                    String hCaptchaSiteKey = brc.getRegex("VUE_APP_HCAPTCHA:\"([^\"]+)").getMatch(0);
+                    if (hCaptchaSiteKey == null) {
+                        logger.warning("Failed to find hCaptchaSiteKey --> Fallback to hardcoded value");
+                        hCaptchaSiteKey = H_CAPTCHA_SITEKEY_STATIC;
+                    }
+                    final String hcaptchaResponse = new CaptchaHelperHostPluginHCaptcha(this, brc, hCaptchaSiteKey).getToken();
+                    postdata.put("h-captcha-response", hcaptchaResponse);
+                } else {
+                    /* Legacy */
+                    String reCaptchaSitekey = brc.getRegex("sitekey\\s*:\"([^\"]+)").getMatch(0);
+                    if (reCaptchaSitekey == null) {
+                        logger.warning("Failed to find reCaptchaSitekey --> Fallback to hardcoded value");
+                        reCaptchaSitekey = RECAPTCHA_SITEKEY_STATIC;
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brc, reCaptchaSitekey).getToken();
+                    postdata.put("g-recaptcha-response", recaptchaV2Response);
                 }
-                final Map<String, Object> postdata = new HashMap<String, Object>();
-                postdata.put("email", account.getUser());
-                postdata.put("password", account.getPass());
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brc, reCaptchaSitekey).getToken();
-                postdata.put("g-recaptcha-response", recaptchaV2Response);
                 br.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, websiteloginurl);
                 final Map<String, Object> resp = this.accessAPI(null, "/auth/login", postdata, true);
                 access_token = (String) resp.get("access_token");

@@ -18,7 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -35,8 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "baixarpremium.net" }, urls = { "" })
 public class BaixarPremiumNet extends PluginForHost {
@@ -92,7 +93,6 @@ public class BaixarPremiumNet extends PluginForHost {
         final String hoststext = br.getRegex("premium aos servidores <span style=\"[^\"]+\">(.*?)<").getMatch(0);
         if (br.containsHTML(">\\s*Você não possui nenhum pacote de Conta Premium\\.\\s*<") || !is_premium) {
             account.setType(AccountType.FREE);
-            ac.setStatus("Free Account");
             ac.setTrafficLeft(0);
         } else {
             /*
@@ -100,7 +100,6 @@ public class BaixarPremiumNet extends PluginForHost {
              * much effort for a website without API!
              */
             account.setType(AccountType.PREMIUM);
-            ac.setStatus("Premium Account");
             ac.setUnlimitedTraffic();
         }
         final ArrayList<String> supportedHosts = new ArrayList<String>();
@@ -109,17 +108,15 @@ public class BaixarPremiumNet extends PluginForHost {
             crippledHosts = hoststext.split(", ");
         } else {
             br.getPage("https://" + account.getHoster() + "/");
-            crippledHosts = br.getRegex("theme/img/([A-Za-z0-9\\-]+)\\.(?:jpg|jpeg|png)\"").getColumn(0);
-            if (crippledHosts.length == 0 || crippledHosts.length <= 5) {
-                /* Especially for comprarpremium.com */
-                crippledHosts = br.getRegex("/srv/([A-Za-z0-9\\-]+)\\-logo\\.(?:jpg|jpeg|png)\"").getColumn(0);
-            }
+            crippledHosts = br.getRegex("data-nome-server=\"([^\"]+)").getColumn(0);
         }
         for (String crippledhost : crippledHosts) {
             crippledhost = crippledhost.trim();
-            crippledhost = crippledhost.toLowerCase();
+            crippledhost = crippledhost.toLowerCase(Locale.ENGLISH);
             if (crippledhost.equals("icerbox")) {
                 supportedHosts.add("icerbox.com");
+            } else if (crippledhost.equals("bangbros")) {
+                supportedHosts.add("bangbros.com");
             } else {
                 supportedHosts.add(crippledhost);
             }
@@ -222,59 +219,55 @@ public class BaixarPremiumNet extends PluginForHost {
 
     public boolean login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                /* Workaround for static usage */
-                if (this.br == null) {
-                    this.br = br;
-                }
-                br.setFollowRedirects(true);
-                final String currenthost = account.getHoster();
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    br.setCookies(currenthost, cookies);
-                    final Browser test = br.cloneBrowser();
-                    test.setFollowRedirects(true);
-                    /* Avoid login captchas whenever possible! */
-                    test.getPage("https://" + currenthost + "/contas-ativas/");
-                    if (test.getURL().endsWith("/contas-ativas/")) {
-                        /* Refresh cookie timestamp */
-                        account.saveCookies(br.getCookies(currenthost), "");
-                        return true;
-                    }
-                    br.clearCookies(account.getHoster());
-                    /* Force full login! */
-                }
-                br.getPage("https://" + currenthost + "/logar/");
-                String postData = "login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass());
-                if (br.containsHTML("/captcha\\.php")) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", currenthost, "https://" + currenthost, true);
-                    final String code = getCaptchaCode("/acoes/captcha.php", dummyLink);
-                    postData += "&confirmacao=" + Encoding.urlEncode(code);
-                }
-                br.getHeaders().put("Accept", "*/*");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("/acoes/deslogado/logar.php", postData);
-                if (br.getCookie(currenthost, "utmhb") == null || br.containsHTML("Login/E-mail ou senha inválida")) {
-                    if (br.toString().equals("6")) {
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDeine IP ist gesperrt.\r\nÄndere deine IP und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour IP is banned.\r\nChange your IP and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                    }
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                account.saveCookies(br.getCookies(currenthost), "");
-                return true;
-            } catch (final PluginException e) {
-                account.clearCookies("");
-                return false;
+            /* Workaround for static usage */
+            if (this.br == null) {
+                this.br = br;
             }
+            br.setFollowRedirects(true);
+            final String currenthost = account.getHoster();
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                br.setCookies(currenthost, cookies);
+                final Browser test = br.cloneBrowser();
+                test.setFollowRedirects(true);
+                /* Avoid login captchas whenever possible! */
+                test.getPage("https://" + currenthost + "/contas-ativas/");
+                if (test.getURL().endsWith("/contas-ativas/")) {
+                    /* Refresh cookie timestamp */
+                    account.saveCookies(br.getCookies(currenthost), "");
+                    return true;
+                }
+                br.clearCookies(account.getHoster());
+                account.clearCookies("");
+                /* Force full login! */
+            }
+            br.getPage("https://" + currenthost + "/logar/");
+            String postData = "login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass());
+            if (br.containsHTML("/captcha\\.php")) {
+                final DownloadLink dummyLink = new DownloadLink(this, "Account", currenthost, "https://" + currenthost, true);
+                final String code = getCaptchaCode("/acoes/captcha.php", dummyLink);
+                postData += "&confirmacao=" + Encoding.urlEncode(code);
+            }
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage("/acoes/deslogado/logar.php", postData);
+            if (br.getCookie(currenthost, "utmhb") == null || br.containsHTML("Login/E-mail ou senha inválida")) {
+                if (br.toString().equals("6")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDeine IP ist gesperrt.\r\nÄndere deine IP und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour IP is banned.\r\nChange your IP and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            account.saveCookies(br.getCookies(currenthost), "");
+            return true;
         }
     }
 

@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -46,7 +45,6 @@ import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -103,10 +101,10 @@ public class FlickrCom extends PluginForHost {
     public static final String  PROPERTY_USERNAME_URL                   = "username_url";
     public static final String  PROPERTY_REAL_NAME                      = "real_name";
     public static final String  PROPERTY_CONTENT_ID                     = "content_id";
-    public static final String  PROPERTY_SET_ID                         = "set_id";                                                                    // set/album
-    public static final String  PROPERTY_GALLERY_ID                     = "gallery_id";                                                                // gallery
+    public static final String  PROPERTY_SET_ID                         = "set_id";                                                                        // set/album
+    public static final String  PROPERTY_GALLERY_ID                     = "gallery_id";                                                                    // gallery
     // id
-    public static final String  PROPERTY_DATE                           = "dateadded";                                                                 // timestamp
+    public static final String  PROPERTY_DATE                           = "dateadded";                                                                     // timestamp
     /* pre-formatted string */
     public static final String  PROPERTY_DATE_TAKEN                     = "date_taken";
     public static final String  PROPERTY_TITLE                          = "title";
@@ -119,9 +117,9 @@ public class FlickrCom extends PluginForHost {
     public static final String  PROPERTY_DIRECTURL                      = "directurl_%s";
     public static final String  PROPERTY_ACCOUNT_CSRF                   = "csrf";
     public static final String  PROPERTY_ACCOUNT_USERNAME_INTERNAL      = "username_internal";
-    private static final String TYPE_PHOTO                              = "https?://[^/]+/photos/([^<>\"/]+)/(\\d+)$";
-    private static final String TYPE_PHOTO_AS_PART_OF_SET               = "https?://[^/]+/photos/([^<>\"/]+)/(\\d+)/in/album-(\\d+)/?$";
-    private static final String TYPE_PHOTO_AS_PART_OF_GALLERY           = "https?://[^/]+/photos/([^<>\"/]+)/(\\d+)/in/gallery-(\\d+@N\\d+)-(\\d+)/?$";
+    private static final String TYPE_PHOTO                              = "(?i)https?://[^/]+/photos/([^<>\"/]+)/(\\d+)$";
+    private static final String TYPE_PHOTO_AS_PART_OF_SET               = "(?i)https?://[^/]+/photos/([^<>\"/]+)/(\\d+)/in/album-(\\d+)/?$";
+    private static final String TYPE_PHOTO_AS_PART_OF_GALLERY           = "(?i)https?://[^/]+/photos/([^<>\"/]+)/(\\d+)/in/gallery-(\\d+@N\\d+)-(\\d+)/?$";
 
     /** Max 2000 requests per hour. */
     @Override
@@ -133,7 +131,9 @@ public class FlickrCom extends PluginForHost {
         }
     }
 
-    public static final Browser prepBrowser(final Browser br) {
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
         return br;
     }
@@ -171,7 +171,7 @@ public class FlickrCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     private String getPublicAPIKey(final Browser br) throws IOException {
@@ -185,7 +185,6 @@ public class FlickrCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        prepBrowser(this.br);
         correctDownloadLink(link);
         if (!link.isNameSet()) {
             /* Set fallback name */
@@ -266,7 +265,13 @@ public class FlickrCom extends PluginForHost {
         /* 2021-09-13: Don't do this anymore as it may not always work for videos! */
         // br.getPage(https://www.flickr.com/photos/<pathAlias>/<photoID> + "/in/photostream");
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("div class=\"Four04Case\">") || br.containsHTML("(?i)>\\s*This member is no longer active on Flickr") || br.containsHTML("class=\"Problem\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("div class=\"Four04Case\">")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*This member is no longer active on Flickr")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("class=\"Problem\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 403) {
             /* This can also happen when user is logged in --> This then probably means that that is private content. */
@@ -412,65 +417,67 @@ public class FlickrCom extends PluginForHost {
             }
         } else {
             logger.warning("Failed to find json in html");
-            if (!isVideo(link)) {
-                /* Old website handling */
+            if (isVideo(link)) {
+                /* Do nothing */
+                return;
+            }
+            /* Old website handling */
+            /*
+             * Fast way to get finallink via site as we always try to access the "o" (original) quality. Page might be redirected!
+             */
+            br.getPage("/photos/" + getUsername(link) + "/" + getFID(link) + "/sizes/o");
+            /* Special case: Check if user prefers to download original quality */
+            String directurl = null;
+            if (preferredPhotoQuality == PhotoQuality.QO) {
+                if (br.getURL().contains("sizes/o")) { // Not redirected
+                    directurl = br.getRegex("<a href=\"([^<>\"]+)\">\\s*(Dieses Foto im Originalformat|Download the Original)").getMatch(0);
+                }
+            }
+            if (directurl != null) {
+                link.setProperty(PROPERTY_QUALITY, "o");
+                link.setProperty(String.format(PROPERTY_DIRECTURL, "o"), directurl);
+            } else { // Redirected if download original is not allowed
                 /*
-                 * Fast way to get finallink via site as we always try to access the "o" (original) quality. Page might be redirected!
+                 * If it is redirected, get the highest available quality
                  */
-                br.getPage("/photos/" + getUsername(link) + "/" + getFID(link) + "/sizes/o");
-                /* Special case: Check if user prefers to download original quality */
-                String directurl = null;
-                if (preferredPhotoQuality == PhotoQuality.QO) {
-                    if (br.getURL().contains("sizes/o")) { // Not redirected
-                        directurl = br.getRegex("<a href=\"([^<>\"]+)\">\\s*(Dieses Foto im Originalformat|Download the Original)").getMatch(0);
+                final String[] qualities = getPhotoQualityStringsDescending();
+                final String html = br.getRegex("<ol class=\"sizes-list\">(.*?)<div id=\"allsizes-photo\">").getMatch(0);
+                String maxQualityName = null;
+                String foundUserPreferredQualityName = null;
+                for (final String qualityName : qualities) {
+                    final String sizeAvailable = new Regex(html, "(?i)\"(/photos/[^/]+/\\d+/sizes/" + qualityName + "/)\"").getMatch(0);
+                    if (sizeAvailable != null) {
+                        /* First found = best */
+                        if (maxQualityName == null) {
+                            maxQualityName = qualityName;
+                        }
+                        if (this.stringToPhotoQuality(qualityName) == preferredPhotoQuality) {
+                            foundUserPreferredQualityName = qualityName;
+                            break;
+                        }
                     }
                 }
-                if (directurl != null) {
-                    link.setProperty(PROPERTY_QUALITY, "o");
-                    link.setProperty(String.format(PROPERTY_DIRECTURL, "o"), directurl);
-                } else { // Redirected if download original is not allowed
-                    /*
-                     * If it is redirected, get the highest available quality
-                     */
-                    final String[] qualities = getPhotoQualityStringsDescending();
-                    final String html = br.getRegex("<ol class=\"sizes-list\">(.*?)<div id=\"allsizes-photo\">").getMatch(0);
-                    String maxQualityName = null;
-                    String foundUserPreferredQualityName = null;
-                    for (final String qualityName : qualities) {
-                        final String sizeAvailable = new Regex(html, "(?i)\"(/photos/[^/]+/\\d+/sizes/" + qualityName + "/)\"").getMatch(0);
-                        if (sizeAvailable != null) {
-                            /* First found = best */
-                            if (maxQualityName == null) {
-                                maxQualityName = qualityName;
-                            }
-                            if (this.stringToPhotoQuality(qualityName) == preferredPhotoQuality) {
-                                foundUserPreferredQualityName = qualityName;
-                                break;
-                            }
-                        }
+                if (maxQualityName != null || foundUserPreferredQualityName != null) {
+                    final String selectedQualityName;
+                    if (foundUserPreferredQualityName != null) {
+                        logger.info("Fond user preferred quality: " + foundUserPreferredQualityName);
+                        selectedQualityName = foundUserPreferredQualityName;
+                    } else {
+                        logger.info("Using best quality: " + maxQualityName);
+                        selectedQualityName = maxQualityName;
                     }
-                    if (maxQualityName != null || foundUserPreferredQualityName != null) {
-                        final String selectedQualityName;
-                        if (foundUserPreferredQualityName != null) {
-                            logger.info("Fond user preferred quality: " + foundUserPreferredQualityName);
-                            selectedQualityName = foundUserPreferredQualityName;
-                        } else {
-                            logger.info("Using best quality: " + maxQualityName);
-                            selectedQualityName = maxQualityName;
-                        }
-                        br.getPage(this.getPhotoURLWithoutAlbumOrGalleryInfo(link) + "/sites/" + selectedQualityName + "/");
-                        directurl = br.getRegex("id=\"allsizes-photo\">[^~]*?<img src=\"(http[^<>\"]*?)\"").getMatch(0);
-                        if (directurl != null) {
-                            link.setProperty(PROPERTY_QUALITY, selectedQualityName);
-                            link.setProperty(String.format(PROPERTY_DIRECTURL, selectedQualityName), directurl);
-                        } else {
-                            /* This should never happen */
-                            logger.warning("Website quality picker appears to be broken");
-                        }
+                    br.getPage(this.getPhotoURLWithoutAlbumOrGalleryInfo(link) + "/sites/" + selectedQualityName + "/");
+                    directurl = br.getRegex("id=\"allsizes-photo\">[^~]*?<img src=\"(http[^<>\"]*?)\"").getMatch(0);
+                    if (directurl != null) {
+                        link.setProperty(PROPERTY_QUALITY, selectedQualityName);
+                        link.setProperty(String.format(PROPERTY_DIRECTURL, selectedQualityName), directurl);
                     } else {
                         /* This should never happen */
-                        logger.warning("Failed to find any photo quality");
+                        logger.warning("Website quality picker appears to be broken");
                     }
+                } else {
+                    /* This should never happen */
+                    logger.warning("Failed to find any photo quality");
                 }
             }
         }
@@ -737,33 +744,32 @@ public class FlickrCom extends PluginForHost {
     }
 
     public static String decodeEncoding(final Plugin plugin, final String property, final String value) {
-        if (value != null) {
-            String decodedValue = Encoding.unicodeDecode(value);
-            try {
-                decodedValue = URLEncode.decodeURIComponent(decodedValue, new URLEncode.Decoder() {
-                    @Override
-                    public String decode(String value) throws UnsupportedEncodingException {
-                        try {
-                            String ret = URLDecoder.decode(value, "UTF-8");
-                            if (ret.contains("\ufffd")) {
-                                // REPLACEMENT CHARACTER
-                                ret = URLDecoder.decode(value, "ISO-8859-1");
-                            }
-                            return ret;
-                        } catch (IllegalArgumentException e) {
-                            plugin.getLogger().log(e);
-                            return value;
-                        }
-                    }
-                });
-            } catch (UnsupportedEncodingException e) {
-                plugin.getLogger().log(e);
-            }
-            decodedValue = Encoding.htmlOnlyDecode(decodedValue);
-            return decodedValue.trim();
-        } else {
+        if (value == null) {
             return null;
         }
+        String decodedValue = Encoding.unicodeDecode(value);
+        try {
+            decodedValue = URLEncode.decodeURIComponent(decodedValue, new URLEncode.Decoder() {
+                @Override
+                public String decode(String value) throws UnsupportedEncodingException {
+                    try {
+                        String ret = URLDecoder.decode(value, "UTF-8");
+                        if (ret.contains("\ufffd")) {
+                            // REPLACEMENT CHARACTER
+                            ret = URLDecoder.decode(value, "ISO-8859-1");
+                        }
+                        return ret;
+                    } catch (IllegalArgumentException e) {
+                        plugin.getLogger().log(e);
+                        return value;
+                    }
+                }
+            });
+        } catch (UnsupportedEncodingException e) {
+            plugin.getLogger().log(e);
+        }
+        decodedValue = Encoding.htmlOnlyDecode(decodedValue);
+        return decodedValue.trim();
     }
 
     private boolean checkDirecturl(final DownloadLink link, final String directurl) throws IOException, PluginException {
@@ -772,23 +778,34 @@ public class FlickrCom extends PluginForHost {
             final Browser brc = br.cloneBrowser();
             brc.setFollowRedirects(true);
             con = brc.openHeadConnection(directurl);
-            if (looksLikeDownloadableContent(con)) {
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                return true;
-            } else {
-                if (con.getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-                }
+            this.handleConnectionErrors(brc, con);
+            if (con.getCompleteContentLength() > 0) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
             }
+            return true;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
+        }
+    }
+
+    @Override
+    protected void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        final DownloadLink link = this.getDownloadLink();
+        if (StringUtils.containsIgnoreCase(con.getURL().toExternalForm(), "/photo_unavailable.gif")) {
+            con.disconnect();
+            errorBrokenFile(link);
+        }
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403 && br.containsHTML(">\\s*Request forbidden by administrative rules")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your IP was banned by flickr.com");
+            }
+            errorBrokenFile(link);
+            /* This code should never be reached */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
@@ -832,88 +849,37 @@ public class FlickrCom extends PluginForHost {
     }
 
     public void handleDownload(final DownloadLink link, final Account account) throws Exception {
-        if (!attemptStoredDownloadurlDownload(link)) {
+        String directurl = getStoredDirecturl(link);
+        if (directurl == null) {
             requestFileInformation(link, account, true);
-            final String directurl = getStoredDirecturl(link);
+            directurl = getStoredDirecturl(link);
             if (StringUtils.isEmpty(directurl)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            /* chunked transfer */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, isResumable(link), getMaxChunks(link));
-            connectionErrorhandling(dl.getConnection());
-            if (!looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
         }
-        if (dl.startDownload()) {
-            /*
-             * 2016-08-19: Detect "Temporarily unavailable" message inside downloaded picture via md5 hash of the file:
-             * https://board.jdownloader.org/showthread.php?t=70487
-             */
-            boolean isTempUnavailable = false;
-            try {
-                isTempUnavailable = "e60b98765d26e34bfbb797c1a5f378f2".equalsIgnoreCase(JDHash.getMD5(new File(link.getFileOutput())));
-            } catch (final Throwable ignore) {
-            }
-            if (isTempUnavailable) {
-                /* Reset progress */
-                link.setDownloadCurrent(0);
-                /* Size unknown */
-                link.setDownloadSize(0);
-                errorBrokenImage();
-            }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, isResumeable(link, account), getMaxChunks(link));
+        this.handleConnectionErrors(br, dl.getConnection());
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
+            errorBrokenFile(link);
+            /* This code should never be reached */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl.startDownload();
     }
 
-    private static void connectionErrorhandling(final URLConnectionAdapter con) throws PluginException {
-        if (StringUtils.containsIgnoreCase(con.getURL().toString(), "/photo_unavailable.gif")) {
-            con.disconnect();
-            errorBrokenImage();
-        }
-    }
-
-    private static void errorBrokenImage() throws PluginException {
-        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken image?");
-    }
-
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
-        final String url = getStoredDirecturl(link);
-        if (StringUtils.isEmpty(url)) {
-            return false;
-        }
-        final Browser brc = br.cloneBrowser();
-        try {
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, this.isResumable(link), this.getMaxChunks(link));
-        } catch (final Throwable e) {
-            logger.log(e);
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable ignore) {
-            }
-            return false;
-        }
-        connectionErrorhandling(dl.getConnection());
-        if (this.looksLikeDownloadableContent(dl.getConnection())) {
-            return true;
+    private void errorBrokenFile(final DownloadLink link) throws PluginException {
+        final String errortext;
+        if (isVideo(link)) {
+            errortext = "Broken video?";
         } else {
-            /* Delete stored URL so it won't be tried again. */
-            link.removeProperty(getDirecturlProperty(link));
-            brc.followConnection(true);
-            throw new IOException();
+            errortext = "Broken image?";
         }
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errortext);
     }
 
-    private boolean isResumable(final DownloadLink link) {
-        // if (isVideo(link)) {
-        // return true;
-        // } else {
-        // return true;
-        // }
-        /*
-         * 2021-09-22: Videos are always resumable. For photos it varies but upper handling correctly auto-detects it so let's allow resume
-         * in general.
-         */
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
         return true;
     }
 
@@ -932,8 +898,8 @@ public class FlickrCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
         login(account, true);
+        final AccountInfo ai = new AccountInfo();
         ai.setUnlimitedTraffic();
         return ai;
     }
