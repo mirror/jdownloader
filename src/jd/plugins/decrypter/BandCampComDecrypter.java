@@ -138,12 +138,13 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String json = br.getRegex("data-client-items\\s*=\\s*\"([^\"]+)").getMatch(0);
+        String json = br.getRegex("data-client-items\\s*=\\s*\"([^\"]+)").getMatch(0);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final HashSet<String> dupes = new HashSet<String>();
         if (json != null) {
             // not every artist has data-client-items
-            final Object jsonObject = JSonStorage.restoreFromString(Encoding.htmlOnlyDecode(json), TypeRef.OBJECT);
+            json = Encoding.htmlOnlyDecode(json);
+            final Object jsonObject = restoreFromString(json, TypeRef.OBJECT);
             final List<Map<String, Object>> clientitems = (List<Map<String, Object>>) jsonObject;
             for (final Map<String, Object> clientitem : clientitems) {
                 final String type = clientitem.get("type").toString();
@@ -153,6 +154,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                 }
                 String page_url = clientitem.get("page_url").toString();
                 page_url = Encoding.htmlOnlyDecode(page_url);
+                page_url = br.getURL(page_url).toExternalForm();
                 if (!dupes.add(page_url)) {
                     /* Skip duplicates */
                     continue;
@@ -391,7 +393,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                 }
                 final DownloadLink audiotrack = createDownloadlink(contentUrl);
                 BandCampCom.parseAndSetSingleTrackInfo(audiotrack, br, index);
-                if (!audiotrack.hasProperty(BandCampCom.PROPERTY_DATE_DIRECTURL)) {
+                if (!audiotrack.hasProperty(BandCampCom.PROPERTY_DIRECTURL)) {
                     numberOfUnPlayableTracks++;
                 }
                 ret.add(audiotrack);

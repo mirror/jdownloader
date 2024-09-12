@@ -128,7 +128,7 @@ public class BandCampCom extends PluginForHost {
     public static final String  PROPERTY_VIDEO_HEIGHT               = "video_height";
     public static final String  PROPERTY_FILE_TYPE                  = "type";
     public static final String  PROPERTY_TRACK_DATE_TIMESTAMP       = "datetimestamp";
-    public static final String  PROPERTY_DATE_DIRECTURL             = "directurl";
+    public static final String  PROPERTY_DIRECTURL             = "directurl";
     private String              dllink                              = null;
 
     @Override
@@ -194,7 +194,7 @@ public class BandCampCom extends PluginForHost {
         if (br.containsHTML("(>\\s*Sorry\\s*,\\s*that something isn('|’)t here|>\\s*start at the beginning\\s*</a>\\s*and you'll certainly find what)") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        link.removeProperty(PROPERTY_DATE_DIRECTURL);
+        link.removeProperty(PROPERTY_DIRECTURL);
         final int trackNumber = link.getIntegerProperty(PROPERTY_ALBUM_TRACK_POSITION, -1);
         final int trackIndex;
         if (trackNumber > 0) {
@@ -204,7 +204,7 @@ public class BandCampCom extends PluginForHost {
             trackIndex = -1;
         }
         parseAndSetSingleTrackInfo(link, br, trackIndex);
-        dllink = link.getStringProperty(PROPERTY_DATE_DIRECTURL);
+        dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         final String filename = getFormattedFilename(link);
         link.setFinalFileName(filename);
         if (dllink != null && !link.isSizeSet() && !isDownload) {
@@ -286,7 +286,7 @@ public class BandCampCom extends PluginForHost {
                 link.setProperty(PROPERTY_ALBUM_TRACK_POSITION, trackinfo1.get("track_num"));
                 final String directurl = (String) JavaScriptEngineFactory.walkJson(trackinfo1, "file/mp3-128");
                 if (directurl != null && directurl.startsWith("http")) {
-                    link.setProperty(PROPERTY_DATE_DIRECTURL, directurl);
+                    link.setProperty(PROPERTY_DIRECTURL, directurl);
                 }
                 /* Calculate filesize */
                 final int duration = ((Number) trackinfo1.get("duration")).intValue();
