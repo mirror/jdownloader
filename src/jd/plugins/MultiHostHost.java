@@ -18,10 +18,10 @@ public class MultiHostHost implements Storable {
         WORKING,
         WORKING_UNSTABLE,
         DEACTIVATED_JDOWNLOADER,
+        DEACTIVATED_JDOWNLOADER_UNSUPPORTED,
         DEACTIVATED_MULTIHOST,
         DEACTIVATED_MULTIHOST_NOT_FOR_THIS_ACCOUNT_TYPE,
-        DEACTIVATED_MULTIHOST_LIMIT_REACHED,
-        UNSUPPORTED_JDOWNLOADER;
+        DEACTIVATED_MULTIHOST_LIMIT_REACHED;
     }
 
     private String                name                            = null;
@@ -32,6 +32,7 @@ public class MultiHostHost implements Storable {
     private long                  linksMax                        = -1;
     private long                  trafficLeft                     = -1;
     private long                  trafficMax                      = -1;
+    private String                unavailableMessage              = null;
     private long                  unavailableUntilTimestamp       = -1;
     private short                 trafficCalculationFactorPercent = 100;
     private int                   maxChunks                       = 0;
@@ -135,7 +136,7 @@ public class MultiHostHost implements Storable {
     }
 
     /**
-     * How much traffic is needed and credited when downloading from this host? </br>
+     * How much traffic is needed- and credited from the account when downloading from this host? </br>
      * 500 = 5 times the size of the downloaded file.
      */
     public short getTrafficCalculationFactorPercent() {
@@ -167,6 +168,7 @@ public class MultiHostHost implements Storable {
         }
     }
 
+    @Deprecated
     public boolean canDownload(final DownloadLink link) {
         if (isUnlimitedTraffic || isUnlimitedLinks) {
             return true;
@@ -246,6 +248,14 @@ public class MultiHostHost implements Storable {
         return this.domains;
     }
 
+    public String getUnavailableMessage() {
+        return unavailableMessage;
+    }
+
+    public void setUnavailableMessage(String unavailableMessage) {
+        this.unavailableMessage = unavailableMessage;
+    }
+
     public long getUnavailableUntilTimestamp() {
         return unavailableUntilTimestamp;
     }
@@ -258,10 +268,12 @@ public class MultiHostHost implements Storable {
     @Override
     public String toString() {
         final String title;
-        if (this.domains != null && this.domains.size() > 0) {
+        if (this.name != null) {
+            title = this.name;
+        } else if (this.domains != null && this.domains.size() > 0) {
             title = this.domains.iterator().next();
         } else {
-            title = this.name;
+            title = null;
         }
         return title + " | LinksAvailable: " + this.getLinksLeft() + "/" + this.getLinksMax() + " | Traffic: " + SizeFormatter.formatBytes(this.getTrafficLeft()) + "/" + SizeFormatter.formatBytes(this.getTrafficMax()) + " | Chunks: " + this.getMaxChunks() + " | Resume: " + this.isResume();
     }
