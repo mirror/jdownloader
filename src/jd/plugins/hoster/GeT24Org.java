@@ -7,7 +7,6 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -20,10 +19,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision: 41665 $", interfaceVersion = 3, names = { "get24.org" }, urls = { "" })
@@ -58,7 +57,7 @@ public class GeT24Org extends PluginForHost {
         // TODO: status
         final AccountInfo acc_info = new AccountInfo();
         this.br = newBrowser();
-        String response = br.postPage("https://get24.org/api/login", "email=" + Encoding.urlEncode(account.getUser()) + "&passwd_sha256=" + JDHash.getSHA256(account.getPass()));
+        String response = br.postPage("https://get24.org/api/login", "email=" + Encoding.urlEncode(account.getUser()) + "&passwd_sha256=" + Hash.getSHA256(account.getPass()));
         if (!Boolean.parseBoolean(PluginJSonUtils.getJson(response, "ok")) && StringUtils.equalsIgnoreCase(PluginJSonUtils.getJson(response, "reason"), "invalid credentials")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong login or password", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
@@ -89,7 +88,7 @@ public class GeT24Org extends PluginForHost {
         final String directurlproperty = this.getHost() + "directurl";
         String directurl = checkDirectLink(link, directurlproperty);
         if (directurl == null) {
-            String post_data = "email=" + Encoding.urlEncode(account.getUser()) + "&passwd_sha256=" + JDHash.getSHA256(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL());
+            String post_data = "email=" + Encoding.urlEncode(account.getUser()) + "&passwd_sha256=" + Hash.getSHA256(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL());
             // "&url=" + Encoding.urlEncode(link.getDownloadURL());
             String response = br.postPage("https://get24.org/api/debrid/geturl", post_data); // security
             if (!Boolean.parseBoolean(PluginJSonUtils.getJson(response, "ok"))) {

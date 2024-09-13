@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -31,11 +30,12 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upfile.vn" }, urls = { "http://(www\\.)?upfile\\.vn/(?!faq|register|login|terms|report_file)[a-z0-9~]+(?:/.*?\\.html)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upfile.vn" }, urls = { "http://(www\\.)?upfile\\.vn/(?!faq|register|login|terms|report_file)[a-z0-9~]+(?:/.*?\\.html)?" })
 public class UpFileVn extends antiDDoSForHost {
 
     public UpFileVn(PluginWrapper wrapper) {
@@ -109,7 +109,7 @@ public class UpFileVn extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, SERVERERRORUSERTEXT, 5 * 60 * 1000l);
         }
         final String uid = new Regex(downloadLink.getDownloadURL(), "upfile\\.vn/([^/]+)").getMatch(0);
-        final String hash = JDHash.getSHA256(uid + 7891).toUpperCase();
+        final String hash = Hash.getSHA256(uid + 7891).toUpperCase();
         br.postPage(br.getURL(), "Token=" + hash);
         final String dllink = PluginJSonUtils.getJsonValue(br, "Link");
         if (dllink == null) {

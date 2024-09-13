@@ -28,6 +28,7 @@ import org.appwork.utils.formatter.HexFormatter;
 /**
  * TODO: Remove with next major update and change to {@link org.appwork.utils.Hash}
  */
+@Deprecated
 public class JDHash {
     public static String HASH_TYPE_MD5    = Hash.HASH_TYPE_MD5;
     public static String HASH_TYPE_SHA1   = Hash.HASH_TYPE_SHA1;
@@ -35,35 +36,15 @@ public class JDHash {
     public static String HASH_TYPE_SHA512 = Hash.HASH_TYPE_SHA512;
 
     public static String getMD5(final String arg) {
-        return Hash.getStringHash(arg, HASH_TYPE_MD5);
+        return Hash.getMD5(arg);
     }
 
     public static String getMD5(final File arg) {
-        return Hash.getFileHash(arg, HASH_TYPE_MD5);
+        return Hash.getMD5(arg);
     }
 
     public static String getSHA1(final String arg) {
-        return Hash.getStringHash(arg, HASH_TYPE_SHA1);
-    }
-
-    public static String getSHA1(final File arg) {
-        return Hash.getFileHash(arg, HASH_TYPE_SHA1);
-    }
-
-    public static String getSHA256(final String arg) {
-        return Hash.getStringHash(arg, HASH_TYPE_SHA256);
-    }
-
-    public static String getSHA256(final File arg) {
-        return Hash.getFileHash(arg, HASH_TYPE_SHA256);
-    }
-
-    public static String getSHA512(final String arg) {
-        return Hash.getStringHash(arg, HASH_TYPE_SHA512);
-    }
-
-    public static String getSHA512(final File arg) {
-        return Hash.getFileHash(arg, HASH_TYPE_SHA512);
+        return Hash.getSHA1(arg);
     }
 
     /**
