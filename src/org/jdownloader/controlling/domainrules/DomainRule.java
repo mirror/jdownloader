@@ -2,13 +2,20 @@ package org.jdownloader.controlling.domainrules;
 
 import org.appwork.storage.Storable;
 
-//{"maxSimultanDownloads":10,"pattern":".*dummmydomain.com,"allowToExceedTheGlobalLimit":true,"enabled":false}
 public class DomainRule implements Storable {
-    public boolean isEnabled() {
-        return enabled;
-    }
+    private String  filenamePattern;
+    private String  accountPattern;
+    private String  pluginPattern;
+    private boolean enabled                     = false;
+    private int     maxSimultanDownloads        = 0;
+    private int     maxChunks                   = 0;
+    private boolean allowToExceedTheGlobalLimit = false;
 
     public DomainRule(/* Storable */) {
+    }
+
+    public boolean isEnabled() {
+        return enabled;
     }
 
     public void setEnabled(boolean enabled) {
@@ -25,8 +32,6 @@ public class DomainRule implements Storable {
         this.domainPattern = domainPattern;
     }
 
-    private String filenamePattern;
-
     public String getFilenamePattern() {
         return filenamePattern;
     }
@@ -34,9 +39,6 @@ public class DomainRule implements Storable {
     public void setFilenamePattern(String filenamePattern) {
         this.filenamePattern = filenamePattern;
     }
-
-    private String accountPattern;
-    private String pluginPattern;
 
     public String getPluginPattern() {
         return pluginPattern;
@@ -54,10 +56,6 @@ public class DomainRule implements Storable {
         this.accountPattern = accountPattern;
     }
 
-    private boolean enabled                     = false;
-    private int     maxSimultanDownloads        = 0;
-    private boolean allowToExceedTheGlobalLimit = false;
-
     public boolean isAllowToExceedTheGlobalLimit() {
         return allowToExceedTheGlobalLimit;
     }
@@ -72,5 +70,13 @@ public class DomainRule implements Storable {
 
     public void setMaxSimultanDownloads(int maxSimultanDownloads) {
         this.maxSimultanDownloads = maxSimultanDownloads;
+    }
+
+    public int getMaxChunks() {
+        return maxChunks;
+    }
+
+    public void setMaxChunks(int maxChunks) {
+        this.maxChunks = maxChunks;
     }
 }

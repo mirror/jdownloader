@@ -624,8 +624,8 @@ public interface GeneralSettings extends ConfigInterface {
     void setFreeProxyBalanceMode(DownloadLinkCandidateSelector.ProxyBalanceMode mode);
 
     @AboutConfig
-    @DescriptionForConfigEntry("Setup Rules by Domain. Let us know if you use this feature and require a nicer User Interface")
-    @DefaultJsonObject("[{\"accountPattern\":\"myUsername\",\"domainPattern\":\".*jdownloader\\\\.org\",\"maxSimultanDownloads\":20,\"allowToExceedTheGlobalLimit\":false,\"filenamePattern\":\"\\\\.png$\",\"enabled\":false}]")
+    @DescriptionForConfigEntry("Setup Rules by Domain. Let us know if you use this feature and require a nicer User Interface. Description of maxChunks: -X = up to X chunks, 0 = unlimited chunks (according to global setting), > 1 = forced chunks e.g. 3 -> Force 3 chunks. Plugins' max chunks limits cannot be overridden with these rules!")
+    @DefaultJsonObject("[{\"accountPattern\":\"myUsername\",\"domainPattern\":\".*jdownloader\\\\.org\",\"maxSimultanDownloads\":20,\"maxChunks\":1,\"allowToExceedTheGlobalLimit\":false,\"filenamePattern\":\"\\\\.png$\",\"enabled\":false}]")
     ArrayList<DomainRule> getDomainRules();
 
     void setDomainRules(ArrayList<DomainRule> e);

@@ -78,6 +78,7 @@ public class MultiHosterManagement {
                 }
                 final MultiHostHost mhost = ai.getMultihostSupportedHost(downloadLink.getHost());
                 if (mhost == null) {
+                    /* Host might have been removed from list of supported hosts in the meantime. */
                     break setLimitOnAccount;
                 }
                 mhost.setUnavailableTime(timeout);
