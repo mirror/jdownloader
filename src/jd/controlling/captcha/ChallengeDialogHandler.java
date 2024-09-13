@@ -1,29 +1,18 @@
 package jd.controlling.captcha;
 
-import java.awt.Image;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.awt.image.BufferedImage;
-import java.net.MalformedURLException;
-
 import javax.swing.SwingUtilities;
 
-import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.DialogType;
 import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Exceptions;
-import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -31,27 +20,20 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogHandler;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.appwork.utils.swing.dialog.InternDialog;
-import org.appwork.utils.swing.windowmanager.WindowManager;
-import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.DomainInfo;
-import org.jdownloader.captcha.v2.AbstractCaptchaDialog;
 import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.settings.SilentModeSettings.CaptchaDuringSilentModeAction;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 
-public abstract class ChallengeDialogHandler<T extends Challenge<ResultType>, ResultType> {
-    private DomainInfo                          host;
-    protected T                                 captchaChallenge;
-    private CaptchaSettings                     config;
-    private final UniqueAlltimeID               id = new UniqueAlltimeID();
-    protected DialogHandler                     dialogHandler;
-    private LogSource                           logger;
-    protected volatile ResultType               result;
-    protected AbstractCaptchaDialog<ResultType> dialog;
+public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
+    private DomainInfo            host;
+    protected T                   captchaChallenge;
+    private CaptchaSettings       config;
+    private final UniqueAlltimeID id = new UniqueAlltimeID();
+    protected DialogHandler       dialogHandler;
+    private LogSource             logger;
 
     public ChallengeDialogHandler(DomainInfo instance, T captchaChallenge2) {
         this.host = instance;
@@ -100,9 +82,6 @@ public abstract class ChallengeDialogHandler<T extends Challenge<ResultType>, Re
                         }
                     }
                 } catch (InterruptedException e) {
-                    if (dialog.getReturnmask() == 0) {
-                        dialog.setCloseReason(CloseReason.INTERRUPT);
-                    }
                     throw new DialogClosedException(Dialog.RETURN_INTERRUPT, e);
                 } catch (DialogCanceledException e) {
                     throw e;
@@ -122,130 +101,8 @@ public abstract class ChallengeDialogHandler<T extends Challenge<ResultType>, Re
         };
     }
 
-    public ResultType getResult() {
-        return result;
-    }
-
-    protected abstract AbstractCaptchaDialog<ResultType> createDialog(DialogType dialogType, int flag);
-
-    protected void setResultFrom(final AbstractCaptchaDialog<ResultType> dialog) {
-        this.result = dialog.getReturnValue();
-    }
-
-    protected Image[] getImages(T challenge) {
-        if (challenge instanceof ImageCaptchaChallenge) {
-            Image images[] = null;
-            try {
-                images = CaptchaDialog.getGifImages(((ImageCaptchaChallenge<?>) captchaChallenge).getImageFile().toURI().toURL());
-                if (images == null || images.length == 0) {
-                    BufferedImage img = IconIO.getImage(((ImageCaptchaChallenge<?>) captchaChallenge).getImageFile().toURI().toURL(), false);
-                    if (img != null) {
-                        images = new Image[] { img };
-                    }
-                }
-            } catch (MalformedURLException e) {
-                throw new WTFException(e);
-            }
-            if (images == null || images.length == 0 || images[0] == null) {
-                getLogger().severe("Could not load CaptchaImage! " + ((ImageCaptchaChallenge<?>) captchaChallenge).getImageFile().getAbsolutePath());
-                return null;
-            } else {
-                return images;
-            }
-        }
-        return null;
-    }
-
-    protected void waitForDialog(final AbstractCaptchaDialog<ResultType> dialog) throws DialogClosedException, DialogCanceledException, HideCaptchasByHostException, HideCaptchasByPackageException, StopCurrentActionException, HideAllCaptchasException, RefreshException {
-        new EDTHelper<Object>() {
-            @Override
-            public Object edtRun() {
-                dialog.getDialog().addWindowListener(new WindowListener() {
-                    @Override
-                    public void windowOpened(WindowEvent e) {
-                    }
-
-                    @Override
-                    public void windowIconified(WindowEvent e) {
-                    }
-
-                    @Override
-                    public void windowDeiconified(WindowEvent e) {
-                    }
-
-                    @Override
-                    public void windowDeactivated(WindowEvent e) {
-                    }
-
-                    @Override
-                    public void windowClosing(WindowEvent e) {
-                        synchronized (ChallengeDialogHandler.this) {
-                            ChallengeDialogHandler.this.notifyAll();
-                        }
-                    }
-
-                    @Override
-                    public void windowClosed(WindowEvent e) {
-                        synchronized (ChallengeDialogHandler.this) {
-                            boolean v = dialog.getDialog().isVisible();
-                            ChallengeDialogHandler.this.notifyAll();
-                        }
-                    }
-
-                    @Override
-                    public void windowActivated(WindowEvent e) {
-                    }
-                });
-                return null;
-            }
-        }.waitForEDT();
-        try {
-            while (dialog.getDialog().isDisplayable()) {
-                synchronized (this) {
-                    this.wait(1000);
-                }
-            }
-        } catch (InterruptedException e) {
-            if (dialog.getReturnmask() == 0) {
-                dialog.setCloseReason(CloseReason.INTERRUPT);
-            }
-            throw new DialogClosedException(Dialog.RETURN_INTERRUPT, e);
-        } finally {
-            try {
-                dialog.dispose();
-            } catch (Exception e) {
-            }
-        }
-        setResultFrom(dialog);
-        try {
-            if (dialog.getCloseReason() != CloseReason.OK) {
-                if (dialog.isHideCaptchasForHost()) {
-                    throw new HideCaptchasByHostException();
-                } else if (dialog.isHideCaptchasForPackage()) {
-                    throw new HideCaptchasByPackageException();
-                } else if (dialog.isStopDownloads()) {
-                    throw new StopCurrentActionException();
-                } else if (dialog.isHideAllCaptchas()) {
-                    throw new HideAllCaptchasException();
-                } else if (dialog.isStopCrawling()) {
-                    throw new StopCurrentActionException();
-                } else if (dialog.isStopShowingCrawlerCaptchas()) {
-                    throw new HideAllCaptchasException();
-                } else if (dialog.isRefresh()) {
-                    throw new RefreshException();
-                } else {
-                    dialog.throwCloseExceptions();
-                    throw new DialogClosedException(Dialog.RETURN_CLOSED);
-                }
-            }
-        } catch (IllegalStateException e) {
-            // Captcha has been solved externally
-        }
-    }
-
-    protected void showDialog(AbstractCaptchaDialog<ResultType> dialog) throws DialogClosedException, DialogCanceledException {
-        this.dialog = dialog;
-        dialogHandler.showDialog(dialog);
+    protected void showDialog(AbstractDialog<?> dialog2) throws DialogClosedException, DialogCanceledException {
+        dialogHandler.showDialog(dialog2);
     }
 
     public DomainInfo getHost() {
@@ -254,31 +111,6 @@ public abstract class ChallengeDialogHandler<T extends Challenge<ResultType>, Re
 
     public void run() throws InterruptedException, SkipException {
         viaGUI();
-    }
-
-    protected volatile ResultType suggest;
-
-    public void setSuggest(final ResultType value) {
-        suggest = value;
-    }
-
-    public ResultType getSuggest() {
-        return suggest;
-    }
-
-    public void requestFocus() {
-        new EDTRunner() {
-            @Override
-            protected void runInEDT() {
-                final AbstractCaptchaDialog<ResultType> d = dialog;
-                if (d != null) {
-                    final InternDialog<ResultType> win = d.getDialog();
-                    if (win != null) {
-                        WindowManager.getInstance().setZState(win, FrameState.TO_FRONT_FOCUSED);
-                    }
-                }
-            }
-        };
     }
 
     protected LogInterface getLogger() {
@@ -302,16 +134,16 @@ public abstract class ChallengeDialogHandler<T extends Challenge<ResultType>, Re
         try {
             int f = 0;
             int countdown = getTimeoutInMS();
-            if (captchaChallenge.isAccountLogin()) {
-                // dialogType = DialogType.ACCOUNT; //TODO
+            if (captchaChallenge.getPlugin() instanceof PluginForHost) {
                 dialogType = DialogType.HOSTER;
-            } else if (captchaChallenge.getPlugin() instanceof PluginForHost) {
-                dialogType = DialogType.HOSTER;
+                if (countdown > 0) {
+                    f = f | UIOManager.LOGIC_COUNTDOWN;
+                }
             } else if (captchaChallenge.getPlugin() instanceof PluginForDecrypt) {
                 dialogType = DialogType.CRAWLER;
-            }
-            if (countdown > 0) {
-                f = f | UIOManager.LOGIC_COUNTDOWN;
+                if (countdown > 0) {
+                    f = f | UIOManager.LOGIC_COUNTDOWN;
+                }
             }
             showDialog(dialogType, f);
             return;
@@ -368,15 +200,7 @@ public abstract class ChallengeDialogHandler<T extends Challenge<ResultType>, Re
      * @throws HideAllCaptchasException
      * @throws RefreshException
      */
-    protected void showDialog(DialogType dialogType, int flag) throws DialogClosedException, DialogCanceledException, HideCaptchasByHostException, HideCaptchasByPackageException, StopCurrentActionException, HideAllCaptchasException, RefreshException {
-        final AbstractCaptchaDialog<ResultType> dialog = createDialog(dialogType, flag);
-        if (dialog == null) {
-            return;
-        }
-        // don't put this in the edt
-        showDialog(dialog);
-        waitForDialog(dialog);
-    }
+    abstract protected void showDialog(DialogType dialogType, int flag) throws DialogClosedException, DialogCanceledException, HideCaptchasByHostException, HideCaptchasByPackageException, StopCurrentActionException, HideAllCaptchasException, RefreshException;
 
     /**
      * @return the iD
