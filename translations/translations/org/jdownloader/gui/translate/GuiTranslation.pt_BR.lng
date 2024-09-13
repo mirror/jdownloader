@@ -1308,6 +1308,7 @@ StopsignAction_actionPerformed_help_msg_=Se você definiu uma marca de pausa em 
 StopsignAction_actionPerformed_help_msg_package_=Se você definiu uma marca de pausa em um pacote, o JDownloader vai parar de baixar depois que todos os arquivos neste pacote tiverem sido baixados.
 StopsignAction_actionPerformed_help_title_=Marca de Pausa para Links de Download
 StopsignAction_actionPerformed_help_title_package_=Marca de Pausa para Pacotes
+TaskColumn_fillColumnHelper_finalizing=Finalizando...
 TaskColumn_fillColumnHelper_starting=Iniciando...
 TaskColumn_getDescription_object_=%s1 bloqueou seu IP (Endereço de Internet).\r\nEm muitos casos, o JDownloader é capaz de fazer uma reconexão e obter um novo IP.\r\nSe não for possível, recomendamos usar o Modo Premium do %s1.
 TaskColumn_getStringValue_extraction_error=Erro ao extrair
