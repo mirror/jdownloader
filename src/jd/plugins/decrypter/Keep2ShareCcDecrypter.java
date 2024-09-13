@@ -25,10 +25,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.components.config.Keep2shareConfig.FileLinkAddMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -43,6 +39,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.K2SApi;
+
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.components.config.Keep2shareConfig.FileLinkAddMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class Keep2ShareCcDecrypter extends PluginForDecrypt {
@@ -129,21 +129,18 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         try {
             singleFileHandling: if (looksLikeSingleFileItem) {
                 /**
-                 * This handling is supposed to be for single files but can also be used for small folders. </br>
-                 * Using the folder handling down below for single files will prohibit our special referrer handling from working since it
-                 * seems to flag the current IP so the referrer will be ignored later and users who have configured a special referrer will
-                 * not get better download speeds anymore. </br>
-                 * More detailed explanation: https://board.jdownloader.org/showthread.php?t=94515
+                 * This handling is supposed to be for single files but can also be used for small folders. </br> Using the folder handling
+                 * down below for single files will prohibit our special referrer handling from working since it seems to flag the current
+                 * IP so the referrer will be ignored later and users who have configured a special referrer will not get better download
+                 * speeds anymore. </br> More detailed explanation: https://board.jdownloader.org/showthread.php?t=94515
                  */
                 logger.info("Link looks like single file link -> Jumping into single file handling");
                 final Map<String, Object> postdataGetfilesinfo = new HashMap<String, Object>();
                 postdataGetfilesinfo.put("ids", Arrays.asList(new String[] { contentid }));
                 /**
-                 * What this returns: </br>
-                 * ID leads to a single file: Single file information </br>
-                 * ID leads to a single SMALL(!) folder: All folder file items </br>
-                 * ID leads to a big folder: Only folder meta-information -> Folder items need to be crawled using a separate request down
-                 * below.
+                 * What this returns: </br> ID leads to a single file: Single file information </br> ID leads to a single SMALL(!) folder:
+                 * All folder file items </br> ID leads to a big folder: Only folder meta-information -> Folder items need to be crawled
+                 * using a separate request down below.
                  */
                 response = plugin.postPageRaw(br, "https://" + this.getHost() + "/api/v2/getfilesinfo", postdataGetfilesinfo, null);
                 if (!"success".equals(response.get("status"))) {
@@ -153,8 +150,15 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                 for (final Map<String, Object> item : items) {
                     final String id = (String) item.get("id");
                     final String fileOrFolderName = (String) item.get("name");
+                    if (fileOrFolderName == null) {
+                        // not on this domain
+                        continue;
+                    }
                     final Boolean isFolder = (Boolean) item.get("is_folder");
-                    if (Boolean.FALSE.equals(isFolder)) {
+                    if (isFolder == null) {
+                        // not on this domain
+                        continue;
+                    } else if (Boolean.FALSE.equals(isFolder)) {
                         /* File */
                         final DownloadLink file = createDownloadlink(generateFileUrl(id, fileOrFolderName, referer));
                         K2SApi.parseFileInfo(file, item, contentidFromURL);
@@ -172,106 +176,106 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                 /* If we reach this line this means we found at least one file that is online. */
                 return ret;
             }
-            FilePackage fp = null;
-            String thisFolderTitle = null;
-            final Set<String> dupes = new HashSet<String>();
-            final int maxItemsPerPage = 50;
-            int offset = 0;
-            int page = 1;
-            boolean isSingleFile = false;
-            String sourceFileID = null;
-            String path = this.getAdoptedCloudFolderStructure();
-            do {
-                final Map<String, Object> postdataGetfilestatus = new HashMap<String, Object>();
-                postdataGetfilestatus.put("id", contentid);
-                postdataGetfilestatus.put("limit", maxItemsPerPage);
-                postdataGetfilestatus.put("offset", offset);
-                response = plugin.postPageRaw(br, "/getfilestatus", postdataGetfilestatus, null);
-                items = (List<Map<String, Object>>) response.get("files");
-                if (items == null && response.containsKey("is_available") && !response.containsKey("id")) {
-                    /* Root map contains single loose file. */
-                    isSingleFile = true;
-                    sourceFileID = contentid;
-                    items = new ArrayList<Map<String, Object>>();
-                    items.add(response);
+        FilePackage fp = null;
+        String thisFolderTitle = null;
+        final Set<String> dupes = new HashSet<String>();
+        final int maxItemsPerPage = 50;
+        int offset = 0;
+        int page = 1;
+        boolean isSingleFile = false;
+        String sourceFileID = null;
+        String path = this.getAdoptedCloudFolderStructure();
+        do {
+            final Map<String, Object> postdataGetfilestatus = new HashMap<String, Object>();
+            postdataGetfilestatus.put("id", contentid);
+            postdataGetfilestatus.put("limit", maxItemsPerPage);
+            postdataGetfilestatus.put("offset", offset);
+            response = plugin.postPageRaw(br, "/getfilestatus", postdataGetfilestatus, null);
+            items = (List<Map<String, Object>>) response.get("files");
+            if (items == null && response.containsKey("is_available") && !response.containsKey("id")) {
+                /* Root map contains single loose file. */
+                isSingleFile = true;
+                sourceFileID = contentid;
+                items = new ArrayList<Map<String, Object>>();
+                items.add(response);
+            } else {
+                /* Root map is folder containing files */
+                if (fp == null) {
+                    fp = FilePackage.getInstance();
+                    thisFolderTitle = response.get("name").toString();
+                    if (path == null) {
+                        path = thisFolderTitle;
+                    } else {
+                        path += "/" + thisFolderTitle;
+                    }
+                    fp.setName(path);
+                }
+            }
+            if (items.isEmpty()) {
+                if (ret.isEmpty()) {
+                    if (thisFolderTitle != null) {
+                        throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, contentid + "_" + thisFolderTitle);
+                    } else {
+                        throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, contentid);
+                    }
                 } else {
-                    /* Root map is folder containing files */
-                    if (fp == null) {
-                        fp = FilePackage.getInstance();
-                        thisFolderTitle = response.get("name").toString();
-                        if (path == null) {
-                            path = thisFolderTitle;
-                        } else {
-                            path += "/" + thisFolderTitle;
-                        }
-                        fp.setName(path);
-                    }
+                    logger.info("Stopping because: Failed to find any items on current page");
+                    break;
                 }
-                if (items.isEmpty()) {
-                    if (ret.isEmpty()) {
-                        if (thisFolderTitle != null) {
-                            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, contentid + "_" + thisFolderTitle);
-                        } else {
-                            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, contentid);
-                        }
-                    } else {
-                        logger.info("Stopping because: Failed to find any items on current page");
-                        break;
-                    }
-                }
-                int numberofNewItems = 0;
-                for (final Map<String, Object> item : items) {
-                    final String id;
-                    if (isSingleFile) {
-                        id = contentid;
-                    } else {
-                        id = item.get("id").toString();
-                    }
-                    if (!dupes.add(id)) {
-                        continue;
-                    }
-                    numberofNewItems++;
-                    final String filenameOrFoldername = (String) item.get("name");
-                    final DownloadLink result;
-                    if (Boolean.TRUE.equals(item.get("is_folder"))) {
-                        /* Folder */
-                        result = createDownloadlink(generateFolderUrl(id, filenameOrFoldername, referer));
-                    } else {
-                        /* File */
-                        result = createDownloadlink(generateFileUrl(id, filenameOrFoldername, referer));
-                        K2SApi.parseFileInfo(result, item, sourceFileID);
-                        if (!result.isNameSet()) {
-                            /* Fallback */
-                            result.setName(id);
-                        }
-                        if (fp != null) {
-                            result._setFilePackage(fp);
-                        }
-                    }
-                    if (path != null) {
-                        result.setRelativeDownloadFolderPath(path);
-                    }
-                    ret.add(result);
-                    distribute(result);
-                }
-                logger.info("Crawled page " + page + " | Offset: " + offset + " | New items this page: " + numberofNewItems + " | Found items so far: " + ret.size());
-                if (this.isAbort()) {
-                    logger.info("Stopping because: Aborted by user");
-                    break;
-                } else if (isSingleFile) {
-                    logger.info("Stopping because: This item is a single file");
-                    break;
-                } else if (numberofNewItems == 0) {
-                    logger.info("Stopping because: Failed to find any new items on current page: " + page);
-                    break;
-                } else if (numberofNewItems < maxItemsPerPage) {
-                    logger.info("Stopping because: Current page contains less items than " + maxItemsPerPage);
-                    break;
+            }
+            int numberofNewItems = 0;
+            for (final Map<String, Object> item : items) {
+                final String id;
+                if (isSingleFile) {
+                    id = contentid;
                 } else {
-                    offset += maxItemsPerPage;
-                    page++;
+                    id = item.get("id").toString();
                 }
-            } while (!this.isAbort());
+                if (!dupes.add(id)) {
+                    continue;
+                }
+                numberofNewItems++;
+                final String filenameOrFoldername = (String) item.get("name");
+                final DownloadLink result;
+                if (Boolean.TRUE.equals(item.get("is_folder"))) {
+                    /* Folder */
+                    result = createDownloadlink(generateFolderUrl(id, filenameOrFoldername, referer));
+                } else {
+                    /* File */
+                    result = createDownloadlink(generateFileUrl(id, filenameOrFoldername, referer));
+                    K2SApi.parseFileInfo(result, item, sourceFileID);
+                    if (!result.isNameSet()) {
+                        /* Fallback */
+                        result.setName(id);
+                    }
+                    if (fp != null) {
+                        result._setFilePackage(fp);
+                    }
+                }
+                if (path != null) {
+                    result.setRelativeDownloadFolderPath(path);
+                }
+                ret.add(result);
+                distribute(result);
+            }
+            logger.info("Crawled page " + page + " | Offset: " + offset + " | New items this page: " + numberofNewItems + " | Found items so far: " + ret.size());
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                break;
+            } else if (isSingleFile) {
+                logger.info("Stopping because: This item is a single file");
+                break;
+            } else if (numberofNewItems == 0) {
+                logger.info("Stopping because: Failed to find any new items on current page: " + page);
+                break;
+            } else if (numberofNewItems < maxItemsPerPage) {
+                logger.info("Stopping because: Current page contains less items than " + maxItemsPerPage);
+                break;
+            } else {
+                offset += maxItemsPerPage;
+                page++;
+            }
+        } while (!this.isAbort());
         } catch (final PluginException e) {
             if (br.getHttpConnection().getResponseCode() == 400) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid fileID");
