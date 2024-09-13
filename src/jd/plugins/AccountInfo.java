@@ -828,7 +828,9 @@ public class AccountInfo extends Property implements AccountTrafficView {
                         }
                     }
                 } catch (final Throwable e) {
-                    logger.log(e);
+                    if (logger != null) {
+                        logger.log(e);
+                    }
                     otherIgnoreEntries.add(maindomainCleaned);
                     continue;
                 }
@@ -839,8 +841,10 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 continue cleanListLoop;
             } else if (best.size() > 1) {
                 unassignedMultiHostSupport.add(maindomainCleaned);
-                logger.warning("Found more than one possible plugins for one domain: " + maindomainCleaned);
-                logger.log(new Exception("DEBUG: " + maindomainCleaned));
+                if (logger != null) {
+                    logger.warning("Found more than one possible plugins for one domain: " + maindomainCleaned);
+                    logger.log(new Exception("DEBUG: " + maindomainCleaned));
+                }
                 continue cleanListLoop;
             }
             final LazyHostPlugin finalplugin = best.get(0);
