@@ -206,7 +206,7 @@ public class TakefileLink extends XFileSharingProBasic {
     protected void checkErrors(final Browser br, final String correctedBR, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         super.checkErrors(br, correctedBR, link, account, checkAll);
         /* 2021-01-11: Some files are "paid files": The user has to pay a fee for that single file to be able to download it. */
-        if (new Regex(correctedBR, "class=\"price\"").matches()) {
+        if (new Regex(correctedBR, "class=\"price\"").patternFind()) {
             throw new AccountRequiredException();
         }
     }
@@ -214,11 +214,12 @@ public class TakefileLink extends XFileSharingProBasic {
     @Override
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo aiNormal;
+        final String takefileVipProperty = "takefileVip";
         try {
             aiNormal = super.fetchAccountInfoWebsite(account);
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                account.removeProperty("takefileVip");
+                account.removeProperty(takefileVipProperty);
             }
             if (br.containsHTML(">\\s*Your IP is banned")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your IP is banned", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -226,7 +227,7 @@ public class TakefileLink extends XFileSharingProBasic {
                 throw e;
             }
         }
-        if (account.getType() == AccountType.PREMIUM && !account.hasProperty("takefileVip")) {
+        if (account.getType() == AccountType.PREMIUM && !account.hasProperty(takefileVipProperty)) {
             return aiNormal;
         } else if ("takefile.link".equals(getHost())) {
             // workaround for old takefile -> vip accounts
@@ -252,13 +253,13 @@ public class TakefileLink extends XFileSharingProBasic {
             }
             if (validUntilStr != null) {
                 logger.info("Account is special VIP premium");
-                account.setProperty("takefileVip", Boolean.TRUE);
+                account.setProperty(takefileVipProperty, Boolean.TRUE);
                 aiVip.setValidUntil(TimeFormatter.getMilliSeconds(validUntilStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), this.br);
                 this.setAccountLimitsByType(account, AccountType.PREMIUM);
                 /* Return result of 2nd check */
                 return aiVip;
             } else {
-                account.removeProperty("takefileVip");
+                account.removeProperty(takefileVipProperty);
                 logger.info("Account is free account");
                 /* Return result of first check */
                 return aiNormal;

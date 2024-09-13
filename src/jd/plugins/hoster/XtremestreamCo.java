@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.config.XtremestreamCoConfig;
@@ -79,7 +80,7 @@ public class XtremestreamCo extends antiDDoSForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://xtremestream.co/";
+        return "https://" + this.getHost();
     }
 
     @Override
@@ -98,12 +99,17 @@ public class XtremestreamCo extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String ext = ".mp4";
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + ".mp4");
+            link.setName(this.getFID(link) + ext);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("Referer", "https://tube.perverzija.com/");
+        String referer = link.getReferrerUrl();
+        if (referer == null || StringUtils.containsIgnoreCase(referer, "tube.perverzija.com")) {
+            referer = "https://tube.perverzija.com/";
+        }
+        br.getHeaders().put("Referer", referer);
         getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -112,7 +118,6 @@ public class XtremestreamCo extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("var video_title = .([^\"]*?)`;").getMatch(0);
-        final String ext = ".mp4";
         if (filename != null) {
             filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
@@ -128,7 +133,12 @@ public class XtremestreamCo extends antiDDoSForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         /* 2022-02-28: They're using an abnormal kind of m3u8 lists which is why a plugin is required in the first place. */
-        br.getPage("/player/load_m3u8_xtremestream.php?data=" + this.getFID(link));
+        String hlsMaster = br.getRegex("var m3u8_loader_url = `(https://[^<>\"']+data=)`;").getMatch(0);
+        if (hlsMaster == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        hlsMaster += this.getFID(link);
+        br.getPage(hlsMaster);
         final List<HlsContainer> qualities = HlsContainer.getHlsQualities(this.br);
         final HlsContainer bestQuality = HlsContainer.findBestVideoByBandwidth(qualities);
         HlsContainer selectedQuality = null;

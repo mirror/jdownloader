@@ -81,8 +81,7 @@ public class TubePerverzijaCom extends PluginForDecrypt {
             }
         }
         if (ret.isEmpty()) {
-            logger.info("Item offline or we failed to find any supported links");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Item offline or plugin failed to find any supported links");
         }
         return ret;
     }
