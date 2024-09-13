@@ -694,7 +694,6 @@ public class AccountInfo extends Property implements AccountTrafficView {
         }
         final LogInterface logger = (multiHostPlugin != null && multiHostPlugin.getLogger() != null) ? multiHostPlugin.getLogger() : LogController.CL();
         final HostPluginController hpc = HostPluginController.getInstance();
-        final HashSet<String> assignedMultiHostPlugins = new HashSet<String>();
         final HashMap<String, MultiHostHost> cleanList = new HashMap<String, MultiHostHost>();
         final HashMap<String, Set<LazyHostPlugin>> mapping = new HashMap<String, Set<LazyHostPlugin>>();
         final HashSet<String> skippedOfflineEntries = new HashSet<String>();
@@ -770,6 +769,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 hits.add(safeHit);
             }
             if (hits.isEmpty()) {
+                /* Items without hits will be logged later */
                 continue mhostLoop;
             }
             for (final LazyHostPlugin hit : hits) {
@@ -779,22 +779,12 @@ public class AccountInfo extends Property implements AccountTrafficView {
                         otherIgnoreEntries.add(siteSupportedName);
                     }
                 }
-                if (assignedMultiHostPlugins.contains(hit.getHost())) {
-                    Set<LazyHostPlugin> plugins = mapping.get(maindomainCleaned);
-                    if (plugins == null) {
-                        plugins = new HashSet<LazyHostPlugin>();
-                        mapping.put(maindomainCleaned, plugins);
-                    }
-                    plugins.add(hit);
-                } else {
-                    assignedMultiHostPlugins.add(hit.getHost());
-                    Set<LazyHostPlugin> plugins = mapping.get(maindomainCleaned);
-                    if (plugins == null) {
-                        plugins = new HashSet<LazyHostPlugin>();
-                        mapping.put(maindomainCleaned, plugins);
-                    }
-                    plugins.add(hit);
+                Set<LazyHostPlugin> plugins = mapping.get(maindomainCleaned);
+                if (plugins == null) {
+                    plugins = new HashSet<LazyHostPlugin>();
+                    mapping.put(maindomainCleaned, plugins);
                 }
+                plugins.add(hit);
             }
         }
         final List<String> finalresults = new ArrayList<String>();
