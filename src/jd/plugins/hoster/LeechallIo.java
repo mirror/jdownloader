@@ -69,7 +69,7 @@ public class LeechallIo extends PluginForHost {
 
     public LeechallIo(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://leechall.io/plans");
+        this.enablePremium("https://" + getHost() + "/plans");
     }
 
     @Override
@@ -79,7 +79,7 @@ public class LeechallIo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://leechall.io/terms";
+        return "https://" + getHost() + "/terms";
     }
 
     @Override
@@ -282,73 +282,69 @@ public class LeechallIo extends PluginForHost {
 
     private Map<String, Object> login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                final Cookies cookies = account.loadCookies("");
-                String access_token = account.getStringProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN);
-                if (cookies != null && access_token != null) {
-                    this.br.setCookies(this.getHost(), cookies);
-                    br.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + access_token);
-                    if (!force) {
-                        /* Do not check cookies */
-                        return null;
-                    }
-                    try {
-                        final Map<String, Object> userinfomap = getUserInfoMap(br);
-                        /* No exception -> Login was successful */
-                        logger.info("Cookie login successful");
-                        account.saveCookies(this.br.getCookies(br.getHost()), "");
-                        return userinfomap;
-                    } catch (final Exception e) {
-                        logger.log(e);
-                        logger.info("Cookie login failed");
-                        br.clearCookies(null);
-                    }
-                }
-                final Map<String, Object> postdata = new HashMap<String, Object>();
-                postdata.put("email", account.getUser());
-                postdata.put("password", account.getPass());
-                /* Get captcha siteKey */
-                final String websiteloginurl = "https://" + this.getHost() + "/login";
-                final Browser brc = br.cloneBrowser();
-                brc.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, websiteloginurl);
-                brc.getPage("https://" + this.getHost() + "/js/chunk-06b4b5f5.38692513.js");
-                final boolean isHCaptcha = true;
-                if (isHCaptcha) {
-                    /* 2024-09-12 */
-                    String hCaptchaSiteKey = brc.getRegex("VUE_APP_HCAPTCHA:\"([^\"]+)").getMatch(0);
-                    if (hCaptchaSiteKey == null) {
-                        logger.warning("Failed to find hCaptchaSiteKey --> Fallback to hardcoded value");
-                        hCaptchaSiteKey = H_CAPTCHA_SITEKEY_STATIC;
-                    }
-                    final String hcaptchaResponse = new CaptchaHelperHostPluginHCaptcha(this, brc, hCaptchaSiteKey).getToken();
-                    postdata.put("h-captcha-response", hcaptchaResponse);
-                } else {
-                    /* Legacy */
-                    String reCaptchaSitekey = brc.getRegex("sitekey\\s*:\"([^\"]+)").getMatch(0);
-                    if (reCaptchaSitekey == null) {
-                        logger.warning("Failed to find reCaptchaSitekey --> Fallback to hardcoded value");
-                        reCaptchaSitekey = RECAPTCHA_SITEKEY_STATIC;
-                    }
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brc, reCaptchaSitekey).getToken();
-                    postdata.put("g-recaptcha-response", recaptchaV2Response);
-                }
-                br.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, websiteloginurl);
-                final Map<String, Object> resp = this.accessAPI(null, "/auth/login", postdata, true);
-                access_token = (String) resp.get("access_token");
-                if (StringUtils.isEmpty(access_token)) {
-                    /* This should never happen. */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.setCookie(br.getHost(), "access_token", access_token);
-                account.saveCookies(this.br.getCookies(br.getHost()), "");
+            final Cookies cookies = account.loadCookies("");
+            String access_token = account.getStringProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN);
+            if (cookies != null && access_token != null) {
+                this.br.setCookies(this.getHost(), cookies);
                 br.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + access_token);
-                account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN, access_token);
-                account.setProperty(PROPERTY_ACCOUNT_RECAPTCHA_SITEKEY, RECAPTCHA_SITEKEY_STATIC);
-                return resp;
-            } catch (final PluginException e) {
-                account.clearCookies("");
-                throw e;
+                if (!force) {
+                    /* Do not check cookies */
+                    return null;
+                }
+                try {
+                    final Map<String, Object> userinfomap = getUserInfoMap(br);
+                    /* No exception -> Login was successful */
+                    logger.info("Cookie login successful");
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return userinfomap;
+                } catch (final Exception e) {
+                    logger.log(e);
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
+                    account.clearCookies("");
+                }
             }
+            final Map<String, Object> postdata = new HashMap<String, Object>();
+            postdata.put("email", account.getUser());
+            postdata.put("password", account.getPass());
+            /* Get captcha siteKey */
+            final String websiteloginurl = "https://" + this.getHost() + "/login";
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, websiteloginurl);
+            brc.getPage("https://" + this.getHost() + "/js/chunk-06b4b5f5.38692513.js");
+            final boolean isHCaptcha = true;
+            if (isHCaptcha) {
+                /* 2024-09-12 */
+                String hCaptchaSiteKey = brc.getRegex("VUE_APP_HCAPTCHA:\"([^\"]+)").getMatch(0);
+                if (hCaptchaSiteKey == null) {
+                    logger.warning("Failed to find hCaptchaSiteKey --> Fallback to hardcoded value: " + H_CAPTCHA_SITEKEY_STATIC);
+                    hCaptchaSiteKey = H_CAPTCHA_SITEKEY_STATIC;
+                }
+                final String hcaptchaResponse = new CaptchaHelperHostPluginHCaptcha(this, brc, hCaptchaSiteKey).getToken();
+                postdata.put("h-captcha-response", hcaptchaResponse);
+            } else {
+                /* Legacy */
+                String reCaptchaSitekey = brc.getRegex("sitekey\\s*:\"([^\"]+)").getMatch(0);
+                if (reCaptchaSitekey == null) {
+                    logger.warning("Failed to find reCaptchaSitekey --> Fallback to hardcoded value: " + RECAPTCHA_SITEKEY_STATIC);
+                    reCaptchaSitekey = RECAPTCHA_SITEKEY_STATIC;
+                }
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brc, reCaptchaSitekey).getToken();
+                postdata.put("g-recaptcha-response", recaptchaV2Response);
+            }
+            br.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, websiteloginurl);
+            final Map<String, Object> resp = this.accessAPI(null, "/auth/login", postdata, true);
+            access_token = (String) resp.get("access_token");
+            if (StringUtils.isEmpty(access_token)) {
+                /* This should never happen. */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.setCookie(br.getHost(), "access_token", access_token);
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            br.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + access_token);
+            account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN, access_token);
+            account.setProperty(PROPERTY_ACCOUNT_RECAPTCHA_SITEKEY, RECAPTCHA_SITEKEY_STATIC);
+            return resp;
         }
     }
 

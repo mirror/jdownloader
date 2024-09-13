@@ -15,16 +15,20 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -183,10 +187,25 @@ public class LinkgenVip extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         login(account, true);
         final AccountInfo ai = new AccountInfo();
-        final Regex expireRegex = br.getRegex("(\\d+) Days?\\s*(\\d+) Hours?");
+        long premiumValidUntilTimestamp = -1;
+        final Browser brc = br.cloneBrowser();
+        brc.getPage("/profile.php");
+        final String expiredateStr = brc.getRegex("(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+        if (expiredateStr != null) {
+            premiumValidUntilTimestamp = TimeFormatter.getMilliSeconds(expiredateStr, "yyyy-MM-ss HH:mm:ss", Locale.CANADA);
+        } else {
+            logger.warning("Failed to find precise expire date");
+            final Regex expireRegex = br.getRegex("(\\d+) Days?\\s*(\\d+) Hours?");
+            if (expireRegex.patternFind()) {
+                final int days = Integer.parseInt(expireRegex.getMatch(0));
+                final int hours = Integer.parseInt(expireRegex.getMatch(1));
+                final long validMilliseconds = (days * 24 * 60 * 60 * 1000) + (hours * 60 * 1000);
+                premiumValidUntilTimestamp = System.currentTimeMillis() + validMilliseconds;
+            }
+        }
         final Regex linksUsedDailyRegex = br.getRegex("Links Today:\\s*<[^>]*>(\\d+)\\s*/\\s*(\\d+)");
         final Regex trafficUsedDailyRegex = br.getRegex("Used Today:\\s*<[^>]*>([^/<]+)/([^<]+)</font>");
-        if (!expireRegex.patternFind()) {
+        if (premiumValidUntilTimestamp == -1) {
             /* No expire time found -> Assume that this is an expired account or it has never been a premium account. */
             ai.setExpired(true);
             return ai;
@@ -201,16 +220,13 @@ public class LinkgenVip extends PluginForHost {
         if (dailyLinksUsed >= dailyLinksMax) {
             throw new AccountUnavailableException("Reached max daily links limit", 5 * 60 * 1000);
         }
-        final int days = Integer.parseInt(expireRegex.getMatch(0));
-        final int hours = Integer.parseInt(expireRegex.getMatch(1));
-        final long validMilliseconds = (days * 24 * 60 * 60 * 1000) + (hours * 60 * 1000);
         String statusText = account.getType().getLabel();
         statusText += " | Daily links used: " + dailyLinksUsed + "/" + dailyLinksMax;
         final long trafficUsed = SizeFormatter.getSize(trafficUsedDailyRegex.getMatch(0));
         final long trafficMax = SizeFormatter.getSize(trafficUsedDailyRegex.getMatch(1));
         ai.setTrafficLeft(trafficMax - trafficUsed);
         ai.setTrafficMax(trafficMax);
-        ai.setValidUntil(System.currentTimeMillis() + validMilliseconds, br);
+        ai.setValidUntil(premiumValidUntilTimestamp, br);
         ai.setStatus(statusText);
         br.getPage("/host.php");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
@@ -226,13 +242,27 @@ public class LinkgenVip extends PluginForHost {
             }
             host = host.trim();
             // TODO: Find- and set individual host limits
-            // final String[] allRows = new Regex(html, "<td>([^<]+)</td>").getColumn(0);
+            final String[] allRows = new Regex(html, "<td>([^<]+)</td>").getColumn(0);
             // final boolean isOnline = new Regex(html, "Online\\s*<").patternFind();
             final boolean isOffline = new Regex(html, "Offline\\s*<").patternFind();
             // final boolean isUnstable = new Regex(html, "Unstable\\s*<").patternFind();
             if (isOffline) {
                 logger.info("Skipping offline entry: " + host);
                 continue;
+            }
+            if (allRows != null && allRows.length == 4) {
+                final String maxSizeLimitStr = allRows[2].trim();
+                final String maxTrafficDailyStr = allRows[3].trim();
+                if (!maxSizeLimitStr.equalsIgnoreCase("Unlimited")) {
+                    // TODO
+                } else {
+                    // TODO
+                }
+                if (!maxTrafficDailyStr.equalsIgnoreCase("Unlimited")) {
+                    // TODO
+                } else {
+                    // TODO
+                }
             }
             supportedHosts.add(host);
         }
@@ -254,9 +284,10 @@ public class LinkgenVip extends PluginForHost {
                     return;
                 }
                 br.getPage("https://" + this.getHost() + targetPath);
+                handleLoginStep2(account);
                 if (isLoggedin(br)) {
                     logger.info("Cookie login successful");
-                    account.saveCookies(this.br.getCookies(br.getHost()), "");
+                    account.saveCookies(br.getCookies(br.getHost()), "");
                     return;
                 } else {
                     logger.info("Cookie login failed");
@@ -264,20 +295,20 @@ public class LinkgenVip extends PluginForHost {
                     account.clearCookies("");
                 }
             }
+            logger.info("Performing full login");
             br.getPage("https://" + this.getHost() + "/login.php");
             final Form loginform = br.getFormbyProperty("name", "UsernameLoginForm");
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find login form");
+            }
             loginform.put("username", Encoding.urlEncode(account.getUser()));
             loginform.put("password", Encoding.urlEncode(account.getPass()));
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            /* Setting this cookie here may prevent login step number two thus speeding up login process. */
+            br.setCookie(br.getHost(), "username", JDHash.getMD5(account.getUser()));
             br.submitForm(loginform);
-            final Form loginform2 = br.getFormbyActionRegex("signin.php");
-            if (loginform2 != null) {
-                /* Strange 2nd step - "Please Enter Username To Login" */
-                logger.info("Performing 2nd login step");
-                loginform2.put("secure", Encoding.urlEncode(account.getUser()));
-                br.submitForm(loginform2);
-            }
+            handleLoginStep2(account);
             if (!isLoggedin(br)) {
                 final String loginErrormessage = br.getRegex("class=\"error\"[^>]*>\\s*<p><b>([^<]+)</b></p>").getMatch(0);
                 if (loginErrormessage != null) {
@@ -288,6 +319,23 @@ public class LinkgenVip extends PluginForHost {
             }
             br.getPage(targetPath);
             account.saveCookies(br.getCookies(br.getHost()), "");
+        }
+    }
+
+    /**
+     * Handles optional login step where website randomly asks user to enter his username even though that is already sent in the first
+     * login form.
+     */
+    private void handleLoginStep2(final Account account) throws IOException {
+        final Form loginform2 = br.getFormbyActionRegex("signin.php");
+        if (loginform2 != null) {
+            /**
+             * Strange 2nd step - "Please Enter Username To Login" </br>
+             * This might only happen on first account login ever(?)
+             */
+            logger.info("Performing 2nd login step");
+            loginform2.put("secure", Encoding.urlEncode(account.getUser()));
+            br.submitForm(loginform2);
         }
     }
 

@@ -104,20 +104,21 @@ public class MultiHosterManagement {
             for (final Object ob : acc) {
                 final Map<String, UnavailableHost> unavailableMap = db.get(ob);
                 final UnavailableHost nue = unavailableMap != null ? (UnavailableHost) unavailableMap.get(downloadLink.getHost()) : null;
-                if (nue != null) {
-                    final Long lastUnavailable = nue.getErrorTimeout();
-                    final String errorReason = nue.getErrorReason();
-                    if (lastUnavailable == null) {
-                        // never can download from
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "Not possible to download from " + downloadLink.getHost());
-                    } else if (Time.systemIndependentCurrentJVMTimeMillis() < lastUnavailable) {
-                        final long wait = lastUnavailable - Time.systemIndependentCurrentJVMTimeMillis();
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporarily unavailable by this MultiHoster Provider: " + errorReason != null ? errorReason : "via " + getHost(), wait);
-                    } else {
-                        unavailableMap.remove(downloadLink.getHost());
-                        if (unavailableMap.size() == 0) {
-                            db.remove(acc);
-                        }
+                if (nue == null) {
+                    continue;
+                }
+                final Long lastUnavailable = nue.getErrorTimeout();
+                final String errorReason = nue.getErrorReason();
+                if (lastUnavailable == null) {
+                    // never can download from
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Not possible to download from " + downloadLink.getHost());
+                } else if (Time.systemIndependentCurrentJVMTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - Time.systemIndependentCurrentJVMTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporarily unavailable by this MultiHoster Provider: " + errorReason != null ? errorReason : "via " + getHost(), wait);
+                } else {
+                    unavailableMap.remove(downloadLink.getHost());
+                    if (unavailableMap.size() == 0) {
+                        db.remove(acc);
                     }
                 }
             }

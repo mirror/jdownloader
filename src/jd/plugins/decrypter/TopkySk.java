@@ -23,7 +23,11 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.YoutubeDashV2;
 
 /**
@@ -69,9 +73,12 @@ public class TopkySk extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink cryptedLink, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.clearCookies(getHost());
-        final String addedurl = cryptedLink.toString();
+        final String contenturl = cryptedLink.getCryptedUrl();
         br.setFollowRedirects(true);
-        br.getPage(addedurl);
+        br.getPage(contenturl);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // extract img.zoznam.sk like vids
         String[][] links = br.getRegex("fo\\.addVariable[(]\"file\", \"(.*?)\"[)]").getMatches();
         if (null != links && 0 < links.length) {
@@ -100,16 +107,21 @@ public class TopkySk extends PluginForDecrypt {
         // extract topky.sk http vids
         final String finallink = br.getRegex("<source src=\"(http[^<>\"]*?)\"").getMatch(0);
         if (finallink != null) {
-            ret.add(createDownloadlink("directhttp://" + finallink));
+            ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(finallink)));
         }
         /* 2022-06-14: Selfhosted hls */
         final String[] hlsplaylists = br.getRegex("(https?://img\\.topky\\.sk/video/\\d+/master\\.m3u8)").getColumn(0);
         for (final String hlsplaylist : hlsplaylists) {
             ret.add(createDownloadlink(hlsplaylist));
         }
-        if (ret == null || ret.size() == 0) {
-            logger.info("Found no downloadable content for link: " + addedurl);
+        if (ret.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String urlSlug = br.getURL().substring(br.getURL().lastIndexOf("/") + 1);
+        final String title = urlSlug.replace("-", " ").trim();
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(title);
+        fp.addLinks(ret);
         return ret;
     }
 
