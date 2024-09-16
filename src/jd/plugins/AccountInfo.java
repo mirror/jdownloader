@@ -671,26 +671,10 @@ public class AccountInfo extends Property implements AccountTrafficView {
         return setMultiHostSupportV2(multiHostPlugin, mhosts, pluginFinder);
     }
 
-    /** Temp legacy/testing method */
-    @Deprecated
-    public List<String> setMultiHostSupporLegacy(final PluginForHost multiHostPlugin, final List<MultiHostHost> multiHostSupportList, final PluginFinder pluginFinder) {
-        final List<String> domains = new ArrayList<String>();
-        for (final MultiHostHost mhost : multiHostSupportList) {
-            if (mhost.getDomains() == null) {
-                continue;
-            }
-            domains.addAll(mhost.getDomains());
-        }
-        return setMultiHostSupport(multiHostPlugin, domains, pluginFinder);
-    }
-
     public List<String> setMultiHostSupportV2(final PluginForHost multiHostPlugin, final List<MultiHostHost> multiHostSupportList, final PluginFinder pluginFinder) {
         if (multiHostSupportList == null || multiHostSupportList.size() == 0) {
             this.removeProperty(PROPERTY_MULTIHOST_SUPPORT);
             return null;
-        }
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            return setMultiHostSupporLegacy(multiHostPlugin, multiHostSupportList, pluginFinder);
         }
         final LogInterface logger = (multiHostPlugin != null && multiHostPlugin.getLogger() != null) ? multiHostPlugin.getLogger() : LogController.CL();
         final HostPluginController hpc = HostPluginController.getInstance();
@@ -707,18 +691,18 @@ public class AccountInfo extends Property implements AccountTrafficView {
             final List<String> cleanedDomains = new ArrayList<String>();
             String maindomainCleaned = null;
             /* Clean domain entries and collect non tld items */
-            for (final String domain : domains) {
+            cleanDomains: for (final String domain : domains) {
                 if (domain == null) {
-                    continue;
+                    continue cleanDomains;
                 }
                 final String domainCleaned = domain.toLowerCase(Locale.ENGLISH).replaceAll("\\s+", "");
                 if (StringUtils.isEmpty(domainCleaned)) {
                     /* Skip null/empty values */
-                    continue;
+                    continue cleanDomains;
                 } else if (new Regex(domainCleaned, patternInvalid).patternMatches()) {
                     /* ignore/blacklist/skip common phrases, else we get too many false positives */
                     skippedInvalidEntries.add(domainCleaned);
-                    continue;
+                    continue cleanDomains;
                 }
                 if (maindomainCleaned == null) {
                     maindomainCleaned = domainCleaned;
@@ -788,10 +772,13 @@ public class AccountInfo extends Property implements AccountTrafficView {
             }
         }
         final List<String> finalresults = new ArrayList<String>();
+        /* TODO: Make use of this */
+        final List<MultiHostHost> finalresults2 = new ArrayList<MultiHostHost>();
         final HashSet<String> unassignedMultiHostSupport = new HashSet<String>();
         cleanListLoop: for (final Entry<String, MultiHostHost> entry : cleanList.entrySet()) {
             final String maindomainCleaned = entry.getKey();
             final MultiHostHost mhost = entry.getValue();
+            finalresults2.add(mhost);
             final Set<LazyHostPlugin> plugins = mapping.get(maindomainCleaned);
             if (plugins == null) {
                 mhost.setStatus(MultihosterHostStatus.DEACTIVATED_JDOWNLOADER_UNSUPPORTED);
