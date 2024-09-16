@@ -39,11 +39,13 @@ public class MultiHostHost implements Storable {
     private Boolean               resume                          = null;
     private String                statusText                      = null;
     private MultihosterHostStatus status                          = null;
+    private static final long     MAX_UNAVAILABLE_TIME            = 5 * 60 * 1000;
 
     public MultiHostHost() {
     }
 
     public MultiHostHost(final String domain) {
+        this.name = domain;
         this.addDomain(domain);
     }
 
@@ -145,11 +147,6 @@ public class MultiHostHost implements Storable {
 
     public void setTrafficCalculationFactorPercent(short num) {
         this.trafficCalculationFactorPercent = num;
-    }
-
-    /** Traffic usage factor e.g. 3 -> 300%. */
-    public void setTrafficCalculationFactor(short num) {
-        this.trafficCalculationFactorPercent = (short) (100 * num);
     }
 
     public boolean isUnlimitedLinks() {
@@ -261,7 +258,7 @@ public class MultiHostHost implements Storable {
     }
 
     public void setUnavailableTime(long milliseconds) {
-        milliseconds = Math.min(milliseconds, 5 * 60 * 1000);
+        milliseconds = Math.min(milliseconds, MAX_UNAVAILABLE_TIME);
         this.unavailableUntilTimestamp = Time.systemIndependentCurrentJVMTimeMillis() + milliseconds;
     }
 
