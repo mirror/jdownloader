@@ -443,7 +443,11 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
             final URLConnectionAdapter connection = br.openHeadConnection(v.getHead());
             try {
                 if (connection.getResponseCode() == 200) {
-                    link.setDownloadSize(connection.getCompleteContentLength());
+                    if (connection.isContentDecoded()) {
+                        link.setDownloadSize(connection.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(connection.getCompleteContentLength());
+                    }
                 } else {
                     br.followConnection(true);
                     return false;
