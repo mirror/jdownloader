@@ -440,9 +440,8 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
             }
         }
         if (link.getKnownDownloadSize() <= 0 && !hostConfig.isImproveCrawlerSpeedBySkippingSizeCheck()) {
-            URLConnectionAdapter connection = null;
+            final URLConnectionAdapter connection = br.openHeadConnection(v.getHead());
             try {
-                connection = br.openHeadConnection(v.getHead());
                 if (connection.getResponseCode() == 200) {
                     link.setDownloadSize(connection.getCompleteContentLength());
                 } else {
@@ -450,9 +449,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                     return false;
                 }
             } finally {
-                if (connection != null) {
-                    connection.disconnect();
-                }
+                connection.disconnect();
             }
         }
         return true;
