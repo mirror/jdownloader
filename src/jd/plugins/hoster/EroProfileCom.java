@@ -16,7 +16,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -28,6 +31,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -41,6 +45,15 @@ public class EroProfileCom extends PluginForHost {
     public EroProfileCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        br.setCookie(getHost(), "lang", "en");
+        br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
+        return br;
     }
 
     @Override
@@ -74,7 +87,7 @@ public class EroProfileCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.eroprofile.com/p/help/termsOfUse";
+        return "https://www." + getHost() + "/p/help/termsOfUse";
     }
 
     private static final String VIDEOLINK = "(?i)https?://(www\\.)?eroprofile\\.com/m/videos/view/[A-Za-z0-9\\-_]+";
@@ -101,9 +114,7 @@ public class EroProfileCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        br.setFollowRedirects(true);
-        br.setReadTimeout(3 * 60 * 1000);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (isAccountRequired(br)) {
             return AvailableStatus.TRUE;
         }
@@ -193,41 +204,63 @@ public class EroProfileCom extends PluginForHost {
         dl.startDownload();
     }
 
-    public void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Browser br, final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
-                    br.setCookies(account.getHoster(), cookies);
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                br.setCookies(account.getHoster(), cookies);
+                if (!validateCookies) {
                     return;
                 }
-                br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
-                br.setCookie("https://eroprofile.com/", "lang", "en");
-                br.setFollowRedirects(false);
-                br.getHeaders().put("X_REQUESTED_WITH", "XMLHttpRequest");
-                br.postPage("https://www." + account.getHoster() + "/ajax_v1.php", "p=profile&a=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (!isLoggedin(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.getPage("https://www." + getHost() + "/");
+                if (this.isLoggedin(br)) {
+                    logger.info("Cookie login successful");
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    account.clearCookies("");
                 }
-                account.saveCookies(br.getCookies(br.getHost()), "");
-            } catch (final PluginException e) {
-                account.clearCookies("");
-                throw e;
             }
+            logger.info("Performing full login");
+            br.getPage("https://www." + getHost() + "/");
+            final UrlQuery query = new UrlQuery();
+            query.add("p", "profile");
+            query.add("a", "login");
+            query.add("username", Encoding.urlEncode(account.getUser()));
+            query.add("password", Encoding.urlEncode(account.getPass()));
+            br.postPage("/ajax_v1.php", query);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Number success = (Number) entries.get("success");
+            final String accountInvalidErrormessage = (String) entries.get("alert");
+            if (accountInvalidErrormessage != null) {
+                throw new AccountInvalidException(accountInvalidErrormessage);
+            } else if (success == null || success.intValue() != 1) {
+                throw new AccountInvalidException();
+            }
+            br.getPage("/");
+            if (!isLoggedin(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
     private boolean isLoggedin(final Browser br) {
-        return br.getCookie(br.getHost(), "memberID", Cookies.NOTDELETEDPATTERN) != null;
+        // return br.getCookie(br.getHost(), "member_id", Cookies.NOTDELETEDPATTERN) != null;
+        if (br.containsHTML("pageHead\\.logout\\(\\)")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
         login(br, account, true);
+        final AccountInfo ai = new AccountInfo();
         ai.setUnlimitedTraffic();
-        ai.setStatus("Free Account");
         account.setType(AccountType.FREE);
         return ai;
     }
@@ -236,18 +269,17 @@ public class EroProfileCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(br, account, false);
-        br.setFollowRedirects(false);
         requestFileInformation(link);
         handleDownload(link);
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     public static String getFilename(Browser br) throws PluginException {
-        String filename = br.getRegex("<tr><th>Title:</th><td>([^<>\"]*?)</td></tr>").getMatch(0);
+        String filename = br.getRegex("<tr><th>\\s*Title:\\s*</th><td>([^<>\"]*?)</td></tr>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(?:EroProfile\\s*-\\s*)?([^<>\"]*?)(?:\\s*-\\s*EroProfile\\s*)?</title>").getMatch(0);
         }
@@ -259,7 +291,7 @@ public class EroProfileCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override

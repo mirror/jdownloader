@@ -47,6 +47,10 @@ public interface ArdConfigInterface extends PluginConfigInterface {
         public String getAudioLanguagePriorityString_label() {
             return "Audio language priority string";
         }
+
+        public String getHlsCrawlMode_label() {
+            return "HLS crawl mode";
+        }
     }
 
     public static final ArdConfigInterface.TRANSLATION TRANSLATION = new TRANSLATION();
@@ -177,7 +181,13 @@ public interface ArdConfigInterface extends PluginConfigInterface {
     void setGrabHLS1080pVideoEnabled(boolean b);
 
     @DefaultBooleanValue(true)
-    @Order(81)
+    @Order(82)
+    boolean isGrabHLS1440pVideoEnabled();
+
+    void setGrabHLS1440pVideoEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
+    @Order(83)
     boolean isGrabHLS2160pVideoEnabled();
 
     void setGrabHLS2160pVideoEnabled(boolean b);
