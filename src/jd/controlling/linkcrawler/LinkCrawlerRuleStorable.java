@@ -23,6 +23,7 @@ public class LinkCrawlerRuleStorable extends LinkCrawlerRule implements Storable
         this.setDeepPattern(rule.getDeepPattern());
         this.setRewriteReplaceWith(rule.getRewriteReplaceWith());
         this.setCookies(rule.getCookies());
+        this.setHeaders(rule.getHeaders());
         this.setPasswordPattern(rule.getPasswordPattern());
         this.setUpdateCookies(rule.isUpdateCookies());
         this.setLogging(rule.isLogging());

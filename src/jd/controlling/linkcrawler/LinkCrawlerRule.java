@@ -24,6 +24,7 @@ public class LinkCrawlerRule {
 
     protected boolean        enabled       = true;
     protected List<String[]> cookies       = null;
+    protected List<String[]> headers       = null;
     protected boolean        updateCookies = false;
     protected boolean        logging       = false;
 
@@ -49,6 +50,14 @@ public class LinkCrawlerRule {
 
     public void setCookies(List<String[]> cookies) {
         this.cookies = cookies;
+    }
+
+    public List<String[]> getHeaders() {
+        return headers;
+    }
+
+    public void setHeaders(List<String[]> headers) {
+        this.headers = headers;
     }
 
     protected int maxDecryptDepth = 0;
@@ -118,43 +127,79 @@ public class LinkCrawlerRule {
         return false;
     }
 
+    public void applyCookiesAndHeaders(final Browser br, final String url, final boolean onlyOnPatternMatch) {
+        applyCookies(br, url, onlyOnPatternMatch);
+        applyHeaders(br, url);
+    }
+
     public boolean applyCookies(final Browser br, final String url, final boolean onlyOnPatternMatch) {
+        if (onlyOnPatternMatch && !matches(url)) {
+            return false;
+        }
+        final List<String[]> cookies = getCookies();
+        if (cookies == null || cookies.size() == 0) {
+            return false;
+        }
         int cookiesSet = 0;
-        if (!onlyOnPatternMatch || matches(url)) {
-            final List<String[]> cookies = getCookies();
-            if (cookies != null && cookies.size() > 0) {
-                for (final String cookie[] : cookies) {
-                    if (cookie != null) {
-                        switch (cookie.length) {
-                        case 1:
-                            br.setCookie(url, cookie[0], null);
-                            cookiesSet++;
-                            break;
-                        case 2:
-                            br.setCookie(url, cookie[0], cookie[1]);
-                            cookiesSet++;
-                            break;
-                        case 3:
-                            try {
-                                if (cookie[2] != null && url.matches(cookie[2])) {
-                                    br.setCookie(url, cookie[0], cookie[1]);
-                                    cookiesSet++;
-                                }
-                            } catch (Exception e) {
-                                final LogInterface logger = br.getLogger();
-                                if (logger != null) {
-                                    logger.log(e);
-                                }
-                            }
-                            break;
-                        default:
-                            break;
-                        }
+        for (final String cookie[] : cookies) {
+            if (cookie == null) {
+                continue;
+            }
+            switch (cookie.length) {
+            case 1:
+                br.setCookie(url, cookie[0], null);
+                cookiesSet++;
+                break;
+            case 2:
+                br.setCookie(url, cookie[0], cookie[1]);
+                cookiesSet++;
+                break;
+            case 3:
+                try {
+                    if (cookie[2] != null && url.matches(cookie[2])) {
+                        br.setCookie(url, cookie[0], cookie[1]);
+                        cookiesSet++;
+                    }
+                } catch (final Exception e) {
+                    final LogInterface logger = br.getLogger();
+                    if (logger != null) {
+                        logger.log(e);
                     }
                 }
+                break;
+            default:
+                break;
             }
         }
-        return cookiesSet > 0;
+        if (cookiesSet > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean applyHeaders(final Browser br, final String url) {
+        final List<String[]> headers = getCookies();
+        if (headers == null || headers.size() == 0) {
+            return false;
+        }
+        int headersSet = 0;
+        for (final String header[] : headers) {
+            if (header == null) {
+                continue;
+            } else if (header.length != 2) {
+                continue;
+            } else if (header[0] == null) {
+                continue;
+            }
+            br.getHeaders().put(header[0], header[1]);
+            headersSet++;
+        }
+        if (headersSet > 0) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public boolean matches(final String input) {
