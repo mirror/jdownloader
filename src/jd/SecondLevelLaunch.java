@@ -983,7 +983,11 @@ public class SecondLevelLaunch {
 
                     @Override
                     public Thread edtRun() {
-                        return JDGui.getInstance().getInitThread();
+                        final JDGui ret = JDGui.init();
+                        if (ret == null) {
+                            return null;
+                        }
+                        return ret.getInitThread();
                     }
                 }.getReturnValue();
                 if (initThread == null || initThread.isAlive() == false) {

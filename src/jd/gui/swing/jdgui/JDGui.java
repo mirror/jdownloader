@@ -179,7 +179,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         LINKGRABBER,
     }
 
-    private static JDGui INSTANCE;
+    private static volatile JDGui INSTANCE;
 
     /**
      * Factorymethode. Erzeugt eine INstanc der Gui oder gibt eine bereits existierende zurück
@@ -1114,9 +1114,6 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         return false;
     }
 
-    public static void main(String[] args) {
-    }
-
     private void layoutComponents() {
         final JPanel contentPane = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]0[shrink]"));
         contentPane.add(this.mainTabbedPane);
@@ -1691,18 +1688,18 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         return pattern;
     }
 
-    public static void init() {
-        if (JDGui.INSTANCE == null) {
-            JDGui.INSTANCE = new EDTHelper<JDGui>() {
-                @Override
-                public JDGui edtRun() {
-                    try {
-                        return new JDGui();
-                    } finally {
-                    }
+    public static JDGui init() {
+        return new EDTHelper<JDGui>() {
+            @Override
+            public JDGui edtRun() {
+                JDGui ret = JDGui.INSTANCE;
+                if (ret == null) {
+                    ret = new JDGui();
+                    JDGui.INSTANCE = ret;
                 }
-            }.getReturnValue();
-        }
+                return ret;
+            }
+        }.getReturnValue();
     }
 
     /**
