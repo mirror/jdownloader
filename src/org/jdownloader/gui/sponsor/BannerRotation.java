@@ -18,33 +18,6 @@ import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.ValidationException;
-import org.appwork.storage.config.events.GenericConfigEventListener;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.swing.components.ExtMergedIcon;
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.event.queue.Queue;
-import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.DomainInfo;
-import org.jdownloader.controlling.download.DownloadControllerListener;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
-import org.jdownloader.premium.OpenURLAction;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
-
 import jd.SecondLevelLaunch;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
@@ -77,12 +50,39 @@ import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
 import jd.plugins.PluginForHost;
 
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.components.ExtMergedIcon;
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.Queue;
+import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.DomainInfo;
+import org.jdownloader.controlling.download.DownloadControllerListener;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
+import org.jdownloader.premium.OpenURLAction;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
+
 public class BannerRotation implements Sponsor, AccountControllerListener {
     private final List<AvailableBanner> allBanners = new CopyOnWriteArrayList<AvailableBanner>();
     private final Queue                 queue      = new Queue("Banner") {
-                                                       public void killQueue() {
-                                                       };
-                                                   };
+        public void killQueue() {
+        };
+    };
 
     private class AvailableBanner implements DownloadControllerListener, LinkCollectorListener, DownloadWatchdogListener, AccountControllerListener {
         private volatile boolean    hasDownloadLinks        = false;
@@ -118,16 +118,20 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
             return domainInfo.getTld();
         }
 
+        protected String getIconHost() {
+            return getHost();
+        }
+
         public Icon getIcon() {
             return getIcon(TranslationFactory.getDesiredLanguage());
         }
 
         public Icon getIcon(String lng) {
             if (StringUtils.isEmpty(lng)) {
-                final String iconKey = "banner/" + getHost() + "_en";
+                final String iconKey = "banner/" + getIconHost() + "_en";
                 return loadIcon(iconKey);
             } else {
-                final String iconKey = "banner/" + getHost() + "_" + lng;
+                final String iconKey = "banner/" + getIconHost() + "_" + lng;
                 final Icon ret = loadIcon(iconKey);
                 if (ret != null) {
                     return ret;
@@ -639,6 +643,10 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         final ArrayList<AvailableBanner> rotation = new ArrayList<AvailableBanner>();
         final ArrayList<AvailableBanner> fallback = new ArrayList<AvailableBanner>();
         for (final AvailableBanner banner : getAllBanners()) {
+            if (banner.getIcon() == null) {
+                // cannot be shown, skip
+                continue;
+            }
             if (banner.hasChanges()) {
                 // required to process changes
             }
@@ -730,7 +738,12 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
                         });
                         isBannerEnabled.set(CFG_GUI.BANNER_ENABLED.isEnabled());
                         getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("rapidgator.net")));
-                        getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("k2s.cc")));
+                        getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("k2s.cc")) {
+                            @Override
+                            protected String getIconHost() {
+                                return "keep2share.cc";
+                            };
+                        });
                         getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("ddownload.com")));
                         getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("filejoker.net")));
                         updateDelayer.resetAndStart();
@@ -845,8 +858,8 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
     @Override
     public Rectangle paint(Graphics2D g) {
         final Banner banner = this.current;
-        if (isVisible() && isEnabled() && banner != null && banner.icon != null) {
-            final Icon icon = banner.getIcon();
+        final Icon icon;
+        if (isVisible() && isEnabled() && banner != null && (icon = banner.icon) != null) {
             icon.paintIcon(pane, g, pane.getWidth() - icon.getIconWidth() - 2, 25 - icon.getIconHeight() + 2);
             final Rectangle bannerRectangle = new Rectangle(pane.getWidth() - icon.getIconWidth() - 2, 25 - icon.getIconHeight(), icon.getIconWidth(), icon.getIconHeight() + 2);
             return bannerRectangle;
