@@ -137,21 +137,25 @@ public class AkiHCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String publicVideoID = this.getFID(link);
-        Browser brc = null;
-        br.getPage("https://aki-h.com/video/" + videoID + "/");
-        brc = br.cloneBrowser();
-        brc.getPage("https://v.aki-h.com/v/" + videoID);
-        brc.getPage("https://v.aki-h.com/f/" + publicVideoID);
-        final String v = brc.getRegex("stream/(v\\d*)/[^\"]*").getMatch(0);
-        final String streamID = brc.getRegex("stream/v\\d*/([^\"]*)").getMatch(0);
-        brc.getPage("https://aki-h.stream/" + v + "/" + streamID);
-        brc = brc.cloneBrowser();
-        brc.getHeaders().put(new HTTPHeader("Accept", "*/*"));
-        if ("v2".equals(v)) {
-            brc.getPage("https://aki-h.stream/file2/" + streamID + "/");
-        } else {
-            brc.getPage("https://aki-h.stream/file/" + streamID + "/");
+        final String mainDomain = "aki-h.com";
+        br.getPage("https://" + mainDomain + "/video/" + videoID + "/");
+        final Browser brc = br.cloneBrowser();
+        brc.getPage("https://v." + mainDomain + "/v/" + videoID);
+        brc.getPage("https://v." + mainDomain + "/f/" + publicVideoID);
+        final String v_url = brc.getRegex("\"(https?://[^/]+/v2?/[A-Za-z0-9]+)\"").getMatch(0);
+        if (v_url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        String file_url = v_url.replaceFirst("/v", "/file");
+        if (!file_url.endsWith("/")) {
+            /* Very important otherwise we will run into http response 404 */
+            file_url += "/";
+        }
+        // final String streamID = brc.getRegex("stream/v2?/([^\"]*)").getMatch(0);
+        brc.getPage(v_url);
+        /* Without this header, we will get html response "null". */
+        brc.getHeaders().put(new HTTPHeader("Accept", "*/*"));
+        brc.getPage(file_url);
         final List<HlsContainer> containers = HlsContainer.getHlsQualities(brc);
         if (containers == null || containers.size() == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
