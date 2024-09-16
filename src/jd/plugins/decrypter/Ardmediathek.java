@@ -34,6 +34,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.ArdConfigInterface;
+import org.jdownloader.plugins.components.config.ArdConfigInterface.HlsCrawlMode;
 import org.jdownloader.plugins.components.config.ArdConfigInterface.SubtitleType;
 import org.jdownloader.plugins.components.config.DasersteConfig;
 import org.jdownloader.plugins.components.config.EurovisionConfig;
@@ -538,20 +539,24 @@ public class Ardmediathek extends PluginForDecrypt {
                 break;
             }
         }
+        final HlsCrawlMode mode = cfg.getHlsCrawlMode();
         // hlsMaster =
         // "https://wdradaptiv-vh.akamaihd.net/i/medp/ondemand/weltweit/fsk0/232/2326527/,2326527_32403893,2326527_32403894,2326527_32403895,2326527_32403891,2326527_32403896,2326527_32403892,.mp4.csmil/master.m3u8";
         String http_url_audio = br.getRegex("((?:https?:)?//[^<>\"]+\\.mp3)\"").getMatch(0);
         if (hlsMaster == null && http_url_audio == null && foundQualitiesMap.isEmpty()) {
+            /* No results and no HLS possible -> This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        /* Decide if we need to grab the HLS qualities too. */
-        final String logpart = "maxHeightHls=" + maxHeightHls + " | maxHeightProgressive=" + maxHeightProgressive;
-        if (maxHeightHls > maxHeightProgressive) {
-            logger.info(logpart + " | Crawl HLS streams because they have higher qualities than progressive");
-            this.grabHLS = true;
-        } else {
-            logger.info(logpart + " | Do not grab HLS streams because the number of qualities for progressive and HLS looks to be the same");
-            this.grabHLS = false;
+        if (mode == HlsCrawlMode.AUTO) {
+            /* Decide if we need to grab the HLS qualities too. */
+            final String logpart = "HLS auto handling: maxHeightHls=" + maxHeightHls + " | maxHeightProgressive=" + maxHeightProgressive;
+            if (maxHeightHls > maxHeightProgressive) {
+                logger.info(logpart + " | Crawl HLS streams because they have higher qualities than progressive");
+                this.grabHLS = true;
+            } else {
+                logger.info(logpart + " | Do not grab HLS streams because the number of qualities for progressive and HLS looks to be the same");
+                this.grabHLS = false;
+            }
         }
         if (hlsMaster != null && this.grabHLS) {
             final ArrayList<DownloadLink> hlsResults = addHLS(param, metadata, br, hlsMaster, false);

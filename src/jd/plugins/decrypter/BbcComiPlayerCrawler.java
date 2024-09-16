@@ -125,23 +125,23 @@ public class BbcComiPlayerCrawler extends PluginForDecrypt {
         Map<Integer, Set<String>> subtitles = new HashMap<Integer, Set<String>>();
         final List<Map<String, Object>> mediaList = (List<Map<String, Object>>) root.get("media");
         this.displayBubbleNotification(notificationTitle, "Looking for valid stream in " + mediaList.size() + " media...");
-        for (final Map<String, Object> media : mediaList) {
+        mediaLoop: for (final Map<String, Object> media : mediaList) {
             final String kind = (String) media.get("kind");
             final List<Map<String, Object>> connections = (List<Map<String, Object>>) media.get("connection");
             if (kind.matches("(?i)audio|video")) {
-                for (final Map<String, Object> connection : connections) {
+                connectionLoop: for (final Map<String, Object> connection : connections) {
                     final String transferFormat = (String) connection.get("transferFormat");
                     final String protocol = (String) connection.get("protocol");
                     // final String m3u8 = (String) entries.get("c");
                     final String thisHLSMaster = (String) connection.get("href");
                     if (!transferFormat.equalsIgnoreCase("hls")) {
                         /* Skip dash/hds/other */
-                        continue;
+                        continue connectionLoop;
                     } else if (protocol.equalsIgnoreCase("http")) {
                         /* Qualities are given as both http- and https URLs -> Skip http URLs */
-                        continue;
+                        continue connectionLoop;
                     } else if (StringUtils.isEmpty(thisHLSMaster)) {
-                        continue;
+                        continue connectionLoop;
                     }
                     List<HlsContainer> results = new ArrayList<HlsContainer>();
                     /* 2024-09-05: Disabled. */
@@ -178,7 +178,7 @@ public class BbcComiPlayerCrawler extends PluginForDecrypt {
                     }
                 }
             } else if (kind.equalsIgnoreCase("captions")) {
-                for (final Map<String, Object> connection : connections) {
+                connectionLoop: for (final Map<String, Object> connection : connections) {
                     final String priorityStr = connection.get("priority").toString();
                     final String url = connection.get("href").toString();
                     final int prio;
@@ -252,7 +252,6 @@ public class BbcComiPlayerCrawler extends PluginForDecrypt {
             link.setProperties(param.getDownloadLink().getProperties());
         }
         link.setProperty(BbcCom.PROPERTY_QUALITY_IDENTIFICATOR, qualityString);
-        link.setFinalFileName(BbcCom.getFilename(link));
         setExtraInformation(link, sourceURL, vpid);
         distribute(link);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -298,7 +297,8 @@ public class BbcComiPlayerCrawler extends PluginForDecrypt {
             }
             if (subtitleValidated != null) {
                 final DownloadLink subtitle = new DownloadLink(hosterPlugin, hosterPlugin.getHost(), subtitleValidated, true);
-                subtitle.setFinalFileName(link.getFinalFileName().substring(0, link.getFinalFileName().lastIndexOf(".")) + ".ttml");
+                final String videoFilename = link.getFinalFileName();
+                subtitle.setFinalFileName(videoFilename.substring(0, videoFilename.lastIndexOf(".")) + ".ttml");
                 if (subtitleSize > 0) {
                     subtitle.setDownloadSize(subtitleSize);
                 }
@@ -316,6 +316,7 @@ public class BbcComiPlayerCrawler extends PluginForDecrypt {
     }
 
     private void setExtraInformation(final DownloadLink link, final String sourceURL, final String vpid) {
+        link.setFinalFileName(BbcCom.getFilename(link));
         link.setAvailable(true);
         if (sourceURL != null) {
             link.setContentUrl(sourceURL);

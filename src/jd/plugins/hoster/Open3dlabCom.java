@@ -22,6 +22,7 @@ import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.Open3dlabComConfig;
+import org.jdownloader.plugins.components.config.Open3dlabComConfigSfmlabCom;
 import org.jdownloader.plugins.components.config.Open3dlabComConfigSmutbaSe;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 
@@ -254,6 +255,8 @@ public class Open3dlabCom extends PluginForHost {
     public Class<? extends PluginConfigInterface> getConfigInterface() {
         if (this.getHost().equals("open3dlab.com")) {
             return Open3dlabComConfig.class;
+        } else if (this.getHost().equals("sfmlab.com")) {
+            return Open3dlabComConfigSfmlabCom.class;
         } else {
             return Open3dlabComConfigSmutbaSe.class;
         }

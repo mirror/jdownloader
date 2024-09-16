@@ -148,7 +148,7 @@ public class ARDMediathek extends PluginForHost {
             checkFFProbe(link, "Check a HLS Stream");
             br.getPage(this.dllink);
             /* Check for offline and GEO-blocked */
-            this.connectionErrorhandling(br.getHttpConnection());
+            connectionErrorhandling(br, br.getHttpConnection(), false);
             final List<M3U8Playlist> list = M3U8Playlist.parseM3U8(br);
             final HLSDownloader downloader = new HLSDownloader(link, br, br.getURL(), list);
             final StreamInfo streamInfo = downloader.getProbe();
@@ -166,10 +166,7 @@ public class ARDMediathek extends PluginForHost {
                 final Browser brc = br.cloneBrowser();
                 brc.getHeaders().put("Accept-Encoding", "identity");
                 con = brc.openGetConnection(dllink);
-                if (!looksLikeDownloadableContent(con, link)) {
-                    connectionErrorhandling(con);
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
+                connectionErrorhandling(br, con, true);
             } finally {
                 try {
                     con.disconnect();
@@ -182,11 +179,7 @@ public class ARDMediathek extends PluginForHost {
                 final Browser brc = br.cloneBrowser();
                 /* 2024-09-13: HEAD request is not possible anymore (for ardmediathek.de items). It will return http response code 403. */
                 con = brc.openGetConnection(dllink);
-                if (!looksLikeDownloadableContent(con, link)) {
-                    /* Content should definitely be offline in this case! */
-                    connectionErrorhandling(con);
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
+                connectionErrorhandling(br, con, true);
                 setFileInfo(link, con);
             } finally {
                 try {
@@ -236,11 +229,27 @@ public class ARDMediathek extends PluginForHost {
         download(link);
     }
 
-    private void connectionErrorhandling(final URLConnectionAdapter con) throws PluginException {
+    private void connectionErrorhandling(final Browser br, final URLConnectionAdapter con, final boolean exceptionOnNoFileContent) throws PluginException, IOException {
+        final String etag = con.getRequest().getResponseHeader("etag");
+        if ("\"cc135f46ae35ba958d6f753790a1a76b:1507796934\"".equals(etag)) {
+            /* 2024-09-16: http://cdn-storage.br.de/tafeln/br-fernsehen/br-fernsehen-tafel_E.mp4 */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-blocked");
+        } else if (StringUtils.containsIgnoreCase(br.getURL(), "br-fernsehen-tafel_")) {
+            /*
+             * 2024-09-16: GEO-blocked HLS item e.g.
+             * http://brvod-rwrtr.akamaized.net/i/,/tafeln/br-fernsehen/br-fernsehen-tafel_,0,A,B,E,C,X,.mp4.csmil/index-f1-v1-a1.m3u8
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-blocked");
+        }
         if (con.getResponseCode() == 403) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 403: GEO-blocked");
+            /* This can mean both, broken file or GEO-blocked */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 403: GEO-blocked or broken media content");
         } else if (con.getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (exceptionOnNoFileContent && !this.looksLikeDownloadableContent(con)) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Broken file?");
         }
     }
 
@@ -266,11 +275,7 @@ public class ARDMediathek extends PluginForHost {
                 maxChunks = 1;
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
-            if (!looksLikeDownloadableContent(dl.getConnection(), link)) {
-                br.followConnection(true);
-                this.connectionErrorhandling(dl.getConnection());
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
-            }
+            this.connectionErrorhandling(br, dl.getConnection(), true);
             setFileInfo(link, dl.getConnection());
             if (this.dl.startDownload()) {
                 this.postprocess(link);
