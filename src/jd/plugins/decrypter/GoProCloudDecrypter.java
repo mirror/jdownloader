@@ -463,7 +463,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
         if ("premium".equals(access)) {
             link.setContentUrl("https://plus.gopro.com/media-library/" + id);
         } else {
-            String root = new Regex(cryptedLink.getCryptedUrl(), "(^http.*/v/[^/]+)").getMatch(0);
+            final String root = new Regex(cryptedLink.getCryptedUrl(), "(^(?i)https?.*/v/[^/]+)").getMatch(0);
             link.setContentUrl(root + "/" + id);
         }
     }
