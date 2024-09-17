@@ -18,6 +18,7 @@ package jd.plugins;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,6 +29,7 @@ import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.nutils.Formatter;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -36,10 +38,8 @@ import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.BasicNotify;
@@ -99,10 +99,9 @@ public abstract class PluginsC {
 
     public abstract PluginsC newPluginInstance();
 
-    protected ArrayList<CrawledLink> cls             = new ArrayList<CrawledLink>();
+    protected ArrayList<CrawledLink> cls = new ArrayList<CrawledLink>();
     protected String                 md5;
     protected byte[]                 k;
-    private boolean                  askFileDeletion = true;
     private final Matcher            matcher;
 
     public abstract ContainerStatus callDecryption(File file) throws Exception;
@@ -155,10 +154,6 @@ public abstract class PluginsC {
         return cls == null ? new ArrayList<CrawledLink>() : cls;
     }
 
-    protected boolean askFileDeletion() {
-        return askFileDeletion;
-    }
-
     public synchronized void initContainer(final CrawledLink source, final File file, final byte[] key) throws IOException {
         if (cls == null || cls.size() == 0) {
             logger.info("Init Container");
@@ -174,7 +169,7 @@ public abstract class PluginsC {
                     this.displayBubbleNotification("Invalid container", "Processing the following container failed for unknown reasons:\n" + file.getAbsolutePath(), new AbstractIcon(IconKey.ICON_ADDCONTAINER, 32));
                 } else if (cs.isStatus(ContainerStatus.STATUS_INVALID_PASSWORD)) {
                     this.displayBubbleNotification("Invalid container password", "Processing the following container failed because the supplied passwords were incorrect:\n" + file.getAbsolutePath(), new AbstractIcon(IconKey.ICON_ADDCONTAINER, 32));
-                } else if (cs.isStatus(ContainerStatus.STATUS_FINISHED) && isDeleteContainer(source, file)) {
+                } else if (cs.isStatus(ContainerStatus.STATUS_FINISHED)) {
                     this.displayBubbleNotification("Successfully crawled container", "The following container has been processed successfully:\n" + file.getAbsolutePath(), new AbstractIcon(IconKey.ICON_ADDCONTAINER, 32));
                     deleteContainer(source, file);
                 }
@@ -184,76 +179,78 @@ public abstract class PluginsC {
         }
     }
 
-    protected void deleteContainer(final CrawledLink source, final File file) {
-        try {
-            if (askFileDeletion() == false) {
-                FileCreationManager.getInstance().delete(file, null);
-            } else if (cls.size() > 0) {
-                switch (JsonConfig.create(ContainerConfig.class).getDeleteContainerFilesAfterAddingThemAction()) {
-                case ASK_FOR_DELETE:
-                    final ConfirmDialog d = new ConfirmDialog(0, _JDT.T.AddContainerAction_delete_container_title(), _JDT.T.AddContainerAction_delete_container_msg(file.toString()), new AbstractIcon(IconKey.ICON_HELP, 32), _GUI.T.lit_yes(), _GUI.T.lit_no()) {
-                        @Override
-                        public String getDontShowAgainKey() {
-                            return null;
-                        }
-                    };
-                    final ConfirmDialogInterface s = UIOManager.I().show(ConfirmDialogInterface.class, d);
-                    s.throwCloseExceptions();
-                    if (s.getCloseReason() == CloseReason.OK) {
-                        FileCreationManager.getInstance().delete(file, null);
-                        if (s.isDontShowAgainSelected()) {
-                            JsonConfig.create(ContainerConfig.class).setDeleteContainerFilesAfterAddingThemAction(ContainerDeleteOption.DELETE);
-                        }
-                    } else {
-                        if (s.isDontShowAgainSelected()) {
-                            JsonConfig.create(ContainerConfig.class).setDeleteContainerFilesAfterAddingThemAction(ContainerDeleteOption.DONT_DELETE);
-                        }
-                    }
-                    break;
-                case DELETE:
-                    FileCreationManager.getInstance().delete(file, null);
-                    this.displayBubbleNotification("Deleted container file", "The following container file has been deleted:\n" + file.getAbsolutePath(), new AbstractIcon(IconKey.ICON_ADDCONTAINER, 32));
-                    break;
-                case RECYCLE:
-                    try {
-                        JDFileUtils.moveToTrash(file);
-                        this.displayBubbleNotification("Moved container file to trash", "The following processed container file has been moved to trash:\n" + file.getAbsolutePath(), new AbstractIcon(IconKey.ICON_ADDCONTAINER, 32));
-                    } catch (IOException e) {
-                        logger.log(e);
-                        logger.info("Could not move file to recycle bin: " + file);
-                        this.displayBubbleNotification("Failed to move processed container file to trash", "Failed to move the following processed container file to trash:\n" + file.getAbsolutePath(), new AbstractIcon(IconKey.ICON_ADDCONTAINER, 32));
-                    }
-                    break;
-                case DONT_DELETE:
-                }
-            }
-        } catch (final DialogNoAnswerException e) {
-            /* Do nothing */
-            logger.log(e);
+    protected ContainerDeleteOption getDeleteOption(final CrawledLink source, final File file) throws Exception {
+        if (isCrawledContainer(source, file)) {
+            logger.fine("Do not ask - just delete crawled container: " + getDebugString(source, file));
+            return ContainerDeleteOption.DELETE;
+        } else if (isTempContainer(source, file)) {
+            logger.fine("Do not ask - just delete temp container: " + getDebugString(source, file));
+            return ContainerDeleteOption.DELETE;
+        } else if (cls.size() == 0) {
+            return ContainerDeleteOption.DONT_DELETE;
         }
+        ContainerDeleteOption ret = JsonConfig.create(ContainerConfig.class).getDeleteContainerFilesAfterAddingThemAction();
+        if (ContainerDeleteOption.ASK_FOR_DELETE.equals(ret)) {
+            final ConfirmDialog dialog = new ConfirmDialog(0, _JDT.T.AddContainerAction_delete_container_title(), _JDT.T.AddContainerAction_delete_container_msg(file.toString()), new AbstractIcon(IconKey.ICON_HELP, 32), _GUI.T.lit_yes(), _GUI.T.lit_no()) {
+                @Override
+                public String getDontShowAgainKey() {
+                    return null;
+                }
+            };
+            final ConfirmDialogInterface s = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+            s.throwCloseExceptions();
+            if (s.getCloseReason() == CloseReason.OK) {
+                ret = ContainerDeleteOption.DELETE;
+            } else {
+                ret = ContainerDeleteOption.DONT_DELETE;
+            }
+            if (s.isDontShowAgainSelected()) {
+                JsonConfig.create(ContainerConfig.class).setDeleteContainerFilesAfterAddingThemAction(ret);
+            }
+        }
+        return ret;
     }
 
-    protected boolean isDeleteContainer(final CrawledLink link, File file) {
-        final String tmp = Application.getTempResource("").getAbsolutePath();
-        final String rel = Files.getRelativePath(tmp, file.getAbsolutePath());
-        if (rel == null) {
-            final LinkOriginDetails originDetails = link.getOrigin();
-            if (originDetails != null) {
-                switch (originDetails.getOrigin()) {
-                case DRAG_DROP_ACTION:
-                case PASTE_LINKS_ACTION:
-                case ADD_CONTAINER_ACTION:
-                case EXTENSION:
-                    return false;
-                default:
-                    break;
-                }
+    protected boolean isCrawledContainer(CrawledLink source, File file) throws URISyntaxException {
+        final File originFile = from(source.getOriginLink());
+        if (originFile == null) {
+            // origin is no file
+            return true;
+        }
+        final File sourceFile = from(source);
+        if (sourceFile != null && !originFile.equals(sourceFile)) {
+            // origin is a different file
+            return true;
+        }
+        return false;
+    }
+
+    protected boolean isTempContainer(final CrawledLink source, final File file) {
+        final File tmp = Application.getTempResource("");
+        final String rel = Files.getRelativePath(tmp, file);
+        return rel != null;
+    }
+
+    protected void deleteContainer(final CrawledLink source, final File file) throws Exception {
+        switch (getDeleteOption(source, file)) {
+        case DELETE:
+            FileCreationManager.getInstance().delete(file, null);
+            this.displayBubbleNotification("Deleted container file", "The following container file has been deleted:\n" + file.getAbsolutePath(), new AbstractIcon(IconKey.ICON_ADDCONTAINER, 32));
+            break;
+        case RECYCLE:
+            try {
+                JDFileUtils.moveToTrash(file);
+                this.displayBubbleNotification("Moved container file to trash", "The following processed container file has been moved to trash:\n" + file.getAbsolutePath(), new AbstractIcon(IconKey.ICON_ADDCONTAINER, 32));
+            } catch (IOException e) {
+                logger.log(e);
+                logger.info("Could not move file to recycle bin: " + file);
+                this.displayBubbleNotification("Failed to move processed container file to trash", "Failed to move the following processed container file to trash:\n" + file.getAbsolutePath(), new AbstractIcon(IconKey.ICON_ADDCONTAINER, 32));
             }
-            return true;
-        } else {
-            logger.fine("Do not ask - just delete(isDeleteContainer,1): " + getDebugString(link, file));
-            askFileDeletion = false;
-            return true;
+            break;
+        case ASK_FOR_DELETE:
+            throw new WTFException("How did this happen!?");
+        case DONT_DELETE:
+            break;
         }
     }
 
@@ -305,6 +302,18 @@ public abstract class PluginsC {
         return null;
     }
 
+    protected File from(final CrawledLink source) throws URISyntaxException {
+        // workaround for authorities in file uris
+        // TODO: proper uri to file
+        final String sourceURL = new Regex(source.getURL(), "(file:/.+)").getMatch(0);
+        if (sourceURL == null) {
+            return null;
+        }
+        final String currentURI = sourceURL.replaceFirst("file:///?", "file:///");
+        final File ret = new File(new URI(currentURI));
+        return ret;
+    }
+
     public ArrayList<CrawledLink> decryptContainer(final CrawledLink source) {
         if (source.getURL() == null) {
             return null;
@@ -312,28 +321,12 @@ public abstract class PluginsC {
         ArrayList<CrawledLink> retLinks = null;
         boolean showException = true;
         try {
-            askFileDeletion = true;
             setCurrentLink(source);
             /* extract filename from url */
-            final String sourceURL = new Regex(source.getURL(), "(file:/.+)").getMatch(0);
-            if (sourceURL == null) {
+            final File file = from(source);
+            if (file == null) {
                 throw new Throwable("Invalid Container: " + source.getURL());
-            }
-            // workaround for authorities in file uris
-            final String currentURI = sourceURL.replaceFirst("file:///?", "file:///");
-            final File file = new File(new URI(currentURI));
-            if (file != null && file.exists() && file.isFile()) {
-                final CrawledLink origin = source.getOriginLink();
-                if (origin != null && !StringUtils.containsIgnoreCase(origin.getURL(), "file:/")) {
-                    logger.fine("Do not ask - just delete(decryptContainer,1): " + getDebugString(source, file));
-                    askFileDeletion = false;
-                } else if (origin != null) {
-                    final String originURL = new Regex(origin.getURL(), "(file:/.+)").getMatch(0);
-                    if (originURL != null && !sourceURL.equalsIgnoreCase(originURL)) {
-                        logger.fine("Do not ask - just delete(decryptContainer,2): " + getDebugString(source, file));
-                        askFileDeletion = false;
-                    }
-                }
+            } else if (file.isFile()) {
                 initContainer(source, file, null);
                 retLinks = getContainedDownloadlinks();
             }
@@ -342,6 +335,8 @@ public abstract class PluginsC {
              * damn, something must have gone really really bad, lets keep the log
              */
             logger.log(e);
+        } finally {
+            setCurrentLink(null);
         }
         if (retLinks == null && showException) {
             /*
@@ -361,7 +356,6 @@ public abstract class PluginsC {
     }
 
     protected void displayBubbleNotification(final String title, final String text) {
-        // TODO: Add functionality
         displayBubbleNotification(title, text, new AbstractIcon(IconKey.ICON_INFO, 32));
     }
 

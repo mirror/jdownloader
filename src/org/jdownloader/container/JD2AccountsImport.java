@@ -47,8 +47,7 @@ public class JD2AccountsImport extends PluginsC {
     }
 
     @Override
-    protected boolean isDeleteContainer(CrawledLink link, File file) {
-        return false;
+    protected void deleteContainer(CrawledLink source, File file) {
     }
 
     public ContainerStatus callDecryption(final File ejsFile) {

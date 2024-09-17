@@ -38,8 +38,7 @@ public class InternetShortcut extends PluginsC {
     }
 
     @Override
-    protected boolean isDeleteContainer(CrawledLink link, File file) {
-        return false;
+    protected void deleteContainer(CrawledLink source, File file) {
     }
 
     public ContainerStatus callDecryption(File lc) {
