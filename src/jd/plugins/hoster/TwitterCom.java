@@ -712,7 +712,6 @@ public class TwitterCom extends PluginForHost {
                 throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
             }
             if (userCookies != null && !userCookies.isEmpty()) {
-                /* 2020-02-13: Experimental - accepts cookies exported via browser addon "EditThisCookie" */
                 br.setCookies(userCookies);
                 if (!validateCookies) {
                     /* Do not check if cookies are valid. */

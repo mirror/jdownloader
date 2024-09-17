@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
@@ -55,6 +56,14 @@ import jd.plugins.hoster.DirectHTTP;
 public class ArteMediathekV3 extends PluginForDecrypt {
     public ArteMediathekV3(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        prepBRAPI(br);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -113,7 +122,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     private final String        TYPE_EMBED                  = "https?://[^/]+/embeds/([a-z]{2})/(\\d+-\\d+-[A-Z]+)";
 
     private static Browser prepBRAPI(final Browser br) {
-        br.getHeaders().put("Authorization", "Bearer Nzc1Yjc1ZjJkYjk1NWFhN2I2MWEwMmRlMzAzNjI5NmU3NWU3ODg4ODJjOWMxNTMxYzEzZGRjYjg2ZGE4MmIwOA");
+        br.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer Nzc1Yjc1ZjJkYjk1NWFhN2I2MWEwMmRlMzAzNjI5NmU3NWU3ODg4ODJjOWMxNTMxYzEzZGRjYjg2ZGE4MmIwOA");
         return br;
     }
 
@@ -137,7 +146,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Object errorsO = entries.get("errors");
         if (errorsO != null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -182,7 +191,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         final Boolean hasVideoStreams = (Boolean) availability.get("hasVideoStreams");
         // final Object broadcastBegin = availability.get("broadcastBegin");
         // broadcastBegin can be null even for available videos
-        if (hasVideoStreams == null || hasVideoStreams == Boolean.FALSE) {
+        if (!Boolean.TRUE.equals(hasVideoStreams)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> vid = (Map<String, Object>) program.get("mainVideo");
@@ -199,7 +208,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             logger.info("Unknown kind Label: " + kind);
         }
         final ArteTv hosterplugin = (ArteTv) this.getNewPluginForHostInstance(this.getHost());
-        final String videoID = vid.get("programId").toString();
+        final String programId = vid.get("programId").toString();
         final String title = vid.get("title").toString();
         final String subtitle = (String) vid.get("subtitle");
         final String date;
@@ -209,17 +218,21 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         } else {
             date = vid.get("creationDate").toString();
         }
+        final String language = vid.get("language").toString();
         final String dateFormatted = new Regex(date, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
         final String shortDescription = (String) vid.get("shortDescription");
         final String platform = vid.get("platform").toString();
-        final String videoStreamsAPIURL = JavaScriptEngineFactory.walkJson(vid, "links/videoStreams/web/href").toString();
+        String videoStreamsAPIURL = (String) JavaScriptEngineFactory.walkJson(vid, "links/videoStreams/web/href");
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            videoStreamsAPIURL = API_BASE + "/videoStreams?programId=" + programId + "&limit=100&language=" + language + "&protocol=HTTPS&kind=SHOW&reassembly=A";
+        }
         String titleAndSubtitle = title;
         if (!StringUtils.isEmpty(subtitle)) {
             titleAndSubtitle += " - " + subtitle;
         }
         prepBRAPI(br);
         br.getPage(videoStreamsAPIURL);
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final List<Map<String, Object>> videoStreams = (List<Map<String, Object>>) entries.get("videoStreams");
         if (videoStreams == null || videoStreams.isEmpty()) {
             /* This should never happen */
@@ -249,7 +262,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         }
         packageName = packageName.replace("*date*", dateFormatted);
         packageName = packageName.replace("*platform*", platform);
-        packageName = packageName.replace("*video_id*", videoID);
+        packageName = packageName.replace("*video_id*", programId);
         packageName = packageName.replace("*title*", title);
         packageName = packageName.replace("*subtitle*", subtitle != null ? subtitle : "");
         packageName = packageName.replace("*title_and_subtitle*", titleAndSubtitle);
@@ -333,7 +346,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 final DownloadLink link = new DownloadLink(hosterplugin, hosterplugin.getHost(), videoStream.get("url").toString(), true);
                 link.setProperty(PROPERTY_TYPE, "video");
                 /* Set properties which we later need for custom filenames. */
-                link.setProperty(PROPERTY_VIDEO_ID, videoID);
+                link.setProperty(PROPERTY_VIDEO_ID, programId);
                 link.setProperty(PROPERTY_TITLE, title);
                 if (!StringUtils.isEmpty(PROPERTY_SUBTITLE)) {
                     link.setProperty(PROPERTY_SUBTITLE, subtitle);
@@ -352,7 +365,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 /* Do not modify those linkIDs to try to keep backward compatibility! remove the -[A-Z] to be same as old vpi */
                 link.setContentUrl(param.getCryptedUrl());
                 link.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, getHost());
-                link.setLinkID(getHost() + "://" + new Regex(videoID, "(\\d+-\\d+)").getMatch(0) + "/" + versionInfo.toString() + "/" + "http_" + bitrate);
+                link.setLinkID(getHost() + "://" + new Regex(programId, "(\\d+-\\d+)").getMatch(0) + "/" + versionInfo.toString() + "/" + "http_" + bitrate);
                 /* Get filename according to users' settings. */
                 final String filename = this.getAndSetFilename(link);
                 /* Make sure that our directHTTP plugin will never change this filename. */

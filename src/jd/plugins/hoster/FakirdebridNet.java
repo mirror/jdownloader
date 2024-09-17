@@ -309,7 +309,7 @@ public class FakirdebridNet extends PluginForHost {
             /* Workaround to find the real domain which we need to assign the properties to later on! */
             final ArrayList<String> supportedHostsTmp = new ArrayList<String>();
             supportedHostsTmp.add(domain);
-            ai.setMultiHostSupport(this, supportedHostsTmp);
+            ai.setMultiHostSupport(null, supportedHostsTmp);
             final List<String> realDomainList = ai.getMultiHostSupport();
             if (realDomainList == null || realDomainList.isEmpty()) {
                 /* Skip unsupported hosts or host plugins which don't allow multihost usage. */
