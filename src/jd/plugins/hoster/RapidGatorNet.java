@@ -1622,7 +1622,7 @@ public class RapidGatorNet extends PluginForHost {
             }
         }
         /* Determine max wait time if a limit related error would happen in free download mode. */
-        final long passedTimeSinceLastDlMilliseconds;
+        long passedTimeSinceLastDlMilliseconds = 0;
         if (currentIP != null) {
             long lastdownload_timestamp = getPluginSavedLastDownloadTimestamp(currentIP);
             if (lastdownload_timestamp == 0) {
@@ -1633,8 +1633,6 @@ public class RapidGatorNet extends PluginForHost {
                 lastdownload_timestamp = this.getPluginConfig().getLongProperty(PROPERTY_LAST_DOWNLOAD_STARTED_TIMESTAMP, 0);
             }
             passedTimeSinceLastDlMilliseconds = System.currentTimeMillis() - lastdownload_timestamp;
-        } else {
-            passedTimeSinceLastDlMilliseconds = 0;
         }
         final long timeMillisUntilNextFreeDownloadIsPossible = FREE_RECONNECTWAIT_BETWEEN_DOWNLOADS_MILLIS - passedTimeSinceLastDlMilliseconds;
         final long maxReconnectWait;
@@ -1679,9 +1677,9 @@ public class RapidGatorNet extends PluginForHost {
             throw new AccountRequiredException("The files of this publisher can be downloaded only by subscribers.");
         }
         /* Check for some generic errors */
-        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 403) {
+        if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
-        } else if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404 (session expired?)", 5 * 60 * 1000l);
         } else if (br.containsHTML(">\\s*An unexpected error occurred\\s*\\.?\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "An unexpected error occurred", 15 * 60 * 1000l);

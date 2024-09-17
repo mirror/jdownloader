@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,9 +31,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class TvShowsClub extends antiDDoSForDecrypt {
+public class TvShowsClub extends PluginForDecrypt {
     public TvShowsClub(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,7 +42,7 @@ public class TvShowsClub extends antiDDoSForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "tvshows.club", "tvshows.show", "tvshows.me" });
+        ret.add(new String[] { "tvshows.club", "tvshows.show", "tvshows.me", "tvshows.ac" });
         return ret;
     }
 
@@ -68,14 +68,19 @@ public class TvShowsClub extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String addedlink = param.getCryptedUrl();
+        final String contenturl = param.getCryptedUrl();
         br.setFollowRedirects(true);
-        getPage(addedlink);
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String fpName = br.getRegex("<title>(?:TV Show\\s+)?([^<]+)(?:\\s+(?:Today&#039\\;s TV Series|TV show. List of all seasons))").getMatch(0);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String urlSlug = br._getURL().getPath().split("/")[1];
+        String title = br.getRegex("<title>(?:TV Show\\s+)?([^<]+)(?:\\s+(?:Today&#039\\;s TV Series|TV show. List of all seasons))").getMatch(0);
+        if (title == null) {
+            /* Fallback */
+            title = urlSlug.replace("-", " ").trim();
+        }
         final ArrayList<String> episodes = new ArrayList<String>();
         Collections.addAll(episodes, br.getRegex("<div[^>]+itemprop\\s*=\\s*\"containsSeason\"[^>]+>\\s*<div[^>]+class\\s*=\\s*\"card\"[^>]*>\\s*<a[^>]+href\\s*=\\s*\"([^\"]+)\"[^>]*>").getColumn(0));
         final String[] base64Strings = br.getRegex("<script defer src=\"data:text/javascript;base64,([a-zA-Z0-9_/\\+\\=\\-%]+)").getColumn(0);
@@ -101,14 +106,19 @@ public class TvShowsClub extends antiDDoSForDecrypt {
             for (String link : episodes) {
                 link = Encoding.htmlDecode(link).replaceAll("^//", "https://");
                 if (link.startsWith("/")) {
-                    link = br.getURL(link).toString();
+                    link = br.getURL(link).toExternalForm();
                 }
                 ret.add(createDownloadlink(link));
             }
         }
-        if (StringUtils.isNotEmpty(fpName)) {
+        if (ret.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (StringUtils.isNotEmpty(title)) {
+            title = Encoding.htmlDecode(title).trim();
+            title = title.replaceFirst("(?i) Download.?$", "");
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.setName(title);
             fp.addLinks(ret);
         }
         return ret;

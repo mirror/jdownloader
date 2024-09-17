@@ -24,6 +24,22 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
@@ -41,23 +57,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fakirdebrid.net" }, urls = { "" })
 public class FakirdebridNet extends PluginForHost {
@@ -142,7 +141,7 @@ public class FakirdebridNet extends PluginForHost {
                     postData += Encoding.urlEncode("|" + passCode);
                 }
                 br.postPage(API_BASE + "/generate.php?pin=" + Encoding.urlEncode(account.getPass()), postData);
-                entries = restoreFromString(br.toString(), TypeRef.MAP);
+                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final Object errorCodeO = entries.get("code");
                 if (errorCodeO != null && errorCodeO instanceof String && errorCodeO.toString().equalsIgnoreCase("Password_Required")) {
                     logger.info("Password required");
@@ -175,7 +174,7 @@ public class FakirdebridNet extends PluginForHost {
                 final String apilink = (String) entries.get("apilink");
                 br.getPage(apilink);
                 this.handleErrorsAPI(this.br, link, account);
-                entries = restoreFromString(br.toString(), TypeRef.MAP);
+                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 entries = (Map<String, Object>) entries.get("data");
                 final int files_done = ((Number) entries.get("files_done")).intValue();
                 if (files_done != 1) {
@@ -198,7 +197,8 @@ public class FakirdebridNet extends PluginForHost {
                 for (final String url : urls) {
                     try {
                         /**
-                         * E.g. server2.turkleech.com/TransLoad/?id=bla </br> Such URLs will also work fine without login cookies
+                         * E.g. server2.turkleech.com/TransLoad/?id=bla </br>
+                         * Such URLs will also work fine without login cookies
                          */
                         br.getPage(url);
                         transloadURL = url;
@@ -262,9 +262,8 @@ public class FakirdebridNet extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
-        final Object accountBannedO = entries.get("banned");
-        if (accountBannedO instanceof Boolean && accountBannedO == Boolean.TRUE) {
+        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        if (Boolean.TRUE.equals(entries.get("banned"))) {
             throw new AccountInvalidException("Account banned");
         }
         /*
@@ -275,13 +274,21 @@ public class FakirdebridNet extends PluginForHost {
             account.setUser(username);
         }
         account.setType(AccountType.PREMIUM);
-        ai.setStatus((String) entries.get("AccountType"));
+        final String message = (String) entries.get("message");
+        final String accountTypeStr = (String) entries.get("type");
+        if (!StringUtils.isEmpty(message) && !StringUtils.isEmpty(accountTypeStr)) {
+            ai.setStatus(message + " - " + accountTypeStr);
+        } else if (!StringUtils.isEmpty(accountTypeStr)) {
+            ai.setStatus(accountTypeStr);
+        } else if (!StringUtils.isEmpty(message)) {
+            ai.setStatus(message);
+        }
         ai.setTrafficLeft(((Number) entries.get("trafficleft")).longValue());
         ai.setTrafficMax(((Number) entries.get("trafficlimit")).longValue());
         ai.setValidUntil(JavaScriptEngineFactory.toLong(entries.get("premium_until"), 0) * 1000, br);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         br.getPage(API_BASE + "/supportedhosts.php?pin=" + Encoding.urlEncode(account.getPass()));
-        entries = restoreFromString(br.toString(), TypeRef.MAP);
+        entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final List<Object> arrayHoster;
         final Object arrayHosterO = entries.get("supportedhosts");
         /* 2021-05-27: API can return Map instead of expected Array */
@@ -347,20 +354,27 @@ public class FakirdebridNet extends PluginForHost {
     }
 
     /**
-     * 'PIN_Required' => 'PIN Required', </br> 'URL_Required' => 'You did not add URL data', </br> 'PIN_Invalid' => 'Invalid PIN',</br>
-     * 'NOT_Supported' => 'This service is not supported or not supported by API.',</br> 'Limit_Error_Transfer' => 'You have exhausted all
-     * transfer limits of your account, You need to purchase a new package.',</br> 'Limit_Error_Premium' => 'You have filled the daily
-     * limits of your account. Please try again after the limits are reset.',</br> 'Link_Error_Browser' => 'This link can only be downloaded
-     * via the browser.',</br> 'Link_Error' => 'An unknown error occurred while creating the link.',</br> 'File_not_found' => 'File not
-     * found',</br> 'Password_Required' => 'This file is protected by password. Please add link Password.',</br> 'Wrong_Password' => 'Wrong
-     * Password, Please try again.',</br> 'File_Unavailable' => 'This link is currently unavailable. Please try again later.',</br>
+     * 'PIN_Required' => 'PIN Required', </br>
+     * 'URL_Required' => 'You did not add URL data', </br>
+     * 'PIN_Invalid' => 'Invalid PIN',</br>
+     * 'NOT_Supported' => 'This service is not supported or not supported by API.',</br>
+     * 'Limit_Error_Transfer' => 'You have exhausted all transfer limits of your account, You need to purchase a new package.',</br>
+     * 'Limit_Error_Premium' => 'You have filled the daily limits of your account. Please try again after the limits are reset.',</br>
+     * 'Link_Error_Browser' => 'This link can only be downloaded via the browser.',</br>
+     * 'Link_Error' => 'An unknown error occurred while creating the link.',</br>
+     * 'File_not_found' => 'File not found',</br>
+     * 'Password_Required' => 'This file is protected by password. Please add link Password.',</br>
+     * 'Wrong_Password' => 'Wrong Password, Please try again.',</br>
+     * 'File_Unavailable' => 'This link is currently unavailable. Please try again later.',</br>
      * 'Price_File' => 'This link cannot be downloaded with premium account, You can download it by purchasing this link only.',</br>
-     * 'Download_Server_Error' => 'Download server with your file is temporarily unavailable.',</br> 'OVH_Yangin' => 'This file seems to
-     * have been affected by the fire in the OVH datacenter.',</br> 'Size_Error' => 'The premium download link for this file is not
-     * working.',</br> 'Banned_Account' => 'Banned Account',</br> 'Free_Account' => 'Not supported for free members.',
+     * 'Download_Server_Error' => 'Download server with your file is temporarily unavailable.',</br>
+     * 'OVH_Yangin' => 'This file seems to have been affected by the fire in the OVH datacenter.',</br>
+     * 'Size_Error' => 'The premium download link for this file is not working.',</br>
+     * 'Banned_Account' => 'Banned Account',</br>
+     * 'Free_Account' => 'Not supported for free members.',
      */
     private void handleErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Object errorO = entries.get("error");
         if (errorO instanceof Boolean && errorO == Boolean.TRUE) {
             final String message = (String) entries.get("message");

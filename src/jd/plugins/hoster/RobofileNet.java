@@ -21,17 +21,14 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class WyslijNet extends XFileSharingProBasic {
-    public WyslijNet(final PluginWrapper wrapper) {
+public class RobofileNet extends XFileSharingProBasic {
+    public RobofileNet(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -40,13 +37,13 @@ public class WyslijNet extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null 4dignum reCaptchaV2, hcaptcha<br />
+     * captchatype-info: null 4dignum solvemedia reCaptchaV2, hcaptcha<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "wyslij.net" });
+        ret.add(new String[] { "robofile.net" });
         return ret;
     }
 
@@ -86,7 +83,7 @@ public class WyslijNet extends XFileSharingProBasic {
             return 0;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return -10;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
             return 0;
@@ -95,75 +92,16 @@ public class WyslijNet extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    protected boolean supportsAPIMassLinkcheck() {
-        return looksLikeValidAPIKey(this.getAPIKey());
-    }
-
-    @Override
-    protected boolean supportsAPISingleLinkcheck() {
-        return looksLikeValidAPIKey(this.getAPIKey());
-    }
-
-    @Override
-    protected boolean allowAPIDownloadIfApikeyIsAvailable(final DownloadLink link, final Account account) {
-        /**
-         * 2024-04-23: API can be used for linkcheck but not for downloading. </br>
-         * During account-check it looks as if the API supports downloads but it does not.
-         */
-        return false;
-    }
-
-    @Override
-    protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account) throws Exception {
-        try {
-            return super.fetchAccountInfoAPI(br, account);
-        } finally {
-            /* Small hack since API is returning wrong information about whether or not it is possible to download via API. */
-            account.setProperty(PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE, false);
-        }
-    }
-
-    @Override
-    protected boolean containsRecaptchaV2Class(String string) {
-        /* 2024-04-23 */
-        if (new Regex(string, "<input[^>]*name=\"g-recaptcha-response\"").patternFind()) {
-            return true;
-        } else {
-            return super.containsRecaptchaV2Class(string);
-        }
-    }
-
-    @Override
-    public String[] scanInfo(final String html, final String[] fileInfo) {
-        super.scanInfo(html, fileInfo);
-        final String betterFilesize = new Regex(html, ">\\s*Rozmiar pliku\\s*</span>\\s*</div>\\s*<div class=\"col-xl-8\">\\s*<p class=\"text-muted fs-14\">([^<]+)</p>").getMatch(0);
-        if (betterFilesize != null) {
-            fileInfo[1] = betterFilesize;
-        }
-        return fileInfo;
-    }
-
-    @Override
-    protected String regExTrafficLeft(final Browser br) {
-        final String ret = br.getRegex(">\\s*Pozostały transfer\\s*</h6>\\s*<h2[^>]*>([^<]+)</h2>").getMatch(0);
-        if (ret != null) {
-            return ret;
-        } else {
-            return super.regExTrafficLeft(br);
-        }
     }
 }
