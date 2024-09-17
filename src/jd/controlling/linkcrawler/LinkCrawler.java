@@ -33,42 +33,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Files;
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.logging2.ClearableLogInterface;
-import org.appwork.utils.logging2.ClosableLogInterface;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.controlling.UrlProtection;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
-import org.jdownloader.plugins.components.abstractGenericHTTPDirectoryIndexCrawler;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
-import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
-import org.jdownloader.plugins.controller.container.ContainerPluginController;
-import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.settings.GeneralSettings;
-
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
@@ -91,6 +55,43 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Files;
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.logging2.ClearableLogInterface;
+import org.appwork.utils.logging2.ClosableLogInterface;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.PublicSuffixList;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.controlling.UrlProtection;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
+import org.jdownloader.plugins.components.abstractGenericHTTPDirectoryIndexCrawler;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.plugins.controller.container.ContainerPluginController;
+import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.settings.GeneralSettings;
 
 public class LinkCrawler {
     private static enum DISTRIBUTE {
@@ -2523,13 +2524,22 @@ public class LinkCrawler {
                                 } else {
                                     maybeURL = checkParam.replaceFirst("^:?/?/?", "");
                                 }
+                                final boolean guessProtocol;
                                 final URL dummyURL;
                                 if (HTMLParser.getProtocol(maybeURL) == null) {
+                                    guessProtocol = true;
                                     dummyURL = new URL("http://" + maybeURL.replaceFirst("^(.+?://)", ""));
                                 } else {
+                                    guessProtocol = false;
                                     dummyURL = new URL(maybeURL);
                                 }
-                                if (dummyURL != null && dummyURL.getHost() != null && dummyURL.getHost().contains(".") && (StringUtils.isNotEmpty(dummyURL.getFile()) || StringUtils.isNotEmpty(dummyURL.getRef()))) {
+                                final boolean validPublicSuffix = PublicSuffixList.getInstance().getDomain(dummyURL.getHost()) != null;
+                                // TODO: add support for literal IPs
+                                if (validPublicSuffix && dummyURL.getHost() != null && dummyURL.getHost().contains(".") && (StringUtils.isNotEmpty(dummyURL.getFile()) || (!guessProtocol && StringUtils.isNotEmpty(dummyURL.getRef())))) {
+                                    // URL must have:
+                                    // -valid host(with at least one dot)
+                                    // -non empty file
+                                    // -or valid protocol and ref
                                     possibleEmbeddedLinks.add(dummyURL.toString());
                                 }
                             } catch (final MalformedURLException e) {
