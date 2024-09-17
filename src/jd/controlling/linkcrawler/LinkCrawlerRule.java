@@ -27,7 +27,7 @@ public class LinkCrawlerRule {
     }
 
     protected boolean                    enabled          = true;
-    protected List<String[]>             cookies          = null;
+    protected Object                     cookies          = null;
     protected List<String[]>             headers          = null;
     protected Map<String, List<Pattern>> propertyPatterns = null;
     protected boolean                    updateCookies    = false;
@@ -49,11 +49,37 @@ public class LinkCrawlerRule {
         this.updateCookies = updateCookies;
     }
 
-    public List<String[]> getCookies() {
+    public List<String[]> getCookiesList() {
+        if (!(this.cookies instanceof List)) {
+            return null;
+        }
+        return (List<String[]>) this.cookies;
+    }
+
+    public Object getCookies() {
         return cookies;
     }
 
-    public void setCookies(List<String[]> cookies) {
+    public void setCookies(final Object obj) {
+        final Cookies cookies = Cookies.parseCookiesFromObject(obj, null);
+        if (cookies == null) {
+            setCookiesList(null);
+            return;
+        }
+        final List<String[]> cookielist = new ArrayList<String[]>();
+        for (final Cookie cookie : cookies.getCookies()) {
+            if (cookie.getHost() != null) {
+                final String[] cookiearray = new String[] { cookie.getKey(), cookie.getValue(), cookie.getHost() };
+                cookielist.add(cookiearray);
+            } else {
+                final String[] cookiearray = new String[] { cookie.getKey(), cookie.getValue() };
+                cookielist.add(cookiearray);
+            }
+        }
+        setCookiesList(cookielist);
+    }
+
+    public void setCookiesList(final List<String[]> cookies) {
         this.cookies = cookies;
     }
 
@@ -173,7 +199,7 @@ public class LinkCrawlerRule {
                     updateCookies.add(new String[] { cookie.getKey(), cookie.getValue() });
                 }
             }
-            setCookies(updateCookies);
+            setCookiesList(updateCookies);
             // TODO: add support for length==3, url pattern matching support
             return true;
         }
@@ -189,7 +215,7 @@ public class LinkCrawlerRule {
         if (onlyOnPatternMatch && !matches(url)) {
             return false;
         }
-        final List<String[]> cookies = getCookies();
+        final List<String[]> cookies = getCookiesList();
         if (cookies == null || cookies.size() == 0) {
             return false;
         }
@@ -232,7 +258,7 @@ public class LinkCrawlerRule {
     }
 
     public boolean applyHeaders(final Browser br, final String url) {
-        final List<String[]> headers = getCookies();
+        final List<String[]> headers = getHeaders();
         if (headers == null || headers.size() == 0) {
             return false;
         }
