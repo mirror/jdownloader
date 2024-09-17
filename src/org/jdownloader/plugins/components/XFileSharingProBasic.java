@@ -556,7 +556,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     protected boolean allowAPIDownloadIfApikeyIsAvailable(final DownloadLink link, final Account account) {
-        // TODO: Rename this to allowAttemptAPIDownloadInWebsiteMode
         if (account == null) {
             return false;
         }
@@ -5278,7 +5277,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 } catch (final Throwable e) {
                     /* Do not throw Exception --> Fallback to website instead */
                     logger.log(e);
-                    logger.warning("Error in API download handling");
+                    logger.warning("Error in API download handling in website mode");
                 }
             }
             /* API failed/not supported? Try website! */
@@ -5649,14 +5648,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         final Map<String, Object> entries = loginAPI(br, account);
-        /**
-         * This is important since the API may also be used as part of the website handling and it is important that the website handling
-         * knows whether an account with an API key can be used for API downloads or not. </br>
-         * In general, if we cannot use an account for downloading, that qualifies us to set an error status on it.
-         */
-        if (!account.hasProperty(PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE)) {
-            throw new AccountUnavailableException("API does not allow download | Contact support of this website", 5 * 60 * 1000l);
-        }
         /** 2019-07-31: Better compare expire-date against their serverside time if possible! */
         final String server_timeStr = (String) entries.get("server_time");
         final Map<String, Object> result = (Map<String, Object>) entries.get("result");
