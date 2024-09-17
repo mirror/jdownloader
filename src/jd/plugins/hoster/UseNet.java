@@ -1,5 +1,6 @@
 package jd.plugins.hoster;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
@@ -326,7 +327,11 @@ public class UseNet extends antiDDoSForHost {
         final URL url = new URL(null, "socket://" + server.getHost() + ":" + server.getPort(), ProxyController.SOCKETURLSTREAMHANDLER);
         final List<HTTPProxy> proxies = selectProxies(url);
         final HTTPProxy proxy = proxies.get(0);
+
         final SimpleUseNet client = new SimpleUseNet(proxy, getLogger()) {
+            private final byte[] encodedBuffer = new byte[512 * 1024];
+            private final byte[] decodedBuffer = new byte[encodedBuffer.length];
+
             @Override
             public int getConnectTimeout() {
                 return Browser.getGlobalConnectTimeout();
@@ -340,6 +345,21 @@ public class UseNet extends antiDDoSForHost {
             @Override
             protected Socket createSocket() {
                 return SocketConnectionFactory.createSocket(getProxy());
+            }
+
+            @Override
+            protected YEncInputStream newYEncInputStream(SimpleUseNet simpleUseNet, String messageID, ByteArrayOutputStream buffer) throws IOException {
+                return new YEncInputStream(simpleUseNet, messageID, buffer) {
+                    @Override
+                    protected byte[] initDecodedBuffer() {
+                        return decodedBuffer;
+                    }
+
+                    @Override
+                    protected byte[] initEncodedBuffer() {
+                        return encodedBuffer;
+                    }
+                };
             }
         };
         try {

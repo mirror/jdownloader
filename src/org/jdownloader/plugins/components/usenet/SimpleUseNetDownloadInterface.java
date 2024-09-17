@@ -261,7 +261,7 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                 }
             }
             connectionHandler.addThrottledConnection(meteredThrottledInputStream);
-            final byte[] buffer = new byte[32767];
+            final byte[] buffer = new byte[256 * 1024];
             final Map<String, AtomicInteger> retryMap = new HashMap<String, AtomicInteger>();
             while (true) {
                 final UsenetFileSegment segment = segments.poll();
@@ -272,6 +272,9 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                         final InputStream bodyInputStream = client.requestMessageBodyAsInputStream(segment.getMessageID());
                         if (bodyInputStream instanceof YEncInputStream) {
                             final YEncInputStream yEnc = (YEncInputStream) bodyInputStream;
+                            if (yEnc.isMultiPart() && yEnc.getPartIndex() != segment.getIndex()) {
+                                throw yEnc.new YEncIndexException(yEnc.getPartIndex());
+                            }
                             final long partSize = yEnc.getPartSize();
                             if (partSize >= 0) {
                                 segment.setPartBegin(yEnc.getPartBegin());
@@ -296,6 +299,9 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                                 localIO = false;
                                 totalLinkBytesLoaded.addAndGet(bytesRead);
                             }
+                        }
+                        if (logger instanceof LogSource) {
+                            ((LogSource) logger).clear();
                         }
                         if (abort.get()) {
                             // so we can quit normally
