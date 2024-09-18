@@ -128,7 +128,7 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
                 final HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
                 addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("^(\\s+)")) {
                     public boolean highlight(javax.swing.text.Highlighter highlighter, CharSequence charSequence) {
-                        if (Cookies.parseCookiesFromJsonString(charSequence.toString()) != null) {
+                        if (Cookies.parseCookiesFromString(charSequence.toString()) != null) {
                             return false;
                         } else {
                             return super.highlight(highlighter, charSequence);
@@ -137,7 +137,7 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
                 });
                 addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("(\\s+)$")) {
                     public boolean highlight(javax.swing.text.Highlighter highlighter, CharSequence charSequence) {
-                        if (Cookies.parseCookiesFromJsonString(charSequence.toString()) != null) {
+                        if (Cookies.parseCookiesFromString(charSequence.toString()) != null) {
                             return false;
                         } else {
                             return super.highlight(highlighter, charSequence);
@@ -201,7 +201,7 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
             userok = true;
         }
         final String pw = getPassword();
-        final Cookies cookies = Cookies.parseCookiesFromJsonString(pw);
+        final Cookies cookies = Cookies.parseCookiesFromString(pw);
         if (StringUtils.isEmpty(pw)) {
             /* Password field is never allowed to be empty/null. */
             passok = false;

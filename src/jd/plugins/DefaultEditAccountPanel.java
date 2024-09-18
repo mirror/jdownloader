@@ -158,7 +158,7 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
             userok = true;
         }
         final String pw = getPassword();
-        final Cookies cookies = Cookies.parseCookiesFromJsonString(pw);
+        final Cookies cookies = Cookies.parseCookiesFromString(pw);
         if (StringUtils.isEmpty(pw)) {
             passok = false;
         } else if (cookies != null && !allowCookiesInPasswordField) {
