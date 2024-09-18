@@ -49,8 +49,17 @@ public class Viet69Net extends antiDDoSForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "viet69.gg", "viet69.in", "viet69.net", "viet69.co", "viet69.love", "viet69.page", "viet69.vc", "viet69.tube" });
+        ret.add(new String[] { "viet69.gg", "viet69.in", "viet69.net", "viet69.co", "viet69.love", "viet69.page", "viet69.vc", "viet69.tube", "viet69.zip" });
         return ret;
+    }
+
+    private ArrayList<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("viet69.gg");
+        deadDomains.add("viet69.co");
+        deadDomains.add("viet69.love");
+        deadDomains.add("viet69.vc");
+        return deadDomains;
     }
 
     public static String[] getAnnotationNames() {
@@ -76,45 +85,53 @@ public class Viet69Net extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        getPage(param.getCryptedUrl());
+        String contenturl = param.getCryptedUrl();
+        for (final String deadDomain : getDeadDomains()) {
+            contenturl = contenturl.replace(deadDomain, this.getHost());
+        }
+        getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String title = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0).replace("-", " ").trim();
+        final String title = new Regex(contenturl, this.getSupportedLinks()).getMatch(0).replace("-", " ").trim();
         final String[] videoDetails = br.getRegex("<div\\s+class\\s*=\\s*\"movieLoader\"\\s+data-movie\\s*=\\s*\"([^\"\\s]+)\"\\s+data-type\\s*=\\s*\"([^\"]*)\"").getRow(0);
-        if (videoDetails != null && videoDetails.length > 1) {
-            final Browser br2 = br.cloneBrowser();
-            postPage(br2, "/get.video.php", "movie_id=" + videoDetails[0] + "&type=" + videoDetails[1] + "&index=1");
-            String[] links = br2.getRegex("\"file\"\\s*:\\s*\"([^\"]+)\"").getColumn(0);
-            if (links == null || links.length == 0) {
-                links = br2.getRegex("file\\s*:\\s*\'([^']+)'").getColumn(0);
-            }
-            if (links != null && links.length > 0) {
-                for (String link : links) {
-                    if (StringUtils.containsIgnoreCase(link, ".m3u8")) {
-                        final Browser brc = br2.cloneBrowser();
-                        brc.getPage(link);
-                        final ArrayList<DownloadLink> downloadLinks = GenericM3u8Decrypter.parseM3U8(this, link, brc, param.getCryptedUrl(), null, title);
-                        if (downloadLinks != null) {
-                            ret.addAll(downloadLinks);
-                        }
-                    } else {
-                        final DownloadLink downloadLink = createDownloadlink(Encoding.htmlDecode(link));
-                        if (title != null) {
-                            downloadLink.setName(title);
-                        }
-                        ret.add(downloadLink);
+        if (videoDetails == null || videoDetails.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Browser br2 = br.cloneBrowser();
+        postPage(br2, "/get.video.php", "movie_id=" + videoDetails[0] + "&type=" + videoDetails[1] + "&index=1");
+        String[] links = br2.getRegex("\"file\"\\s*:\\s*\"([^\"]+)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            links = br2.getRegex("file\\s*:\\s*\'([^']+)'").getColumn(0);
+        }
+        if (links != null && links.length > 0) {
+            for (String link : links) {
+                if (StringUtils.containsIgnoreCase(link, ".m3u8")) {
+                    final Browser brc = br2.cloneBrowser();
+                    brc.getPage(link);
+                    final ArrayList<DownloadLink> downloadLinks = GenericM3u8Decrypter.parseM3U8(this, link, brc, contenturl, null, title);
+                    if (downloadLinks != null) {
+                        ret.addAll(downloadLinks);
                     }
-                }
-            } else {
-                /* Look for embedded content */
-                final String[] embedURLs = br2.getRegex("<iframe[^>]*src=\"(https?://[^\"]+)").getColumn(0);
-                if (embedURLs != null && embedURLs.length > 0) {
-                    for (final String embedURL : embedURLs) {
-                        ret.add(this.createDownloadlink(embedURL));
+                } else {
+                    final DownloadLink downloadLink = createDownloadlink(Encoding.htmlDecode(link));
+                    if (title != null) {
+                        downloadLink.setName(title);
                     }
+                    ret.add(downloadLink);
                 }
             }
+        } else {
+            /* Look for embedded content */
+            final String[] embedURLs = br2.getRegex("<iframe[^>]*src=\"(https?://[^\"]+)").getColumn(0);
+            if (embedURLs != null && embedURLs.length > 0) {
+                for (final String embedURL : embedURLs) {
+                    ret.add(this.createDownloadlink(embedURL));
+                }
+            }
+        }
+        if (ret.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final FilePackage fp = FilePackage.getInstance();
         if (title != null) {

@@ -71,7 +71,7 @@ public class NicoVideoJp extends PluginForHost {
 
     public NicoVideoJp(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://site.nicovideo.jp/premium_contents/");
+        this.enablePremium("https://site." + getHost() + "/premium_contents/");
         setConfigElements();
     }
 
@@ -187,7 +187,7 @@ public class NicoVideoJp extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://info.nicovideo.jp/base/rule.html";
+        return "https://info." + getHost() + "/base/rule.html";
     }
 
     @Override
@@ -207,18 +207,20 @@ public class NicoVideoJp extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         requestFileInformation(link, account);
+        final String errortext_drm_failure = "DRM_PROTECTED_AND_UNSUPPORTED_STREAMING_TYPE_HLS_SPLIT_AUDIO_VIDEO";
         if (link.getBooleanProperty(PROPERTY_ACCOUNT_REQUIRED, false) && account == null) {
             throw new AccountRequiredException();
         } else if (br.containsHTML("(?)>\\s*Sorry, this video can only be viewed in the same region where it was uploaded")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-blocked");
         } else if (entries == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_FATAL, errortext_drm_failure);
         }
         final Map<String, Object> delivery = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "media/delivery");
         if (delivery == null) {
             /* 2024-02-26: New json and no possibility to get audio + video as one stream(?) */
             // delivery = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "media/domand");
-            throw new PluginException(LinkStatus.ERROR_FATAL, "DRM_PROTECTED_AND_UNSUPPORTED_STREAMING_TYPE_HLS_SPLIT_AUDIO_VIDEO");
+            throw new PluginException(LinkStatus.ERROR_FATAL, errortext_drm_failure);
         }
         final Map<String, Object> movie = (Map<String, Object>) delivery.get("movie");
         final List<Map<String, Object>> audios = (List<Map<String, Object>>) movie.get("audios");
@@ -392,7 +394,7 @@ public class NicoVideoJp extends PluginForHost {
             if (!validateCookies) {
                 return null;
             }
-            br.getPage("https://account.nicovideo.jp/my/account");
+            br.getPage("https://account." + getHost() + "/my/account");
             if (!isLoggedIn(br)) {
                 if (account.hasEverBeenValid()) {
                     throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());

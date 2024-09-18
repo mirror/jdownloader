@@ -9,8 +9,7 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "wallpaperscraft.com", type = Type.CRAWLER)
 public interface WallPapersCraftComConfig extends PluginConfigInterface {
     public static class TRANSLATION {
-
-        public String isPreferOriginalResolution_label() {
+        public String getPreferOriginalResolution_label() {
             return "Prefer original resolution?";
         }
     }
