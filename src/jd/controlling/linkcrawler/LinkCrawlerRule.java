@@ -212,6 +212,7 @@ public class LinkCrawlerRule {
     }
 
     public boolean applyCookies(final Browser br, final String url, final boolean onlyOnPatternMatch) {
+        // TODO: psp: I can't find any usage where onlyOnPatternMatch is true
         if (onlyOnPatternMatch && !matches(url)) {
             return false;
         }
