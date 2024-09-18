@@ -58,6 +58,8 @@ public class UploadedpremiumlinkNet extends PluginForHost {
     public UploadedpremiumlinkNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www." + this.getHost() + "/register");
+        /* https://docs.uploadedpremiumlink.net/#rate-limiting */
+        // Browser.setBurstRequestIntervalLimitGlobal("api.uploadedpremiumlink.net", 60000, 600, 60000);
     }
 
     @Override
@@ -166,6 +168,7 @@ public class UploadedpremiumlinkNet extends PluginForHost {
         final int daily_links_limit = ((Number) user.get("daily_links_limit")).intValue();
         ai.setStatus(user.get("type").toString() + " | Total traffic left: " + user.get("traffic_left") + " | Daily links generated: " + daily_links_generated + "/" + daily_links_limit);
         ai.setTrafficMax(((Number) user.get("daily_traffic_limit")).longValue());
+        ai.setTrafficLeft(ai.getTrafficMax() - ((Number) user.get("daily_traffic_used")).longValue());
         final ArrayList<String> supportedhosts = new ArrayList<String>();
         final List<Map<String, Object>> hosters = (List<Map<String, Object>>) user.get("hosters");
         for (final Map<String, Object> hoster : hosters) {
@@ -181,7 +184,7 @@ public class UploadedpremiumlinkNet extends PluginForHost {
         account.setConcurrentUsePossible(true);
         if (daily_links_generated >= daily_links_limit) {
             /* Account cannot be used for downloading. */
-            throw new AccountUnavailableException("Account has reached daily max links limit", 5 * 60 * 1000);
+            throw new AccountUnavailableException("Account has reached daily max links limit of " + daily_links_limit + " links", 5 * 60 * 1000);
         }
         return ai;
     }

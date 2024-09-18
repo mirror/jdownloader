@@ -200,7 +200,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlVideo(final CryptedLink param, final Map<String, Object> vid) throws IOException, PluginException {
         final String kind = vid.get("kind").toString();
-        if (!kind.matches("(PROGRAMM|SHOW)")) {
+        if (!kind.matches("(?i)(PROGRAMM|SHOW)")) {
             if (kind.equals("LIVE")) {
                 logger.info("Livestreams are not supported");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
