@@ -208,7 +208,7 @@ public class LinkCrawlerRule {
 
     public void applyCookiesAndHeaders(final Browser br, final String url, final boolean onlyOnPatternMatch) {
         applyCookies(br, url, onlyOnPatternMatch);
-        applyHeaders(br, url);
+        applyHeaders(br);
     }
 
     public boolean applyCookies(final Browser br, final String url, final boolean onlyOnPatternMatch) {
@@ -258,7 +258,7 @@ public class LinkCrawlerRule {
         }
     }
 
-    public boolean applyHeaders(final Browser br, final String url) {
+    public boolean applyHeaders(final Browser br) {
         final List<String[]> headers = getHeaders();
         if (headers == null || headers.size() == 0) {
             return false;

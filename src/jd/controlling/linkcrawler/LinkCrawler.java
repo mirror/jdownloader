@@ -1361,6 +1361,31 @@ public class LinkCrawler {
                 return last.getURL().toExternalForm();
             }
         }
+
+        private Map<String, String> findPropertyPatternMatches(final LinkCrawlerRule rule) {
+            final Map<String, List<Pattern>> patternmap = rule._getPropertyPatterns();
+            if (patternmap == null) {
+                return null;
+            }
+            final Map<String, String> results = new HashMap<String, String>();
+            patternmapLoop: for (final Entry<String, List<Pattern>> entry : patternmap.entrySet()) {
+                final String key = entry.getKey();
+                patternLoop: for (final Pattern pattern : entry.getValue()) {
+                    final Regex regex = new Regex(br, pattern);
+                    if (!regex.patternFind()) {
+                        continue patternLoop;
+                    }
+                    String match = new Regex(br, pattern).getMatch(0);
+                    if (match == null) {
+                        match = regex.getMatch(-1);
+                    }
+                    results.put(key, match);
+                    /* Take first match */
+                    break patternLoop;
+                }
+            }
+            return results;
+        }
     }
 
     protected void crawlDeeperOrMatchingRule(final LinkCrawlerGeneration generation, final CrawledLink source) {
@@ -1607,7 +1632,6 @@ public class LinkCrawler {
                     final String finalBaseUrl = new Regex(brURL, "(https?://.*?)(\\?|$)").getMatch(0);
                     final boolean deepPatternContent;
                     final List<CrawledLink> possibleDeepCryptedLinks;
-                    Map<String, String> properties = null;
                     if (matchingRule != null && matchingRule._getDeepPattern() != null) {
                         /* Crawl links according to pattern of rule. */
                         final String[][] matches = new Regex(request.getHtmlCode(), matchingRule._getDeepPattern()).getMatches();
@@ -1643,10 +1667,6 @@ public class LinkCrawler {
                         }
                         deepPatternContent = true;
                         possibleDeepCryptedLinks = find(generation, source, sb.toString(), finalBaseUrl, false, false);
-                        if (matchingRule.getPropertyPatterns() != null) {
-                            properties = this.findPropertyPatternMatches(br, matchingRule);
-                            logger.info("Found properties: " + properties);
-                        }
                     } else {
                         deepPatternContent = false;
                         possibleDeepCryptedLinks = find(generation, source, request.getHtmlCode(), finalBaseUrl, false, false);
@@ -1693,31 +1713,6 @@ public class LinkCrawler {
         } finally {
             checkFinishNotify(task);
         }
-    }
-
-    private Map<String, String> findPropertyPatternMatches(final Browser br, final LinkCrawlerRule rule) {
-        final Map<String, List<Pattern>> patternmap = rule._getPropertyPatterns();
-        if (patternmap == null) {
-            return null;
-        }
-        final Map<String, String> results = new HashMap<String, String>();
-        patternmapLoop: for (final Entry<String, List<Pattern>> entry : patternmap.entrySet()) {
-            final String key = entry.getKey();
-            for (final Pattern pattern : entry.getValue()) {
-                final Regex regex = new Regex(br, pattern);
-                if (!regex.patternFind()) {
-                    continue;
-                }
-                String match = new Regex(br, pattern).getMatch(0);
-                if (match == null) {
-                    match = regex.getMatch(-1);
-                }
-                results.put(key, match);
-                /* Take first match */
-                break;
-            }
-        }
-        return results;
     }
 
     /** Opens connection */
