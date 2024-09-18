@@ -503,21 +503,21 @@ public class AccountInfo extends Property implements AccountTrafficView {
                     otherIgnoreEntries.add(maindomainCleaned);
                     continue;
                 }
-                try {
-                    if (plugin.isHasAllowHandle()) {
+                if (multiHostPlugin != null && plugin.isHasAllowHandle()) {
+                    try {
                         final DownloadLink link = new DownloadLink(null, "", plugin.getHost(), "", false);
                         final PluginForHost plg = pluginFinder.getPlugin(plugin);
                         if (!plg.allowHandle(link, multiHostPlugin)) {
                             skippedbyPluginAllowHandleEntries.add(plugin.getHost());
                             continue;
                         }
+                    } catch (final Throwable e) {
+                        if (logger != null) {
+                            logger.log(e);
+                        }
+                        otherIgnoreEntries.add(maindomainCleaned);
+                        continue;
                     }
-                } catch (final Throwable e) {
-                    if (logger != null) {
-                        logger.log(e);
-                    }
-                    otherIgnoreEntries.add(maindomainCleaned);
-                    continue;
                 }
                 best.add(plugin);
             }
