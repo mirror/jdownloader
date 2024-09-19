@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -22,7 +23,6 @@ import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -109,33 +109,61 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        final String fileID = this.getFID(link);
+        final String preferredFormat = getPreferredImageFormat();
+        final String extDefault = "." + preferredFormat;
+        if (!link.isNameSet()) {
+            link.setName(fileID + extDefault);
+        }
         prepBrowser(br);
         final String r = getReferer(link);
         if (r != null) {
             br.getHeaders().put("Referer", "https://" + getHost() + "/");
         }
         getPage(link.getPluginPatternMatcher(), link);
-        // final String originalFilename = br.getRegex("fetchpriority='high' alt='([^']+)'>").getMatch(0);
-        // if (originalFilename != null) {
-        // link.setFinalFileName(originalFilename);
-        // }
-        getDllink();
+        final String filename;
+        String originalFilename = br.getRegex("fetchpriority='high' alt='([^']+)'>").getMatch(0);
+        if (originalFilename != null) {
+            originalFilename = Encoding.htmlDecode(originalFilename).trim();
+            filename = fileID + "_" + originalFilename;
+        } else {
+            filename = fileID;
+        }
+        link.setFinalFileName(this.correctOrApplyFileNameExtension(filename, extDefault, null));
+        this.dllink = getDllink();
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (!isDownload) {
-            basicLinkCheck(br.cloneBrowser(), br.createGetRequest(dllink), link, link.getName(), ".jpeg");
+            basicLinkCheck(br.cloneBrowser(), br.createGetRequest(dllink), link, filename, extDefault);
         }
         return AvailableStatus.TRUE;
     }
 
-    private void getDllink() {
-        final String[] formats = new String[] { "jpeg", "webp" };
+    public static final String getPreferredImageFormat() {
+        return "jpeg";
+    }
+
+    private String getDllink() {
+        /* Check for .gif first because otherwise we may grab the .gif static preview image which we don't want to grab. */
+        final String gifLink = br.getRegex("'big-pic-webp'\\)\\.srcset='([^']+\\.gif)'").getMatch(0);
+        if (gifLink != null) {
+            return gifLink;
+        }
+        final ArrayList<String> formats = new ArrayList<String>();
+        final String preferredFormat = getPreferredImageFormat();
+        formats.add("jpeg");
+        formats.add("webp");
+        if (preferredFormat != null) {
+            formats.remove(preferredFormat);
+            formats.add(0, preferredFormat);
+        }
         for (final String format : formats) {
             dllink = br.getRegex("id='big-pic-" + format + "' srcset='([^<>\"']+)'").getMatch(0);
             if (dllink != null) {
-                break;
+                return dllink;
             }
         }
+        return null;
     }
 
     @Override
@@ -147,21 +175,7 @@ public class ImgSrcRu extends PluginForHost {
         br.setFollowRedirects(true);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
         handleConnectionErrors(br, dl.getConnection());
-        this.filenameHandling(link, dl.getConnection());
         dl.startDownload();
-    }
-
-    private void filenameHandling(final DownloadLink link, final URLConnectionAdapter con) {
-        String filenameFromConnection = getFileNameFromConnection(con);
-        if (filenameFromConnection == null) {
-            return;
-        }
-        final String fileid = this.getFID(link);
-        if (filenameFromConnection.contains(".")) {
-            /* Remove domain from header-filename. */
-            filenameFromConnection = filenameFromConnection.substring(filenameFromConnection.lastIndexOf("."));
-        }
-        link.setFinalFileName(fileid + filenameFromConnection);
     }
 
     public static boolean isPasswordProtected(final Browser br) {

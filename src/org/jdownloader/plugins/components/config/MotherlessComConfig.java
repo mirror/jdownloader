@@ -12,7 +12,7 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "motherless.com", type = Type.HOSTER)
 public interface MotherlessComConfig extends PluginConfigInterface {
-    final String                    text_GroupCrawlerLimit                 = "Define limit for group crawler (0 = disable group crawler, -1 = unlimited)";
+    final String                    text_GroupCrawlerLimit                 = "Limit for group crawler (0 = disable group crawler, -1 = unlimited)";
     final String                    text_UseTitleAsFilenameIfExtensionFits = "Use title as final filename if it ends with the expected file-extension?";
     public static final TRANSLATION TRANSLATION                            = new TRANSLATION();
 

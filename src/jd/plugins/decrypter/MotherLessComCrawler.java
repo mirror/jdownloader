@@ -330,6 +330,7 @@ public class MotherLessComCrawler extends PluginForDecrypt {
                 break;
             } else if (maxItemsLimit != -1 && ret.size() >= maxItemsLimit) {
                 logger.info("Stopping because: Reached max items limit of " + maxItemsLimit);
+                this.displayBubbleNotification(fpName, "Stopping because: Reached user defined limit of: " + maxItemsLimit + "\r\nYou can adjust this limit in the motherless.com plugin settings.");
                 break;
             } else if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");

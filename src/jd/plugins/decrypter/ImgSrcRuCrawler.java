@@ -44,6 +44,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.ImgSrcRu;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class ImgSrcRuCrawler extends PluginForDecrypt {
@@ -348,15 +349,22 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
         }
         final String currentLink = br.getURL();
         final Set<String> dups = new HashSet<String>();
+        final String extDefault = "." + ImgSrcRu.getPreferredImageFormat();
         for (final String imageid : imageids) {
             if (!dups.add(imageid)) {
                 logger.info("Skipping duplicated item: " + imageid);
                 continue;
             }
+            final String guessedFileExtension;
+            if (br.containsHTML("_" + imageid + "[A-Za-z0-9]+\\.gif'")) {
+                guessedFileExtension = ".gif";
+            } else {
+                guessedFileExtension = extDefault;
+            }
             String url = "/" + username + "/" + imageid + ".html";
             final DownloadLink img = createDownloadlink("https://decryptedimgsrc.ru" + url);
             img.setReferrerUrl(currentLink);
-            img.setName(imageid + ".jpg");
+            img.setName(imageid + guessedFileExtension);
             img.setAvailable(true);
             if (password != null) {
                 img.setDownloadPassword(password);

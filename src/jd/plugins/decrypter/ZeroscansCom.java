@@ -40,7 +40,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DirectHTTP;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zeroscans.com" }, urls = { "https?://(?:www\\.)?zeroscans\\.com/comics/([a-z0-9\\-]+)(/(\\d+))?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ZeroscansCom extends PluginForDecrypt {
     public ZeroscansCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,9 +53,37 @@ public class ZeroscansCom extends PluginForDecrypt {
         return br;
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "zscans.com", "zeroscans.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/comics/([a-z0-9\\-]+)(/(\\d+))?");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String contenturl = param.getCryptedUrl();
+        final String contenturl = param.getCryptedUrl().replaceFirst("^http://", "https://");
         br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -92,7 +120,7 @@ public class ZeroscansCom extends PluginForDecrypt {
             if (title != null) {
                 fp.setName(title);
             }
-            fp.setPackageKey("zeroscanscom://chapter/" + chapterID);
+            fp.setPackageKey("zeroscans://chapter/" + chapterID);
             fp.addLinks(ret);
         } else {
             /* Crawl all chapters of a comic-series */

@@ -71,7 +71,7 @@ public class XhamsterShorturls extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String url = param.getCryptedUrl().replaceFirst("http://", "https://");
+        final String url = param.getCryptedUrl().replaceFirst("^http://", "https://");
         br.setFollowRedirects(false);
         br.getPage(url);
         final String finallink = br.getRedirectLocation();

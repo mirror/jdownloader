@@ -16,10 +16,9 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,36 +27,78 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zipcomic.com" }, urls = { "https?://(www\\.)?zipcomic\\.com/[^/]+/?" })
-public class ZipComic extends antiDDoSForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class ZipComic extends PluginForDecrypt {
     public ZipComic(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
+    }
+
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        ret.add(new String[] { "zipcomic.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[\\w\\-]+-issue-[\\w\\-]+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
-        getPage(parameter);
-        String fpName = br.getRegex("<title>\\s*Read\\s+online,\\s+Download\\s+zip\\s+([^>]+)\\s+comic").getMatch(0);
-        if (StringUtils.isEmpty(fpName)) {
-            fpName = br.getRegex("<title>\\s*Read\\s+online([^>]+)\\s+-\\s+Issue").getMatch(0);
+        br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String[] links = br.getRegex("<a[^>]+href\\s*=\\s*[\"']*([^\"'>]+)[\"']*[^>]*><i[^>]+class\\s*=\\s*\"fa fa-download\"[^>]*>").getColumn(0);
-        if (links != null && links.length > 0) {
-            for (String link : links) {
-                if (new Regex(link, "^/[^/]").matches()) {
-                    link = "directhttp://" + br.getURL(link).toString();
-                }
-                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
-            }
+        String title = br.getRegex("<h1 class=push-10>Read online ([^<]+)</h1>").getMatch(0);
+        final String[] links = br.getRegex("class=img-responsive src=\"(https?://[^\"]+)\" alt=\"[^\"]*Issue #").getColumn(0);
+        if (links == null || links.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (StringUtils.isNotEmpty(fpName)) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+        final String urlpath = br._getURL().getPath();
+        final String urlSlug = urlpath.substring(1);
+        final String urlTitle = urlSlug.replace("-", " ").trim();
+        int index = 0;
+        for (String link : links) {
+            link = Encoding.htmlOnlyDecode(link);
+            final DownloadLink image = createDownloadlink(DirectHTTP.createURLForThisPlugin(link));
+            image.setName(urlTitle + "_" + (index + 1) + ".jpg");
+            image.setAvailable(true);
+            ret.add(image);
+            index++;
         }
-        return decryptedLinks;
+        final FilePackage fp = FilePackage.getInstance();
+        if (title != null && !true) {
+            fp.setName(Encoding.htmlDecode(title).trim());
+        } else {
+            /* Fallback */
+            fp.setName(urlTitle);
+        }
+        fp.addLinks(ret);
+        return ret;
     }
 }
