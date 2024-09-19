@@ -12,7 +12,6 @@ import org.jdownloader.gui.IconKey;
 import jd.controlling.TaskQueue;
 
 public class AbortExtractionAction extends AbstractExtractionContextAction {
-
     public AbortExtractionAction() {
         super();
         setName(org.jdownloader.extensions.extraction.translate.T.T.contextmenu_abort());
@@ -37,20 +36,18 @@ public class AbortExtractionAction extends AbstractExtractionContextAction {
         final List<Archive> lArchives = getArchives();
         if (!isEnabled() || lArchives == null) {
             return;
-        } else {
-            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
-                @Override
-                protected Void run() throws RuntimeException {
-                    for (final Archive lArchive : lArchives) {
-                        final ExtractionController extractionController = lArchive.getExtractionController();
-                        if (extractionController != null && !extractionController.isFinished() && !extractionController.gotKilled()) {
-                            _getExtension().cancel(extractionController);
-                        }
-                    }
-                    return null;
-                }
-            });
         }
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+            @Override
+            protected Void run() throws RuntimeException {
+                for (final Archive lArchive : lArchives) {
+                    final ExtractionController extractionController = lArchive.getExtractionController();
+                    if (extractionController != null && !extractionController.isFinished() && !extractionController.gotKilled()) {
+                        _getExtension().cancel(extractionController);
+                    }
+                }
+                return null;
+            }
+        });
     }
 }
