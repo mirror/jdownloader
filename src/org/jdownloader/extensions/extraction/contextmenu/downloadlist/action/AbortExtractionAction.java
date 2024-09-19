@@ -21,13 +21,15 @@ public class AbortExtractionAction extends AbstractExtractionContextAction {
     @Override
     protected void onAsyncInitDone() {
         final List<Archive> lArchives = getArchives();
-        if (lArchives != null && lArchives.size() > 0) {
-            for (final Archive lArchive : lArchives) {
-                final ExtractionController extractionController = lArchive.getExtractionController();
-                if (extractionController != null && !extractionController.isFinished() && !extractionController.gotKilled()) {
-                    setEnabled(true);
-                    break;
-                }
+        if (lArchives == null || lArchives.size() == 0) {
+            /* Do nothing */
+            return;
+        }
+        for (final Archive lArchive : lArchives) {
+            final ExtractionController extractionController = lArchive.getExtractionController();
+            if (extractionController != null && !extractionController.isFinished() && !extractionController.gotKilled()) {
+                setEnabled(true);
+                break;
             }
         }
     }
