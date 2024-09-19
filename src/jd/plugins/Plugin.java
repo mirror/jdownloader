@@ -523,6 +523,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     public String correctOrApplyFileNameExtension(final String filenameOrg, String newExtension, URLConnectionAdapter connection) {
+        final String newExtensionParam = newExtension;
         if (connection != null) {
             final String extensionFromConnection = getExtensionFromConnection(connection);
             if (extensionFromConnection != null) {
@@ -535,6 +536,10 @@ public abstract class Plugin implements ActionListener {
             return filenameOrg;
         } else if (!newExtension.startsWith(".")) {
             newExtension = "." + newExtension;
+        }
+        if (!StringUtils.equalsIgnoreCase(newExtensionParam, newExtension)) {
+            // call again with newExtension set
+            return correctOrApplyFileNameExtension(filenameOrg, newExtension, connection);
         }
         final CompiledFiletypeExtension filetypeNew = CompiledFiletypeFilter.getExtensionsFilterInterface(newExtension);
         if (!filenameOrg.contains(".")) {

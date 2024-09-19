@@ -17,27 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.downloader.text.TextDownloader;
-import org.jdownloader.plugins.components.config.RedditConfig;
-import org.jdownloader.plugins.components.config.RedditConfig.VideoDownloadStreamType;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -59,6 +41,26 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.RedditComCrawler;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.CountingPushbackInputStream;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.downloader.text.TextDownloader;
+import org.jdownloader.plugins.components.config.RedditConfig;
+import org.jdownloader.plugins.components.config.RedditConfig.VideoDownloadStreamType;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RedditCom extends PluginForHost {
@@ -587,6 +589,41 @@ public class RedditCom extends PluginForHost {
         } else {
             throw new AccountInvalidException("Username mismatch: Please enter the username in which you are logged in in your browser!");
         }
+    }
+
+    @Override
+    public String correctOrApplyFileNameExtension(String filenameOrg, String newExtension, URLConnectionAdapter connection) {
+        final String ret = super.correctOrApplyFileNameExtension(filenameOrg, newExtension, connection);
+        if (StringUtils.endsWithCaseInsensitive(filenameOrg, ".gif") && StringUtils.endsWithCaseInsensitive(ret, ".jpg")) {
+            try {
+                final CountingPushbackInputStream is = new CountingPushbackInputStream(connection.getInputStream(), 32);
+                connection.setInputStream(is);
+                final byte[] magic = new byte[4];
+                int magicIndex = 0;
+                try {
+                    for (magicIndex = 0; magicIndex < magic.length; magicIndex++) {
+                        final int read = is.read();
+                        if (read != -1) {
+                            magic[magicIndex] = (byte) read;
+                        } else {
+                            break;
+                        }
+                    }
+                } finally {
+                    if (magicIndex > 0) {
+                        is.unread(magic, 0, magicIndex);
+                    }
+                }
+                if (Arrays.equals(magic, new byte[] { (byte) 0xff, (byte) 0xd8, (byte) 0xff, (byte) 0xe0 })) {
+                    return ret;
+                } else {
+                    return filenameOrg;
+                }
+            } catch (IOException e) {
+                logger.log(e);
+            }
+        }
+        return ret;
     }
 
     public String userlessLogin(final Browser brlogin) throws IOException {

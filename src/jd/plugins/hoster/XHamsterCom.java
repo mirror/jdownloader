@@ -25,18 +25,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -60,6 +48,18 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterCom extends PluginForHost {
@@ -89,11 +89,9 @@ public class XHamsterCom extends PluginForHost {
             }
         }
         /**
-         * 2022-07-22: Workaround for possible serverside bug: </br>
-         * In some countries, xhamster seems to redirect users to xhamster2.com. </br>
-         * If those users send an Accept-Language header of "de,en-gb;q=0.7,en;q=0.3" they can get stuck in a redirect-loop between
-         * deu.xhamster3.com and deu.xhamster3.com. </br>
-         * See initial report: https://board.jdownloader.org/showthread.php?t=91170
+         * 2022-07-22: Workaround for possible serverside bug: </br> In some countries, xhamster seems to redirect users to xhamster2.com.
+         * </br> If those users send an Accept-Language header of "de,en-gb;q=0.7,en;q=0.3" they can get stuck in a redirect-loop between
+         * deu.xhamster3.com and deu.xhamster3.com. </br> See initial report: https://board.jdownloader.org/showthread.php?t=91170
          */
         final String acceptLanguage = "en-gb;q=0.7,en;q=0.3";
         br.setAcceptLanguage(acceptLanguage);
@@ -504,14 +502,14 @@ public class XHamsterCom extends PluginForHost {
             }
             if (title != null) {
                 if (getPluginConfig().getBooleanProperty("Filename_id", true)) {
-                    filename += "_" + fid;
+                    filename = title + "_" + fid;
                 } else {
                     filename = fid + "_" + title;
                 }
                 if (vq != null) {
-                    filename = Encoding.htmlDecode(title.trim() + "_" + vq).trim();
+                    filename = Encoding.htmlDecode(filename.trim() + "_" + vq).trim();
                 } else {
-                    filename = Encoding.htmlDecode(title).trim();
+                    filename = Encoding.htmlDecode(filename).trim();
                 }
                 filename += ext;
                 link.setFinalFileName(filename);
@@ -1395,10 +1393,9 @@ public class XHamsterCom extends PluginForHost {
             /* Check vja ajax request -> json */
             br.getPage(api_base_premium + "/subscription/get");
             /**
-             * Returns "null" if cookies are valid but this is not a premium account. </br>
-             * Redirects to mainpage if cookies are invalid. </br>
-             * Return json if cookies are valid. </br>
-             * Can also return json along with http responsecode 400 for valid cookies but user is non-premium.
+             * Returns "null" if cookies are valid but this is not a premium account. </br> Redirects to mainpage if cookies are invalid.
+             * </br> Return json if cookies are valid. </br> Can also return json along with http responsecode 400 for valid cookies but
+             * user is non-premium.
              */
             final boolean looksLikeJsonResponse = br.getRequest().getHtmlCode().startsWith("{");
             if (br.getHttpConnection().getContentType().contains("json") && (looksLikeJsonResponse || br.toString().equals("null"))) {
