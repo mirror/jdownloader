@@ -36,7 +36,7 @@ public class ExtractArchiveNowAction extends AbstractExtractionContextAction {
         final Thread thread = new Thread() {
             @Override
             public void run() {
-                for (Archive archive : lArchives) {
+                for (final Archive archive : lArchives) {
                     if (_getExtension().isComplete(archive)) {
                         _getExtension().addToQueue(archive, true);
                     } else {
@@ -57,7 +57,7 @@ public class ExtractArchiveNowAction extends AbstractExtractionContextAction {
             return false;
         }
         /**
-         * Check if at least one selected item is a finished downloa or a while which exists. </br>
+         * Check if at least one selected item is a finished download or a while which exists. </br>
          * This is just a very simple check to provide visual feedback (grey-out action on non allowed items). </br>
          * Believe it or not but some people are using this feature to extract files that they've never downloaded via JDownloader.
          */
@@ -66,6 +66,9 @@ public class ExtractArchiveNowAction extends AbstractExtractionContextAction {
                 continue;
             }
             final DownloadLink dl = (DownloadLink) o;
+            if (!dl.isEnabled()) {
+                continue;
+            }
             if (FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
                 return true;
             } else if (new File(dl.getFileOutput()).exists()) {
