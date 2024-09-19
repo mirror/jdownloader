@@ -17,14 +17,8 @@ package jd.plugins.hoster;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -85,23 +79,18 @@ public class ImgSrcRu extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), "(?i)(\\d+)\\.html").getMatch(0);
     }
 
-    public Browser prepBrowser(Browser prepBr, boolean newFlag) {
-        if (newFlag) {
-            String refer = prepBr.getHeaders().get("Referer");
-            prepBr = new Browser();
-            prepBr.getHeaders().put("Referer", refer);
-        }
+    public Browser prepBrowser(final Browser prepBr) {
         prepBr.setFollowRedirects(true);
-        if (uaInt.incrementAndGet() > 25 || userAgent.get() == null || newFlag) {
+        if (uaInt.incrementAndGet() > 25 || userAgent.get() == null) {
             userAgent.set(UserAgents.stringUserAgent());
             uaInt.set(0);
         }
         prepBr.getHeaders().put("User-Agent", userAgent.get());
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        prepBr.setCookie(this.getHost(), "iamlegal", "yeah");
-        prepBr.setCookie(this.getHost(), "over18", "yeah"); // 2022-09-24
-        prepBr.setCookie(this.getHost(), "lang", "en");
-        prepBr.setCookie(this.getHost(), "per_page", "48");
+        prepBr.setCookie(getHost(), "iamlegal", "yeah");
+        prepBr.setCookie(getHost(), "over18", "yeah"); // 2022-09-24
+        prepBr.setCookie(getHost(), "lang", "en");
+        prepBr.setCookie(getHost(), "per_page", "48");
         return prepBr;
     }
 
@@ -120,82 +109,31 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
-        br = prepBrowser(br, false);
+        prepBrowser(br);
         final String r = getReferer(link);
         if (r != null) {
-            br.getHeaders().put("Referer", "https://imgsrc.ru/");
+            br.getHeaders().put("Referer", "https://" + getHost() + "/");
         }
         getPage(link.getPluginPatternMatcher(), link);
+        // final String originalFilename = br.getRegex("fetchpriority='high' alt='([^']+)'>").getMatch(0);
+        // if (originalFilename != null) {
+        // link.setFinalFileName(originalFilename);
+        // }
         getDllink();
-        if (dllink == null) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (!isDownload) {
-            basicLinkCheck(br.cloneBrowser(), br.createGetRequest(dllink), link, link.getName(), null);
+            basicLinkCheck(br.cloneBrowser(), br.createGetRequest(dllink), link, link.getName(), ".jpeg");
         }
         return AvailableStatus.TRUE;
     }
 
     private void getDllink() {
-        /* 2022-12-12 > full size image */
-        dllink = br.getRegex("<a\\s*href\\s*=\\s*'([^<>\"\\']+)[^>]*\\s*'view full-sized").getMatch(0);
-        if (dllink == null) {
-            /* 2020-12-28 > full size image */
-            dllink = br.getRegex("<a\\s*href\\s*=\\s*'([^<>\"\\']+)[^>]*>\\s*(<\\s*b\\s*>)?\\s*view full").getMatch(0);
-            if (dllink == null) {
-                /* 2020-11-16 > rev. 42336 */
-                dllink = br.getRegex("img[^>]*class\\s*=\\s*'big'[^>]*src\\s*=\\s*'([^<>\"\\']+)").getMatch(0);
-                if (dllink == null) {
-                    /* 2021-02-25 */
-                    dllink = br.getRegex("img[^>]*id\\s*=\\s*'bpi'[^>]*src\\s*=\\s*'([^<>\"\\']+)").getMatch(0);
-                    if (dllink == null) {
-                        /* 2021-06-07, click image area */
-                        /* 2023-05-15, changed click image text and class='big' */
-                        final String clickImage = br.getRegex(">\\s*Click the\\s*(?:<[^/>]*>)\\s*image(.*?)</a>").getMatch(0);
-                        if (clickImage != null) {
-                            dllink = new Regex(clickImage, "img[^>]*src\\s*=\\s*'(//[^<>\"\\']+)[^>]*class\\s*=\\s*'big'").getMatch(0);
-                            if (dllink == null) {
-                                dllink = new Regex(clickImage, "img[^>]*src\\s*=\\s*'(//[^<>\"\\']+)").getMatch(0);
-                            }
-                        }
-                        if (dllink == null) {
-                            dllink = br.getRegex("img[^>]*style\\s*=[^>]*src\\s*=\\s*'(//[^<>\"\\']+)").getMatch(0);
-                            if (dllink == null) {
-                                dllink = br.getRegex("img[^>]*src\\s*=\\s*'(//[^<>\"\\']+)[^>]*style\\s*=[^>]*").getMatch(0);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (dllink == null) {
-            /* Old: < rev. 42336 */
-            try {
-                String js = br.getRegex(".+<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*((?:var|let) [a-z]=[^<]+.*?)</script>.+").getMatch(1);
-                if (js != null) {
-                    js = js.replaceFirst("var n=new Image.*?;", "").replaceFirst("n\\.src.*?;", "").replaceAll("Mousetrap.*?;\\}\\s*\\)\\s*;", "");
-                    String elementName = new Regex(js, "(?:var|let) [a-z]=(\"|')(.+?)\\1").getMatch(1);
-                    String imageTag = br.getRegex("<[^>]+'" + Pattern.quote(elementName) + "'[^>]*>").getMatch(-1);
-                    String varSrc = new Regex(imageTag, "src=(\"|')(.+?)\\1").getMatch(1);
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("var element = {src: elementSrc, href: ''}, document={getElementById:function(e){return element}};");
-                    sb.append("String.fromCodePoint = function (cp) {return String.fromCharCode(cp);};");
-                    sb.append(js.replaceAll("=\\s*location\\.protocol", "=\"" + br._getURL().getProtocol() + ":\""));
-                    sb.append("var result=element.href === '' ? element.src : element.href;");
-                    try {
-                        final ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
-                        final ScriptEngine engine = mgr.getEngineByName("javascript");
-                        engine.put("elementSrc", br.getURL(varSrc).toString());
-                        engine.eval(sb.toString());
-                        final Object result = engine.get("result");
-                        if (result != null && result instanceof ConsString) {
-                            dllink = result.toString();
-                        }
-                    } catch (final Throwable e) {
-                        logger.log(e);
-                    }
-                }
-            } catch (final Throwable e) {
-                logger.log(e);
+        final String[] formats = new String[] { "jpeg", "webp" };
+        for (final String format : formats) {
+            dllink = br.getRegex("id='big-pic-" + format + "' srcset='([^<>\"']+)'").getMatch(0);
+            if (dllink != null) {
+                break;
             }
         }
     }

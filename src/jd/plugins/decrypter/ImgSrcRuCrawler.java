@@ -16,9 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -114,7 +112,7 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
                 throw new IllegalStateException("imgsrc.ru hoster plugin not found!");
             }
         }
-        return ((jd.plugins.hoster.ImgSrcRu) plugin).prepBrowser(prepBr, neu);
+        return ((jd.plugins.hoster.ImgSrcRu) plugin).prepBrowser(prepBr);
     }
 
     private void setInitConstants(final CryptedLink param) {
@@ -279,7 +277,25 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
             final Set<String> pagesDone = new HashSet<String>();
             final List<String> pagesTodo = new ArrayList<String>();
             pagination: do {
-                ret.addAll(this.crawlImages(param));
+                final int numberofResultsOld = ret.size();
+                final ArrayList<DownloadLink> thisPageResults = this.crawlImages(param);
+                for (final DownloadLink result : thisPageResults) {
+                    result.setProperty("username", username.trim());
+                    if (galleryTitle != null) {
+                        result.setProperty("gallery", galleryTitle.trim());
+                    }
+                    result._setFilePackage(fp);
+                    distribute(result);
+                }
+                ret.addAll(thisPageResults);
+                if (ret.size() == numberofResultsOld) {
+                    if (ret.isEmpty()) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Found zero new results");
+                    } else {
+                        logger.info("Stopping because: Found zero new results");
+                        break pagination;
+                    }
+                }
                 /* Look for next page */
                 final String nextPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + quotedUsername + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}[^>]*?|\\?)?)\\1\\s*>\\s*(▶|&#9654;?|&#9658;?|<i\\s*class\\s*=\\s*\"material-icons\"\\s*>\\s*&#xe5cc;?)").getMatch(1);
                 final String previousPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + quotedUsername + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}[^>]*?|\\?)?)\\1\\s*>\\s*(◄|&#9664;?|&#9668;?|<i\\s*class\\s*=\\s*\"material-icons\"\\s*>\\s*&#xe5cb;?)").getMatch(1);
@@ -314,13 +330,6 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
                     }
                 }
             } while (!this.isAbort());
-            for (final DownloadLink link : ret) {
-                link.setProperty("username", username.trim());
-                if (galleryTitle != null) {
-                    link.setProperty("gallery", galleryTitle.trim());
-                }
-            }
-            fp.addLinks(ret);
             if (ret.isEmpty()) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -332,67 +341,27 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlImages(final CryptedLink param) {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final LinkedHashSet<String> imgs = new LinkedHashSet<String>();
-        // first link = album uid (uaid), these uid's are not transferable to picture ids (upid). But once you are past album page
-        // br.getURL() is the correct upid.
-        if (br.getURL().contains("/" + id)) {
-            String currentID = br.getRegex("<img[^>]*class=(\"|'|)(?:cur|big|prev)\\1[^>]*src=(?:'|\")?(?:https?:)?//[^/]*(?:imgsrc\\.ru|icdn\\.ru)/[a-z]/" + Pattern.quote(username) + "/\\d+/(\\d+)").getMatch(1);
-            if (currentID == null) {
-                currentID = br.getRegex("<img[^>]*src=(?:'|\")?(?:https?:)?//[^/]*(?:imgsrc\\.ru|icdn\\.ru)/[a-z]/" + Pattern.quote(username) + "/\\d+/(\\d+)[^>]*class=(\"|'|)(?:cur|big|prev)\\2").getMatch(0);
-                if (currentID == null) {
-                    currentID = br.getRegex("/voter\\.php\\?w=(?:up|down|'\\+way\\+')_(\\d+)").getMatch(0);
-                }
-            }
-            if (currentID != null) {
-                currentID = "/" + username + "/" + currentID + ".html";
-                if (pwd != null) {
-                    currentID += "?pwd=" + pwd;
-                }
-                imgs.add(currentID);
-            } else {
-                logger.warning("ERROR parsePage");
-                return ret;
-            }
-        } else {
-            imgs.add(br.getURL().replaceFirst("https?://imgsrc\\.ru", ""));
-        }
-        String[] images = br.getRegex("(/" + Pattern.quote(username) + "/\\d+\\.html(\\?pwd=[a-z0-9]{32})?)[^']*'\\s*(?:>|target)").getColumn(0);
-        if (images != null) {
-            imgs.addAll(Arrays.asList(images));
-        }
-        // parse imageID directly from imageURL, anchors(href='#pID') are incomplete as last one is link to next page
-        images = br.getRegex("/imgsrc.ru_(\\d+)[a-zA-Z]{3}\\.(jpe?g|webp)'[^>]*id").getColumn(0);
-        if (images != null) {
-            imgs.addAll(Arrays.asList(images));
-        }
-        if (imgs.isEmpty()) {
+        final String[] imageids = br.getRegex("id='p(\\d+)'").getColumn(0);
+        if (imageids == null || imageids.length == 0) {
             logger.warning("Possible plugin error: Please confirm in your webbrowser that this album " + param.getCryptedUrl() + " contains more than one image. If it does please report this issue to JDownloader Development Team.");
             return ret;
         }
         final String currentLink = br.getURL();
         final Set<String> dups = new HashSet<String>();
-        if (imgs.size() != 0) {
-            for (String url : imgs) {
-                if (url.matches("^\\d+$")) {
-                    url = "/" + username + "/" + url + ".html";
-                }
-                final String imageid = new Regex(url, "(?i)/(\\d+)\\.html").getMatch(0);
-                if (imageid == null) {
-                    logger.info("Skipping invalid item: " + url);
-                    continue;
-                } else if (!dups.add(imageid)) {
-                    logger.info("Skipping duplicated item: " + url);
-                    continue;
-                }
-                final DownloadLink img = createDownloadlink("https://decryptedimgsrc.ru" + url);
-                img.setReferrerUrl(currentLink);
-                img.setName(imageid + ".jpg");
-                img.setAvailable(true);
-                if (password != null) {
-                    img.setDownloadPassword(password);
-                }
-                ret.add(img);
+        for (final String imageid : imageids) {
+            if (!dups.add(imageid)) {
+                logger.info("Skipping duplicated item: " + imageid);
+                continue;
             }
+            String url = "/" + username + "/" + imageid + ".html";
+            final DownloadLink img = createDownloadlink("https://decryptedimgsrc.ru" + url);
+            img.setReferrerUrl(currentLink);
+            img.setName(imageid + ".jpg");
+            img.setAvailable(true);
+            if (password != null) {
+                img.setDownloadPassword(password);
+            }
+            ret.add(img);
         }
         return ret;
     }
