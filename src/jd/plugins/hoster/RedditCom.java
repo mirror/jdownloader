@@ -594,7 +594,7 @@ public class RedditCom extends PluginForHost {
     @Override
     public String correctOrApplyFileNameExtension(String filenameOrg, String newExtension, URLConnectionAdapter connection) {
         final String ret = super.correctOrApplyFileNameExtension(filenameOrg, newExtension, connection);
-        if (StringUtils.endsWithCaseInsensitive(filenameOrg, ".gif") && StringUtils.endsWithCaseInsensitive(ret, ".jpg")) {
+        if (StringUtils.endsWithCaseInsensitive(filenameOrg, ".gif") && StringUtils.endsWithCaseInsensitive(ret, ".jpg") && (connection.getRange() == null || connection.getRange()[0] == 0)) {
             try {
                 final CountingPushbackInputStream is = new CountingPushbackInputStream(connection.getInputStream(), 32);
                 connection.setInputStream(is);
