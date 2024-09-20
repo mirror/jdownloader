@@ -92,7 +92,7 @@ public class ZipComic extends PluginForDecrypt {
             index++;
         }
         final FilePackage fp = FilePackage.getInstance();
-        if (title != null && !true) {
+        if (title != null) {
             fp.setName(Encoding.htmlDecode(title).trim());
         } else {
             /* Fallback */

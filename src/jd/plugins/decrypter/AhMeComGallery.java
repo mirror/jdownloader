@@ -21,6 +21,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -31,10 +32,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ah-me.com" }, urls = { "https?://(?:www\\.)?ah\\-me\\.com/pics/gallery/\\d+/\\d+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ah-me.com" }, urls = { "https?://(?:www\\.)?ah\\-me\\.com/pics/gallery/(\\d+)/(\\d+)/" })
 public class AhMeComGallery extends PluginForDecrypt {
     public AhMeComGallery(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -42,23 +50,26 @@ public class AhMeComGallery extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br.getPage(param.getCryptedUrl());
-        if (br.containsHTML("class=\"gal_thumbs spec_right\">\\s*</div>") || br.getHttpConnection().getResponseCode() == 404) {
+        final String galleryID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("class=\"gal_thumbs spec_right\">\\s*</div>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.getURL().contains(galleryID)) {
+            /* E.g. redirect to main page */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String galleryID = new Regex(param.getCryptedUrl(), "(\\d+)/\\d+/").getMatch(0);
         String fpName = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
         if (fpName == null) {
             fpName = this.getHost() + " gallery " + galleryID;
         }
         final String[] links = br.getRegex("class=\"thumb\"[^>]*src=\"(https?://[^/]+/work/[^/]+/[^\"]+\\.jpg)\"").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         for (final String singleLink : links) {
             final String partToRemove = new Regex(singleLink, "/work/([^/]+)/").getMatch(0);
             if (partToRemove == null) {
@@ -66,11 +77,11 @@ public class AhMeComGallery extends PluginForDecrypt {
             }
             final DownloadLink dl = createDownloadlink(singleLink.replaceFirst(org.appwork.utils.Regex.escape(partToRemove), "orig"));
             dl.setAvailable(true);
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName).trim());
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 }

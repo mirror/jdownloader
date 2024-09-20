@@ -24,6 +24,7 @@ import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -41,136 +42,80 @@ public class YumpuCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
+        return br;
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String jsonURL = br.getRegex("var jsonUrl = \"([^\"]+)\"").getMatch(0);
         final String fid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final String url_name = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1);
         final String[] possibleQualityIdentifiersSorted = new String[] { "big", "large", "medium", "small" };
-        if (jsonURL != null) {
-            /* New way */
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            // br.getPage("https://www." + this.getHost() + "/en/document/json2/" + fid);
-            br.getPage(jsonURL);
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        /* Old way */
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getPage("https://www." + this.getHost() + "/en/document/json2/" + fid);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Object errorO = entries.get("error");
+        if (errorO != null) {
+            /* E.g. {"error":{"reason":"deleted","message":"Document deleted"}} */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> document = (Map<String, Object>) entries.get("document");
+        final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) document.get("pages");
+        final String description = (String) document.get("description");
+        String fpName = (String) document.get("title");
+        if (StringUtils.isEmpty(fpName)) {
+            /* Fallback */
+            fpName = url_name;
+        }
+        final String base_path = (String) document.get("base_path");
+        final Map<String, Object> images = (Map<String, Object>) document.get("images");
+        final String title = (String) images.get("title");
+        final Map<String, Object> dimensions = (Map<String, Object>) images.get("dimensions");
+        String best_resolution = null;
+        String best_resolution_label = null;
+        for (final String quality : possibleQualityIdentifiersSorted) {
+            best_resolution = (String) dimensions.get(quality);
+            if (best_resolution != null) {
+                best_resolution_label = quality;
+                break;
             }
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            final Object errorO = entries.get("error");
-            if (errorO != null) {
-                /* E.g. {"error":{"reason":"deleted","message":"Document deleted"}} */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (StringUtils.isEmpty(base_path) || StringUtils.isEmpty(title) || StringUtils.isEmpty(best_resolution) || ressourcelist == null || ressourcelist.size() == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final boolean setComment = !StringUtils.isEmpty(description) && !description.equalsIgnoreCase(fpName);
+        for (int i = 0; i < ressourcelist.size(); i++) {
+            /* 2019-05-21: 'quality' parameter = percentage of quality */
+            final Map<String, Object> ressource = ressourcelist.get(i);
+            final Map<String, Object> this_images = (Map<String, Object>) ressource.get("images");
+            final Map<String, Object> this_qss = (Map<String, Object>) ressource.get("qss");
+            final String this_image_best_resolution = this_images.get(best_resolution_label).toString();
+            final String this_image_best_resolution_aws_auth = this_qss.get(best_resolution_label).toString();
+            final String directurl = base_path + this_image_best_resolution + "?" + this_image_best_resolution_aws_auth;
+            final String filename = i + "_" + title;
+            final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl));
+            dl.setFinalFileName(filename);
+            dl.setAvailable(true);
+            if (setComment) {
+                dl.setComment(description);
             }
-            final Map<String, Object> document = (Map<String, Object>) entries.get("document");
-            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) document.get("pages");
-            final String description = (String) document.get("description");
-            String fpName = (String) document.get("title");
-            if (StringUtils.isEmpty(fpName)) {
-                /* Fallback */
-                fpName = url_name;
-            }
-            final String base_path = (String) document.get("base_path");
-            final Map<String, Object> images = (Map<String, Object>) document.get("images");
-            final String basetitle = (String) images.get("title");
-            if (StringUtils.isEmpty(base_path) || StringUtils.isEmpty(basetitle) || ressourcelist == null || ressourcelist.size() == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final boolean setComment = !StringUtils.isEmpty(description) && !description.equalsIgnoreCase(fpName);
-            for (int i = 0; i <= ressourcelist.size() - 1; i++) {
-                /* 2019-05-21: 'quality' = percentage of quality */
-                final Map<String, Object> page = ressourcelist.get(i);
-                final Map<String, Object> imagesInfo1 = (Map<String, Object>) page.get("images");
-                final Map<String, Object> imagesInfo2 = (Map<String, Object>) page.get("qss");
-                String urlPath = null, query = null;
-                for (final String possibleQualityIdentifierSorted : possibleQualityIdentifiersSorted) {
-                    if (imagesInfo1.containsKey(possibleQualityIdentifierSorted) && imagesInfo2.containsKey(possibleQualityIdentifierSorted)) {
-                        // bestResolution = (String) dimensions.get(possibleQualityIdentifierSorted);
-                        urlPath = imagesInfo1.get(possibleQualityIdentifierSorted).toString();
-                        query = imagesInfo2.get(possibleQualityIdentifierSorted).toString();
-                        break;
-                    }
-                }
-                final String directurl = base_path + urlPath + "?" + query;
-                final String filename = i + "_" + basetitle;
-                final DownloadLink dl = createDownloadlink(directurl + "");
-                dl.setFinalFileName(filename);
-                dl.setAvailable(true);
-                if (setComment) {
-                    dl.setComment(description);
-                }
-                ret.add(dl);
-            }
-            if (fpName != null) {
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName).trim());
-                fp.addLinks(ret);
-            }
-        } else {
-            /* Old way */
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage("https://www." + this.getHost() + "/en/document/json2/" + fid);
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            final Object errorO = entries.get("error");
-            if (errorO != null) {
-                /* E.g. {"error":{"reason":"deleted","message":"Document deleted"}} */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Map<String, Object> document = (Map<String, Object>) entries.get("document");
-            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) document.get("pages");
-            final String description = (String) document.get("description");
-            String fpName = (String) document.get("title");
-            if (StringUtils.isEmpty(fpName)) {
-                /* Fallback */
-                fpName = url_name;
-            }
-            final String base_path = (String) document.get("base_path");
-            final Map<String, Object> images = (Map<String, Object>) document.get("images");
-            final String title = (String) images.get("title");
-            final Map<String, Object> dimensions = (Map<String, Object>) images.get("dimensions");
-            String best_resolution = null;
-            String best_resolution_label = null;
-            final String[] qualitiesHighestToLowest = new String[] { "big", "large", "medium", "small", "thumb" };
-            for (final String quality : qualitiesHighestToLowest) {
-                best_resolution = (String) dimensions.get(quality);
-                if (best_resolution != null) {
-                    best_resolution_label = quality;
-                    break;
-                }
-            }
-            if (StringUtils.isEmpty(base_path) || StringUtils.isEmpty(title) || StringUtils.isEmpty(best_resolution) || ressourcelist == null || ressourcelist.size() == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final boolean setComment = !StringUtils.isEmpty(description) && !description.equalsIgnoreCase(fpName);
-            for (int i = 0; i < ressourcelist.size(); i++) {
-                /* 2019-05-21: 'quality' parameter = percentage of quality */
-                final Map<String, Object> ressource = ressourcelist.get(i);
-                final Map<String, Object> this_images = (Map<String, Object>) ressource.get("images");
-                final Map<String, Object> this_qss = (Map<String, Object>) ressource.get("qss");
-                final String this_image_best_resolution = this_images.get(best_resolution_label).toString();
-                final String this_image_best_resolution_aws_auth = this_qss.get(best_resolution_label).toString();
-                final String directurl = base_path + this_image_best_resolution + "?" + this_image_best_resolution_aws_auth;
-                final String filename = i + "_" + title;
-                final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl));
-                dl.setFinalFileName(filename);
-                dl.setAvailable(true);
-                if (setComment) {
-                    dl.setComment(description);
-                }
-                ret.add(dl);
-            }
-            if (fpName != null) {
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(ret);
-            }
+            ret.add(dl);
+        }
+        if (fpName != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(ret);
         }
         return ret;
     }
