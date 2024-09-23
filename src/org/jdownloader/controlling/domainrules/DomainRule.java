@@ -8,7 +8,7 @@ public class DomainRule implements Storable {
     private String  pluginPattern;
     private boolean enabled                     = false;
     private int     maxSimultanDownloads        = 0;
-    private int     maxChunks                   = 0;
+    private int     maxChunks                   = null;
     private boolean allowToExceedTheGlobalLimit = false;
 
     public DomainRule(/* Storable */) {
@@ -72,11 +72,11 @@ public class DomainRule implements Storable {
         this.maxSimultanDownloads = maxSimultanDownloads;
     }
 
-    public int getMaxChunks() {
+    public Integer getMaxChunks() {
         return maxChunks;
     }
 
-    public void setMaxChunks(int maxChunks) {
+    public void setMaxChunks(Integer maxChunks) {
         this.maxChunks = maxChunks;
     }
 }
