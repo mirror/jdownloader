@@ -58,22 +58,12 @@ public class NexusmodsComCrawler extends PluginForDecrypt {
         final String mod_id = new Regex(url, this.getSupportedLinks()).getMatch(1);
         if (game_domain_name == null || mod_id == null) {
             /* This should never happen */
-            logger.warning("game_domain_name or mod_id missing");
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "game_domain_name or mod_id missing");
         }
         final Account account = AccountController.getInstance().getValidAccount(plugin.getHost());
         final String apikey = jd.plugins.hoster.NexusmodsCom.getApikey(account);
         if (apikey != null) {
-            try {
-                ret = crawlAPI(param, account, game_domain_name, mod_id);
-            } catch (final PluginException e) {
-                /* Offline errorhandling as crawler + hosterplugins share the code for errorhandling. */
-                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                    ret.add(this.createOfflinelink(url));
-                    return ret;
-                }
-                throw e;
-            }
+            ret = crawlAPI(param, account, game_domain_name, mod_id);
         } else {
             ret = crawlWebsite(param, account, game_domain_name, mod_id);
         }
@@ -146,7 +136,7 @@ public class NexusmodsComCrawler extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlWebsite(final CryptedLink param, final Account account, final String game_domain_name, final String mod_id) throws Exception {
         final String parameter = param.toString();
         final PluginForHost plugin = JDUtilities.getPluginForHost(this.getHost());
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (account != null) {
             /* Login via website */
             ((jd.plugins.hoster.NexusmodsCom) plugin).loginWebsite(account);
@@ -154,8 +144,8 @@ public class NexusmodsComCrawler extends PluginForDecrypt {
         br.setFollowRedirects(true);
         ((jd.plugins.hoster.NexusmodsCom) plugin).getPage(br, parameter);
         if (jd.plugins.hoster.NexusmodsCom.isOfflineWebsite(br)) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            ret.add(this.createOfflinelink(parameter));
+            return ret;
         } else if (((jd.plugins.hoster.NexusmodsCom) plugin).isLoginRequired(br)) {
             throw new AccountRequiredException();
         } else if (br.containsHTML(">\\s*This mod contains adult content")) {
@@ -170,12 +160,14 @@ public class NexusmodsComCrawler extends PluginForDecrypt {
         }
         final String game_id = br.getRegex("game_id\\s*=\\s*(\\d+)").getMatch(0);
         if (game_id == null) {
-            logger.warning("Failed to find game_id");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find game_id");
         }
         final Browser br2 = br.cloneBrowser();
         ((jd.plugins.hoster.NexusmodsCom) plugin).getPage(br2, "/Core/Libs/Common/Widgets/ModFilesTab?id=" + mod_id + "&game_id=" + game_id);
         final String[] downloadTypesHTMLs = br2.getRegex("<div class=\"file-category-header\">\\s*<h2>[^<>]+</h2>\\s*<div>.*?</dd>\\s*</dl>\\s*</div>").getColumn(-1);
+        if (downloadTypesHTMLs == null || downloadTypesHTMLs.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         int counter = 0;
         for (final String downnloadTypeHTML : downloadTypesHTMLs) {
             counter++;
@@ -222,10 +214,10 @@ public class NexusmodsComCrawler extends PluginForDecrypt {
                 link.setProperty("mod_id", mod_id);
                 /* Every category goes into a subfolder */
                 link.setRelativeDownloadFolderPath(game_domain_name + "/" + category_name);
-                decryptedLinks.add(link);
+                ret.add(link);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private String generateContentURL(final String game_domain_name, final String mod_id, final String file_id) {
