@@ -70,7 +70,7 @@ public class HypnotubeCom extends PluginForHost {
     }
 
     private String        dllink         = null;
-    private final Pattern PATTERN_NORMAL = Pattern.compile("(?i)https?://[^/]+/video/([a-z0-9\\-]*)-(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
+    private final Pattern PATTERN_NORMAL = Pattern.compile("https?://[^/]+/video/([a-z0-9\\-]*)-(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
     private final Pattern PATTERN_EMBED  = Pattern.compile("https?://[^/]+/embed/(\\d+)", Pattern.CASE_INSENSITIVE);
 
     public static List<String[]> getPluginDomains() {

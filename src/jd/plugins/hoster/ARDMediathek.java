@@ -148,7 +148,7 @@ public class ARDMediathek extends PluginForHost {
             checkFFProbe(link, "Check a HLS Stream");
             br.getPage(this.dllink);
             /* Check for offline and GEO-blocked */
-            connectionErrorhandling(br, br.getHttpConnection(), false);
+            connectionErrorhandling(br, br.getHttpConnection(), link, false);
             final List<M3U8Playlist> list = M3U8Playlist.parseM3U8(br);
             final HLSDownloader downloader = new HLSDownloader(link, br, br.getURL(), list);
             final StreamInfo streamInfo = downloader.getProbe();
@@ -166,7 +166,7 @@ public class ARDMediathek extends PluginForHost {
                 final Browser brc = br.cloneBrowser();
                 brc.getHeaders().put("Accept-Encoding", "identity");
                 con = brc.openGetConnection(dllink);
-                connectionErrorhandling(br, con, true);
+                connectionErrorhandling(brc, con, link, true);
             } finally {
                 try {
                     con.disconnect();
@@ -179,7 +179,7 @@ public class ARDMediathek extends PluginForHost {
                 final Browser brc = br.cloneBrowser();
                 /* 2024-09-13: HEAD request is not possible anymore (for ardmediathek.de items). It will return http response code 403. */
                 con = brc.openGetConnection(dllink);
-                connectionErrorhandling(br, con, true);
+                connectionErrorhandling(brc, con, link, true);
                 setFileInfo(link, con);
             } finally {
                 try {
@@ -229,7 +229,7 @@ public class ARDMediathek extends PluginForHost {
         download(link);
     }
 
-    private void connectionErrorhandling(final Browser br, final URLConnectionAdapter con, final boolean exceptionOnNoFileContent) throws PluginException, IOException {
+    private void connectionErrorhandling(final Browser br, final URLConnectionAdapter con, final DownloadLink link, final boolean exceptionOnNoFileContent) throws PluginException, IOException {
         final String etag = con.getRequest().getResponseHeader("etag");
         if ("\"cc135f46ae35ba958d6f753790a1a76b:1507796934\"".equals(etag)) {
             /* 2024-09-16: http://cdn-storage.br.de/tafeln/br-fernsehen/br-fernsehen-tafel_E.mp4 */
@@ -247,7 +247,7 @@ public class ARDMediathek extends PluginForHost {
         } else if (con.getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (exceptionOnNoFileContent && !this.looksLikeDownloadableContent(con)) {
+        if (exceptionOnNoFileContent && !this.looksLikeDownloadableContent(con, link)) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_FATAL, "Broken file?");
         }
@@ -275,7 +275,7 @@ public class ARDMediathek extends PluginForHost {
                 maxChunks = 1;
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
-            this.connectionErrorhandling(br, dl.getConnection(), true);
+            this.connectionErrorhandling(br, dl.getConnection(), link, true);
             setFileInfo(link, dl.getConnection());
             if (this.dl.startDownload()) {
                 this.postprocess(link);

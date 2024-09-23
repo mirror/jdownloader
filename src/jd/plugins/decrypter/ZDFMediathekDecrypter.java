@@ -61,15 +61,14 @@ import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface.SubtitleType
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "3sat.de", "phoenix.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/(?:.+/)?[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?3sat\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?3sat\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?phoenix\\.de/(?:.*?-\\d+\\.html.*|podcast/[A-Za-z0-9]+/video/rss\\.xml)" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
-    private boolean             fastlinkcheck             = false;
-    private final String        TYPE_ZDF                  = "(?i)https?://(?:www\\.)?(?:zdf\\.de|3sat\\.de)/.+";
-    private static final String TYPE_PHOENIX              = "(?i)https?://(?:www\\.)?phoenix\\.de/.*-(\\d+)\\.html.*";
-    private final String        TYPE_PHOENIX_RSS          = "(?i)http://(?:www\\.)?phoenix\\.de/podcast/.+";
+    private boolean                          fastlinkcheck             = false;
+    private final String                     TYPE_ZDF                  = "(?i)https?://(?:www\\.)?(?:zdf\\.de|3sat\\.de)/.+";
+    private static final String              TYPE_PHOENIX              = "(?i)https?://(?:www\\.)?phoenix\\.de/.*-(\\d+)\\.html.*";
+    private final String                     TYPE_PHOENIX_RSS          = "(?i)http://(?:www\\.)?phoenix\\.de/podcast/.+";
     /* Not sure where these URLs come from. Probably old RSS readers via old APIs ... */
-    private final String        TYPER_ZDF_REDIRECT        = "(?i)https?://[^/]+/uri/.+";
-    private List<String>        userSelectedSubtitleTypes = new ArrayList<String>();
-    private Map<String, String> subtitlesXML              = new HashMap<String, String>();
-    private Map<String, String> subtitlesVTT              = new HashMap<String, String>();
+    private final String                     TYPER_ZDF_REDIRECT        = "(?i)https?://[^/]+/uri/.+";
+    private List<String>                     userSelectedSubtitleTypes = new ArrayList<String>();
+    private Map<String, Map<String, Object>> subtitlesByLanguage       = new HashMap<String, Map<String, Object>>();
 
     public ZDFMediathekDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -131,42 +130,44 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     public static List<String[]> getBetterQualities(final String url) {
         final String base[] = new Regex(url, "((\\d{3,4}k_p\\d{1,2})(v\\d{2})\\.mp4)", Pattern.CASE_INSENSITIVE).getRow(0);
-        if (base != null && base.length == 3) {
-            final String qualityModifierComplete = base[0];
-            final String bitrateAndP = base[1];
-            final String version = base[2];
-            final List<String[]> qualities = QUALITIES_MAP.get(version.toLowerCase(Locale.ENGLISH));
-            if (qualities != null) {
-                boolean unknownQuality = false;
-                while (true) {
-                    final Iterator<String[]> it = qualities.iterator();
+        if (base == null || base.length != 3) {
+            return null;
+        }
+        final String qualityModifierComplete = base[0];
+        final String bitrateAndP = base[1];
+        final String version = base[2];
+        final List<String[]> qualities = QUALITIES_MAP.get(version.toLowerCase(Locale.ENGLISH));
+        if (qualities == null) {
+            return null;
+        }
+        boolean unknownQuality = false;
+        while (true) {
+            final Iterator<String[]> it = qualities.iterator();
+            while (it.hasNext()) {
+                String next[] = unknownQuality ? null : it.next();
+                String thisBitrateAndP = next != null ? next[0] : null;
+                /* Find list where first item equals */
+                if (thisBitrateAndP == null || thisBitrateAndP.equalsIgnoreCase(bitrateAndP)) {
+                    final List<String[]> ret = new ArrayList<String[]>();
                     while (it.hasNext()) {
-                        String next[] = unknownQuality ? null : it.next();
-                        String thisBitrateAndP = next != null ? next[0] : null;
-                        /* Find list where first item equals */
-                        if (thisBitrateAndP == null || thisBitrateAndP.equalsIgnoreCase(bitrateAndP)) {
-                            final List<String[]> ret = new ArrayList<String[]>();
-                            while (it.hasNext()) {
-                                next = it.next();
-                                thisBitrateAndP = next[0];
-                                final String nextURL = url.replaceFirst("(?i)" + Pattern.quote(qualityModifierComplete), thisBitrateAndP + version + ".mp4");
-                                ret.add(new String[] { nextURL, next[1].toLowerCase(Locale.ENGLISH) });
-                            }
-                            if (ret.size() > 0) {
-                                /* Reverse sort so highest quality is on the beginning */
-                                Collections.reverse(ret);
-                                return ret;
-                            } else {
-                                return null;
-                            }
-                        }
+                        next = it.next();
+                        thisBitrateAndP = next[0];
+                        final String nextURL = url.replaceFirst("(?i)" + Pattern.quote(qualityModifierComplete), thisBitrateAndP + version + ".mp4");
+                        ret.add(new String[] { nextURL, next[1].toLowerCase(Locale.ENGLISH) });
                     }
-                    if (unknownQuality == false) {
-                        unknownQuality = true;
+                    if (ret.size() > 0) {
+                        /* Reverse sort so highest quality is on the beginning */
+                        Collections.reverse(ret);
+                        return ret;
                     } else {
-                        break;
+                        return null;
                     }
                 }
+            }
+            if (unknownQuality == false) {
+                unknownQuality = true;
+            } else {
+                break;
             }
         }
         return null;
@@ -629,17 +630,32 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             }
             /* 1. Collect subtitles */
             final Object captionsO = JavaScriptEngineFactory.walkJson(player, "captions");
-            if (captionsO instanceof List && this.subtitlesXML.isEmpty()) {
+            if (captionsO instanceof List && this.subtitlesByLanguage.isEmpty()) {
                 /* Captions can be available in different versions (languages- and types) */
                 final List<Object> subtitlesO = (List<Object>) player.get("captions");
-                Map<String, Object> subInfo = null;
                 for (final Object subtitleO : subtitlesO) {
-                    subInfo = (Map<String, Object>) subtitleO;
-                    final String subtitleType = (String) subInfo.get("class");
-                    final String uri = (String) subInfo.get("uri");
+                    final Map<String, Object> subInfo = (Map<String, Object>) subtitleO;
+                    final String subtitleType = subInfo.get("class").toString();
+                    final String uri = subInfo.get("uri").toString();
+                    final String subtitleLanguage = subInfo.get("language").toString();
                     /* E.g. "ebu-tt-d-basic-de" or "webvtt" */
                     // final String format = (String) subInfo.get("format");
                     /* Skip unsupported formats */
+                    Map<String, Object> subtitlesThisLanguage = subtitlesByLanguage.get(subtitleLanguage);
+                    if (subtitlesThisLanguage == null) {
+                        subtitlesThisLanguage = new HashMap<String, Object>();
+                        subtitlesByLanguage.put(subtitleLanguage, subtitlesThisLanguage);
+                    }
+                    Map<String, String> subtitlesXML = (Map<String, String>) subtitlesThisLanguage.get("xml");
+                    if (subtitlesXML == null) {
+                        subtitlesXML = new HashMap<String, String>();
+                        subtitlesThisLanguage.put("xml", subtitlesXML);
+                    }
+                    Map<String, String> subtitlesVTT = (Map<String, String>) subtitlesThisLanguage.get("vtt");
+                    if (subtitlesVTT == null) {
+                        subtitlesVTT = new HashMap<String, String>();
+                        subtitlesThisLanguage.put("vtt", subtitlesVTT);
+                    }
                     if (uri.toLowerCase(Locale.ENGLISH).endsWith(".xml")) {
                         subtitlesXML.put(subtitleType, uri);
                     } else if (uri.toLowerCase(Locale.ENGLISH).endsWith(".vtt")) {
@@ -733,7 +749,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     /* http mp4- and segment streams. */
                     ext = "mp4";
                 }
-                final String language = (String) qualitymap.get("language");
+                final String language = qualitymap.get("language").toString();
                 String uri = (String) qualitymap.get("uri");
                 if (StringUtils.isEmpty(audio_class) || StringUtils.isEmpty(language) || StringUtils.isEmpty(uri)) {
                     /* Skip invalid objects */
@@ -816,6 +832,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         final String qualitySelectorString = generateQualitySelectorString(protocol, ext, Integer.toString(hlscontainer.getHeight()), language, audio_class);
                         all_found_downloadlinks.put(qualitySelectorString, dl);
                         addDownloadLinkAndGenerateSubtitleDownloadLink(allDownloadLinks, dl);
+                        dl.setProperty(ZdfDeMediathek.PROPERTY_language, language);
                         if (containsQuality(selectedQualityStrings, qualitySelectorString)) {
                             userSelectedQualitiesTmp.add(dl);
                             selectedQualitiesMapTmp.put(qualitySelectorString, dl);
@@ -889,6 +906,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                             dl.setVerifiedFileSize(thisFilesize);
                         }
                         setDownloadlinkProperties(dl, final_filename, type, linkid, title, tv_show, date_formatted, tv_station);
+                        dl.setProperty(ZdfDeMediathek.PROPERTY_language, language);
                         final String qualitySelectorString = generateQualitySelectorString(protocol, ext, httpQualityIdentifierWeak, language, audio_class);
                         final boolean isMp4 = StringUtils.startsWithCaseInsensitive(qualitySelectorString, "http_mp4");
                         final boolean isWebm = StringUtils.startsWithCaseInsensitive(qualitySelectorString, "http_webm");
@@ -1075,38 +1093,49 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     private void addDownloadLinkAndGenerateSubtitleDownloadLink(final ArrayList<DownloadLink> ret, final DownloadLink dl) {
         ret.add(dl);
+        if (this.userSelectedSubtitleTypes.isEmpty()) {
+            /* User has disabled subtitles. */
+            return;
+        }
         final ZdfmediathekConfigInterface cfg = PluginJsonConfig.get(ZdfmediathekConfigInterface.class);
         final SubtitleType subtitleType = cfg.getPreferredSubtitleType();
-        final Map<String, String> subtitleSource;
+        Map<String, String> subtitleSource = null;
         final String ext;
         boolean convertSubtitle = false;
+        final String lang = dl.getStringProperty(ZdfDeMediathek.PROPERTY_language);
+        final Map<String, Object> subtitlesThisLang = this.subtitlesByLanguage.get(lang);
+        if (subtitlesThisLang == null) {
+            /* No subtitles available (for this language) */
+            return;
+        }
         if (subtitleType == SubtitleType.WEBVTT) {
-            subtitleSource = this.subtitlesVTT;
+            subtitleSource = (Map<String, String>) subtitlesThisLang.get("vtt");
             ext = ".vtt";
         } else if (subtitleType == SubtitleType.SRT) {
-            subtitleSource = this.subtitlesXML;
+            subtitleSource = (Map<String, String>) subtitlesThisLang.get("xml");
             ext = ".xml";
             /* xml -> srt */
             convertSubtitle = true;
         } else {
-            subtitleSource = this.subtitlesXML;
+            subtitleSource = (Map<String, String>) subtitlesThisLang.get("xml");
             ext = ".xml";
             /* xml -> srt */
             convertSubtitle = false;
         }
         for (final String selectedSubtitleType : this.userSelectedSubtitleTypes) {
-            if (subtitleSource.containsKey(selectedSubtitleType)) {
-                final String current_ext = dl.getFinalFileName().substring(dl.getFinalFileName().lastIndexOf("."));
-                final String longSubtitleName = this.convertInternalSubtitleClassToUserReadable(selectedSubtitleType);
-                final String final_filename = dl.getFinalFileName().replace(current_ext, "_" + longSubtitleName + ext);
-                final String linkid = dl.getLinkID() + "_" + longSubtitleName;
-                final DownloadLink dl_subtitle = this.createDownloadlink(subtitleSource.get(selectedSubtitleType));
-                setDownloadlinkProperties(dl_subtitle, final_filename, "subtitle_" + ext, linkid, null, null, null, null);
-                if (convertSubtitle) {
-                    dl_subtitle.setProperty(ZdfDeMediathek.PROPERTY_convert_subtitle, true);
-                }
-                ret.add(dl_subtitle);
+            if (!subtitleSource.containsKey(selectedSubtitleType)) {
+                continue;
             }
+            final String current_ext = dl.getFinalFileName().substring(dl.getFinalFileName().lastIndexOf("."));
+            final String longSubtitleName = this.convertInternalSubtitleClassToUserReadable(selectedSubtitleType);
+            final String final_filename = dl.getFinalFileName().replace(current_ext, "_" + longSubtitleName + ext);
+            final String linkid = dl.getLinkID() + "_" + longSubtitleName;
+            final DownloadLink dl_subtitle = this.createDownloadlink(subtitleSource.get(selectedSubtitleType));
+            setDownloadlinkProperties(dl_subtitle, final_filename, "subtitle_" + ext, linkid, null, null, null, null);
+            if (convertSubtitle) {
+                dl_subtitle.setProperty(ZdfDeMediathek.PROPERTY_convert_subtitle, true);
+            }
+            ret.add(dl_subtitle);
         }
     }
 
