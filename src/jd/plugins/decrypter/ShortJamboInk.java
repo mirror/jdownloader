@@ -30,7 +30,7 @@ public class ShortJamboInk extends MightyScriptAdLinkFly {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "short-jambo.ink", "university.jargonbuzz.online", "fawzy.xyz" });
+        ret.add(new String[] { "short-jambo.ink", "university.jargonbuzz.online", "fawzy.xyz", "crizyman.online" });
         return ret;
     }
 
@@ -57,6 +57,6 @@ public class ShortJamboInk extends MightyScriptAdLinkFly {
 
     @Override
     protected String getSpecialReferer() {
-        return "https://fawzy.xyz/";
+        return "https://crizyman.online/";
     }
 }
