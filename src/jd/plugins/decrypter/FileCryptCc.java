@@ -23,6 +23,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.FileCryptConfig;
+import org.jdownloader.plugins.components.config.FileCryptConfig.CrawlMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -47,21 +62,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.FileCryptConfig;
-import org.jdownloader.plugins.components.config.FileCryptConfig.CrawlMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FileCryptCc extends PluginForDecrypt {
@@ -407,13 +407,15 @@ public class FileCryptCc extends PluginForDecrypt {
             }
             if (cutCaptchaRetryIndex == 0 && logoPW == null) {
                 /**
-                 * Search password based on folder-logo. </br> Only do this one time in the first run of this loop.
+                 * Search password based on folder-logo. </br>
+                 * Only do this one time in the first run of this loop.
                  */
                 final String customLogoID = br.getRegex("custom/([a-z0-9]+)\\.png").getMatch(0);
                 if (customLogoID != null) {
                     /**
-                     * Magic auto passwords: </br> Creators can set custom logos on each folder. Each logo has a unique ID. This way we can
-                     * try specific passwords first that are typically associated with folders published by those sources.
+                     * Magic auto passwords: </br>
+                     * Creators can set custom logos on each folder. Each logo has a unique ID. This way we can try specific passwords first
+                     * that are typically associated with folders published by those sources.
                      */
                     if ("53d1b".equals(customLogoID) || "80d13".equals(customLogoID) || "fde1d".equals(customLogoID) || "8abe0".equals(customLogoID) || "8f073".equals(customLogoID)) {
                         logoPW = "serienfans.org";
@@ -435,7 +437,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
             }
             /* Separate password and captcha handling. This is easier for several reasons! */
-            if (containsPassword()) {
+            if (containsPassword(this.cleanHTML)) {
                 int passwordCounter = 0;
                 final int maxPasswordRetries = 3;
                 final List<String> passwords = getPreSetPasswords();
@@ -515,7 +517,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     }
                     passwordForm.put(passwordFieldKey, Encoding.urlEncode(passCode));
                     submitForm(passwordForm);
-                    if (!containsPassword()) {
+                    if (!containsPassword(this.cleanHTML)) {
                         /* Success */
                         logger.info("Password success: " + passCode);
                         successfullyUsedFolderPassword = passCode;
@@ -526,7 +528,7 @@ public class FileCryptCc extends PluginForDecrypt {
                         continue passwordLoop;
                     }
                 }
-                if (passwordCounter >= maxPasswordRetries && containsPassword()) {
+                if (passwordCounter >= maxPasswordRetries && containsPassword(this.cleanHTML)) {
                     throw new DecrypterException(DecrypterException.PASSWORD);
                 }
                 if (!StringUtils.equals(this.getPluginConfig().getStringProperty(PROPERTY_PLUGIN_LAST_USED_PASSWORD), successfullyUsedFolderPassword)) {
@@ -536,7 +538,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 this.getPluginConfig().setProperty(PROPERTY_PLUGIN_LAST_USED_PASSWORD, successfullyUsedFolderPassword);
             }
             lastCaptchaIsCutCaptcha = false;
-            if (containsCaptcha()) {
+            if (containsCaptcha(this.cleanHTML)) {
                 /* Process captcha */
                 int captchaCounter = -1;
                 final int maxCaptchaRetries = 10;
@@ -548,6 +550,9 @@ public class FileCryptCc extends PluginForDecrypt {
                     if (forms != null && forms.length != 0) {
                         for (final Form form : forms) {
                             if (form.containsHTML("captcha") || AbstractRecaptchaV2.containsRecaptchaV2Class(form)) {
+                                captchaForm = form;
+                                break;
+                            } else if (form.containsHTML("cform")) {
                                 captchaForm = form;
                                 break;
                             }
@@ -635,7 +640,7 @@ public class FileCryptCc extends PluginForDecrypt {
                         captchaForm.put("recaptcha_response_field", Encoding.urlEncode(code));
                     }
                     submitForm(captchaForm);
-                    if (this.containsCaptcha()) {
+                    if (this.containsCaptcha(this.cleanHTML)) {
                         logger.info("User entered wrong captcha");
                         this.invalidateLastChallengeResponse();
                         continue captchaLoop;
@@ -771,12 +776,30 @@ public class FileCryptCc extends PluginForDecrypt {
         return ret;
     }
 
-    private final boolean containsCaptcha() {
-        return new Regex(cleanHTML, ">\\s*(?:Sicherheitsüberprüfung|Security prompt)\\s*</").patternFind();
+    private final boolean containsCaptcha(final String html) {
+        if (new Regex(html, ">\\s*(?:Sicherheitsüberprüfung|Security prompt)\\s*</").patternFind()) {
+            return true;
+        } else if (containsCircleCaptcha(html)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    private final boolean containsPassword() {
-        return new Regex(cleanHTML, "(?i)>\\s*(?:Passwort erforderlich|Password required)\\s*</").patternFind();
+    private final boolean containsCircleCaptcha(final String html) {
+        if (html.contains("circle.php")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private final boolean containsPassword(final String html) {
+        if (new Regex(html, "(?i)>\\s*(?:Passwort erforderlich|Password required)\\s*</").patternFind()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private String cleanHTML = null;
