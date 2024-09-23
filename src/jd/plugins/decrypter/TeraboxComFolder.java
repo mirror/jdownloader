@@ -22,6 +22,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -40,12 +46,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.TeraboxCom;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TeraboxComFolder extends PluginForDecrypt {
@@ -83,7 +83,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(web/share/(?:init|link|filelist)\\?surl=[A-Za-z0-9\\-_]+(\\&path=[^/]+)?|web/share/videoPlay\\?surl=[A-Za-z0-9\\-_]+\\&dir=[^\\&]+|s/[A-Za-z0-9\\-_]+|(?:[a-z0-9]+/)?sharing/link\\?surl=[A-Za-z0-9\\-_]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(web/share/(?:init|link|filelist)\\?surl=[A-Za-z0-9\\-_]+.*|web/share/videoPlay\\?surl=[A-Za-z0-9\\-_]+\\&dir=[^\\&]+|s/[A-Za-z0-9\\-_]+|(?:[a-z0-9]+/)?sharing/link\\?surl=[A-Za-z0-9\\-_]+.*)");
         }
         return ret.toArray(new String[0]);
     }
@@ -110,10 +110,10 @@ public class TeraboxComFolder extends PluginForDecrypt {
         br.setCookie(host, "BOXCLND", passwordCookie);
     }
 
-    private static final String            TYPE_SHORT                = "(?i)https?://[^/]+/s/(.+)";
-    private static final String            TYPE_SHORT_NEW            = "(?i)https?://[^/]+/(?:[a-z0-9]+/)?sharing/link\\?surl=([A-Za-z0-9\\-_]+)";
+    private static final Pattern           TYPE_SHORT                = Pattern.compile("https?://[^/]+/s/(.+)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern           TYPE_SHORT_NEW            = Pattern.compile("https?://[^/]+/(?:[a-z0-9]+/)?sharing/link\\?surl=([A-Za-z0-9\\-_]+).*", Pattern.CASE_INSENSITIVE);
     /* For such URLs leading to single files we'll crawl all items of the folder that file is in -> Makes it easier */
-    private static final String            TYPE_SINGLE_VIDEO         = "(?i)https?://[^/]+/web/share/videoPlay\\?surl=([A-Za-z0-9\\-_]+)\\&dir=([^\\&]+)";
+    private static final Pattern           TYPE_SINGLE_VIDEO         = Pattern.compile("https?://[^/]+/web/share/videoPlay\\?surl=([A-Za-z0-9\\-_]+)\\&dir=([^\\&]+)", Pattern.CASE_INSENSITIVE);
     private static final AtomicLong        anonymousJstokenTimestamp = new AtomicLong(-1);
     private static AtomicReference<String> anonymousJstoken          = new AtomicReference<String>(null);
 
@@ -131,21 +131,16 @@ public class TeraboxComFolder extends PluginForDecrypt {
             contenturl = contenturl.replaceFirst(Pattern.quote(domainOfAddedURL) + "/", getHost() + "/");
         }
         final UrlQuery paramsOfAddedURL = UrlQuery.parse(contenturl);
-        String surl;
+        String surl = null;
         String preGivenPath = null;
-        if (contenturl.matches(TYPE_SHORT)) {
+        if (new Regex(contenturl, TYPE_SHORT).patternFind()) {
             surl = new Regex(contenturl, TYPE_SHORT).getMatch(0);
-        } else if (contenturl.matches(TYPE_SHORT_NEW)) {
-            surl = new Regex(param.getCryptedUrl(), TYPE_SHORT_NEW).getMatch(0);
-        } else if (contenturl.matches(TYPE_SINGLE_VIDEO)) {
-            surl = paramsOfAddedURL.get("surl");
-            preGivenPath = paramsOfAddedURL.get("dir");
         } else {
             surl = paramsOfAddedURL.get("surl");
-            preGivenPath = paramsOfAddedURL.get("dir");
-            if (preGivenPath == null) {
-                preGivenPath = paramsOfAddedURL.get("path");
-            }
+        }
+        preGivenPath = paramsOfAddedURL.get("dir");
+        if (preGivenPath == null) {
+            preGivenPath = paramsOfAddedURL.get("path");
         }
         if (surl == null) {
             /* Developer mistake */
@@ -336,17 +331,16 @@ public class TeraboxComFolder extends PluginForDecrypt {
                 logger.info("Assume that this folder is offline");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final List<Object> ressourcelist = (List<Object>) entries.get("list");
+            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) entries.get("list");
             if (ressourcelist.isEmpty()) {
                 logger.info("Stopping because: Current page doesn't contain any items");
                 break;
             }
-            for (final Object ressourceO : ressourcelist) {
-                entries = (Map<String, Object>) ressourceO;
-                final String path = (String) entries.get("path");
+            for (final Map<String, Object> ressource : ressourcelist) {
+                final String path = (String) ressource.get("path");
                 /* 2021-04-14: 'category' is represented as a String. */
-                final long category = JavaScriptEngineFactory.toLong(entries.get("category"), -1);
-                if (JavaScriptEngineFactory.toLong(entries.get("isdir"), -1) == 1) {
+                final long category = JavaScriptEngineFactory.toLong(ressource.get("category"), -1);
+                if (JavaScriptEngineFactory.toLong(ressource.get("isdir"), -1) == 1) {
                     /* Folder */
                     final String url = "https://www." + this.getHost() + "/web/share/link?surl=" + surl + "&path=" + Encoding.urlEncode(path);
                     final DownloadLink folder = this.createDownloadlink(url);
@@ -360,12 +354,12 @@ public class TeraboxComFolder extends PluginForDecrypt {
                     ret.add(folder);
                 } else {
                     /* File */
-                    final String serverfilename = (String) entries.get("server_filename");
+                    final String serverfilename = (String) ressource.get("server_filename");
                     // final long fsid = JavaScriptEngineFactory.toLong(entries.get("fs_id"), -1);
-                    final String fsidStr = Long.toString(JavaScriptEngineFactory.toLong(entries.get("fs_id"), -1));
+                    final String fsidStr = Long.toString(JavaScriptEngineFactory.toLong(ressource.get("fs_id"), -1));
                     final String realpath;
                     if (path.endsWith("/" + serverfilename)) {
-                        realpath = path.replaceFirst("/" + org.appwork.utils.Regex.escape(serverfilename) + "$", "");
+                        realpath = path.replaceFirst("/" + Pattern.quote(serverfilename) + "$", "");
                     } else {
                         realpath = path;
                     }
@@ -385,7 +379,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
                     }
                     final DownloadLink dl = new DownloadLink(plg, "dubox", this.getHost(), url, true);
                     dl.setContentUrl(contentURL);
-                    TeraboxCom.parseFileInformation(dl, entries);
+                    TeraboxCom.parseFileInformation(dl, ressource);
                     if (passCode != null) {
                         dl.setDownloadPassword(passCode);
                     }

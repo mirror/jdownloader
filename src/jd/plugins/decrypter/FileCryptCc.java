@@ -562,7 +562,7 @@ public class FileCryptCc extends PluginForDecrypt {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find captchaForm");
                     }
                     final String captchaURL = captchaForm.getRegex("((https?://[^<>\"']*?)?/captcha/[^<>\"']*?)\"").getMatch(0);
-                    if (captchaURL != null && captchaURL.contains("circle.php")) {
+                    if (captchaURL != null && this.containsCircleCaptcha(captchaURL)) {
                         /* Click-captcha */
                         final File file = this.getLocalCaptchaFile();
                         getCaptchaBrowser(br).getDownload(file, captchaURL);
@@ -786,8 +786,8 @@ public class FileCryptCc extends PluginForDecrypt {
         }
     }
 
-    private final boolean containsCircleCaptcha(final String html) {
-        if (html.contains("circle.php")) {
+    private final boolean containsCircleCaptcha(final String str) {
+        if (StringUtils.containsIgnoreCase(str, "circle.php")) {
             return true;
         } else {
             return false;
