@@ -20,6 +20,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.ImgsrcConfig;
+import org.jdownloader.plugins.components.config.ImgsrcConfig.ImageFormat;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -140,7 +143,12 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     public static final String getPreferredImageFormat() {
-        return "jpeg";
+        final ImgsrcConfig cfg = PluginJsonConfig.get(ImgsrcConfig.class);
+        if (cfg.getPreferredImageFormat() == ImageFormat.JPEG) {
+            return "jpeg";
+        } else {
+            return "webp";
+        }
     }
 
     private String getDllink() {
@@ -276,6 +284,11 @@ public class ImgSrcRu extends PluginForHost {
          * time.
          */
         return 3;
+    }
+
+    @Override
+    public Class<? extends ImgsrcConfig> getConfigInterface() {
+        return ImgsrcConfig.class;
     }
 
     @Override

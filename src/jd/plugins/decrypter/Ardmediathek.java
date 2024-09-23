@@ -147,10 +147,13 @@ public class Ardmediathek extends PluginForDecrypt {
         if (cfg.isGrabHLS1080pVideoEnabled()) {
             selectedQualities.add("hls_1080");
         }
+        if (cfg.isGrabHLS1440pVideoEnabled()) {
+            selectedQualities.add("hls_1440");
+        }
         if (cfg.isGrabHLS2160pVideoEnabled()) {
             selectedQualities.add("hls_2160");
         }
-        /* If user has deselected all HLS qualities, we can later skip HLS crawling entirely which speeds up the crawl process. */
+        /* If user has de-selected all HLS qualities, we can later skip HLS crawling entirely which speeds up the crawl process. */
         if (selectedQualities.size() > 0) {
             this.grabHLS = true;
         } else {
@@ -182,6 +185,9 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (cfg.isGrabHTTP1080pVideoEnabled()) {
             selectedQualities.add("http_1080");
+        }
+        if (cfg.isGrabHTTP1440pVideoEnabled()) {
+            selectedQualities.add("http_1440");
         }
         if (cfg.isGrabHTTP2160pVideoEnabled()) {
             selectedQualities.add("http_2160");
