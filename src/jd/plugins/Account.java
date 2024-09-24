@@ -37,6 +37,7 @@ import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
@@ -83,6 +84,17 @@ public class Account extends Property {
             }
         }
         return null;
+    }
+
+    private DomainInfo domainInfo;
+
+    public DomainInfo getDomainInfo() {
+        DomainInfo domainInfo = this.domainInfo;
+        if (domainInfo == null) {
+            domainInfo = DomainInfo.getInstance(getHosterByPlugin(true));
+            this.domainInfo = domainInfo;
+        }
+        return domainInfo;
     }
 
     public final AccountTrafficView getAccountTrafficView() {
@@ -377,9 +389,13 @@ public class Account extends Property {
     }
 
     public String getHosterByPlugin() {
+        return getHosterByPlugin(false);
+    }
+
+    public String getHosterByPlugin(final boolean includeSubdomain) {
         final PluginForHost plugin = this.getPlugin();
         if (plugin != null && isMultiPlugin()) {
-            final String ret = plugin.getHost(null, this, false);
+            final String ret = plugin.getHost(null, this, includeSubdomain);
             if (ret != null) {
                 return ret;
             }

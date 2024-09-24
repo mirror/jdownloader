@@ -23,18 +23,17 @@ import java.awt.event.WindowFocusListener;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
-import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.swing.dialog.AbstractDialog;
-import org.jdownloader.DomainInfo;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-
 import jd.controlling.TaskQueue;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.gui.swing.dialog.InputOKButtonAdapter;
 import jd.plugins.Account;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 public class EditAccountDialog extends AbstractDialog<Integer> implements InputChangedCallbackInterface {
     private final Account           acc;
@@ -42,7 +41,7 @@ public class EditAccountDialog extends AbstractDialog<Integer> implements InputC
     private JPanel                  content;
 
     public EditAccountDialog(Account acc) {
-        super(0, _GUI.T.jd_gui_swing_components_AccountDialog_edit_title(), DomainInfo.getInstance(acc.getHosterByPlugin()).getFavIcon(), _GUI.T.lit_save(), null);
+        super(0, _GUI.T.jd_gui_swing_components_AccountDialog_edit_title(), acc.getDomainInfo().getFavIcon(), _GUI.T.lit_save(), null);
         this.acc = acc;
     }
 

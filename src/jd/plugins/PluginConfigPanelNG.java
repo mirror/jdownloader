@@ -310,9 +310,9 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
                  * synchronized on list because plugins can change the list in runtime
                  */
                 for (String sup : supported) {
-                    LazyHostPlugin plg = HostPluginController.getInstance().get(sup);
+                    final LazyHostPlugin plg = HostPluginController.getInstance().get(sup);
                     if (plg != null) {
-                        domains.add(DomainInfo.getInstance(plg.getHost()));
+                        domains.add(plg.getDomainInfo());
                     }
                 }
             }

@@ -8,14 +8,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.net.URLHelper;
 import org.jdownloader.controlling.UniqueAlltimeID;
-
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 
 public class LinkCrawlerRule {
     public static enum RULE {
@@ -27,7 +27,7 @@ public class LinkCrawlerRule {
     }
 
     protected boolean                    enabled          = true;
-    protected Object                     cookies          = null;
+    protected List<String[]>             cookies          = null;
     protected List<String[]>             headers          = null;
     protected Map<String, List<Pattern>> propertyPatterns = null;
     protected boolean                    updateCookies    = false;
@@ -49,13 +49,6 @@ public class LinkCrawlerRule {
         this.updateCookies = updateCookies;
     }
 
-    public List<String[]> getCookiesList() {
-        if (!(this.cookies instanceof List)) {
-            return null;
-        }
-        return (List<String[]>) this.cookies;
-    }
-
     public Object getCookies() {
         return cookies;
     }
@@ -63,7 +56,7 @@ public class LinkCrawlerRule {
     public void setCookies(final Object obj) {
         final Cookies cookies = Cookies.parseCookiesFromObject(obj, null);
         if (cookies == null) {
-            setCookiesList(null);
+            _setCookies(null);
             return;
         }
         final List<String[]> cookielist = new ArrayList<String[]>();
@@ -76,11 +69,7 @@ public class LinkCrawlerRule {
                 cookielist.add(cookiearray);
             }
         }
-        setCookiesList(cookielist);
-    }
-
-    public void setCookiesList(final List<String[]> cookies) {
-        this.cookies = cookies;
+        _setCookies(cookielist);
     }
 
     public List<String[]> getHeaders() {
@@ -199,11 +188,19 @@ public class LinkCrawlerRule {
                     updateCookies.add(new String[] { cookie.getKey(), cookie.getValue() });
                 }
             }
-            setCookiesList(updateCookies);
+            _setCookies(updateCookies);
             // TODO: add support for length==3, url pattern matching support
             return true;
         }
         return false;
+    }
+
+    private void _setCookies(List<String[]> cookies) {
+        if (cookies == null || cookies.size() == 0) {
+            this.cookies = null;
+        } else {
+            this.cookies = cookies;
+        }
     }
 
     public void applyCookiesAndHeaders(final Browser br, final String url, final boolean onlyOnPatternMatch) {
@@ -216,7 +213,7 @@ public class LinkCrawlerRule {
         if (onlyOnPatternMatch && !matches(url)) {
             return false;
         }
-        final List<String[]> cookies = getCookiesList();
+        final List<String[]> cookies = this.cookies;
         if (cookies == null || cookies.size() == 0) {
             return false;
         }

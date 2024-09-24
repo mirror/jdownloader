@@ -5,7 +5,6 @@ import java.util.Arrays;
 import javax.swing.Icon;
 
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.http.Browser;
 
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.exttable.ExtTableModel;
@@ -179,10 +178,7 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
             }
 
             protected Icon getIcon(final CrawledLink value) {
-                DomainInfo domain = value.getDomainInfo();
-                if (domain == null) {
-                    domain = DomainInfo.getInstance(Browser.getHost(value.getURL()));
-                }
+                final DomainInfo domain = value.getDomainInfo();
                 if (domain == null) {
                     return null;
                 }
@@ -191,10 +187,7 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             public String getStringValue(CrawledLink value) {
-                DomainInfo domain = value.getDomainInfo();
-                if (domain == null) {
-                    domain = DomainInfo.getInstance(Browser.getHost(value.getURL()));
-                }
+                final DomainInfo domain = value.getDomainInfo();
                 if (domain == null) {
                     return null;
                 }

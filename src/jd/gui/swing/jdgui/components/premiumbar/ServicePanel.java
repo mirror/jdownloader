@@ -33,6 +33,19 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
+import jd.SecondLevelLaunch;
+import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
+import jd.gui.swing.dialog.AddAccountDialog;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
@@ -55,19 +68,6 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.PremiumStatusBarDisplay;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.AccountController;
-import jd.controlling.AccountControllerEvent;
-import jd.controlling.AccountControllerListener;
-import jd.gui.swing.dialog.AddAccountDialog;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
-
 public class ServicePanel extends JPanel implements MouseListener, AccountTooltipOwner {
     private static final long                                serialVersionUID = 7290466989514173719L;
     private DelayedRunnable                                  redrawTimer;
@@ -78,7 +78,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
             throw new HeadlessException();
         }
     }
-    private AtomicBoolean redrawing = new AtomicBoolean(false);
+    private AtomicBoolean                                    redrawing        = new AtomicBoolean(false);
 
     public static ServicePanel getInstance() {
         return INSTANCE;
@@ -278,7 +278,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
             }
             final PluginForHost plugin = acc.getPlugin();
             if (plugin != null) {
-                final DomainInfo domainInfo = DomainInfo.getInstance(plugin.getHost(), true);
+                final DomainInfo domainInfo = DomainInfo.getInstance(plugin.getHost());
                 final String domainTld = domainInfo.getTld();
                 domainInfo.getFavIcon();
                 switch (premiumStatusBarDisplay) {

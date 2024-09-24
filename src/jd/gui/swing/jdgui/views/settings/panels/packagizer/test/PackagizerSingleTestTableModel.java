@@ -6,7 +6,6 @@ import javax.swing.Icon;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.PackagizerFilterRuleDialog.RuleMatcher;
-import jd.http.Browser;
 
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.exttable.ExtTableModel;
@@ -206,24 +205,18 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
             }
 
             protected Icon getIcon(final CrawledLink value) {
-                DomainInfo domain = value.getDomainInfo();
+                final DomainInfo domain = value.getDomainInfo();
                 if (domain == null) {
-                    domain = DomainInfo.getInstance(Browser.getHost(value.getURL()));
-                    if (domain == null) {
-                        return null;
-                    }
+                    return null;
                 }
                 return domain.getFavIcon(false);
             }
 
             @Override
             public String getStringValue(CrawledLink value) {
-                DomainInfo domain = value.getDomainInfo();
+                final DomainInfo domain = value.getDomainInfo();
                 if (domain == null) {
-                    domain = DomainInfo.getInstance(Browser.getHost(value.getURL()));
-                    if (domain == null) {
-                        return null;
-                    }
+                    return null;
                 }
                 return domain.getTld();
             }

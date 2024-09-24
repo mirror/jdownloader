@@ -2,7 +2,7 @@ package org.jdownloader.plugins.controller.host;
 
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
@@ -121,6 +121,10 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
     protected void setPremium(boolean premium) {
         setProperty(premium, PROPERTY.PREMIUM);
+    }
+
+    public DomainInfo getDomainInfo() {
+        return DomainInfo.getInstance(getHost());
     }
 
     private String configInterface = null;

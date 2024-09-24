@@ -10,6 +10,7 @@ import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -619,9 +620,8 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         final DownloadLink dlLink = getDownloadLink();
         if (dlLink != null) {
             return dlLink.getDomainInfo();
-        } else {
-            return null;
         }
+        return DomainInfo.getInstance(Browser.getHost(getURL(), true));
     }
 
     public CrawledLinkModifier getCustomCrawledLinkModifier() {

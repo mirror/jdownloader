@@ -7,23 +7,22 @@ import java.util.List;
 import javax.swing.Icon;
 import javax.swing.SwingUtilities;
 
-import org.appwork.swing.components.tooltips.ExtTooltip;
-import org.appwork.swing.components.tooltips.ToolTipController;
-import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.images.IconIO;
-import org.jdownloader.DomainInfo;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.downloads.columns.candidatetooltip.CandidateTooltip;
-import org.jdownloader.images.BadgeIcon;
-import org.jdownloader.images.NewTheme;
-
 import jd.controlling.downloadcontroller.HistoryEntry;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
+
+import org.appwork.swing.components.tooltips.ExtTooltip;
+import org.appwork.swing.components.tooltips.ToolTipController;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.images.IconIO;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.columns.candidatetooltip.CandidateTooltip;
+import org.jdownloader.images.BadgeIcon;
+import org.jdownloader.images.NewTheme;
 
 public class CandidateAccountColumn extends ExtTextColumn<AbstractNode> {
     private final Icon iconDownload = NewTheme.I().getIcon(IconKey.ICON_DOWNLOAD, 20);
@@ -78,9 +77,9 @@ public class CandidateAccountColumn extends ExtTextColumn<AbstractNode> {
                 Account account = history.getAccount();
                 if (account != null) {
                     if (icon == null) {
-                        icon = DomainInfo.getInstance(account.getHosterByPlugin());
+                        icon = account.getDomainInfo();
                     } else {
-                        icon = new BadgeIcon(DomainInfo.getInstance(account.getHosterByPlugin()), IconIO.getScaledInstance(icon, 12, 12), 4, 2);
+                        icon = new BadgeIcon(account.getDomainInfo(), IconIO.getScaledInstance(icon, 12, 12), 4, 2);
                     }
                     String accountType = null;
                     switch (history.getAccountType()) {

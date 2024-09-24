@@ -31,7 +31,6 @@ import org.appwork.swing.components.JScrollPopupMenu;
 import org.appwork.swing.exttable.ExtMenuItem;
 import org.appwork.swing.exttable.columns.ExtComboColumn;
 import org.appwork.utils.event.queue.QueueAction;
-import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -109,7 +108,7 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
     public void fillPopupWithPluginSettingsButton(final JPopupMenu popup, final CrawledLink link) {
         popup.add(new JMenuItem(new BasicAction() {
             {
-                setSmallIcon(new BadgeIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 18), DomainInfo.getInstance(link.getDownloadLink().getDefaultPlugin().getHost()).getIcon(10), 0, 0).crop(18, 18));
+                setSmallIcon(new BadgeIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 18), link.getDomainInfo().getIcon(10), 0, 0).crop(18, 18));
                 setName(_GUI.T.VariantColumn_fillPopup_settings(link.getDownloadLink().getDefaultPlugin().getHost()));
             }
 

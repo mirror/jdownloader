@@ -10,7 +10,6 @@ import jd.plugins.DownloadLink;
 
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.SwingUtils;
-import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.AbstractBubbleContentPanel;
 import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
@@ -47,7 +46,7 @@ public class DownloadStartedContentPanel extends AbstractBubbleContentPanel {
         }
         if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_ACCOUNT_VISIBLE.isEnabled()) {
             if (account != null) {
-                this.account = addPair(this.account, _GUI.T.lit_account() + ":", DomainInfo.getInstance(account.getHosterByPlugin()).getFavIcon());
+                this.account = addPair(this.account, _GUI.T.lit_account() + ":", account.getDomainInfo().getFavIcon());
                 this.account.setText(account.getUser() + (CFG_GUI.SHOW_FULL_HOSTNAME.isEnabled() ? "@" + account.getHoster() : ""));
             }
         }

@@ -21,6 +21,11 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.swing.components.tooltips.PanelToolTip;
 import org.appwork.swing.components.tooltips.TooltipPanel;
 import org.appwork.utils.swing.SwingUtils;
@@ -30,11 +35,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import net.miginfocom.swing.MigLayout;
 
 public class AccountTooltip extends PanelToolTip {
     private Color                 color;
@@ -157,7 +157,7 @@ public class AccountTooltip extends PanelToolTip {
                 if (plg == null) {
                     continue;
                 }
-                domains.add(DomainInfo.getInstance(plg.getHost(), true));
+                domains.add(plg.getDomainInfo());
             }
         }
         final ArrayList<DomainInfo> ret = new ArrayList<DomainInfo>(domains);

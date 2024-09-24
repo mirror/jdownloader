@@ -6,12 +6,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.DomainInfo;
-import org.jdownloader.controlling.hosterrule.AccountGroup.Rules;
-import org.jdownloader.controlling.hosterrule.CachedAccountGroup;
-
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -19,6 +13,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.MultiHostHost;
 import jd.plugins.MultiHostHost.MultihosterHostStatus;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.DomainInfo;
+import org.jdownloader.controlling.hosterrule.AccountGroup.Rules;
+import org.jdownloader.controlling.hosterrule.CachedAccountGroup;
 
 public class AccountCache implements Iterable<CachedAccount> {
     public static enum ACCOUNTTYPE {
@@ -56,7 +56,7 @@ public class AccountCache implements Iterable<CachedAccount> {
             }
             this.plugin = plugin;
             this.host = host;
-            pluginDomainInfo = plugin != null ? DomainInfo.getInstance(plugin.getHost(), true) : null;
+            pluginDomainInfo = plugin != null ? DomainInfo.getInstance(plugin.getHost()) : null;
         }
 
         public final Account getAccount() {
@@ -181,25 +181,25 @@ public class AccountCache implements Iterable<CachedAccount> {
     }
 
     protected final static AccountCache      NA = new AccountCache(null) {
-                                                    public java.util.Iterator<CachedAccount> iterator() {
-                                                        return new Iterator<AccountCache.CachedAccount>() {
-                                                                                                        @Override
-                                                                                                        public boolean hasNext() {
-                                                                                                            return false;
-                                                                                                        }
+        public java.util.Iterator<CachedAccount> iterator() {
+            return new Iterator<AccountCache.CachedAccount>() {
+                                                            @Override
+                                                            public boolean hasNext() {
+                                                                return false;
+                                                            }
 
-                                                                                                        @Override
-                                                                                                        public CachedAccount next() {
-                                                                                                            return null;
-                                                                                                        }
+                                                            @Override
+                                                            public CachedAccount next() {
+                                                                return null;
+                                                            }
 
-                                                                                                        @Override
-                                                                                                        public void remove() {
-                                                                                                            throw new UnsupportedOperationException();
-                                                                                                        }
-                                                                                                    };
-                                                    };
-                                                };
+                                                            @Override
+                                                            public void remove() {
+                                                                throw new UnsupportedOperationException();
+                                                            }
+                                                        };
+        };
+    };
     protected final List<CachedAccountGroup> cache;
 
     public boolean isCustomizedCache() {

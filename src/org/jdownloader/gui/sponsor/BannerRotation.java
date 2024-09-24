@@ -80,9 +80,9 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 public class BannerRotation implements Sponsor, AccountControllerListener {
     private final List<AvailableBanner> allBanners = new CopyOnWriteArrayList<AvailableBanner>();
     private final Queue                 queue      = new Queue("Banner") {
-        public void killQueue() {
-        };
-    };
+                                                       public void killQueue() {
+                                                       };
+                                                   };
 
     private class AvailableBanner implements DownloadControllerListener, LinkCollectorListener, DownloadWatchdogListener, AccountControllerListener {
         private volatile boolean    hasDownloadLinks        = false;
@@ -97,8 +97,8 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         private long                lastUpdateTimestamp     = -1;
         private final DomainInfo    domainInfo;
 
-        protected AvailableBanner(final DomainInfo domainInfo) {
-            this.domainInfo = domainInfo;
+        protected AvailableBanner(final String domain) {
+            this.domainInfo = DomainInfo.getInstance(domain);
             DownloadController.getInstance().getEventSender().addListener(this, true);
             LinkCollector.getInstance().getEventsender().addListener(this, true);
             DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
@@ -737,15 +737,15 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
                             }
                         });
                         isBannerEnabled.set(CFG_GUI.BANNER_ENABLED.isEnabled());
-                        getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("rapidgator.net")));
-                        getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("k2s.cc")) {
+                        getAllBanners().add(new AvailableBanner("rapidgator.net"));
+                        getAllBanners().add(new AvailableBanner("k2s.cc") {
                             @Override
                             protected String getIconHost() {
                                 return "keep2share.cc";
                             };
                         });
-                        getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("ddownload.com")));
-                        getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("filejoker.net")));
+                        getAllBanners().add(new AvailableBanner("ddownload.com"));
+                        getAllBanners().add(new AvailableBanner("filejoker.net"));
                         updateDelayer.resetAndStart();
                         refreshThread.start();
                     }
@@ -829,7 +829,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
             } else {
                 customURL = null;
             }
-            final Icon fav = DomainInfo.getInstance(account.getHoster()).getFavIcon(false);
+            final Icon fav = account.getDomainInfo().getFavIcon(false);
             final ExtMergedIcon hosterIcon = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_REFRESH, 32)).add(fav, 32 - fav.getIconWidth(), 32 - fav.getIconHeight());
             final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, hosterIcon, _GUI.T.lit_continue(), _GUI.T.lit_close()) {
                 @Override

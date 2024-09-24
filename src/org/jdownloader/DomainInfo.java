@@ -9,19 +9,19 @@ import java.util.Locale;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-import org.appwork.swing.components.IDIcon;
-import org.appwork.swing.components.IconIdentifier;
-import org.appwork.utils.images.IconIO;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.NewTheme;
-
 import jd.config.Property;
 import jd.controlling.faviconcontroller.FavIconRequestor;
 import jd.controlling.faviconcontroller.FavIcons;
 import jd.http.Browser;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.swing.components.IDIcon;
+import org.appwork.swing.components.IconIdentifier;
+import org.appwork.utils.images.IconIO;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.NewTheme;
 
 public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Icon, IDIcon {
     private static final HashMap<String, String> HARDCODEDFAVICONS = new HashMap<String, String>();
@@ -38,10 +38,10 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
         HARDCODEDFAVICONS.put("usenet", IconKey.ICON_LOGO_NZB);
         HARDCODEDFAVICONS.put("genericusenet", IconKey.ICON_LOGO_NZB);
     }
-    private static final int     WIDTH  = 16;
-    private static final int     HEIGHT = 16;
-    private final String         domain;
-    private final IconIdentifier iconIdentifier;
+    private static final int                     WIDTH             = 16;
+    private static final int                     HEIGHT            = 16;
+    private final String                         domain;
+    private final IconIdentifier                 iconIdentifier;
 
     private DomainInfo(String tld, String domain) {
         this.tld = Property.dedupeString(tld);
@@ -151,12 +151,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
         return ret;
     }
 
-    /** Returns DomainInfo without subdomain */
     public static DomainInfo getInstance(final String domain) {
-        return getInstance(domain, false);
-    }
-
-    public static DomainInfo getInstance(final String domain, final boolean includeSubdomain) {
         if (domain == null) {
             return null;
         }
@@ -165,7 +160,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
             DomainInfo ret = null;
             final WeakReference<DomainInfo> domainInfo = CACHE.get(lcaseTld);
             if (domainInfo == null || (ret = domainInfo.get()) == null) {
-                ret = new DomainInfo(Browser.getHost(lcaseTld, includeSubdomain), lcaseTld);
+                ret = new DomainInfo(Browser.getHost(lcaseTld, true), lcaseTld);
                 CACHE.put(lcaseTld, new WeakReference<DomainInfo>(ret));
             }
             return ret;

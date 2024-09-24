@@ -8,6 +8,10 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 
+import jd.controlling.AccountController;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -19,10 +23,6 @@ import org.jdownloader.gui.views.components.AbstractAddAction;
 import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-
-import jd.controlling.AccountController;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
 
 public class NewRuleAction extends AbstractAddAction {
     /**
@@ -87,7 +87,7 @@ public class NewRuleAction extends AbstractAddAction {
                 }
                 final LazyHostPlugin plg = HostPluginController.getInstance().get(supportedHost);
                 if (plg != null) {
-                    domains.add(DomainInfo.getInstance(plg.getHost(), true));
+                    domains.add(plg.getDomainInfo());
                 }
             }
         }
@@ -95,7 +95,7 @@ public class NewRuleAction extends AbstractAddAction {
         /* Collect all domains which the user is allowed to create usage rules for. */
         for (final LazyHostPlugin plugin : plugins) {
             if (allowAccountUsageRuleCreation(plugin)) {
-                domains.add(DomainInfo.getInstance(plugin.getHost(), true));
+                domains.add(plugin.getDomainInfo());
             }
         }
         /* Sort results. */
