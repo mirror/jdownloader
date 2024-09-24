@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.components.premiumbar;
 
 import java.awt.HeadlessException;
@@ -33,19 +32,6 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-
-import jd.SecondLevelLaunch;
-import jd.controlling.AccountController;
-import jd.controlling.AccountControllerEvent;
-import jd.controlling.AccountControllerListener;
-import jd.gui.swing.dialog.AddAccountDialog;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
@@ -69,12 +55,22 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.PremiumStatusBarDisplay;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
+import jd.SecondLevelLaunch;
+import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
+import jd.gui.swing.dialog.AddAccountDialog;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
+
 public class ServicePanel extends JPanel implements MouseListener, AccountTooltipOwner {
-
     private static final long                                serialVersionUID = 7290466989514173719L;
-
     private DelayedRunnable                                  redrawTimer;
-
     private final CopyOnWriteArrayList<ServicePanelExtender> extender;
     private static ServicePanel                              INSTANCE         = new ServicePanel();
     static {
@@ -82,7 +78,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
             throw new HeadlessException();
         }
     }
-    private AtomicBoolean                                    redrawing        = new AtomicBoolean(false);
+    private AtomicBoolean redrawing = new AtomicBoolean(false);
 
     public static ServicePanel getInstance() {
         return INSTANCE;
@@ -110,13 +106,10 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
 
     private ServicePanel() {
         super(new MigLayout("ins 0 2 0", "0[]0[]0[]0[]0", "0[]0"));
-
         extender = new CopyOnWriteArrayList<ServicePanelExtender>();
         this.setOpaque(false);
         final ScheduledExecutorService scheduler = DelayedRunnable.getNewScheduledExecutorService();
-
         redrawTimer = new DelayedRunnable(scheduler, 1000, 5000) {
-
             @Override
             public String getID() {
                 return "PremiumStatusRedraw";
@@ -124,15 +117,11 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
 
             @Override
             public void delayedrun() {
-
                 redraw();
             }
-
         };
         redraw();
-
         CFG_GUI.PREMIUM_STATUS_BAR_DISPLAY.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
-
             @Override
             public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
             }
@@ -143,7 +132,6 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
             }
         });
         org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                 redraw();
             }
@@ -152,15 +140,12 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
             }
         });
         SecondLevelLaunch.ACCOUNTLIST_LOADED.executeWhenReached(new Runnable() {
-
             public void run() {
                 new Thread() {
-
                     @Override
                     public void run() {
                         redrawTimer.run();
                         AccountController.getInstance().getEventSender().addListener(new AccountControllerListener() {
-
                             public void onAccountControllerEvent(AccountControllerEvent event) {
                                 if (org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled()) {
                                     redrawTimer.run();
@@ -198,18 +183,15 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                                             break;
                                         }
                                     }
-
                                     if (!hasValidAccount) {
                                         sb.append("[]0");
                                     }
                                     setLayout(new MigLayout("ins 0 2 0 0", sb.toString(), "[22!]"));
                                     for (ServiceCollection<?> s : services) {
-
                                         final JComponent c = s.createIconComponent(ServicePanel.this);
                                         if (c != null) {
                                             add(c, "gapleft 0,gapright 0");
                                         }
-
                                     }
                                     if (!hasValidAccount && CFG_GUI.CFG.isStatusBarAddPremiumButtonVisible()) {
                                         ExtButton addPremium = new ExtButton(new AppAction() {
@@ -223,13 +205,11 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                                                 JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
                                                 ConfigurationView.getInstance().setSelectedSubPanel(AccountManagerSettings.class);
                                                 SwingUtilities.invokeLater(new Runnable() {
-
                                                     @Override
                                                     public void run() {
                                                         AddAccountDialog.showDialog(null, null);
                                                     }
                                                 });
-
                                             }
                                         });
                                         addPremium.setRolloverEffectEnabled(true);
@@ -237,7 +217,6 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                                         addPremium.setIcon(new AbstractIcon(IconKey.ICON_ADD, 18));
                                         // addPremium.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
                                         add(addPremium, "height 20!,gapright 10!");
-
                                     }
                                     revalidate();
                                     repaint();
@@ -272,7 +251,6 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                 public int compare(Account o1, Account o2) {
                     return compare(o1.isMultiHost(), o2.isMultiHost());
                 }
-
             });
         } catch (final Throwable e) {
             LogController.CL(true).log(e);
@@ -298,10 +276,9 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
             if (acc.getLastValidTimestamp() == -1 || (!acc.isEnabled() && timeSinceValidLogin > expireTimeMS)) {
                 continue;
             }
-
             final PluginForHost plugin = acc.getPlugin();
             if (plugin != null) {
-                final DomainInfo domainInfo = DomainInfo.getInstance(plugin.getHost());
+                final DomainInfo domainInfo = DomainInfo.getInstance(plugin.getHost(), true);
                 final String domainTld = domainInfo.getTld();
                 domainInfo.getFavIcon();
                 switch (premiumStatusBarDisplay) {
@@ -361,7 +338,6 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                     break;
                 }
             }
-
         }
         if (PremiumStatusBarDisplay.GROUP_BY_SUPPORTED_ACCOUNTS.equals(premiumStatusBarDisplay)) {
             for (ServiceCollection<?> serviceCollection : services) {
@@ -391,5 +367,4 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
 
     public void mouseReleased(MouseEvent e) {
     }
-
 }

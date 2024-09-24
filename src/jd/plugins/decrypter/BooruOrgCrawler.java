@@ -16,12 +16,15 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -40,7 +43,9 @@ public class BooruOrgCrawler extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "tbib.org", "booru.org" });
+        ret.add(new String[] { "tbib.org" });
+        ret.add(new String[] { "booru.org" });
+        ret.add(new String[] { "safebooru.org" });
         return ret;
     }
 
@@ -56,7 +61,7 @@ public class BooruOrgCrawler extends PluginForDecrypt {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/index\\.php\\?page=post\\&s=list\\&tags=[A-Za-z0-9_\\-]+");
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/.*?index\\.php\\?page=post\\&s=list\\&tags=[A-Za-z0-9_\\-]+");
         }
         return ret.toArray(new String[0]);
     }
@@ -68,8 +73,8 @@ public class BooruOrgCrawler extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String full_host = new Regex(contenturl, "https?://([^/]+)/").getMatch(0);
-        final String fpName = new Regex(contenturl, "tags=(.+)").getMatch(0);
+        final UrlQuery query = UrlQuery.parse(contenturl);
+        final String fpName = query.get("tags");
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName).trim());
         final String url_part = contenturl;
@@ -77,11 +82,8 @@ public class BooruOrgCrawler extends PluginForDecrypt {
         int offset = 0;
         final int max_entries_per_page = 20;
         int entries_per_page_current = 0;
-        do {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user");
-                return ret;
-            }
+        final Set<String> dupes = new HashSet<String>();
+        pagination: do {
             if (page_counter > 1) {
                 this.br.getPage(url_part + "&pid=" + offset);
                 if (this.br.containsHTML("You are viewing an advertisement")) {
@@ -95,8 +97,12 @@ public class BooruOrgCrawler extends PluginForDecrypt {
                 break;
             }
             entries_per_page_current = linkids.length;
+            int numberofNewItemsThisPage = 0;
             for (final String linkid : linkids) {
-                final String link = "http://" + full_host + "/index.php?page=post&s=view&id=" + linkid;
+                if (!dupes.add(linkid)) {
+                    continue;
+                }
+                final String link = br.getURL("index.php?page=post&s=view&id=" + linkid).toExternalForm();
                 final DownloadLink dl = createDownloadlink(link);
                 dl.setLinkID(linkid);
                 dl.setAvailable(true);
@@ -105,9 +111,22 @@ public class BooruOrgCrawler extends PluginForDecrypt {
                 ret.add(dl);
                 distribute(dl);
                 offset++;
+                numberofNewItemsThisPage++;
             }
-            page_counter++;
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user");
+                break pagination;
+            } else if (numberofNewItemsThisPage == 0) {
+                logger.info("Stopping because: Failed to find any new items on current page");
+                break pagination;
+            } else {
+                /* Continue to next page */
+                page_counter++;
+            }
         } while (entries_per_page_current >= max_entries_per_page);
+        if (ret.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return ret;
     }
 

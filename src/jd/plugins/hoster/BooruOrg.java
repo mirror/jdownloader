@@ -64,7 +64,7 @@ public class BooruOrg extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/index\\.php\\?page=post\\&s=view\\&id=(\\d+)");
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/.*?index\\.php\\?page=post\\&s=view\\&id=(\\d+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -88,7 +88,7 @@ public class BooruOrg extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://booru.org/tos.php";
+        return "https://" + getHost() + "/tos.php";
     }
 
     @Override

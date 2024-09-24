@@ -46,51 +46,6 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
-import jd.PluginWrapper;
-import jd.captcha.JACMethod;
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.controlling.downloadcontroller.AccountCache.ACCOUNTTYPE;
-import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.NoGateWayException;
-import jd.http.ProxySelectorInterface;
-import jd.http.Request;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
-import jd.nutils.JDHash;
-import jd.plugins.Account.AccountError;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadInterfaceFactory;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
@@ -104,6 +59,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
@@ -190,6 +146,51 @@ import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdateHandler;
 
+import jd.PluginWrapper;
+import jd.captcha.JACMethod;
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.controlling.downloadcontroller.AccountCache.ACCOUNTTYPE;
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.NoGateWayException;
+import jd.http.ProxySelectorInterface;
+import jd.http.Request;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.Formatter;
+import jd.nutils.JDHash;
+import jd.plugins.Account.AccountError;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadInterfaceFactory;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien herunterladen koennen
  *
@@ -198,11 +199,10 @@ import org.jdownloader.updatev2.UpdateHandler;
 public abstract class PluginForHost extends Plugin {
     private static final String    COPY_MOVE_FILE = "CopyMoveFile";
     private static final Pattern[] PATTERNS       = new Pattern[] {
-                                                  /**
-                                                   * these patterns should split filename and fileextension (extension must include the
-                                                   * point)
-                                                   */
-                                                  // multipart rar archives
+            /**
+             * these patterns should split filename and fileextension (extension must include the point)
+             */
+            // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
             // normal files with extension
             Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
@@ -1136,14 +1136,41 @@ public abstract class PluginForHost extends Plugin {
         if (accountTrafficView == null) {
             return true;
         }
+        final long trafficLeft = accountTrafficView.getTrafficLeft();
+        final long minimum = 1024;
+        final long downloadSize = link.getView().getBytesTotalEstimated();
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && ACCOUNTTYPE.MULTI.equals(account.getType()) && downloadSize != -1) {
+            final AccountInfo ai = account.getAccountInfo();
+            if (ai == null) {
+                /* Multihoster account without accountInfo -> That should never happen */
+                return false;
+            }
+            /* Verify again because plugins can modify list on runtime */
+            /* Check for domain specific limits of multihost items. */
+            final MultiHostHost hostinfo = ai.getMultihostSupportedHost(link.getHost());
+            if (hostinfo == null) {
+                /* Not supported */
+                return false;
+            }
+            final long trafficCalcFactor = hostinfo.getTrafficCalculationFactorPercent();
+            long neededTraffic = downloadSize;
+            if (trafficCalcFactor != 100) {
+                neededTraffic = (downloadSize * trafficCalcFactor) / 100;
+                if (neededTraffic > trafficLeft) {
+                    return false;
+                }
+            }
+            /* Account itself has enough traffic but does it have enough traffic for the host we are trying to download from? */
+            if (!hostinfo.isUnlimitedTraffic() && neededTraffic > hostinfo.getTrafficLeft()) {
+                /* Not enough traffic to download this file */
+                return false;
+            }
+        }
         if (accountTrafficView.isUnlimitedTraffic() || accountTrafficView.isSpecialTraffic()) {
             return true;
         }
-        final long trafficLeft = accountTrafficView.getTrafficLeft();
-        final long minimum = 1024;
         if (trafficLeft == 0) {
             if (accountTrafficView.isTrafficRefill()) {
-                final long downloadSize = link.getView().getBytesTotalEstimated();
                 final long downloadLeft;
                 if (downloadSize >= 0) {
                     downloadLeft = Math.max(minimum, downloadSize - link.getView().getBytesLoaded());
@@ -1155,7 +1182,6 @@ public abstract class PluginForHost extends Plugin {
                 return false;
             }
         } else {
-            final long downloadSize = link.getView().getBytesTotalEstimated();
             if (downloadSize <= 0) {
                 /* File size is unknown */
                 return true;
@@ -1292,12 +1318,9 @@ public abstract class PluginForHost extends Plugin {
     protected void handleException(final DownloadLink downloadLink, final ACCOUNTTYPE accountType, final Account account, final Exception e) throws Exception {
         if (ACCOUNTTYPE.MULTI.equals(accountType) && e instanceof PluginException) {
             if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && AvailableStatus.TRUE.equals(link.getAvailableStatus())) {
-
                 /* File is online according to original filehoster -> Do not trust offline status from multihoster. */
-
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Multihoster " + getHost() + " claims that this file is offline", e);
             }
-
         }
     }
 
@@ -1367,16 +1390,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         * 
+         *
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         * 
+         *
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         * 
+         *
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         * 
-         * 
-         * 
+         *
+         *
+         *
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);

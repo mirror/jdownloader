@@ -15,11 +15,16 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URL;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -28,20 +33,17 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.MixCloudComCrawler;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://stream\\d+\\.mixcloud\\.com/.+|https://thumbnailer\\.mixcloud\\.com/unsafe/.+" })
 public class MixCloudCom extends PluginForHost {
     public MixCloudCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.mixcloud.com/select/");
+        this.enablePremium("https://www." + getHost() + "/select/");
     }
 
     @Override
@@ -87,12 +89,12 @@ public class MixCloudCom extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
         br.setFollowRedirects(true);
-        final String url_filename = new Regex(link.getDownloadURL(), "mixcloud\\.com/(.+)").getMatch(0);
+        final String url_filename = Plugin.getFileNameFromURL(new URL(link.getPluginPatternMatcher()));
         String filename = link.getFinalFileName();
         if (filename == null) {
             filename = url_filename;
         }
-        dllink = link.getDownloadURL();
+        dllink = link.getPluginPatternMatcher();
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -156,7 +158,7 @@ public class MixCloudCom extends PluginForHost {
                 if (!StringUtils.isEmpty(username)) {
                     logger.info("Cookie login successful");
                     /* Refresh cookie timestamp */
-                    account.saveCookies(this.br.getCookies(br.getHost()), "");
+                    account.saveCookies(br.getCookies(br.getHost()), "");
                     return true;
                 } else {
                     logger.info("Cookie login failed");

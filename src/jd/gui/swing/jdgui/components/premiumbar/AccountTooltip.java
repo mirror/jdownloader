@@ -138,26 +138,29 @@ public class AccountTooltip extends PanelToolTip {
         return super.getPreferredSize();
     }
 
-    private List<DomainInfo> getDomainInfos(AccountServiceCollection accountCollection) {
-        HashSet<DomainInfo> domains = new HashSet<DomainInfo>();
-        for (Account acc : accountCollection) {
-            AccountInfo ai = acc.getAccountInfo();
-            if (ai != null) {
-                final List<String> supported = ai.getMultiHostSupport();
-                if (supported != null) {
-                    /*
-                     * synchronized on list because plugins can change the list in runtime
-                     */
-                    for (String sup : supported) {
-                        LazyHostPlugin plg = HostPluginController.getInstance().get(sup);
-                        if (plg != null) {
-                            domains.add(DomainInfo.getInstance(plg.getHost()));
-                        }
-                    }
+    private List<DomainInfo> getDomainInfos(final AccountServiceCollection accountCollection) {
+        final HashSet<DomainInfo> domains = new HashSet<DomainInfo>();
+        for (final Account acc : accountCollection) {
+            final AccountInfo ai = acc.getAccountInfo();
+            if (ai == null) {
+                continue;
+            }
+            final List<String> supported = ai.getMultiHostSupport();
+            if (supported == null) {
+                continue;
+            }
+            /*
+             * synchronized on list because plugins can change the list in runtime
+             */
+            for (final String sup : supported) {
+                final LazyHostPlugin plg = HostPluginController.getInstance().get(sup);
+                if (plg == null) {
+                    continue;
                 }
+                domains.add(DomainInfo.getInstance(plg.getHost(), true));
             }
         }
-        ArrayList<DomainInfo> ret = new ArrayList<DomainInfo>(domains);
+        final ArrayList<DomainInfo> ret = new ArrayList<DomainInfo>(domains);
         Collections.sort(ret, new Comparator<DomainInfo>() {
             @Override
             public int compare(DomainInfo o1, DomainInfo o2) {

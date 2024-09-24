@@ -625,7 +625,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
         return mhosts;
     }
 
-    /** Returns information about host if it is supported. */
+    /** Returns information about specific host if it is supported. */
     public MultiHostHost getMultihostSupportedHost(final String domain) {
         final List<MultiHostHost> mhosts = getMultiHostSupport2();
         if (mhosts == null || mhosts.size() == 0) {

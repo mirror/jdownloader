@@ -38,8 +38,8 @@ public class NewRuleAction extends AbstractAddAction {
         final ArrayList<DomainInfo> list = getAvailableDomainInfoList();
         /* Allow only one rule per hoster -> Remove items from list which a rule already exists for. */
         final HosterRuleController hrc = HosterRuleController.getInstance();
-        for (AccountUsageRule aur : hrc.list()) {
-            list.remove(DomainInfo.getInstance(aur.getHoster()));
+        for (final AccountUsageRule aur : hrc.list()) {
+            list.remove(DomainInfo.getInstance(aur.getHoster(), true));
         }
         final ChooseHosterDialog d = new ChooseHosterDialog(_GUI.T.NewRuleAction_actionPerformed_choose_hoster_message(), list.toArray(new DomainInfo[] {}));
         try {
@@ -64,27 +64,30 @@ public class NewRuleAction extends AbstractAddAction {
         final HashSet<String> multihosterDomains = new HashSet<String>();
         /* Collect domains of all multihoster accounts which the user currently has. */
         for (final Account acc : AccountController.getInstance().list()) {
-            if (acc.getPlugin().hasFeature(FEATURE.MULTIHOST)) {
-                final String thisMultihosterDomain = acc.getHoster();
-                multihosterDomains.add(thisMultihosterDomain);
-                final AccountInfo ai = acc.getAccountInfo();
-                if (ai != null) {
-                    final List<String> supportedHosts = ai.getMultiHostSupport();
-                    if (supportedHosts != null) {
-                        for (final String supportedHost : supportedHosts) {
-                            if (multihosterDomains.contains(supportedHost)) {
-                                /*
-                                 * Multihoster supports its own domain or domains of other multihosters -> Exclude those domains from usage
-                                 * rule selection
-                                 */
-                                continue;
-                            }
-                            final LazyHostPlugin plg = HostPluginController.getInstance().get(supportedHost);
-                            if (plg != null) {
-                                domains.add(DomainInfo.getInstance(plg.getHost()));
-                            }
-                        }
-                    }
+            if (!acc.getPlugin().hasFeature(FEATURE.MULTIHOST)) {
+                continue;
+            }
+            final String thisMultihosterDomain = acc.getHoster();
+            multihosterDomains.add(thisMultihosterDomain);
+            final AccountInfo ai = acc.getAccountInfo();
+            if (ai == null) {
+                continue;
+            }
+            final List<String> supportedHosts = ai.getMultiHostSupport();
+            if (supportedHosts == null) {
+                continue;
+            }
+            for (final String supportedHost : supportedHosts) {
+                if (multihosterDomains.contains(supportedHost)) {
+                    /*
+                     * Multihoster supports its own domain or domains of other multihosters -> Exclude those domains from usage rule
+                     * selection
+                     */
+                    continue;
+                }
+                final LazyHostPlugin plg = HostPluginController.getInstance().get(supportedHost);
+                if (plg != null) {
+                    domains.add(DomainInfo.getInstance(plg.getHost(), true));
                 }
             }
         }
@@ -92,7 +95,7 @@ public class NewRuleAction extends AbstractAddAction {
         /* Collect all domains which the user is allowed to create usage rules for. */
         for (final LazyHostPlugin plugin : plugins) {
             if (allowAccountUsageRuleCreation(plugin)) {
-                domains.add(DomainInfo.getInstance(plugin.getHost()));
+                domains.add(DomainInfo.getInstance(plugin.getHost(), true));
             }
         }
         /* Sort results. */

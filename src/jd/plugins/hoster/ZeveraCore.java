@@ -213,7 +213,7 @@ abstract public class ZeveraCore extends UseNet {
             link.setFinalFileName(filename);
         }
         if (filesize != null) {
-            link.setDownloadSize(filesize.longValue());
+            link.setVerifiedFileSize(filesize.longValue());
         }
         return details;
     }

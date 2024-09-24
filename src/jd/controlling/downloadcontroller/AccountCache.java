@@ -56,7 +56,7 @@ public class AccountCache implements Iterable<CachedAccount> {
             }
             this.plugin = plugin;
             this.host = host;
-            pluginDomainInfo = plugin != null ? DomainInfo.getInstance(plugin.getHost()) : null;
+            pluginDomainInfo = plugin != null ? DomainInfo.getInstance(plugin.getHost(), true) : null;
         }
 
         public final Account getAccount() {

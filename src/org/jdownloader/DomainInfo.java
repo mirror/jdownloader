@@ -136,7 +136,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
 
     private static final HashMap<String, WeakReference<DomainInfo>> CACHE = new HashMap<String, WeakReference<DomainInfo>>();
 
-    private static String getCacheID(String domain) {
+    private static String getCacheID(final String domain) {
         String ret = domain.toLowerCase(Locale.ENGLISH);
         int index = ret.indexOf(" ");
         if (index > 0) {
@@ -151,16 +151,21 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
         return ret;
     }
 
+    /** Returns DomainInfo without subdomain */
     public static DomainInfo getInstance(final String domain) {
+        return getInstance(domain, false);
+    }
+
+    public static DomainInfo getInstance(final String domain, final boolean includeSubdomain) {
         if (domain == null) {
             return null;
         }
         final String lcaseTld = getCacheID(domain);
         synchronized (CACHE) {
             DomainInfo ret = null;
-            WeakReference<DomainInfo> domainInfo = CACHE.get(lcaseTld);
+            final WeakReference<DomainInfo> domainInfo = CACHE.get(lcaseTld);
             if (domainInfo == null || (ret = domainInfo.get()) == null) {
-                ret = new DomainInfo(Browser.getHost(lcaseTld), lcaseTld);
+                ret = new DomainInfo(Browser.getHost(lcaseTld, includeSubdomain), lcaseTld);
                 CACHE.put(lcaseTld, new WeakReference<DomainInfo>(ret));
             }
             return ret;
