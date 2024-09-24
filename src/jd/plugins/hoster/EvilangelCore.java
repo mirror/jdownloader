@@ -109,7 +109,7 @@ public abstract class EvilangelCore extends PluginForHost {
     @Override
     public String getAGBLink() {
         /* All websites using this script will usually link to this support portal. */
-        return "http://www.famesupport.com/";
+        return "https://www.famesupport.com/";
     }
 
     private String       dllink                          = null;
@@ -440,6 +440,7 @@ public abstract class EvilangelCore extends PluginForHost {
                             final long date_timestamp = ((Number) clip.get("date")).longValue() * 1000;
                             waitUntilRelease = date_timestamp - System.currentTimeMillis();
                             if (waitUntilRelease <= 0) {
+                                logger.info("Calculated unplausible time until video gets released -> Fallback to default");
                                 waitUntilRelease = 5 * 60 * 1000l;
                             }
                         }
@@ -507,15 +508,22 @@ public abstract class EvilangelCore extends PluginForHost {
             filename = applyFilenameExtension(filename, extDefault);
             link.setFinalFileName(filename);
         }
+        final boolean canDownload;
+        if (waitUntilRelease > 0) {
+            /* Item can't be downloaded because full video hasn't been released yet. */
+            canDownload = false;
+        } else {
+            canDownload = true;
+        }
         /* Try to find filesize if possible and needed. */
         if (filesize > 0) {
             link.setDownloadSize(filesize);
         }
+        if (canDownload && !isDownload && dllink != null && !dllink.contains(".m3u8")) {
+            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, filename, extDefault, FILENAME_SOURCE.FINAL, FILENAME_SOURCE.HEADER, FILENAME_SOURCE.URL, FILENAME_SOURCE.CUSTOM);
+        }
         if (waitUntilRelease > 0 && isDownload) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait until full video gets released", waitUntilRelease);
-        }
-        if (!isDownload && dllink != null && !dllink.contains(".m3u8")) {
-            basicLinkCheck(br.cloneBrowser(), br.createHeadRequest(dllink), link, filename, extDefault, FILENAME_SOURCE.FINAL, FILENAME_SOURCE.HEADER, FILENAME_SOURCE.URL, FILENAME_SOURCE.CUSTOM);
         }
         return AvailableStatus.TRUE;
     }
