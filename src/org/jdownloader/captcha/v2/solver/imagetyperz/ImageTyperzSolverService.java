@@ -20,7 +20,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
@@ -135,7 +134,7 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
             services.add(new ServiceCollection<ImageTyperzCaptchaSolver>() {
                 @Override
                 public Icon getIcon() {
-                    return DomainInfo.getInstance("ImageTyperz.com").getFavIcon();
+                    return ServicePanelImageTyperzTooltip.DOMAININFO.getFavIcon();
                 }
 
                 @Override
