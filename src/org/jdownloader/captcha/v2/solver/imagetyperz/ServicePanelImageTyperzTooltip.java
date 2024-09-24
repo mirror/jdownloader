@@ -25,11 +25,12 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class ServicePanelImageTyperzTooltip extends PanelToolTip {
-    private Color        color;
+    private Color            color;
 
-    private ServicePanel owner;
+    private ServicePanel     owner;
 
-    private JComponent   activeComponent;
+    private JComponent       activeComponent;
+    private final DomainInfo domainInfo = DomainInfo.getInstance("ImageTyperz.com");
 
     public Point getDesiredLocation(JComponent activeComponent, Point ttPosition) {
         if (activeComponent != null) {
@@ -50,7 +51,7 @@ public class ServicePanelImageTyperzTooltip extends PanelToolTip {
         JProgressBar progress = new JProgressBar();
         progress.setIndeterminate(true);
         panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]"));
-        JLabel header = new JLabel("ImageTyperz Solver", DomainInfo.getInstance("ImageTyperz.com").getFavIcon(), JLabel.LEFT);
+        JLabel header = new JLabel("ImageTyperz Solver", domainInfo.getFavIcon(), JLabel.LEFT);
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
         SwingUtils.toBold(header);
         header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
@@ -69,7 +70,7 @@ public class ServicePanelImageTyperzTooltip extends PanelToolTip {
                         // panel.setPreferredSize(null);
                         if (!account.isValid()) {
                             panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]"));
-                            JLabel header = new JLabel("ImageTyperz.com Captcha Solver", DomainInfo.getInstance("ImageTyperz.com").getFavIcon(), JLabel.LEFT);
+                            JLabel header = new JLabel("ImageTyperz.com Captcha Solver", domainInfo.getFavIcon(), JLabel.LEFT);
                             header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
                             SwingUtils.toBold(header);
                             header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
@@ -78,7 +79,7 @@ public class ServicePanelImageTyperzTooltip extends PanelToolTip {
                             panel.add(lbl(account.getError()), "gapleft 22");
                         } else {
                             panel.setLayout(new MigLayout("ins 0,wrap 2", "[][grow,align right]", "[]0"));
-                            JLabel header = new JLabel("ImageTyperz.com Captcha Solver", DomainInfo.getInstance("ImageTyperz.com").getFavIcon(), JLabel.LEFT);
+                            JLabel header = new JLabel("ImageTyperz.com Captcha Solver", domainInfo.getFavIcon(), JLabel.LEFT);
                             header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
                             SwingUtils.toBold(header);
                             header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());

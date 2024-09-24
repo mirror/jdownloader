@@ -19,6 +19,16 @@ import javax.swing.JScrollPane;
 import javax.swing.Scrollable;
 import javax.swing.SwingUtilities;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import jd.plugins.Account;
+import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
@@ -34,7 +44,6 @@ import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.Header;
 import org.jdownloader.gui.IconKey;
@@ -48,16 +57,6 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
-import jd.plugins.Account;
-import jd.plugins.Plugin;
-import jd.plugins.PluginConfigPanelNG;
-import net.miginfocom.swing.MigLayout;
 
 public class PluginSettingsPanel extends JPanel implements SettingsComponent, ActionListener {
     /**
@@ -93,7 +92,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                 if (value == null) {
                     return null;
                 } else {
-                    final Icon favIcon = DomainInfo.getInstance(value.getDisplayName()).getFavIcon(false);
+                    final Icon favIcon = value.getDomainInfo().getFavIcon(false);
                     if (value instanceof LazyHostPlugin) {
                         return favIcon;
                     } else {
@@ -349,13 +348,12 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                         configPanel.setShown();
                         card.add(configPanel);
                         if (selectedItem != null) {
+                            final Icon fav = selectedItem.getDomainInfo().getFavIcon(false);
                             if (selectedItem instanceof LazyHostPlugin) {
                                 header.setText(_GUI.T.PluginSettingsPanel_runInEDT_plugin_header_text_host(selectedItem.getDisplayName()));
-                                final Icon fav = DomainInfo.getInstance(((LazyHostPlugin) selectedItem).getHost()).getFavIcon(false);
                                 header.setIcon(fav);
                             } else {
                                 header.setText(_GUI.T.PluginSettingsPanel_runInEDT_plugin_header_text_decrypt(selectedItem.getDisplayName()));
-                                final Icon fav = DomainInfo.getInstance(((LazyCrawlerPlugin) selectedItem).getDisplayName()).getFavIcon(false);
                                 if (fav == null) {
                                     header.setIcon(decryterIcon);
                                 } else {

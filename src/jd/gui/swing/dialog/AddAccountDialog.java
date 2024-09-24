@@ -71,7 +71,6 @@ import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
-import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.sponsor.Sponsor;
@@ -194,7 +193,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
             public String getLabelString() {
                 return null;
             }
-        }, 0, _GUI.T.accountdialog_check(), _GUI.T.accountdialog_check_msg(), DomainInfo.getInstance(ac.getHosterByPlugin()).getFavIcon());
+        }, 0, _GUI.T.accountdialog_check(), _GUI.T.accountdialog_check_msg(), ac.getDomainInfo().getFavIcon());
         try {
             Dialog.getInstance().showDialog(pd);
         } catch (DialogCanceledException e) {
@@ -339,27 +338,27 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         };
         filter.getDocument().addDocumentListener(new DocumentListener() {
             private DelayedRunnable delayedRefresh = new DelayedRunnable(200, 1000) {
-                String lastText = null;
+                                                       String lastText = null;
 
-                @Override
-                public String getID() {
-                    return "AddAccountDialog";
-                }
+                                                       @Override
+                                                       public String getID() {
+                                                           return "AddAccountDialog";
+                                                       }
 
-                @Override
-                public void delayedrun() {
-                    new EDTRunner() {
-                        @Override
-                        protected void runInEDT() {
-                            final String text = filter.getText();
-                            if (!StringUtils.equals(lastText, text)) {
-                                lastText = text;
-                                hoster.refresh(text);
-                            }
-                        }
-                    }.waitForEDT();
-                }
-            };
+                                                       @Override
+                                                       public void delayedrun() {
+                                                           new EDTRunner() {
+                                                               @Override
+                                                               protected void runInEDT() {
+                                                                   final String text = filter.getText();
+                                                                   if (!StringUtils.equals(lastText, text)) {
+                                                                       lastText = text;
+                                                                       hoster.refresh(text);
+                                                                   }
+                                                               }
+                                                           }.waitForEDT();
+                                                       }
+                                                   };
 
             @Override
             public void removeUpdate(DocumentEvent e) {

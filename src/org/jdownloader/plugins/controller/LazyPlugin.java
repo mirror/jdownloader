@@ -7,6 +7,10 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
+import jd.config.Property;
+import jd.plugins.Plugin;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.storage.config.MinTimeWeakReferenceCleanup;
@@ -14,12 +18,9 @@ import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.TooltipInterface;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.translate._JDT;
-
-import jd.PluginWrapper;
-import jd.config.Property;
-import jd.plugins.Plugin;
 
 public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferenceCleanup {
     public static enum FEATURE implements LabelInterface, TooltipInterface {
@@ -310,8 +311,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         }
 
         /**
-         * Return true if this is an internal feature. </br>
-         * Internal features are used internally only and are not displayed in GUI.
+         * Return true if this is an internal feature. </br> Internal features are used internally only and are not displayed in GUI.
          */
         public abstract boolean isInternal();
     }
@@ -337,6 +337,8 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
     public FEATURE[] getFeatures() {
         return features;
     }
+
+    public abstract DomainInfo getDomainInfo();
 
     protected void setFeatures(LazyPlugin.FEATURE[] features) {
         if (features == null || features.length == 0) {

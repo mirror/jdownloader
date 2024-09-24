@@ -132,7 +132,7 @@ public class BuyAction extends AbstractAction {
                                             if (value == null) {
                                                 return null;
                                             } else {
-                                                return DomainInfo.getInstance(value.getDisplayName()).getFavIcon(false);
+                                                return value.getDomainInfo().getFavIcon(false);
                                             }
                                         }
 
@@ -153,7 +153,7 @@ public class BuyAction extends AbstractAction {
                                                 _this.setIcon(null);
                                                 return;
                                             }
-                                            DomainInfo domainInfo = DomainInfo.getInstance(((LazyHostPlugin) item).getDisplayName());
+                                            DomainInfo domainInfo = ((LazyHostPlugin) item).getDomainInfo();
                                             String tld = domainInfo.getTld();
                                             Image ic = null;
                                             if (NewTheme.I().hasIcon("fav/big." + tld)) {
@@ -182,8 +182,8 @@ public class BuyAction extends AbstractAction {
                             if (lazyHostPlugin != null) {
                                 AccountController.openAfflink(lazyHostPlugin, null, "buypremium/accountmanager/buy" + (table == null ? "/context" : "/table"));
                                 final BuyAndAddPremiumAccount dia;
-                                UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, dia = new BuyAndAddPremiumAccount(DomainInfo.getInstance(lazyHostPlugin.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));
-                                dia.throwCloseExceptions();
+                                UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, dia = new BuyAndAddPremiumAccount(lazyHostPlugin.getDomainInfo()), "accountmanager" + (table == null ? "/context" : "/table")));
+        dia.throwCloseExceptions();
                             }
                         } catch (DialogClosedException e1) {
                             e1.printStackTrace();

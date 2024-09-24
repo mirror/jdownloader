@@ -2,6 +2,7 @@ package org.jdownloader.plugins.controller.crawler;
 
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.DomainInfo;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
@@ -91,6 +92,10 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
             }
             averageRuntime = decryptsRuntime / decrypts;
         }
+    }
+
+    public DomainInfo getDomainInfo() {
+        return DomainInfo.getInstance(getHost());
     }
 
     @Override

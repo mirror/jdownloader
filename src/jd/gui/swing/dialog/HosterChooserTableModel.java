@@ -22,7 +22,6 @@ import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.CompareUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.Log;
-import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
@@ -174,7 +173,7 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
 
             @Override
             protected Icon getIcon(LazyHostPlugin value) {
-                return DomainInfo.getInstance(value.getDisplayName()).getFavIcon(false);
+                return value.getDomainInfo().getFavIcon(false);
             }
         });
         addColumn(new ExtTextColumn<LazyHostPlugin>(_GUI.T.HosterChooserTableModel_column_domain()) {
