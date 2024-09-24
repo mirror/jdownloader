@@ -479,9 +479,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             }
         }
         ensureInitHosterplugin();
+        /* Login whenever possible */
         final Account account = AccountController.getInstance().getValidAccount(hostPlugin.getHost());
         if (account != null) {
-            /* Login if possible as this can have an influence on the books' 'lending-status'. */
             hostPlugin.login(account, false);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
