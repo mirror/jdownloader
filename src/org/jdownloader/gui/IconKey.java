@@ -14,12 +14,13 @@ public class IconKey {
         while (!file.getName().equals("bin")) {
             file = file.getParentFile();
         }
-        final File images;
+        final String fpath;
         if (CrossSystem.isWindows()) {
-            images = new File(file.getParentFile(), "themes\\themes\\standard\\org\\jdownloader\\images");
+            fpath = "themes\\themes\\standard\\org\\jdownloader\\images";
         } else {
-            images = new File(file.getParentFile(), "themes/themes/standard/org/jdownloader/images");
+            fpath = "themes/themes/standard/org/jdownloader/images";
         }
+        final File images = new File(file.getParentFile(), fpath);
         Files.walkThroughStructure(new org.appwork.utils.Files.AbstractHandler<RuntimeException>() {
             protected File root = null;
 
