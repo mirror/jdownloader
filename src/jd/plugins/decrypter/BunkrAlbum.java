@@ -65,7 +65,7 @@ public class BunkrAlbum extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { MAIN_BUNKR_DOMAIN, "bunkr.su", "bunkr.si", "bunkr.ru", "bunkr.is", "bunkr.la", "bunkrr.ru", "bunkr.sk", "bunkr.black", "bunkr.cat", "bunkr.media", "bunkr.ac", "bunkr.ws", "bunkr.red", "bunkr.site", "bunkr.black", "bunkrrr.org", "bunkr.fi", "bunkr.ci", "bunkr.ax", "bunkr.ac", "bunkr.se", "bunkr.es" });
+        ret.add(new String[] { MAIN_BUNKR_DOMAIN, "bunkr.su", "bunkr.si", "bunkr.ru", "bunkr.is", "bunkr.la", "bunkrr.ru", "bunkr.sk", "bunkr.black", "bunkr.cat", "bunkr.media", "bunkr.ac", "bunkr.ws", "bunkr.red", "bunkr.site", "bunkr.black", "bunkrrr.org", "bunkr.fi", "bunkr.ci", "bunkr.ax", "bunkr.ac", "bunkr.se", "bunkr.es", "bunkr.pk" });
         return ret;
     }
 

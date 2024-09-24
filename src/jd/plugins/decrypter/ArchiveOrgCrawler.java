@@ -478,6 +478,12 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 contenturl = URLHelper.getUrlWithoutParams(contenturl) + "?" + query.toString();
             }
         }
+        ensureInitHosterplugin();
+        final Account account = AccountController.getInstance().getValidAccount(hostPlugin.getHost());
+        if (account != null) {
+            /* Login if possible as this can have an influence on the books' 'lending-status'. */
+            hostPlugin.login(account, false);
+        }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         try {
             URLConnectionAdapter con = null;
@@ -506,7 +512,11 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 } catch (final Throwable e) {
                 }
             }
-            if (br.getHttpConnection().getResponseCode() == 404) {
+            if (ArchiveOrg.isAccountRequired(br) || ArchiveOrg.isItemUnavailable(br)) {
+                throw new AccountRequiredException();
+            } else if (br.getHttpConnection().getResponseCode() == 403) {
+                throw new AccountRequiredException();
+            } else if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (!isCompressedArchiveURL(br.getURL())) {
                 /* Redirect to some unsupported URL. */
@@ -1717,8 +1727,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* This link will go back into this crawler to find all individual downloadlinks. */
             ret.add(createDownloadlink(downloadurl));
             return ret;
-        } else if (br.containsHTML("(?i)>\\s*You must log in to view this content") || br.containsHTML("(?i)>\\s*Item not available|>\\s*The item is not available due to issues with the item's content")) {
-            /* 2021-02-24: <p class="theatre-title">You must log in to view this content</p> */
+        } else if (ArchiveOrg.isItemUnavailable(br) || ArchiveOrg.isAccountRequired(br)) {
             if (br.containsHTML("/download/" + Pattern.quote(identifier))) {
                 /* Account is still required but we can go ahead and crawl all individual file URLs via XML. */
                 ret.add(createDownloadlink(downloadurl));

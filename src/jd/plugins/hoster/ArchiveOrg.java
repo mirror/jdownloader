@@ -383,9 +383,8 @@ public class ArchiveOrg extends PluginForHost {
             } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            /* <h1>Item not available</h1> */
-            if (br.containsHTML("(?i)>\\s*Item not available<")) {
-                if (br.containsHTML("(?i)>\\s*The item is not available due to issues")) {
+            if (ArchiveOrg.isItemUnavailable(br)) {
+                if (ArchiveOrg.isAccountRequired(br)) {
                     /* First check for this flag */
                     if (link.hasProperty(PROPERTY_IS_NOT_DOWNLOADABLE)) {
                         throw new PluginException(LinkStatus.ERROR_FATAL, ERRORMSG_FILE_NOT_DOWNLOADABLE);
@@ -430,6 +429,22 @@ public class ArchiveOrg extends PluginForHost {
             if (deleteHashInfo) {
                 link.setHashInfo(null);
             }
+        }
+    }
+
+    public static boolean isItemUnavailable(final Browser br) {
+        if (br.containsHTML(">\\s*Item not available")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean isAccountRequired(final Browser br) {
+        if (br.containsHTML(">\\s*You must log in to view this content|>\\s*The item is not available due to issues")) {
+            return true;
+        } else {
+            return false;
         }
     }
 
