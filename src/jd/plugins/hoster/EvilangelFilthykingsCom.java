@@ -53,6 +53,11 @@ public class EvilangelFilthykingsCom extends EvilangelCore {
     }
 
     @Override
+    protected boolean allowCookieLoginOnly() {
+        return true;
+    }
+
+    @Override
     public void reset() {
     }
 
