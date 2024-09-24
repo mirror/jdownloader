@@ -6,6 +6,7 @@ import java.util.List;
 import jd.plugins.AccountInfo;
 
 import org.appwork.swing.exttable.tree.TreeNodeInterface;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.hosterrule.AccountReference;
 
 public class AccountWrapper implements AccountInterface {
@@ -84,5 +85,9 @@ public class AccountWrapper implements AccountInterface {
     @Override
     public void setParent(TreeNodeInterface parent) {
         this.parent = (GroupWrapper) parent;
+    }
+
+    public DomainInfo getDomainInfo() {
+        return account.getDomainInfo();
     }
 }

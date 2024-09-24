@@ -182,8 +182,8 @@ public class BuyAction extends AbstractAction {
                             if (lazyHostPlugin != null) {
                                 AccountController.openAfflink(lazyHostPlugin, null, "buypremium/accountmanager/buy" + (table == null ? "/context" : "/table"));
                                 final BuyAndAddPremiumAccount dia;
-                                UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, dia = new BuyAndAddPremiumAccount(lazyHostPlugin.getDomainInfo()), "accountmanager" + (table == null ? "/context" : "/table")));
-        dia.throwCloseExceptions();
+                                UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, dia = new BuyAndAddPremiumAccount(lazyHostPlugin.getDomainInfo(), "accountmanager" + (table == null ? "/context" : "/table")));
+                                dia.throwCloseExceptions();
                             }
                         } catch (DialogClosedException e1) {
                             e1.printStackTrace();

@@ -7,6 +7,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.AccountTrafficView;
 
 import org.appwork.exceptions.WTFException;
+import org.jdownloader.DomainInfo;
 
 public class FreeAccountReference extends AccountReference {
     static final int     FREE_ID = 0;
@@ -33,6 +34,10 @@ public class FreeAccountReference extends AccountReference {
 
     public Date getExpireDate() {
         return null;
+    }
+
+    public DomainInfo getDomainInfo() {
+        return DomainInfo.getInstance(getHoster());
     }
 
     public boolean isAvailable() {

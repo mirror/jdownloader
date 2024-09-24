@@ -7,6 +7,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.AccountTrafficView;
 
 import org.appwork.utils.Hash;
+import org.jdownloader.DomainInfo;
 
 public class AccountReference {
     public AccountReference() {
@@ -52,6 +53,10 @@ public class AccountReference {
 
     public String getHoster() {
         return getAccount().getHoster();
+    }
+
+    public DomainInfo getDomainInfo() {
+        return getAccount().getDomainInfo();
     }
 
     public String getUser() {

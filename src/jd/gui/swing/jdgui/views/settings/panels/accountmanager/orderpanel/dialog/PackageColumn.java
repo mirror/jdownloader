@@ -22,7 +22,6 @@ import org.appwork.swing.exttable.renderercomponents.RendererTextField;
 import org.appwork.swing.exttable.tree.ExtTreeTableModel;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.renderer.RendererCheckBox;
-import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.hosterrule.FreeAccountReference;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -165,7 +164,7 @@ public class PackageColumn extends ExtTextColumn<AccountInterface> {
         if (value instanceof GroupWrapper) {
             return new AbstractIcon(IconKey.ICON_PACKAGE_OPEN, 18);
         } else {
-            return DomainInfo.getInstance(((AccountWrapper) value).getHost()).getFavIcon(false);
+            return ((AccountWrapper) value).getDomainInfo().getFavIcon(false);
         }
     }
 

@@ -82,4 +82,5 @@ public class GroupWrapper implements AccountInterface {
     public String getName() {
         return name;
     }
+
 }

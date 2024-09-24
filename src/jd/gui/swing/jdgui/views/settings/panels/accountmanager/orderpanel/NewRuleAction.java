@@ -39,7 +39,7 @@ public class NewRuleAction extends AbstractAddAction {
         /* Allow only one rule per hoster -> Remove items from list which a rule already exists for. */
         final HosterRuleController hrc = HosterRuleController.getInstance();
         for (final AccountUsageRule aur : hrc.list()) {
-            list.remove(DomainInfo.getInstance(aur.getHoster(), true));
+            list.remove(DomainInfo.getInstance(aur.getHoster()));
         }
         final ChooseHosterDialog d = new ChooseHosterDialog(_GUI.T.NewRuleAction_actionPerformed_choose_hoster_message(), list.toArray(new DomainInfo[] {}));
         try {
