@@ -10,9 +10,6 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.swing.components.tooltips.PanelToolTip;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.components.tooltips.TooltipPanel;
@@ -24,6 +21,9 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+import net.miginfocom.swing.MigLayout;
 
 public class ServicePanel9kwTooltip extends PanelToolTip {
     private Color               color;
@@ -48,7 +48,9 @@ public class ServicePanel9kwTooltip extends PanelToolTip {
         JProgressBar progress = new JProgressBar();
         progress.setIndeterminate(true);
         panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]"));
-        JLabel header = new JLabel("9kw Captcha Solver", DomainInfo.getInstance("9kw.eu").getFavIcon(), JLabel.LEFT);
+        final DomainInfo di = DomainInfo.getInstance("9kw.eu");
+        final Icon icon = di.getFavIcon();
+        JLabel header = new JLabel("9kw Captcha Solver", icon, JLabel.LEFT);
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
         SwingUtils.toBold(header);
         header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
@@ -70,7 +72,7 @@ public class ServicePanel9kwTooltip extends PanelToolTip {
                             panel.setLayout(new MigLayout("ins 0,wrap 2", "[][grow,align right]", "[]0"));
                             if (!account.isValid()) {
                                 // panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]"));
-                                JLabel header = new JLabel("9kw Captcha Solver", DomainInfo.getInstance("9kw.eu").getFavIcon(), JLabel.LEFT);
+                                JLabel header = new JLabel("9kw Captcha Solver", icon, JLabel.LEFT);
                                 header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
                                 SwingUtils.toBold(header);
                                 header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
@@ -78,7 +80,7 @@ public class ServicePanel9kwTooltip extends PanelToolTip {
                                 panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_error2(""), NewTheme.I().getIcon(IconKey.ICON_ERROR, 18), JLabel.LEFT));
                                 panel.add(lbl(account.getError()), "gapleft 22");
                             } else {
-                                JLabel header = new JLabel("9kw Captcha Solver", DomainInfo.getInstance("9kw.eu").getFavIcon(), JLabel.LEFT);
+                                JLabel header = new JLabel("9kw Captcha Solver", icon, JLabel.LEFT);
                                 header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
                                 SwingUtils.toBold(header);
                                 header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
@@ -91,7 +93,7 @@ public class ServicePanel9kwTooltip extends PanelToolTip {
                                 panel.add(lbl(account.getSkipped() + "/" + account.getSendError() + " Captcha(s)"));
                                 panel.add(lbl("Feedback: ", NewTheme.I().getIcon(IconKey.ICON_LOGIN, 18), JLabel.LEFT));
                                 panel.add(lbl("OK:" + account.getOK() + " NotOK:" + account.getNotOK() + " Unused:" + account.getUnused()));
-                                JLabel header2 = new JLabel("Account", DomainInfo.getInstance("9kw.eu").getFavIcon(), JLabel.LEFT);
+                                JLabel header2 = new JLabel("Account", icon, JLabel.LEFT);
                                 header2.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
                                 SwingUtils.toBold(header2);
                                 header2.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
@@ -103,7 +105,7 @@ public class ServicePanel9kwTooltip extends PanelToolTip {
                                 panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_answered(), NewTheme.I().getIcon(IconKey.ICON_LOGOUT, 18), JLabel.LEFT));
                                 panel.add(lbl(account.getAnswered9kw() + ""));
                             }
-                            JLabel header3 = new JLabel("Server", DomainInfo.getInstance("9kw.eu").getFavIcon(), JLabel.LEFT);
+                            JLabel header3 = new JLabel("Server", icon, JLabel.LEFT);
                             header3.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
                             SwingUtils.toBold(header3);
                             header3.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
@@ -116,7 +118,7 @@ public class ServicePanel9kwTooltip extends PanelToolTip {
                             panel.add(lbl(account.getWorker()));
                             panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_inwork(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
                             panel.add(lbl(account.getInWork()));
-                            JLabel header4 = new JLabel("Workerdetails", DomainInfo.getInstance("9kw.eu").getFavIcon(), JLabel.LEFT);
+                            JLabel header4 = new JLabel("Workerdetails", icon, JLabel.LEFT);
                             header4.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
                             SwingUtils.toBold(header4);
                             header4.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
