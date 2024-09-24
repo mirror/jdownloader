@@ -6,6 +6,10 @@ import java.util.List;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.gui.swing.jdgui.GUIUtils;
+import jd.plugins.Account;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtTableModel;
@@ -14,14 +18,9 @@ import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
-import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.CandidateAccountColumn;
 import org.jdownloader.images.BadgeIcon;
-
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.plugins.Account;
 
 public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
     public static interface MaxWidthProvider {
@@ -167,9 +166,9 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
             Account account = history.getAccount();
             if (account != null) {
                 if (icon == null) {
-                    icon = DomainInfo.getInstance(account.getHosterByPlugin()).getFavIcon();
+                    icon = account.getDomainInfo().getFavIcon();
                 } else {
-                    icon = new BadgeIcon(DomainInfo.getInstance(account.getHosterByPlugin()), IconIO.getScaledInstance(icon, 12, 12), 4, 2);
+                    icon = new BadgeIcon(account.getDomainInfo(), IconIO.getScaledInstance(icon, 12, 12), 4, 2);
                 }
                 String accountType = null;
                 switch (history.getAccountType()) {
