@@ -740,18 +740,16 @@ public class Multi extends IExtraction {
             return null;
         }
         final Long size = item.getSize();
-        if (true || CrossSystem.isWindows()) {
-            // always alleviate the path and filename
-            final String itemPathParts[] = itemPath.split(Regex.escape(File.separator));
-            final StringBuilder sb = new StringBuilder();
-            for (final String pathPartItem : itemPathParts) {
-                if (sb.length() > 0) {
-                    sb.append(File.separator);
-                }
-                sb.append(CrossSystem.alleviatePathParts(pathPartItem));
+        // always alleviate the path and filename
+        final String itemPathParts[] = itemPath.split("(/|\\\\)");
+        final StringBuilder sb = new StringBuilder();
+        for (final String pathPartItem : itemPathParts) {
+            if (sb.length() > 0) {
+                sb.append(File.separator);
             }
-            itemPath = sb.toString();
+            sb.append(CrossSystem.alleviatePathParts(pathPartItem));
         }
+        itemPath = sb.toString();
         final String extractToRoot = getExtractionController().getExtractToFolder().getAbsoluteFile() + File.separator;
         File extractToFile = new File(extractToRoot + itemPath);
         logger.info("Extract " + extractToFile);
