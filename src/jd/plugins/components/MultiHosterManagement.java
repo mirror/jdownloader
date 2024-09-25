@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Time;
 
 import jd.config.Property;
@@ -62,7 +63,7 @@ public class MultiHosterManagement {
         final Map<Object, Map<String, UnavailableHost>> db = getDB();
         synchronized (db) {
             // null(multihosterwide) && AccountType && Account
-            final UnavailableHost nue = new UnavailableHost(Time.systemIndependentCurrentJVMTimeMillis() + timeout, reason);
+            final UnavailableHost nue = new UnavailableHost(reason, Time.systemIndependentCurrentJVMTimeMillis() + timeout);
             Map<String, UnavailableHost> unavailableMap = db.get(account);
             if (unavailableMap == null) {
                 unavailableMap = new HashMap<String, UnavailableHost>();
@@ -81,6 +82,7 @@ public class MultiHosterManagement {
                     /* Host might have been removed from list of supported hosts in the meantime. */
                     break setLimitOnAccount;
                 }
+                mhost.setStatusText(reason);
                 mhost.setUnavailableTime(timeout);
                 ai.updateMultihostSupportedHost(mhost);
             }
@@ -101,6 +103,11 @@ public class MultiHosterManagement {
         synchronized (db) {
             // check for null(multihosterwide) first, AccountTypes(specific to this account type) second, and Account (specific to this
             // account) last!
+            MultiHostHost mhost = null;
+            final AccountInfo ai = account.getAccountInfo();
+            if (ai != null) {
+                mhost = ai.getMultihostSupportedHost(downloadLink.getHost());
+            }
             final Object[] acc = new Object[] { null, account.getType(), account };
             for (final Object ob : acc) {
                 final Map<String, UnavailableHost> unavailableMap = db.get(ob);
@@ -108,8 +115,16 @@ public class MultiHosterManagement {
                 if (nue == null) {
                     continue;
                 }
-                final Long lastUnavailable = nue.getErrorTimeout();
-                final String errorReason = nue.getErrorReason();
+                String errorReason = nue.getErrorReason();
+                Long lastUnavailable = nue.getErrorTimeout();
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && mhost != null) {
+                    if (mhost.getStatusText() != null) {
+                        errorReason = mhost.getStatusText();
+                    }
+                    if (mhost.getUnavailableUntilTimestamp() != -1) {
+                        lastUnavailable = mhost.getUnavailableUntilTimestamp();
+                    }
+                }
                 if (lastUnavailable == null) {
                     // never can download from
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Not possible to download from " + downloadLink.getHost());

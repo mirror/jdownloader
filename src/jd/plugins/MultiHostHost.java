@@ -109,7 +109,7 @@ public class MultiHostHost implements Storable {
         this.isUnlimitedLinks = false;
     }
 
-    /** Only do this when linksMax is given. */
+    /** Only use this when linksMax is given!! */
     public void setLinksUsed(long num) {
         this.linksLeft = this.linksMax - num;
         this.isUnlimitedLinks = false;
@@ -182,14 +182,9 @@ public class MultiHostHost implements Storable {
         }
     }
 
+    /** Returns custom set status text. Typically used to describe why this host is currently not working. */
     public String getStatusText() {
-        if (this.statusText != null) {
-            return statusText;
-        } else if (status != null) {
-            return status.name();
-        } else {
-            return null;
-        }
+        return statusText;
     }
 
     public void setStatusText(String statusText) {
@@ -197,6 +192,7 @@ public class MultiHostHost implements Storable {
     }
 
     public MultihosterHostStatus getStatus() {
+        // TODO: Update this to simply return status without any evaluation
         if (this.unavailableUntilTimestamp > Time.systemIndependentCurrentJVMTimeMillis()) {
             return MultihosterHostStatus.DEACTIVATED_JDOWNLOADER;
         } else if (status == null) {

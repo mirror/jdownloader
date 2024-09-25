@@ -12,7 +12,7 @@ public final class UnavailableHost {
     private String errorReason;
     private Long   errorTimeout;
 
-    public UnavailableHost(final Long errorTimeout, final String errorReason) {
+    public UnavailableHost(final String errorReason, final Long errorTimeout) {
         this.errorTimeout = errorTimeout;
         this.errorReason = errorReason;
     }
