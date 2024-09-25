@@ -247,9 +247,10 @@ public class LinksvipNet extends PluginForHost {
             }
             br.getPage("/host-support.html");
             final String[] hostlist = br.getRegex("domain=([^<>\"]+)\"").getColumn(0);
-            if (hostlist != null) {
-                supportedHosts = new ArrayList<String>(Arrays.asList(hostlist));
+            if (hostlist == null || hostlist.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find list of supported hosts");
             }
+            supportedHosts = new ArrayList<String>(Arrays.asList(hostlist));
             ai.setUnlimitedTraffic();
         } else {
             account.setType(AccountType.FREE);

@@ -35,7 +35,7 @@ public class LinkifierCom extends PluginForHost {
 
     public LinkifierCom(PluginWrapper wrapper) {
         super(wrapper);
-        enablePremium("https://www.linkifier.com");
+        enablePremium("https://www." + getHost());
     }
 
     @Override
@@ -45,15 +45,12 @@ public class LinkifierCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://www.linkifier.com/terms-of-use/";
+        return "https://www." + getHost() + "/terms-of-use/";
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         final String username = account.getUser();
-        if (username == null || !username.matches("^.+?@.+?\\.[^\\.]+")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please use your email address to login", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
         final AccountInfo ai = new AccountInfo();
         final HashMap<String, Object> userJson = new HashMap<String, Object>();
         userJson.put("login", username);

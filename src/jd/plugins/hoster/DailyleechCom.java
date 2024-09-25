@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
@@ -521,11 +520,10 @@ public class DailyleechCom extends PluginForHost {
         }
         br.getPage("/hostsp/");
         final String[] hostlist = br.getRegex("domain=([^<>\"\\'/]+)\"").getColumn(0);
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
-        if (hostlist != null) {
-            supportedHosts.addAll(Arrays.asList(hostlist));
+        if (hostlist == null || hostlist.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find list of supported hosts");
         }
-        ai.setMultiHostSupport(this, supportedHosts);
+        ai.setMultiHostSupport(this, Arrays.asList(hostlist));
         return ai;
     }
 

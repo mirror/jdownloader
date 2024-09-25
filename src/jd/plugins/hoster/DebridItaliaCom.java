@@ -21,6 +21,13 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,13 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "https?://\\w+\\.debriditalia\\.com/dl/\\d+/.+" })
 public class DebridItaliaCom extends antiDDoSForHost {
@@ -103,7 +103,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
         }
         ac.setValidUntil(Long.parseLong(expire) * 1000l, this.br);
         getPage(API_BASE + "?hosts");
-        final String[] hosts = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
+        final String[] hosts = br.getRegex("\"([^\"]*?)\"").getColumn(0);
         ac.setMultiHostSupport(this, new ArrayList<String>(Arrays.asList(hosts)));
         account.setType(AccountType.PREMIUM);
         return ac;
@@ -245,7 +245,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
     @Override
     public Downloadable newDownloadable(DownloadLink downloadLink, final Browser br) {
         return new DownloadLinkDownloadable(downloadLink, br) {
-
             @Override
             protected DispositionHeader parseDispositionHeader(URLConnectionAdapter connection) {
                 final DispositionHeader ret = super.parseDispositionHeader(connection);

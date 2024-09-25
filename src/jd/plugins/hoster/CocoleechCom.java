@@ -39,6 +39,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.MultiHostHost;
+import jd.plugins.MultiHostHost.MultihosterHostStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
@@ -214,7 +216,7 @@ public class CocoleechCom extends PluginForHost {
         }
         br.getPage(API_ENDPOINT + "/hosts-status");
         final Map<String, Object> hoststatusmap = handleAPIErrors(br, account, null);
-        final ArrayList<String> supportedhostslist = new ArrayList();
+        final List<MultiHostHost> supportedhostslist = new ArrayList<MultiHostHost>();
         final List<Map<String, Object>> hosters = (List<Map<String, Object>>) hoststatusmap.get("result");
         for (final Map<String, Object> hostinfo : hosters) {
             final String host = (String) hostinfo.get("host");
@@ -223,13 +225,13 @@ public class CocoleechCom extends PluginForHost {
                 /* Skip invalid items */
                 continue;
             }
-            if ("online".equalsIgnoreCase(status)) {
-                supportedhostslist.add(host);
-            } else {
-                logger.info("Not adding currently serverside deactivated host: " + host);
+            final MultiHostHost mhost = new MultiHostHost(host);
+            if (!"online".equalsIgnoreCase(status)) {
+                mhost.setStatus(MultihosterHostStatus.DEACTIVATED_MULTIHOST);
             }
+            supportedhostslist.add(mhost);
         }
-        ai.setMultiHostSupport(this, supportedhostslist);
+        ai.setMultiHostSupportV2(this, supportedhostslist);
         return ai;
     }
 

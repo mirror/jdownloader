@@ -319,7 +319,7 @@ public class EsouboryCz extends PluginForHost {
         /*
          * E.g. {"error":"","data":{"list":"http:\/\/www.edisk.cz;https:\/\/datoid.cz;https:\/\/webshare.cz;https:\/\/www.shareprofi.com"}}
          */
-        entries = restoreFromString(br.toString(), TypeRef.MAP);
+        entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         data = (Map<String, Object>) entries.get("data");
         final String hostsStr = (String) data.get("list");
         final String[] hosts = hostsStr.split(";");

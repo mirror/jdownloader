@@ -44,6 +44,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.MultiHostHost;
+import jd.plugins.MultiHostHost.MultihosterHostStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
@@ -210,12 +212,12 @@ public class BoxbitApp extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
         Map<String, Object> user = loginAPI(account, true);
         /* Access userInfo if it hasn't been accessed already. */
         if (br.getURL() == null || !br.getURL().contains("/users/")) {
             user = accessUserInfo(this.br, account);
         }
+        final AccountInfo ai = new AccountInfo();
         final Map<String, Object> subscription = (Map<String, Object>) user.get("subscription");
         List<Map<String, Object>> hosts = null;
         final Object currentSubscriptionO = subscription.get("current");
@@ -243,7 +245,7 @@ public class BoxbitApp extends PluginForHost {
             status += " | TokenValidity: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(this.getLoginTokenValidity(account));
             ai.setStatus(status);
         }
-        final ArrayList<String> supportedhostslist = new ArrayList<String>();
+        final ArrayList<MultiHostHost> supportedhostslist = new ArrayList<MultiHostHost>();
         /* Can be null for free accounts! */
         if (hosts != null) {
             br.getPage(API_BASE + "/filehosts/domains");
@@ -252,17 +254,17 @@ public class BoxbitApp extends PluginForHost {
             for (final Map<String, Object> hostInfo : hosts) {
                 final Map<String, Object> hostDetails = (Map<String, Object>) hostInfo.get("details");
                 final String hostIdentifier = (String) hostDetails.get("identifier");
+                final MultiHostHost mhost = new MultiHostHost();
                 if (hostDetails.get("status").toString().equalsIgnoreCase("working")) {
-                    final List<String> fullDomains = (List<String>) hostMapping.get(hostIdentifier);
-                    for (final String fullDomain : fullDomains) {
-                        supportedhostslist.add(fullDomain);
-                    }
+                    mhost.setStatus(MultihosterHostStatus.WORKING);
                 } else {
-                    logger.info("Skipping non working host: " + hostIdentifier);
+                    mhost.setStatus(MultihosterHostStatus.DEACTIVATED_MULTIHOST);
                 }
+                final List<String> fullDomains = (List<String>) hostMapping.get(hostIdentifier);
+                mhost.setDomains(fullDomains);
             }
         }
-        ai.setMultiHostSupport(this, supportedhostslist);
+        ai.setMultiHostSupportV2(this, supportedhostslist);
         account.setConcurrentUsePossible(true);
         return ai;
     }

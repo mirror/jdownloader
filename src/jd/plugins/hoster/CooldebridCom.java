@@ -17,8 +17,15 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -35,16 +42,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.MultiHostHost;
+import jd.plugins.MultiHostHost.MultihosterHostStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cooldebrid.com" }, urls = { "" })
 public class CooldebridCom extends PluginForHost {
@@ -215,8 +217,11 @@ public class CooldebridCom extends PluginForHost {
             ai.setExpired(true);
         }
         // br.getPage("/host-status.html");
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        final List<MultiHostHost> supportedHosts = new ArrayList<MultiHostHost>();
         final String[] htmls = br.getRegex("<tr>(.*?)</tr>").getColumn(0);
+        if (htmls == null || htmls.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find list of supported hosts");
+        }
         for (final String html : htmls) {
             final String domain = new Regex(html, "favicons\\?domain=([^\"]+)").getMatch(0);
             if (domain == null) {
@@ -230,10 +235,17 @@ public class CooldebridCom extends PluginForHost {
             }
             /* Skip hosts that are marked as broken/offline by this multihost */
             final String hostStatusColumn = columns[2].toLowerCase(Locale.ENGLISH);
-            final boolean isHostAvailable = hostStatusColumn.contains("online") || hostStatusColumn.contains("unstable");
-            if (!isHostAvailable) {
-                logger.info("Skipping currently unsupported host: " + domain);
-                continue;
+            final MultiHostHost mhost = new MultiHostHost(domain);
+            if (StringUtils.containsIgnoreCase(html, "Only Premium") && account.getType() != AccountType.PREMIUM) {
+                mhost.setStatus(MultihosterHostStatus.DEACTIVATED_MULTIHOST_NOT_FOR_THIS_ACCOUNT_TYPE);
+            } else {
+                if (hostStatusColumn.contains("online")) {
+                    mhost.setStatus(MultihosterHostStatus.WORKING);
+                } else if (hostStatusColumn.contains("unstable")) {
+                    mhost.setStatus(MultihosterHostStatus.WORKING_UNSTABLE);
+                } else {
+                    mhost.setStatus(MultihosterHostStatus.DEACTIVATED_MULTIHOST);
+                }
             }
             /*
              * Skip hosts if individual limits have been reached. Some have "unlimited" links or bandwidth -> Limit-RegEx will fail for them
@@ -241,28 +253,24 @@ public class CooldebridCom extends PluginForHost {
              */
             final String hostLimitsHTML = columns[1];
             final Regex maxLinkLimitRegex = new Regex(hostLimitsHTML, "used_count=\"[^\"]+\">(\\d+)</span>\\s*/\\s*(\\d+)\\s*link\\s*</p>");
-            if (maxLinkLimitRegex.matches()) {
+            if (maxLinkLimitRegex.patternFind()) {
                 final int linksUsed = Integer.parseInt(maxLinkLimitRegex.getMatch(0));
                 final int linksMax = Integer.parseInt(maxLinkLimitRegex.getMatch(1));
                 final int linksLeft = linksMax - linksUsed;
-                if (linksLeft <= 0) {
-                    logger.info("Skipping host because user reached individual max links limit for it: " + domain + " | " + linksUsed + "/" + linksMax);
-                    continue;
-                }
+                mhost.setLinksLeft(linksLeft);
+                mhost.setLinksMax(linksMax);
             }
             final Regex maxQuotaRegex = new Regex(hostLimitsHTML, "used_mb=\"[^\"]+\">(\\d+(?:\\.\\d{1,2})? [A-Za-z]{1,5})</span>\\s*/\\s*(\\d+(?:\\.\\d{1,2})? [A-Za-z]{1,5})\\s*<br>");
-            if (maxQuotaRegex.matches()) {
+            if (maxQuotaRegex.patternFind()) {
                 final long trafficUsed = SizeFormatter.getSize(maxQuotaRegex.getMatch(0));
                 final long trafficMax = SizeFormatter.getSize(maxQuotaRegex.getMatch(1));
                 final long trafficLeft = trafficMax - trafficUsed;
-                if (trafficLeft <= 0) {
-                    logger.info("Skipping host because user reached individual traffic limit for it: " + domain + " | " + maxQuotaRegex.getMatch(0) + "/" + maxQuotaRegex.getMatch(1));
-                    continue;
-                }
+                mhost.setTrafficLeft(trafficLeft);
+                mhost.setTrafficMax(trafficMax);
             }
-            supportedHosts.add(domain);
+            supportedHosts.add(mhost);
         }
-        ai.setMultiHostSupport(this, supportedHosts);
+        ai.setMultiHostSupportV2(this, supportedHosts);
         account.setConcurrentUsePossible(true);
         return ai;
     }

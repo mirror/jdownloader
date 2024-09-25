@@ -26,33 +26,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
 
-import jd.PluginWrapper;
-import jd.controlling.AccountController;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountInvalidException;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.HashInfo;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
@@ -75,6 +48,35 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.controlling.AccountController;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.MultiHostHost;
+import jd.plugins.MultiHostHost.MultihosterHostStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.components.MultiHosterManagement;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.HashInfo;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://alldebrid\\.com/f/([A-Za-z0-9\\-_]+)" })
 public class AllDebridCom extends PluginForHost {
@@ -277,18 +279,17 @@ public class AllDebridCom extends PluginForHost {
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> supportedHostsInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/hosts");
         final Iterator<Entry<String, Object>> iterator = supportedHostsInfo.entrySet().iterator();
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        final List<MultiHostHost> supportedHosts = new ArrayList<MultiHostHost>();
         while (iterator.hasNext()) {
             final Entry<String, Object> entry = iterator.next();
-            final String hosterKey = entry.getKey();
+            // final String hosterKey = entry.getKey();
             final Map<String, Object> hosterinfos = (Map<String, Object>) entry.getValue();
-            String host_without_tld = (String) hosterinfos.get("name");
+            final String host_without_tld = hosterinfos.get("name").toString();
             final Number quota = (Number) hosterinfos.get("quota");
             final String quotaType = (String) hosterinfos.get("quotaType");
-            if (StringUtils.isEmpty(host_without_tld)) {
-                host_without_tld = hosterKey;
-            }
-            final List<String> domains = (List<String>) hosterinfos.get("domains");
+            final MultiHostHost mhost = new MultiHostHost();
+            mhost.setName(host_without_tld);
+            mhost.setDomains((List<String>) hosterinfos.get("domains"));
             /*
              * 2020-04-01: This check will most likely never be required as free accounts officially cannot be used via API at all and JD
              * also does not accept them but we're doing this check nevertheless.
@@ -297,37 +298,29 @@ public class AllDebridCom extends PluginForHost {
             final Boolean status = (Boolean) hosterinfos.get("status"); // optional field
             // final Number quota = (Number) entry.get("quota");
             if (account.getType() == AccountType.FREE && !"free".equalsIgnoreCase(type)) {
-                logger.info("Skipping host because it cannot be used with free accounts: " + host_without_tld);
-                continue;
-            } else if (quota != null && quota.longValue() <= 0) {
-                logger.info("Skipping host because there is no quota left: " + host_without_tld);
-                continue;
-            } else if (domains.isEmpty()) {
-                /* This should never happen */
-                logger.info("Skipping entry with empty domains field: " + host_without_tld);
-                continue;
+                mhost.setStatus(MultihosterHostStatus.DEACTIVATED_MULTIHOST_NOT_FOR_THIS_ACCOUNT_TYPE);
+                logger.info("This host cannot be used with free accounts: " + host_without_tld);
             }
             /* Skip currently disabled hosts --> 2020-03-26: Do not skip any hosts anymore, display all in JD RE: admin */
             if (Boolean.FALSE.equals(status)) {
                 /* Log hosts which look to be non working according to API. */
                 logger.info("Host which might currently be broken: " + host_without_tld);
-                /* 2024-09-03: Do not ignore/skip such entries */
-                // continue;
+                mhost.setStatus(MultihosterHostStatus.DEACTIVATED_MULTIHOST);
             }
             /* Add all domains of host */
             // TODO: Make use of this quota information
             if (StringUtils.equalsIgnoreCase(quotaType, "traffic")) {
                 // quota is traffic in MB
+                mhost.setTrafficLeft(quota.longValue() * 1024 * 1024);
             } else if (StringUtils.equalsIgnoreCase(quotaType, "nb_download")) {
                 // quota is number of links left to download
+                mhost.setLinksLeft(quota.intValue());
             } else {
                 // No limit
             }
-            for (final String domain : domains) {
-                supportedHosts.add(domain);
-            }
+            supportedHosts.add(mhost);
         }
-        accountInfo.setMultiHostSupport(this, supportedHosts);
+        accountInfo.setMultiHostSupportV2(this, supportedHosts);
         return accountInfo;
     }
 

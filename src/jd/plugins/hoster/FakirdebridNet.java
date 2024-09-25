@@ -54,6 +54,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.MultiHostHost;
+import jd.plugins.MultiHostHost.MultihosterHostStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
@@ -286,10 +288,9 @@ public class FakirdebridNet extends PluginForHost {
         ai.setTrafficLeft(((Number) entries.get("trafficleft")).longValue());
         ai.setTrafficMax(((Number) entries.get("trafficlimit")).longValue());
         ai.setValidUntil(JavaScriptEngineFactory.toLong(entries.get("premium_until"), 0) * 1000, br);
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
         br.getPage(API_BASE + "/supportedhosts.php?pin=" + Encoding.urlEncode(account.getPass()));
         entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        final List<Object> arrayHoster;
+        final List<Map<String, Object>> arrayHoster;
         final Object arrayHosterO = entries.get("supportedhosts");
         /* 2021-05-27: API can return Map instead of expected Array */
         if (arrayHosterO instanceof Map) {
@@ -297,28 +298,24 @@ public class FakirdebridNet extends PluginForHost {
             arrayHoster = new ArrayList(mapHoster.values());
             // mapHoster.values();
         } else {
-            arrayHoster = (List<Object>) arrayHosterO;
+            arrayHoster = (List<Map<String, Object>>) arrayHosterO;
         }
-        for (final Object hoster : arrayHoster) {
-            final Map<String, Object> hostermap = (Map<String, Object>) hoster;
-            final String domain = (String) hostermap.get("host");
+        final List<MultiHostHost> supportedHosts = new ArrayList<MultiHostHost>();
+        for (final Map<String, Object> hostermap : arrayHoster) {
+            final String domain = hostermap.get("host").toString();
             final boolean active = ((Boolean) hostermap.get("currently_working")).booleanValue();
+            final MultiHostHost mhost = new MultiHostHost(domain);
             if (!active) {
-                continue;
+                mhost.setStatus(MultihosterHostStatus.DEACTIVATED_MULTIHOST);
             }
-            /* Workaround to find the real domain which we need to assign the properties to later on! */
-            final ArrayList<String> supportedHostsTmp = new ArrayList<String>();
-            supportedHostsTmp.add(domain);
-            ai.setMultiHostSupport(null, supportedHostsTmp);
-            final List<String> realDomainList = ai.getMultiHostSupport();
-            if (realDomainList == null || realDomainList.isEmpty()) {
-                /* Skip unsupported hosts or host plugins which don't allow multihost usage. */
-                continue;
-            }
-            final String realDomain = realDomainList.get(0);
-            supportedHosts.add(realDomain);
+            mhost.setResume(((Boolean) hostermap.get("resumable")).booleanValue());
+            mhost.setMaxChunks(((Number) hostermap.get("maxChunks")).intValue());
+            mhost.setMaxDownloads(((Number) hostermap.get("maxDownloads")).intValue());
+            mhost.setTrafficMax(((Number) hostermap.get("traffixmax_daily")).longValue());
+            mhost.setTrafficLeft(((Number) hostermap.get("trafficleft")).longValue());
+            supportedHosts.add(mhost);
         }
-        ai.setMultiHostSupport(this, supportedHosts);
+        ai.setMultiHostSupportV2(this, supportedHosts);
         return ai;
     }
 

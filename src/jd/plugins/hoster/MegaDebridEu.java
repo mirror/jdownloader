@@ -19,9 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -84,26 +84,24 @@ public class MegaDebridEu extends PluginForHost {
         }
         // now it's time to get all supported hosts
         br.getPage("/api.php?action=getHostersList");
-        final Map<String, Object> results = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> results = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         if (!"ok".equalsIgnoreCase((String) results.get("response_code"))) {
             throw new AccountInvalidException();
         }
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        for (final Object resultz : (List<Object>) results.get("hosters")) {
-            final Map<String, Object> r = (Map<String, Object>) resultz;
-            if (!"up".equals(r.get("status")) || r.get("domains") == null) {
+        for (final Map<String, Object> hostinfo : (List<Map<String, Object>>) results.get("hosters")) {
+            final List<String> domains = (List<String>) hostinfo.get("domains");
+            if (!"up".equals(hostinfo.get("status")) || domains == null) {
                 continue;
             }
-            for (final String domain : (List<String>) r.get("domains")) {
-                supportedHosts.add(domain);
-            }
+            supportedHosts.addAll(domains);
         }
         ac.setMultiHostSupport(this, supportedHosts);
         account.setType(AccountType.PREMIUM);
         return ac;
     }
 
-    private String login(Account account) throws Exception {
+    private String login(final Account account) throws Exception {
         synchronized (account) {
             br.getPage(mProt + mName + "/api.php?action=connectUser&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
@@ -145,7 +143,7 @@ public class MegaDebridEu extends PluginForHost {
         }
         url = Encoding.urlEncode(url);
         prepBrowser(br);
-        String token = account.getStringProperty("token", null);
+        String token = account.getStringProperty("token");
         if (token == null) {
             // this shouldn't happen!
             token = login(account);
@@ -196,7 +194,7 @@ public class MegaDebridEu extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 

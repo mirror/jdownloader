@@ -19,6 +19,13 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -34,14 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-file.com" }, urls = { "" })
 public class DebridFileCom extends PluginForHost {
@@ -197,6 +196,9 @@ public class DebridFileCom extends PluginForHost {
          * Get list of supported hosts.
          */
         final String[] hosts = br.getRegex("/hostlar/([^<>\"]+)\\.png\"").getColumn(0);
+        if (hosts == null || hosts.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find list of supported hosts");
+        }
         ai.setMultiHostSupport(this, Arrays.asList(hosts));
         account.setConcurrentUsePossible(true);
         return ai;
@@ -276,7 +278,7 @@ public class DebridFileCom extends PluginForHost {
             /*
              * 2020-03-27: What does this mean? Is this supposed to be a temporary error? If so, you should use e.g. throw new
              * AccountUnavailableException("Error 403 'blocked by debrid-file'", 10 * 60 * 1000);
-             * 
+             *
              * 2020-03-27 : phg : This a temporary fix as we are not supposed to have a 403 error and we must fix the 403. I let the
              * previous code as it is not a temporary account error but a fatal plugin error
              */

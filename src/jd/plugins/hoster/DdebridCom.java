@@ -20,6 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -37,13 +43,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ddebrid.com" }, urls = { "" })
 public class DdebridCom extends PluginForHost {
     private static final String          API_BASE            = "https://ddebrid.com/api";
@@ -57,12 +56,12 @@ public class DdebridCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public DdebridCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://ddebrid.com/premium");
+        this.enablePremium("https://" + getHost() + "/premium");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://ddebrid.com/support";
+        return "https://" + getHost() + "/support";
     }
 
     private Browser prepBR(final Browser br) {
