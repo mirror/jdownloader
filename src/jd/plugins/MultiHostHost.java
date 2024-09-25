@@ -36,6 +36,7 @@ public class MultiHostHost implements Storable {
     private long                  unavailableUntilTimestamp       = -1;
     private short                 trafficCalculationFactorPercent = 100;
     private int                   maxChunks                       = 0;
+    private int                   maxDownloads                    = -1;
     private Boolean               resume                          = null;
     private String                statusText                      = null;
     private MultihosterHostStatus status                          = null;
@@ -262,6 +263,14 @@ public class MultiHostHost implements Storable {
         this.unavailableUntilTimestamp = Time.systemIndependentCurrentJVMTimeMillis() + milliseconds;
     }
 
+    public int getMaxDownloads() {
+        return maxDownloads;
+    }
+
+    public void setMaxDownloads(int maxDownloads) {
+        this.maxDownloads = maxDownloads;
+    }
+
     @Override
     public String toString() {
         final String title;
@@ -272,6 +281,6 @@ public class MultiHostHost implements Storable {
         } else {
             title = null;
         }
-        return title + " | LinksAvailable: " + this.getLinksLeft() + "/" + this.getLinksMax() + " | Traffic: " + SizeFormatter.formatBytes(this.getTrafficLeft()) + "/" + SizeFormatter.formatBytes(this.getTrafficMax()) + " | Chunks: " + this.getMaxChunks() + " | Resume: " + this.isResume();
+        return title + " | Status: " + this.getStatus() + " | LinksAvailable: " + this.getLinksLeft() + "/" + this.getLinksMax() + " | Traffic: " + SizeFormatter.formatBytes(this.getTrafficLeft()) + "/" + SizeFormatter.formatBytes(this.getTrafficMax()) + " | Chunks: " + this.getMaxChunks() + " | Resume: " + this.isResume();
     }
 }

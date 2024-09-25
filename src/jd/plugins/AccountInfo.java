@@ -545,6 +545,16 @@ public class AccountInfo extends Property implements AccountTrafficView {
                 }
                 continue cleanListLoop;
             }
+            final boolean hostIsWorkingAccordingToMultihost = mhost.getStatus() == MultihosterHostStatus.WORKING || mhost.getStatus() == MultihosterHostStatus.WORKING_UNSTABLE;
+            final boolean forcePrintNonWorkingHosts = true;
+            if (forcePrintNonWorkingHosts && !hostIsWorkingAccordingToMultihost) {
+                logger.info("Non working host: " + mhost);
+            }
+            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE && !hostIsWorkingAccordingToMultihost) {
+                // TODO: Remove this check
+                logger.info("Skipping non working host in stable: " + mhost.getName());
+                continue cleanListLoop;
+            }
             final LazyHostPlugin finalplugin = best.get(0);
             final String pluginHost = finalplugin.getHost();
             if (!finalresults.contains(pluginHost)) {
