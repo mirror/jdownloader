@@ -87,7 +87,7 @@ public abstract class EvilangelCore extends PluginForHost {
 
     protected Browser prepBrowser(final Browser br) {
         /* Define custom browser headers and language settings */
-        br.setCookie(this.getHost(), "enterSite", "en");
+        br.setCookie(getHost(), "enterSite", "en");
         br.setFollowRedirects(true);
         return br;
     }
@@ -904,18 +904,29 @@ public abstract class EvilangelCore extends PluginForHost {
         if (!StringUtils.isEmpty(expirationDate)) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expirationDate + " 23:59:59", "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
         }
-        if (account.getType() == AccountType.PREMIUM) {
-            final Browser brc = br.cloneBrowser();
-            brc.getHeaders().put("Accept", "application/json, text/plain, */*");
-            brc.getHeaders().put("Referer", "https://" + br.getHost(true) + "/en/payment-info");
-            brc.getHeaders().put("x-requested-with", "XMLHttpRequest");
-            brc.getPage("/membership/info");
-            final Map<String, Object> additionalinfo = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
-            final String nextRebillDate = (String) additionalinfo.get("nextRebillDate");
-            if (!StringUtils.isEmpty(nextRebillDate)) {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(nextRebillDate + " 23:59:59", "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
-            } else {
-                logger.warning("Failed to find nextRebillDate");
+        if (account.getType() == AccountType.PREMIUM && StringUtils.isEmpty(expirationDate)) {
+            /**
+             * Use next rebill date as expire date. Doesn't work for all websites. <br>
+             * Examples: <br>
+             * Working for: filthykings.com <br>
+             * Not working for: dfxtra.com
+             */
+            try {
+                final Browser brc = br.cloneBrowser();
+                brc.getHeaders().put("Accept", "application/json, text/plain, */*");
+                brc.getHeaders().put("Referer", "https://" + br.getHost(true) + "/en/payment-info");
+                brc.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                brc.getPage("/membership/info");
+                final Map<String, Object> additionalinfo = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+                final String nextRebillDate = (String) additionalinfo.get("nextRebillDate");
+                if (!StringUtils.isEmpty(nextRebillDate)) {
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(nextRebillDate + " 23:59:59", "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
+                } else {
+                    logger.warning("Failed to find nextRebillDate");
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
+                logger.info("Failed to find additional expire date information");
             }
         }
         return ai;

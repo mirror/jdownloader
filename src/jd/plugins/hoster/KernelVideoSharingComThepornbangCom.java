@@ -22,6 +22,10 @@ import org.jdownloader.plugins.components.config.KVSConfig;
 import org.jdownloader.plugins.components.config.KVSConfigThepornbangCom;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -74,7 +78,23 @@ public class KernelVideoSharingComThepornbangCom extends KernelVideoSharingComV2
     }
 
     @Override
+    protected AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        final AvailableStatus status = super.requestFileInformationWebsite(link, account, isDownload);
+        final String htmlTitleTag = br.getRegex("<title>([^<]+)").getMatch(0);
+        if (htmlTitleTag != null) {
+            link.setProperty("title", Encoding.htmlDecode(htmlTitleTag).trim());
+        }
+        return status;
+    }
+
+    @Override
     public Class<? extends KVSConfig> getConfigInterface() {
         return KVSConfigThepornbangCom.class;
+    }
+
+    @Override
+    protected boolean enableFastLinkcheck() {
+        /* 2024-09-25: Experiment to counter problems reported here: https://board.jdownloader.org/showthread.php?t=96207 */
+        return true;
     }
 }
