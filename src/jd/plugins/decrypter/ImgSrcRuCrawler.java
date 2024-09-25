@@ -23,7 +23,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
@@ -89,7 +88,6 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
 
     private String        password     = null;
     private String        username     = null;
-    private String        id           = null;
     private String        pwd          = null;
     private PluginForHost plugin       = null;
     private List<String>  passwords    = null;
@@ -156,7 +154,7 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
         }
     }
 
-    private String getGalleryName(Browser br) {
+    private String getGalleryName(final Browser br) {
         String ret = br.getRegex("from '<strong>([^\r\n]+)</strong>").getMatch(0);
         if (ret == null) {
             ret = br.getRegex("<title>(.*?)(\\s*@\\s*iMGSRC\\.RU)?</title>").getMatch(0);
@@ -209,7 +207,9 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         try {
             // best to get the original parameter, as the page could contain blocks due to forward or password
-            if (!getPage(param.getCryptedUrl(), param)) {
+            String contenturl = param.getCryptedUrl();
+            final boolean firstGetPageResult = getPage(contenturl, param);
+            if (!firstGetPageResult) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (br._getURL().getPath().equalsIgnoreCase("/main/search.php")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -219,7 +219,6 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
                 username = br.getRegex(">\\s*Add\\s*(.*?)\\s*to\\s*your").getMatch(0);
                 if (username == null) {
                     username = br.getRegex("/main/user\\.php\\?user=(.*?)'").getMatch(0);
-                    username = URLEncode.decodeURIComponent(username);
                 }
             }
             if (username == null) {
@@ -229,45 +228,30 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
             if (username == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
+            username = Encoding.htmlDecode(username).trim();
+            final UrlQuery query = UrlQuery.parse(contenturl);
             final String galleryTitle = getGalleryName(br);
             if (galleryTitle == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            // final String album_id_old = new Regex(contenturl, "(?i)/a(\\d+)\\.html").getMatch(0);
             String aid = query.get("ad");
             if (aid == null) {
                 aid = query.get("aid");
-                if (aid == null) {
-                    aid = new Regex(param.getCryptedUrl(), "/a(\\d+)\\.html").getMatch(0);
-                }
             }
             String uid = query.get("id");
             if (uid == null) {
-                uid = new Regex(param.getCryptedUrl(), "/(\\d+)\\.html").getMatch(0);
+                uid = new Regex(contenturl, "(?i)/(\\d+)\\.html").getMatch(0);
             }
             if (uid == null && aid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            // We need to make sure we are on page 1 otherwise we could miss pages.
-            // but this also makes things look tidy, making all parameters the same format
-            if (aid != null) {
-                id = "a" + aid;
-            } else {
-                id = uid;
-            }
-            final String galleryURL = br.getURL("/" + username + "/" + id + ".html").toExternalForm();
-            if (!br.getURL().matches(Pattern.quote(galleryURL) + ".*?")) {
-                /* Access gallery-URL if it hasn't already been accessed. */
-                if (!getPage(galleryURL, param)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
             }
             /**
              * 2024-03-18: Change image view to be able to find all items. </br>
              * And no, this not give us all images on one page, just lets us paginate over the gallery.
              */
             final String allImagesOnOnePage = br.getRegex("'(/main/tape\\.php\\?aid=\\d+&id=\\d+&pwd=[^']*)'").getMatch(0);
-            if (allImagesOnOnePage != null && !br.getURL().contains("tape.php")) {
+            if (allImagesOnOnePage != null && !br.getURL().endsWith(allImagesOnOnePage)) {
                 getPage(allImagesOnOnePage, param);
             }
             final String title = Encoding.htmlDecode(username.trim()) + " @ " + Encoding.htmlDecode(galleryTitle).trim();
@@ -277,11 +261,12 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
             final String quotedUsername = Pattern.quote(username);
             final Set<String> pagesDone = new HashSet<String>();
             final List<String> pagesTodo = new ArrayList<String>();
+            int page = 1;
             pagination: do {
                 final int numberofResultsOld = ret.size();
                 final ArrayList<DownloadLink> thisPageResults = this.crawlImages(param);
                 for (final DownloadLink result : thisPageResults) {
-                    result.setProperty("username", username.trim());
+                    result.setProperty("username", username);
                     if (galleryTitle != null) {
                         result.setProperty("gallery", galleryTitle.trim());
                     }
@@ -289,7 +274,9 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
                     distribute(result);
                 }
                 ret.addAll(thisPageResults);
-                if (ret.size() == numberofResultsOld) {
+                final int numberofNewItemsThisPage = ret.size() - numberofResultsOld;
+                logger.info("Crawled page " + page + " | New items this page: " + numberofNewItemsThisPage + " | Total: " + ret.size());
+                if (numberofNewItemsThisPage == 0) {
                     if (ret.isEmpty()) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Found zero new results");
                     } else {
@@ -330,6 +317,8 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
                         break pagination;
                     }
                 }
+                /* Continue to crawl next page */
+                page++;
             } while (!this.isAbort());
             if (ret.isEmpty()) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -508,7 +497,7 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
                         password = passwords.remove(0);
                     } else {
                         password = getUserInput("Enter password for link: " + param.getCryptedUrl(), param);
-                        if (password == null || password.equals("")) {
+                        if (StringUtils.isEmpty(password)) {
                             logger.info("User aborted/entered blank password");
                             throw new DecrypterException(DecrypterException.PASSWORD);
                         }

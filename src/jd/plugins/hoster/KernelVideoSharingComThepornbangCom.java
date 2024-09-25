@@ -94,7 +94,7 @@ public class KernelVideoSharingComThepornbangCom extends KernelVideoSharingComV2
 
     @Override
     protected boolean enableFastLinkcheck() {
-        /* 2024-09-25: Experiment to counter problems reported here: https://board.jdownloader.org/showthread.php?t=96207 */
+        /* 2024-09-25: To counter problems reported here: https://board.jdownloader.org/showthread.php?t=96207 */
         return true;
     }
 }
