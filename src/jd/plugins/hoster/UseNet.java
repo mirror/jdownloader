@@ -318,7 +318,6 @@ public class UseNet extends antiDDoSForHost {
 
     protected void handleMultiHost(DownloadLink downloadLink, Account account, UsenetFile usenetFile, String username, String password, UsenetServer server) throws Exception {
         if (usenetFile == null) {
-            logger.severe("UsenetFile is missing!");
             setIncomplete(downloadLink, true);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (server == null) {
