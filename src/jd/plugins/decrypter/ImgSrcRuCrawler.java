@@ -331,19 +331,24 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlImages(final CryptedLink param) {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String[] imageids = br.getRegex("id='p(\\d+)'").getColumn(0);
-        if (imageids == null || imageids.length == 0) {
+        final String[] imageIDRegexes = new String[] { "id='p(\\d+)'", "/imgsrc\\.ru_(\\d+)" };
+        final HashSet<String> allimageids = new HashSet<String>();
+        for (final String imageIDRegex : imageIDRegexes) {
+            final String[] imageids = br.getRegex(imageIDRegex).getColumn(0);
+            if (imageids == null || imageids.length == 0) {
+                continue;
+            }
+            for (final String imageID : imageids) {
+                allimageids.add(imageID);
+            }
+        }
+        if (allimageids.isEmpty()) {
             logger.warning("Possible plugin error: Please confirm in your webbrowser that this album " + param.getCryptedUrl() + " contains more than one image. If it does please report this issue to JDownloader Development Team.");
             return ret;
         }
         final String currentLink = br.getURL();
-        final Set<String> dups = new HashSet<String>();
         final String extDefault = "." + ImgSrcRu.getPreferredImageFormat();
-        for (final String imageid : imageids) {
-            if (!dups.add(imageid)) {
-                logger.info("Skipping duplicated item: " + imageid);
-                continue;
-            }
+        for (final String imageid : allimageids) {
             final String guessedFileExtension;
             if (br.containsHTML("_" + imageid + "[A-Za-z0-9]+\\.gif'")) {
                 guessedFileExtension = ".gif";
