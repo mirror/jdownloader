@@ -16,20 +16,16 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -48,63 +44,113 @@ public class PanBaiduCom extends PluginForHost {
     public PanBaiduCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
-        setConfigElements();
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.getHeaders().put("Accept-Charset", null);
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
     public String getAGBLink() {
-        return "http://pan.baidu.com/";
+        return "https://" + getHost();
     }
 
-    private String               DLLINK                                     = null;
-    private static final String  TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED = "https?://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
-    // private static final String USER_AGENT =
-    // "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36";
+    private String               dllink                                     = null;
+    private static final String  TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED = "(?i)https?://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
     private static final String  APPID                                      = "250528";
     private static final String  NICE_HOST                                  = "pan.baidu.com";
     private static final String  NICE_HOSTproperty                          = "panbaiducom";
-    public static final long     trust_cookie_age                           = 300000l;
     /* Connection stuff */
     private static final boolean FREE_RESUME                                = true;
     private static final int     FREE_MAXCHUNKS                             = 1;
-    private static final int     FREE_MAXDOWNLOADS                          = 20;
-    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger totalMaxSimultanFreeDownload               = new AtomicInteger(FREE_MAXDOWNLOADS);
-    // don't touch the following!
-    private static AtomicInteger maxFree                                    = new AtomicInteger(1);
-    private boolean              accountOnly                                = true;
+    private static final boolean accountOnly                                = true;
+    public static final String   PROPERTY_FSID                              = "important_fsid";
+    public static final String   PROPERTY_SHORTURL_ID                       = "shorturl_id";
+    public static final String   PROPERTY_PASSWORD_COOKIE                   = "important_link_password_cookie";
+    public static final String   PROPERTY_INTERNAL_MD5_HASH                 = "internal_md5hash";
+    public static final String   PROPERTY_INTERNAL_PATH                     = "internal_path";
+    public static final String   PROPERTY_INTERNAL_UK                       = "origurl_uk";
+    public static final String   PROPERTY_INTERNAL_SHAREID                  = "origurl_shareid";
+    public static final String   PROPERTY_SERVER_FILENAME                   = "server_filename";
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        br = new Browser();
-        if (downloadLink.getBooleanProperty("offline", false)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        br.getHeaders().put("Accept-Charset", null);
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        // Other or older User-Agents might get slow speed
-        // From decrypter
-        DLLINK = downloadLink.getStringProperty("dlink", null);
-        // From host plugin
-        if (DLLINK == null) {
-            DLLINK = downloadLink.getStringProperty("panbaidudirectlink", null);
-        }
-        if (DLLINK == null) {
-            // We might need to enter a captcha to get the link so let's just stop here
-            downloadLink.setAvailable(true);
-            return AvailableStatus.TRUE;
-        }
-        return AvailableStatus.TRUE;
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        return 1;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, "freedirectlink");
+    public String getLinkID(final DownloadLink link) {
+        final String fsid = link.getStringProperty(PROPERTY_FSID);
+        final String internal_md5_hash = link.getStringProperty(PROPERTY_INTERNAL_MD5_HASH);
+        if (fsid != null || internal_md5_hash != null) {
+            return this.getHost() + "://" + fsid + "_" + internal_md5_hash;
+        } else {
+            return super.getLinkID(link);
+        }
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property, null);
+    @Override
+    public String getPluginContentURL(final DownloadLink link) {
+        final String url_legacy = link.getStringProperty("mainLink");
+        if (url_legacy != null) {
+            return url_legacy;
+        }
+        final String shorturl_id = link.getStringProperty(PROPERTY_SHORTURL_ID);
+        final String uk = link.getStringProperty(PROPERTY_INTERNAL_UK);
+        final String shareid = link.getStringProperty(PROPERTY_INTERNAL_SHAREID);
+        final String internal_path = link.getStringProperty(PROPERTY_INTERNAL_PATH);
+        if (shorturl_id != null) {
+            String url = "https://pan.baidu.com/s/" + shorturl_id;
+            if (internal_path != null) {
+                url += "#list/path=" + URLEncode.encodeURIComponent(internal_path);
+            }
+            return url;
+        } else if (uk != null && shareid != null) {
+            return String.format("https://pan.baidu.com/share/link?shareid=%s&uk=%s", shareid, uk);
+        } else {
+            /* Fallback */
+            return super.getPluginContentURL(link);
+        }
+    }
+
+    @Override
+    public String buildExternalDownloadURL(final DownloadLink link, final PluginForHost plugin) {
+        if (plugin != null && plugin.hasFeature(LazyPlugin.FEATURE.MULTIHOST)) {
+            String url = this.getPluginContentURL(link);
+            /* Include unique fileID in links for multihosters so they can match them correctly. */
+            final String fsid = link.getStringProperty(PROPERTY_FSID);
+            if (fsid != null) {
+                url += "&fsid=" + fsid;
+            }
+            return url;
+        } else {
+            return super.buildExternalDownloadURL(link, plugin);
+        }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        dllink = link.getStringProperty("dlink", null);
+        return AvailableStatus.UNCHECKABLE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, "freedirectlink");
+    }
+
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property, null);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             final Browser br2 = br.cloneBrowser();
@@ -112,11 +158,11 @@ public class PanBaiduCom extends PluginForHost {
             try {
                 con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || con.getResponseCode() == 403) {
-                    downloadLink.setProperty(property, Property.NULL);
+                    link.setProperty(property, Property.NULL);
                     dllink = null;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
                 try {
@@ -128,20 +174,20 @@ public class PanBaiduCom extends PluginForHost {
         return dllink;
     }
 
-    private void doFree(final DownloadLink downloadLink, final String directlinkproperty) throws Exception {
-        String passCode = downloadLink.getDownloadPassword();
-        DLLINK = checkDirectLink(downloadLink, directlinkproperty);
-        if (DLLINK == null) {
-            final String fsid = downloadLink.getStringProperty("important_fsid", null);
+    private void doFree(final DownloadLink link, final String directlinkproperty) throws Exception {
+        String passCode = link.getDownloadPassword();
+        dllink = checkDirectLink(link, directlinkproperty);
+        if (dllink == null) {
+            final String fsid = link.getStringProperty(PROPERTY_FSID);
             String sign;
             String tsamp;
             /* Needed to get the pcsett cookie on http://.pcs.baidu.com/ to avoid "hotlinking forbidden" errormessage later */
             getPage(this.br, "https://pcs.baidu.com/rest/2.0/pcs/file?method=plantcookie&type=ett");
-            final String original_url = downloadLink.getStringProperty("mainLink", null);
-            final String shareid = downloadLink.getStringProperty("origurl_shareid", null);
-            final String uk = downloadLink.getStringProperty("origurl_uk", null);
-            final String link_password = downloadLink.getStringProperty("important_link_password", null);
-            final String link_password_cookie = downloadLink.getStringProperty("important_link_password_cookie", null);
+            final String original_url = this.getPluginContentURL(link);
+            final String shareid = link.getStringProperty("origurl_shareid");
+            final String uk = link.getStringProperty("origurl_uk");
+            final String link_password = link.getDownloadPassword();
+            final String link_password_cookie = link.getStringProperty(PROPERTY_PASSWORD_COOKIE);
             if (shareid == null || uk == null) {
                 /* Should never happen */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -223,7 +269,7 @@ public class PanBaiduCom extends PluginForHost {
                     }
                     String code = null;
                     try {
-                        code = getCaptchaCode(captchaLink, downloadLink);
+                        code = getCaptchaCode(captchaLink, link);
                     } catch (final Throwable e) {
                         if (e instanceof CaptchaException) {
                             // JD2 reference to skip button we should abort!
@@ -260,22 +306,21 @@ public class PanBaiduCom extends PluginForHost {
             if (br2.containsHTML("\"errno\":\\-20")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else if (br2.containsHTML("\"errno\":112")) {
-                handlePluginBroken(downloadLink, "unknownerror112", 3);
+                handlePluginBroken(link, "unknownerror112", 3);
             } else if (br2.containsHTML("\"errno\":118")) {
                 logger.warning("It seems like one or multiple parameters are missing in the previous request(s)");
-                handlePluginBroken(downloadLink, "unknownerror118", 3);
+                handlePluginBroken(link, "unknownerror118", 3);
             } else if (br2.containsHTML("No htmlCode read")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error_dllink", 5 * 60 * 1000l);
             }
-            DLLINK = PluginJSonUtils.getJsonValue(br2, "dlink");
-            if (DLLINK == null && accountOnly) {
+            dllink = PluginJSonUtils.getJsonValue(br2, "dlink");
+            if (dllink == null && accountOnly) {
                 /* DLLINK null and not logged in but download is only possible via account */
                 throw new AccountRequiredException();
-            } else if (DLLINK == null) {
+            } else if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        br.setFollowRedirects(true);
         final int maxchunks;
         if (this.getPluginConfig().getBooleanProperty("ALLOW_UNLIMITED_CHUNKS", false)) {
             maxchunks = 0;
@@ -283,8 +328,8 @@ public class PanBaiduCom extends PluginForHost {
             maxchunks = FREE_MAXCHUNKS;
         }
         br.getHeaders().put("Accept-Encoding", "identity");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, FREE_RESUME, maxchunks);
-        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() == 403) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403 && accountOnly) {
                 throw new AccountRequiredException();
             } else if (dl.getConnection().getResponseCode() == 403) {
@@ -296,39 +341,12 @@ public class PanBaiduCom extends PluginForHost {
             handleJsonErrorcodes(this.br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(dl.getConnection())));
+        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(dl.getConnection())));
         if (passCode != null) {
-            downloadLink.setDownloadPassword(passCode);
+            link.setDownloadPassword(passCode);
         }
-        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
-        try {
-            // add a download slot
-            controlFree(+1);
-            // start the dl
-            dl.startDownload();
-        } finally {
-            // remove download slot
-            controlFree(-1);
-        }
-    }
-
-    /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
-     *
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
-     *
-     * @param controlFree
-     *            (+1|-1)
-     */
-    public synchronized void controlFree(final int num) {
-        logger.info("maxFree was = " + maxFree.get());
-        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
-        logger.info("maxFree now = " + maxFree.get());
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
+        dl.startDownload();
     }
 
     private void getPage(final Browser br, final String url) throws IOException, PluginException {
@@ -426,139 +444,26 @@ public class PanBaiduCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
-                        /* We trust these cookies --> Do not check them */
-                        return;
-                    }
-                    if (isLoggedInHtml()) {
-                        /* Save new cookie timestamp (will also avoid unnecessary login captchas). */
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
-                        return;
-                    }
-                    /* Not logged in? Perform full login! */
-                }
-                final boolean loginV3_qrcode = false;
-                if (loginV3_qrcode) {
-                    br.setFollowRedirects(true);
-                    br.getPage("https://passport.baidu.com/v2/?login");
-                    br.getPage("https://passport.baidu.com/v2/api/getqrcode?lp=pc&qrloginfrom=pc&gid=TODO_FIXME&callback=tangram_guid_" + System.currentTimeMillis() + "&apiver=v3&tt=" + System.currentTimeMillis() + "&tpl=pp&_=" + System.currentTimeMillis());
-                    // final String url_qrcode = PluginJSonUtils.getJson(br, "imgurl");
-                    final String sign = PluginJSonUtils.getJson(br, "sign");
-                    if (StringUtils.isEmpty(sign)) {
-                        logger.warning("Failed to find sign");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    br.getHeaders().put("User-Agent", "Mozilla/5.0 (Linux; Android 4.4.2; Nexus 4 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.114 Mobile Safari/537.36");
-                    String vcodestr = null;
-                    String traceid = null;
-                    String userid = null;
-                    for (int i = 0; i <= 3; i++) {
-                        br.getPage("https://wappass.baidu.com/wp/?qrlogin&t=" + System.currentTimeMillis() + "&error=0&sign=" + sign + "&cmd=login&lp=pc&tpl=pp&uaonly=&client_id=&adapter=3&client=&qrloginfrom=pc&traceid=");
-                        final Form loginform = br.getForm(0);
-                        if (loginform == null) {
-                            logger.warning("Failed to find loginform");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        if (loginform.getAction() == null) {
-                            loginform.setAction("https://wappass.baidu.com/wp/api/login?tt=" + System.currentTimeMillis());
-                        }
-                        loginform.put("username", account.getUser());
-                        loginform.put("password", "TODO_pw_hash");
-                        /* Although we're using a mobile User-Agent, this is the correct value */
-                        loginform.put("isphone", "0");
-                        loginform.put("countrycode", "");
-                        loginform.put("mobilenum", "");
-                        loginform.put("logLoginType", "wap_loginTouch");
-                        loginform.put("vcodefrom", "login");
-                        /* TODO */
-                        // loginform.put("servertime", "TODO");
-                        // loginform.put("gid", "TODO");
-                        // loginform.put("dv", "TODO");
-                        // loginform.put("tk", "TODO");
-                        // loginform.put("traceid", "TODO");
-                        if (!true) {
-                            /* Captcha required */
-                            /*
-                             * E.g. https://wappass.baidu.com/cgi-bin/genimage?njGd206e2ff64fae257027915cfde0154149520de06930213c3&v=
-                             * 1541637709658
-                             */
-                            final String captchaurl = "https://wappass.baidu.com/cgi-bin/genimage?" + vcodestr + "&v=TODO";
-                            final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "http://" + this.getHost(), true);
-                            final String captchaCode = getCaptchaCode(captchaurl, dummyLink);
-                            loginform.put("vericode", captchaCode);
-                        }
-                        br.submitForm(loginform);
-                        /* Required in form for the next loop (e.g. captcha required/wrong) */
-                        vcodestr = PluginJSonUtils.getJson(br, "codeString");
-                        traceid = PluginJSonUtils.getJson(br, "traceid");
-                        userid = PluginJSonUtils.getJson(br, "userid");
-                        /* E.g. +57123*****89 */
-                        final String phonenumber_censored = PluginJSonUtils.getJson(br, "phone");
-                        if (!StringUtils.isEmpty(userid)) {
-                            break;
-                        }
-                    }
-                    if (userid == null) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    logger.info("First login stage complete");
-                    /* Okay we're one step further but not yet fully logged in ... */
-                } else {
-                    br.setFollowRedirects(false);
-                    final String getdata = "tpl=pp&callback=bdPass.api.login._needCodestringCheckCallback&index=0&logincheck=&time=0&username=" + Encoding.urlEncode(account.getUser());
-                    this.br.getPage("https://passport.baidu.com/v2/api/?logincheck&" + getdata);
-                    /* Get captcha if required. */
-                    String captchaCode = "";
-                    final String codestring = PluginJSonUtils.getJson(this.br, "codestring");
-                    if (codestring != null && !codestring.equalsIgnoreCase("null")) {
-                        final String captchaurl = "https://passport.baidu.com/cgi-bin/genimage?" + codestring;
-                        final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "https://" + this.getHost(), true);
-                        captchaCode = getCaptchaCode(captchaurl, dummyLink);
-                    }
-                    this.br.getPage("https://passport.baidu.com/v2/api/?getapi&class=login&tpl=pp&tangram=false");
-                    final String logintoken = this.br.getRegex("login_token=\\'([^<>\"\\']+)\\'").getMatch(0);
-                    if (logintoken == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final String loginpost = "token=" + Encoding.urlEncode(logintoken) + "&ppui_logintime=1600000&charset=utf-8&codestring=&isPhone=false&index=0&u=&safeflg=0&staticpage=" + Encoding.urlEncode("http://www.baidu.com/cache/user/html/jump.html") + "&loginType=1&tpl=pp&callback=parent.bd__pcbs__qvljue&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&verifycode=" + Encoding.urlEncode(captchaCode) + "&mem_pass=on&apiver=v3";
-                    br.postPage("https://passport.baidu.com/v2/api/?login", loginpost);
-                    if (!isLoggedInHtml()) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
+            if (true) {
+                /* Login broken since 2018, see: https://board.jdownloader.org/showthread.php?t=78948 */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
     }
 
-    private boolean isLoggedInHtml() throws Exception {
-        this.br.getPage("http://www.baidu.com/home/msg/data/personalcontent");
-        final String errorNo = PluginJSonUtils.getJsonValue(this.br, "errNo");
-        return "0".equals(errorNo);
+    private boolean isLoggedInHtml(final Browser br) throws Exception {
+        return br.containsHTML("TODO_BROKEN_SINCE_2018");
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
         login(account, true);
+        final AccountInfo ai = new AccountInfo();
         /* 2016-04-21: So far all accounts are handled as free accounts - free does not have any limits anyways! */
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
-        ai.setStatus("Registered (free) user");
         return ai;
     }
 
@@ -569,13 +474,9 @@ public class PanBaiduCom extends PluginForHost {
         doFree(link, "account_free_directlink");
     }
 
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_UNLIMITED_CHUNKS", "Allow unlimited [=20] connections per file (chunks)?\r\nWarning: This can cause download issues.").setDefaultValue(false));
-    }
-
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return maxFree.get();
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -584,15 +485,25 @@ public class PanBaiduCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return maxFree.get();
+        return Integer.MAX_VALUE;
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return true;
+    }
+
+    @Override
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
+        if (accountOnly && account == null) {
+            /* without account its not possible to download any link for this host */
+            return false;
+        } else {
+            return true;
+        }
     }
 }
