@@ -1105,9 +1105,10 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             }
             return null;
         }
-        final StreamCollection audioStreams = clipData.getStreams(variant.getBaseVariant().getiTagAudio());
-        final StreamCollection videoStreams = clipData.getStreams(variant.getiTagVideo());
-        final StreamCollection dataStreams = clipData.getStreams(variant.getiTagData());
+
+        final StreamCollection audioStreams = clipData.getStreams(variant.getBaseVariant().getiTagAudio(), variant);
+        final StreamCollection videoStreams = clipData.getStreams(variant.getiTagVideo(), variant);
+        final StreamCollection dataStreams = clipData.getStreams(variant.getiTagData(), variant);
         if (variant.getBaseVariant().getiTagAudio() != null && audioStreams == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid Audio Stream");
         } else if (variant.getiTagVideo() != null && videoStreams == null) {
