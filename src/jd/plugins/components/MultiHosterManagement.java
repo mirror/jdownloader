@@ -3,11 +3,10 @@ package jd.plugins.components;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Time;
-
 import jd.config.Property;
+import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -15,6 +14,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.MultiHostHost;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Time;
 
 /**
  * Instead of duplication we create a class
@@ -24,7 +27,7 @@ import jd.plugins.PluginException;
  * @author raztoki
  *
  */
-public class MultiHosterManagement {
+public class MultiHosterManagement implements AccountControllerListener {
     private final String host;
 
     public MultiHosterManagement(final String host) {
@@ -60,6 +63,9 @@ public class MultiHosterManagement {
     }
 
     public void putError(final Object account, final DownloadLink downloadLink, final Long timeout, final String reason) throws PluginException {
+        if (account instanceof Account) {
+            AccountController.getInstance().getEventSender().addListener(this, true);
+        }
         final Map<Object, Map<String, UnavailableHost>> db = getDB();
         synchronized (db) {
             // null(multihosterwide) && AccountType && Account
@@ -188,6 +194,23 @@ public class MultiHosterManagement {
             downloadLink.setProperty(errorID, Property.NULL);
             // default of 1 hour wait.
             this.putError(account, downloadLink, errorWait, "Exhausted retry count: " + error);
+        }
+    }
+
+    @Override
+    public void onAccountControllerEvent(AccountControllerEvent event) {
+        switch (event.getType()) {
+        case ACCOUNT_CHECKED:
+        case ACCOUNT_PROPERTY_UPDATE:
+            if (event.getAccount().isValid()) {
+                final Map<Object, Map<String, UnavailableHost>> db = getDB();
+                synchronized (db) {
+                    db.remove(event.getAccount());
+                }
+            }
+            break;
+        default:
+            break;
         }
     }
 }
