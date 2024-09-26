@@ -22,6 +22,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -46,13 +53,6 @@ import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashResult;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { TeraboxComFolder.class })
@@ -244,7 +244,7 @@ public class TeraboxCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     public AccountInfo login(final Account account, final boolean force) throws Exception {
@@ -274,14 +274,16 @@ public class TeraboxCom extends PluginForHost {
                 br.getPage("https://www." + this.getHost() + "/");
             }
             final String bdstoken = br.getRegex("\"bdstoken\":\"([a-f0-9]{32})\"").getMatch(0);
-            if (bdstoken == null) {
+            final String pcftoken = br.getRegex("\"pcftoken\":\"([a-f0-9]{32})\"").getMatch(0);
+            if (bdstoken == null || pcftoken == null) {
                 errorAccountInvalid(account);
             }
             account.setProperty(PROPERTY_ACCOUNT_TOKEN, bdstoken);
             /* Try to find additional account information */
             final AccountInfo ai = new AccountInfo();
+            final String app_id = "250528";
             final Browser brc = br.cloneBrowser();
-            brc.getPage("/rest/2.0/membership/proxy/user?method=query&membership_version=1.0&channel=dubox&web=1&app_id=250528&clienttype=0&bdstoken=" + bdstoken);
+            brc.getPage("/rest/2.0/membership/proxy/user?method=query&membership_version=1.0&channel=dubox&web=1&app_id=" + app_id + "&clienttype=0&bdstoken=" + bdstoken);
             /* 2021-04-14: Only free accounts are existent/supported */
             final Map<String, Object> root = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             final Number error_code = (Number) root.get("error_code");
@@ -311,6 +313,20 @@ public class TeraboxCom extends PluginForHost {
             } else {
                 logger.warning("Failed to find jstoken");
                 account.removeProperty(PROPERTY_ACCOUNT_JS_TOKEN);
+            }
+            final boolean getExtendedInfo = true;
+            if (getExtendedInfo) {
+                brc.getPage("/api/check/login?app_id=" + app_id + "&web=1&channel=dubox&clienttype=0&jsToken=&dp-logid=");
+                final Map<String, Object> root2 = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+                final String user_id = root2.get("uk").toString();
+                // account.setProperty("user_id", user_id);
+                brc.getPage("/api/user/getinfo?app_id=" + app_id + "&web=1&channel=dubox&clienttype=0&jsToken=" + jstoken + "&dp-logid=&client=web&pass_version=2.8&lang=en&clientfrom=h5&pcftoken=" + pcftoken + "&user_list=%5B" + user_id + "%5D&need_relation=0&need_secret_info=1&bdstoken=" + bdstoken);
+                final Map<String, Object> root3 = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+                final Map<String, Object> userinfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root3, "records/{0}");
+                final String uname = (String) userinfo.get("uname");
+                if (StringUtils.isEmpty(uname)) {
+                    errorAccountInvalid(account);
+                }
             }
             ai.setUnlimitedTraffic();
             return ai;
@@ -428,7 +444,7 @@ public class TeraboxCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override
