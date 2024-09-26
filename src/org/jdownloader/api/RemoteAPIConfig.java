@@ -49,6 +49,11 @@ public interface RemoteAPIConfig extends ConfigInterface {
 
     void setDeprecatedApiEnabled(boolean b);
 
+    @DefaultBooleanValue(true)
+    public void setHeadlessMyJDownloaderMandatory(boolean b);
+
+    public boolean isHeadlessMyJDownloaderMandatory();
+
     @AboutConfig
     @DefaultIntValue(3128)
     int getDeprecatedApiPort();

@@ -104,11 +104,6 @@ public interface MyJDownloaderSettings extends ConfigInterface {
 
     public boolean isAutoConnectEnabledV2();
 
-    @DefaultBooleanValue(true)
-    public void setHeadlessAutoConnectEnabled(boolean b);
-
-    public boolean isHeadlessAutoConnectEnabled();
-
     @AboutConfig
     @DefaultEnumValue("LAN")
     @RequiresRestart("A JDownloader Restart is Required")

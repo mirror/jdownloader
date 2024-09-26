@@ -9,6 +9,7 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -19,6 +20,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.api.RemoteAPIConfig;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.MyJDownloaderError;
 import org.jdownloader.api.myjdownloader.api.MyJDownloaderAPI;
 import org.jdownloader.api.myjdownloader.event.MyJDownloaderEvent;
@@ -101,7 +103,8 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
     }
 
     public final boolean isAlwaysConnectRequired() {
-        return Application.isHeadless() && CFG_MYJD.CFG.isHeadlessAutoConnectEnabled();
+        final RemoteAPIConfig remoteAPIConfig = JsonConfig.create(RemoteAPIConfig.class);
+        return Application.isHeadless() && (remoteAPIConfig.isHeadlessMyJDownloaderMandatory() || !remoteAPIConfig.isDeprecatedApiEnabled());
     }
 
     private MyJDownloaderController() {
