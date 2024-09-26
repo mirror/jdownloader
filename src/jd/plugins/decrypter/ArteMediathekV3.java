@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -47,6 +48,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ArteTv;
@@ -222,16 +224,26 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         final String dateFormatted = new Regex(date, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
         final String shortDescription = (String) vid.get("shortDescription");
         final String platform = vid.get("platform").toString();
-        String videoStreamsAPIURL = (String) JavaScriptEngineFactory.walkJson(vid, "links/videoStreams/web/href");
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            videoStreamsAPIURL = API_BASE + "/videoStreams?programId=" + programId + "&limit=100&language=" + language + "&protocol=HTTPS&kind=SHOW&reassembly=A";
-        }
         String titleAndSubtitle = title;
         if (!StringUtils.isEmpty(subtitle)) {
             titleAndSubtitle += " - " + subtitle;
         }
-        prepBRAPI(br);
-        br.getPage(videoStreamsAPIURL);
+        final String videoStreamsAPIV3URL = (String) JavaScriptEngineFactory.walkJson(vid, "links/videoStreams/web/href");
+        /*
+         * The APIv3 request cannot be used anymore since 2024-09 since the auth has changed(?) More information:
+         * https://board.jdownloader.org/showthread.php?t=96449
+         */
+        final boolean allowUseAPIV3 = false;
+        boolean usingAPIV2 = false;
+        if (!StringUtils.isEmpty(videoStreamsAPIV3URL) && allowUseAPIV3) {
+            prepBRAPI(br);
+            br.getPage(videoStreamsAPIV3URL);
+        } else {
+            /* APIv2: This gives us only progressive streams and only up to 720p */
+            final String videoStreamsAPIV2URL = String.format("https://www.arte.tv/hbbtvv2/services/web/index.php/OPA/v3/streams/%s/SHOW/%s", programId, language);
+            br.getPage(videoStreamsAPIV2URL);
+            usingAPIV2 = true;
+        }
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final List<Map<String, Object>> videoStreams = (List<Map<String, Object>>) entries.get("videoStreams");
         if (videoStreams == null || videoStreams.isEmpty()) {
@@ -307,6 +319,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             /* Language by URL */
             selectedLanguages.add(langFromURL);
         }
+        final Number durationSecondsO = (Number) vid.get("durationSeconds");
         final HashSet<Language> existingLanguages = new HashSet<Language>();
         /* Look ahead and collect existing languages */
         for (final List<Map<String, Object>> videoStreamsByLanguage : languagePacks.values()) {
@@ -332,18 +345,37 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             long bestOfUserSelectedFilesize = 0;
             DownloadLink bestOfUserSelected = null;
             for (final Map<String, Object> videoStream : videoStreamsByLanguage) {
-                // final String language = videoStream.get("language").toString();
-                final String protocol = videoStream.get("protocol").toString();
-                if (!protocol.equalsIgnoreCase("https")) {
+                final String protocol;
+                if (usingAPIV2) {
+                    protocol = "http";
+                } else {
+                    protocol = videoStream.get("protocol").toString();
+                }
+                if (!protocol.matches("(?i)https?")) {
                     /* 2022-05-25: Only grab HTTP streams for now, skip all others */
                     continue;
                 }
-                final String videoStreamId = videoStream.get("videoStreamId").toString();
+                final String streamURL = videoStream.get("url").toString();
+                final String videoStreamId = (String) videoStream.get("videoStreamId");
                 final int height = ((Number) videoStream.get("height")).intValue();
-                final int durationSeconds = ((Number) videoStream.get("durationSeconds")).intValue();
-                final int bitrate = ((Number) videoStream.get("bitrate")).intValue();
+                int bitrate = -1;
+                if (usingAPIV2) {
+                    /* Extract bitrate from URL */
+                    final String bitrateFromURLStr = new Regex(streamURL, "MP4-(\\d+)").getMatch(0);
+                    if (bitrateFromURLStr != null) {
+                        bitrate = Integer.parseInt(bitrateFromURLStr);
+                    }
+                } else {
+                    bitrate = ((Number) videoStream.get("bitrate")).intValue();
+                }
                 final String audioCode = videoStream.get("audioCode").toString(); // e.g. VF, VF-STA, VA, ...
-                final DownloadLink link = new DownloadLink(hosterplugin, hosterplugin.getHost(), videoStream.get("url").toString(), true);
+                final String originalFilename;
+                if (usingAPIV2) {
+                    originalFilename = Plugin.getFileNameFromURL(new URL(streamURL));
+                } else {
+                    originalFilename = videoStream.get("filename").toString();
+                }
+                final DownloadLink link = new DownloadLink(hosterplugin, hosterplugin.getHost(), streamURL, true);
                 link.setProperty(PROPERTY_TYPE, "video");
                 /* Set properties which we later need for custom filenames. */
                 link.setProperty(PROPERTY_VIDEO_ID, programId);
@@ -360,7 +392,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 link.setProperty(PROPERTY_AUDIO_SHORT_LABEL, videoStream.get("audioShortLabel"));
                 link.setProperty(PROPERTY_AUDIO_LABEL, videoStream.get("audioLabel"));
                 link.setProperty(PROPERTY_PLATFORM, platform);
-                link.setProperty(PROPERTY_ORIGINAL_FILENAME, videoStream.get("filename"));
+                link.setProperty(PROPERTY_ORIGINAL_FILENAME, originalFilename);
                 final VersionInfo versionInfo = parseVersionInfo(audioCode);
                 /* Do not modify those linkIDs to try to keep backward compatibility! remove the -[A-Z] to be same as old vpi */
                 link.setContentUrl(param.getCryptedUrl());
@@ -371,10 +403,12 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 /* Make sure that our directHTTP plugin will never change this filename. */
                 link.setProperty(DirectHTTP.FIXNAME, filename);
                 link.setAvailable(true);
-                /* Calculate filesize in a very simple way */
-                link.setDownloadSize(bitrate / 8 * 1024 * durationSeconds);
+                /* Calculate rough filesize by bitrate */
+                if (durationSecondsO != null && bitrate != -1) {
+                    link.setDownloadSize(bitrate / 8 * 1024 * durationSecondsO.longValue());
+                }
                 link._setFilePackage(fp);
-                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !StringUtils.isEmpty(videoStreamId)) {
                     link.setComment(videoStreamId.toString());
                 }
                 allResults.add(link);
@@ -405,18 +439,18 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                         /* Allow only selected languages, skip the rest */
                         if (!selectedLanguages.contains(versionInfo.getAudioLanguage())) {
                             /* Skip unwanted languages */
-                            logger.info("Skipping videoStreamId because of unselected language: " + versionInfo.getAudioLanguage() + " | videoStreamId: " + videoStreamId);
+                            logger.info("Skipping videoStreamId because of unselected language: " + versionInfo.getAudioLanguage() + " | videoStreamId: " + videoStreamId + " | URL: " + streamURL);
                             continue;
                         }
                     } else {
                         /* Allow only language by URL and original version, skip the rest */
                         if (existingLanguages.size() > 1 && versionInfo.getAudioLanguage() != langFromURL) {
                             /* Multiple languages available --> Allow "stupid" filtering by language / skip unwanted languages */
-                            logger.info("Skipping videoStreamId because of unselected language: " + versionInfo.getAudioLanguage() + " | videoStreamId: " + videoStreamId);
+                            logger.info("Skipping videoStreamId because of unselected language: " + versionInfo.getAudioLanguage() + " | videoStreamId: " + videoStreamId + " | URL: " + streamURL);
                             continue;
                         } else if (versionInfo.getAudioLanguage() != langFromURL && !versionInfo.isOriginalVersion()) {
                             /* Skip unwanted languages */
-                            logger.info("Skipping videoStreamId: " + videoStreamId);
+                            logger.info("Skipping videoStreamId: " + videoStreamId + " | URL: " + streamURL);
                             continue;
                         }
                     }

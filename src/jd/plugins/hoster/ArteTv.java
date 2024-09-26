@@ -44,7 +44,7 @@ public class ArteTv extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://www.arte.tv/sites/corporate/de/allgemeine-nutzungsbedingungen/";
+        return "https://www." + getHost() + "/sites/corporate/de/allgemeine-nutzungsbedingungen/";
     }
 
     @Override
@@ -73,6 +73,7 @@ public class ArteTv extends PluginForHost {
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
+                findAndSetMd5Hash(link, con);
             } finally {
                 try {
                     con.disconnect();
@@ -139,7 +140,21 @@ public class ArteTv extends PluginForHost {
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, true, 0);
             connectionErrorhandling(dl.getConnection());
+            findAndSetMd5Hash(link, dl.getConnection());
             dl.startDownload();
+        }
+    }
+
+    private void findAndSetMd5Hash(final DownloadLink link, final URLConnectionAdapter con) {
+        final String etag = con.getRequest().getResponseHeader("etag");
+        if (etag != null) {
+            try {
+                final String md5 = etag.replace("\"", "").split(":")[0];
+                if (md5.matches("[A-Fa-f0-9]{32}")) {
+                    link.setMD5Hash(md5);
+                }
+            } catch (final Throwable ignore) {
+            }
         }
     }
 

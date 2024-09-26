@@ -235,7 +235,7 @@ public class ZapiszSe extends PluginForHost {
         br.getPage("/addfiles.html");
         final String[] hosts = br.getRegex("<div class=\"col-1-6 host-item\"><img src=\"https?://[^\"]+/img/server/([^\"]+)\\.png\" />").getColumn(0);
         if (hosts == null || hosts.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find list of supported hosts");
         }
         ai.setMultiHostSupport(this, Arrays.asList(hosts));
         account.setConcurrentUsePossible(true);

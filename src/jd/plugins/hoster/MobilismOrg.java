@@ -21,6 +21,11 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -36,12 +41,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mobilism.org" }, urls = { "" })
 public class MobilismOrg extends antiDDoSForHost {
@@ -214,8 +213,8 @@ public class MobilismOrg extends antiDDoSForHost {
     }
 
     /**
-     * 2021-03-04: Free Accounts are not supported as downloading is impossible with them. </br> Expired premium -> Account will be
-     * permanently disabled!
+     * 2021-03-04: Free Accounts are not supported as downloading is impossible with them. </br>
+     * Expired premium -> Account will be permanently disabled!
      */
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -242,6 +241,9 @@ public class MobilismOrg extends antiDDoSForHost {
         if (supportedHosts != null) {
             supported.addAll(Arrays.asList(supportedHosts));
         }
+        if (supported.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find list of supported hosts");
+        }
         ai.setMultiHostSupport(this, new ArrayList<String>(supported));
         account.setType(AccountType.PREMIUM);
         ai.setUnlimitedTraffic();
@@ -251,59 +253,53 @@ public class MobilismOrg extends antiDDoSForHost {
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                br.setFollowRedirects(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    br.setCookies(cookies);
-                    if (!force) {
-                        logger.info("Trust cookies without check");
-                        return;
-                    }
-                    logger.info("Checking login cookies...");
-                    this.checkAndHandleLogin2(account);
-                    br.getPage(WEBSITE_BASE + "/amember/member");
-                    if (this.isLoggedinHTML()) {
-                        logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(br.getHost()), "");
-                        return;
-                    } else {
-                        logger.info("Cookie login failed");
-                    }
+            br.setCookiesExclusive(true);
+            br.setFollowRedirects(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                br.setCookies(cookies);
+                if (!force) {
+                    logger.info("Trust cookies without check");
+                    return;
                 }
-                logger.info("Performing full login");
-                getPage(WEBSITE_BASE + "/amember/login");
-                final Form login = br.getFormbyProperty("name", "login");
-                if (login == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                login.put("amember_pass", Encoding.urlEncode(account.getPass()));
-                login.put("amember_login", Encoding.urlEncode(account.getUser()));
-                /* json with these, html and standard redirect without! */
-                br.getHeaders().put("Accept", "*/*");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                submitForm(login);
-                br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-                br.getHeaders().put("X-Requested-With", null);
-                /* E.g. successful response: {"ok":true,"url":"\/amember\/member"} */
-                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
-                final boolean loginIsOK = ((Boolean) entries.get("ok")).booleanValue();
-                if (br.getCookie(this.br.getHost(), "amember_nr", Cookies.NOTDELETEDPATTERN) == null || !loginIsOK) {
-                    /*
-                     * 2021-03-01: This may also happen sometimes:
-                     * {"ok":false,"error":["Please wait 55 seconds before next login attempt"],"code":-4}
-                     */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+                logger.info("Checking login cookies...");
                 this.checkAndHandleLogin2(account);
-                account.saveCookies(br.getCookies(br.getHost()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                br.getPage(WEBSITE_BASE + "/amember/member");
+                if (this.isLoggedinHTML()) {
+                    logger.info("Cookie login successful");
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
                     account.clearCookies("");
                 }
-                throw e;
             }
+            logger.info("Performing full login");
+            getPage(WEBSITE_BASE + "/amember/login");
+            final Form login = br.getFormbyProperty("name", "login");
+            if (login == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            login.put("amember_pass", Encoding.urlEncode(account.getPass()));
+            login.put("amember_login", Encoding.urlEncode(account.getUser()));
+            /* json with these, html and standard redirect without! */
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            submitForm(login);
+            br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            br.getHeaders().put("X-Requested-With", null);
+            /* E.g. successful response: {"ok":true,"url":"\/amember\/member"} */
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+            final boolean loginIsOK = ((Boolean) entries.get("ok")).booleanValue();
+            if (br.getCookie(this.br.getHost(), "amember_nr", Cookies.NOTDELETEDPATTERN) == null || !loginIsOK) {
+                /*
+                 * 2021-03-01: This may also happen sometimes:
+                 * {"ok":false,"error":["Please wait 55 seconds before next login attempt"],"code":-4}
+                 */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            this.checkAndHandleLogin2(account);
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
