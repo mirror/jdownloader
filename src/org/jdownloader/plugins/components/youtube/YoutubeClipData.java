@@ -8,9 +8,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.plugins.DownloadLink;
+
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
+import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
 import org.jdownloader.plugins.components.youtube.variants.DescriptionVariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
 import org.jdownloader.plugins.components.youtube.variants.SubtitleVariantInfo;
@@ -19,8 +22,6 @@ import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
-
-import jd.plugins.DownloadLink;
 
 public class YoutubeClipData {
     /**
@@ -261,7 +262,7 @@ public class YoutubeClipData {
         }
     }
 
-    public StreamCollection getStreams(YoutubeITAG itag) {
+    public StreamCollection getStreams(final YoutubeITAG itag, AbstractVariant variant) {
         if (itag == null) {
             return null;
         }
@@ -277,6 +278,10 @@ public class YoutubeClipData {
                     }
                 }
             }
+        }
+        if (ret != null && itag.getAudioCodec() != null && variant instanceof AudioInterface) {
+            final String audioId = ((AudioInterface) variant).getAudioId();
+            ret = splitByLngId(ret).get(audioId);
         }
         return ret;
     }
@@ -300,24 +305,18 @@ public class YoutubeClipData {
         return descriptions;
     }
 
-    private List<StreamCollection> splitByLngId(StreamCollection collection) {
-        final ArrayList<StreamCollection> ret = new ArrayList<StreamCollection>();
-        if (collection.size() <= 1) {
-            ret.add(collection);
-        } else {
-            final Map<String, StreamCollection> map = new HashMap<String, StreamCollection>();
-            for (final YoutubeStreamData stream : collection) {
-                final String lng = stream.getLngId();
-                StreamCollection col = map.get(lng);
-                if (col == null) {
-                    col = new StreamCollection();
-                    map.put(lng, col);
-                }
-                col.add(stream);
+    private Map<String, StreamCollection> splitByLngId(StreamCollection collection) {
+        final Map<String, StreamCollection> map = new HashMap<String, StreamCollection>();
+        for (final YoutubeStreamData stream : collection) {
+            final String lng = stream.getLngId();
+            StreamCollection col = map.get(lng);
+            if (col == null) {
+                col = new StreamCollection();
+                map.put(lng, col);
             }
-            ret.addAll(map.values());
+            col.add(stream);
         }
-        return ret;
+        return map;
     }
 
     public List<VariantInfo> findVariants() {
@@ -354,7 +353,7 @@ public class YoutubeClipData {
             }
             if (valid) {
                 if (audios != null) {
-                    for (StreamCollection audio : splitByLngId(audios)) {
+                    for (StreamCollection audio : splitByLngId(audios).values()) {
                         final AbstractVariant abstractVariant = AbstractVariant.get(v, this, audio, video, data);
                         if (abstractVariant != null) {
                             final VariantInfo vi = new VariantInfo(abstractVariant, audio, video, data);

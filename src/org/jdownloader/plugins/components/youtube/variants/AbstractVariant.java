@@ -265,25 +265,25 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     }
 
     private static final SimpleMapper MAPPER = new SimpleMapper() {
-        @Override
-        protected JSonFactory newJsonFactory(String jsonString) {
-            return new JSonFactory(jsonString) {
-                @Override
-                protected String dedupeString(String string) {
-                    return string;
-                }
-            };
-        }
+                                                 @Override
+                                                 protected JSonFactory newJsonFactory(String jsonString) {
+                                                     return new JSonFactory(jsonString) {
+                                                         @Override
+                                                         protected String dedupeString(String string) {
+                                                             return string;
+                                                         }
+                                                     };
+                                                 }
 
-        @Override
-        protected void initMapper() {
-        }
+                                                 @Override
+                                                 protected void initMapper() {
+                                                 }
 
-        @Override
-        public boolean isPrettyPrintEnabled() {
-            return false;
-        }
-    };
+                                                 @Override
+                                                 public boolean isPrettyPrintEnabled() {
+                                                     return false;
+                                                 }
+                                             };
 
     public String getStorableString() {
         String ret = storableString;
@@ -410,6 +410,10 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
             AudioInterface avar = (AudioInterface) var;
             sb.append(avar.getAudioBitrate().name()).append("_");
             sb.append(avar.getAudioCodec().name()).append("_");
+            final String audioid = avar.getAudioId();
+            if (audioid != null) {
+                sb.append(avar).append("_");
+            }
         }
         if (var instanceof ImageVariant) {
             sb.append(var.getBaseVariant().name()).append("_");
