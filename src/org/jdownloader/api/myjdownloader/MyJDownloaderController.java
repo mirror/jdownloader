@@ -101,7 +101,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
     }
 
     public final boolean isAlwaysConnectRequired() {
-        return Application.isHeadless();
+        return Application.isHeadless() && CFG_MYJD.CFG.isHeadlessAutoConnectEnabled();
     }
 
     private MyJDownloaderController() {
