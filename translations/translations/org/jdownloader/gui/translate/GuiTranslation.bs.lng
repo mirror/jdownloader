@@ -1308,6 +1308,7 @@ StopsignAction_actionPerformed_help_msg_=Ako postavite Stop Znak na Download Lin
 StopsignAction_actionPerformed_help_msg_package_=Ako na Paket postavite Stop Znak, JDownloader će zaustaviti download-ovanje nakon što završi sve dokumente iz tog Paketa.
 StopsignAction_actionPerformed_help_title_=Stop Znak za Download Linkove
 StopsignAction_actionPerformed_help_title_package_=Stop Znak za Pakete
+TaskColumn_fillColumnHelper_finalizing=Završavanje ...
 TaskColumn_fillColumnHelper_starting=Pokretanje...
 TaskColumn_getDescription_object_=%s1 je blokirao vaš IP (Internet Adresu).\r U velikom broju slučajeva, JDownloader je u mogućnosti da se ponovno konektuje i dobije novi IP.\r  Ako to nije moguće, preporučujemo korištenje %s1 Premium Modusa.
 TaskColumn_getStringValue_extraction_error=Greška pri ekstrakciji
