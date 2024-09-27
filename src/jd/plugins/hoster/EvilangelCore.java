@@ -466,9 +466,34 @@ public abstract class EvilangelCore extends PluginForHost {
                                 }
                                 logger.info("Chose best quality: " + thisChosenQuality);
                             }
-                            chosenQualityLabel = thisChosenQuality;
+                            /*
+                             * 2024-09-27: At this moment we do not yet know in beforehand if the user is allowed to do official downloads
+                             * (there are also cheaper "stream only" accounts) -> Need to check.
+                             */
+                            /* We can always use the file size as usually stream- and download sizes and available qualities are similar. */
                             filesize = download_file_sizes.get(thisChosenQuality).longValue();
-                            dllink = String.format("https://members.%s/movieaction/download/%s/%s/mp4?codec=h264", getHost(), fileID, thisChosenQuality);
+                            final String officialDownloadlink = String.format("https://members.%s/movieaction/download/%s/%s/mp4?codec=h264", getHost(), fileID, thisChosenQuality);
+                            URLConnectionAdapter con = null;
+                            try {
+                                final Browser br_dltest = br.cloneBrowser();
+                                con = br_dltest.openHeadConnection(officialDownloadlink);
+                                if (this.looksLikeDownloadableContent(con)) {
+                                    this.dllink = officialDownloadlink;
+                                    chosenQualityLabel = thisChosenQuality;
+                                    filesize = con.getCompleteContentLength();
+                                } else {
+                                    /* Typically http response 404 */
+                                    logger.info("Official download not possible: Received no file content");
+                                }
+                            } catch (final Throwable e) {
+                                logger.log(e);
+                                logger.info("Official download not possible: Exception");
+                            } finally {
+                                try {
+                                    con.disconnect();
+                                } catch (final Throwable e) {
+                                }
+                            }
                         } else {
                             logger.info("Looks like official download is not possible");
                         }

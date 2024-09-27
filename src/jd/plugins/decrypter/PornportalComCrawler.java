@@ -261,13 +261,16 @@ public class PornportalComCrawler extends PluginForDecrypt {
                 }
                 final String codec = (String) videomap.get("codec");
                 String qualityIdentifier = (String) videomap.get("format");
-                final String streamType = (String) videomap.get("type");
+                final String streamType;
                 final long filesize = JavaScriptEngineFactory.toLong(videomap.get("sizeBytes"), 0);
                 final Map<String, Object> downloadInfo = (Map<String, Object>) urlsO;
                 String downloadurl = (String) downloadInfo.get("download");
-                if (StringUtils.isEmpty(downloadurl)) {
+                if (!StringUtils.isEmpty(downloadurl)) {
+                    streamType = "progressive";
+                } else {
                     /* Fallback to stream-URL (most times, an official downloadurl is available!) */
                     downloadurl = (String) downloadInfo.get("view");
+                    streamType = videomap.get("type").toString();
                 }
                 if (StringUtils.isEmpty(downloadurl)) {
                     continue;
@@ -296,16 +299,12 @@ public class PornportalComCrawler extends PluginForDecrypt {
                 }
                 dl.setContentUrl(contentURL);
                 final String originalFilename = UrlQuery.parse(downloadurl).get("filename");
-                String filenameQualityIdentifier = qualityIdentifier;
-                if ("hls".equals(streamType)) {
-                    filenameQualityIdentifier += "_hls";
-                }
                 if (filenameScheme == FilenameScheme.ORIGINAL && originalFilename != null) {
                     dl.setFinalFileName(originalFilename);
                 } else if (filenameScheme == FilenameScheme.VIDEO_ID_TITLE_QUALITY_EXT) {
-                    dl.setFinalFileName(itemID + "_" + title + "_" + filenameQualityIdentifier + ".mp4");
+                    dl.setFinalFileName(itemID + "_" + title + "_" + qualityIdentifier + "_" + streamType + ".mp4");
                 } else {
-                    dl.setFinalFileName(title + "_" + filenameQualityIdentifier + ".mp4");
+                    dl.setFinalFileName(title + "_" + streamType + ".mp4");
                 }
                 dl.setProperty(PornportalCom.PROPERTY_VIDEO_ID, itemID);
                 dl.setProperty(PornportalCom.PROPERTY_VIDEO_QUALITY, qualityIdentifier);

@@ -188,11 +188,12 @@ public class PornportalCom extends PluginForHost {
     public String getLinkID(final DownloadLink link) {
         final String videoid = link.getStringProperty(PROPERTY_VIDEO_ID);
         final String videoquality = link.getStringProperty(PROPERTY_VIDEO_QUALITY);
+        final String videoStreamType = link.getStringProperty(PROPERTY_VIDEO_STREAM_TYPE);
         final String galleryid = link.getStringProperty(PROPERTY_GALLERY_ID);
         final int galleryImagePosition = link.getIntegerProperty(PROPERTY_GALLERY_IMAGE_POSITION, -1);
         final int galleryPosition = link.getIntegerProperty(PROPERTY_GALLERY_POSITION, -1);
         if (videoid != null && videoquality != null) {
-            return this.getHost() + "://video" + videoid + "/" + videoquality;
+            return this.getHost() + "://video" + videoid + "/" + videoquality + "/" + videoStreamType;
         } else if (galleryid != null && galleryPosition != -1 && galleryImagePosition != -1) {
             return this.getHost() + "://photo" + galleryid + "/" + galleryPosition + "/" + galleryImagePosition;
         } else {
