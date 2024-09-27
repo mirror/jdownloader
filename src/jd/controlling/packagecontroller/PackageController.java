@@ -15,9 +15,8 @@ import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.swing.SwingUtilities;
+import jd.controlling.packagecontroller.PackageControllerQueue.ReadOnlyQueueAction;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.ModifyLock;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -104,22 +103,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         return mapLock;
     }
 
-    protected final Queue QUEUE = new Queue(getClass().getName()) {
-        @Override
-        public void killQueue() {
-            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new Throwable("YOU CANNOT KILL ME!"));
-            /*
-             * this queue can't be killed
-             */
-        }
-
-        public <E, T extends Throwable> E addWait(QueueAction<E, T> item) throws T {
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && SwingUtilities.isEventDispatchThread()) {
-                new Exception("This should be done via callback to avoid queue<->edt deadlocks").printStackTrace();
-            }
-            return super.addWait(item);
-        };
-    };
+    protected final PackageControllerQueue QUEUE = new PackageControllerQueue(getClass().getName());
 
     /**
      * add a Package at given position position in this PackageController. in case the Package is already controlled by this
@@ -132,7 +116,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         addmovePackageAt(pkg, index, false);
     }
 
-    public Queue getQueue() {
+    public PackageControllerQueue getQueue() {
         return QUEUE;
     }
 
@@ -828,7 +812,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     /* remove all */
                     /*
                      * TODO: speed optimization, we have to correct the index to match changes in children structure
-                     *
+                     * 
                      * TODO: optimize this loop. only process existing links in this package
                      */
                     for (final ChildType child : elementsToMove) {
@@ -1161,7 +1145,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         if (lSelectionInfo != null && lSelectionInfo.getBackendVersion() == version) {
             return lSelectionInfo;
         }
-        return getQueue().addWait(new QueueAction<SelectionInfo<PackageType, ChildType>, RuntimeException>(Queue.QueuePriority.HIGH) {
+        return getQueue().addWait(new ReadOnlyQueueAction<SelectionInfo<PackageType, ChildType>, RuntimeException>(Queue.QueuePriority.HIGH) {
             @Override
             protected SelectionInfo<PackageType, ChildType> run() throws RuntimeException {
                 final long version = getBackendChanged();

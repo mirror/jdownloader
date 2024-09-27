@@ -31,6 +31,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
+import jd.controlling.packagecontroller.PackageControllerQueue.ReadOnlyQueueAction;
 import jd.gui.swing.jdgui.BasicJDTable;
 
 import org.appwork.exceptions.WTFException;
@@ -344,7 +345,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                     }
                 }.start(invokeLater);
             } else {
-                getModel().getController().getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
+                getModel().getController().getQueue().add(new ReadOnlyQueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
                     @Override
                     protected Void run() throws RuntimeException {
                         final SelectionInfo<ParentType, ChildrenType> selectionInfo = getModel().getController().getSelectionInfo();

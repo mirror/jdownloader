@@ -18,13 +18,13 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
+import jd.controlling.packagecontroller.PackageControllerQueue.ReadOnlyQueueAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
-import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
@@ -114,7 +114,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
     protected void aggregate(Queue queue) {
         if (queue != null) {
-            queue.addWait(new QueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
+            queue.addWait(new ReadOnlyQueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
                 @Override
                 protected Void run() throws RuntimeException {
                     aggregate();
