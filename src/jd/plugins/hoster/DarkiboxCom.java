@@ -17,16 +17,16 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -44,7 +44,7 @@ public class DarkiboxCom extends XFileSharingProBasic {
      * mods: See overridden functions<br />
      * limit-info: <br />
      * captchatype-info: 2023-10-06: reCaptchaV2<br />
-     * other:<br />
+     * other: 2026-04-12: Switched from website mode to API mode<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -111,30 +111,69 @@ public class DarkiboxCom extends XFileSharingProBasic {
         return -1;
     }
 
-    private boolean uglyTempWorkaround = false;
+    /** 2026-04-12: Use API key based login instead of website login. API docs: https://darkibox.com/api.html */
+    @Override
+    protected boolean enableAccountApiOnlyMode() {
+        return true;
+    }
 
     @Override
-    protected String getDllinkViaOfficialVideoDownload(final Browser br, final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
-        /* 2024-04-17: Removed special handling as it looks like this website has disabled official video downloads for free-users. */
-        // final URL_TYPE type = getURLType(br.getURL());
-        // if (type != URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD) {
-        // /* 2023-10-06: This skips pre download wait */
-        // this.getPage(buildURLPath(link, this.getFUIDFromURL(link), URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD));
-        // }
-        if (!uglyTempWorkaround && Thread.currentThread() instanceof SingleDownloadController) {
-            // Wait before download1 form is sent
-            final int waitSeconds;
-            final String waitStr = this.regexWaittime(br);
-            if (waitStr != null) {
-                waitSeconds = Integer.parseInt(waitStr);
-            } else {
-                /* Fallback */
-                waitSeconds = 3;
-            }
-            this.sleep(waitSeconds * 1001l, this.getDownloadLink());
-            uglyTempWorkaround = true;
+    protected boolean supportsAPIMassLinkcheck() {
+        return looksLikeValidAPIKey(this.getAPIKey());
+    }
+
+    @Override
+    protected boolean supportsAPISingleLinkcheck() {
+        return looksLikeValidAPIKey(this.getAPIKey());
+    }
+
+    /**
+     * 2026-04-12: Override needed because darkibox API returns direct links in a "versions" array format:
+     * {"result":{"versions":[{"name":"o","url":"..."},{"name":"h","url":"..."}]}} instead of the standard XFS format:
+     * {"result":{"o":{"url":"..."},"h":{"url":"..."}}}
+     */
+    @Override
+    protected String getDllinkAPI(final DownloadLink link, final Account account) throws Exception {
+        logger.info("Trying to get dllink via API");
+        final String apikey = getAPIKeyFromAccount(account);
+        if (StringUtils.isEmpty(apikey)) {
+            logger.warning("Cannot do this without apikey");
+            return null;
         }
-        return super.getDllinkViaOfficialVideoDownload(br, link, account, returnFilesize);
+        final String fileid = this.getFUIDFromURL(link);
+        getPage(this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=" + fileid);
+        final Map<String, Object> entries = this.checkErrorsAPI(this.br, link, account);
+        final Map<String, Object> result = (Map<String, Object>) entries.get("result");
+        String dllink = null;
+        /* Darkibox returns qualities in a "versions" array */
+        final List<Map<String, Object>> versions = (List<Map<String, Object>>) result.get("versions");
+        if (versions != null && !versions.isEmpty()) {
+            final String[] preferredQualities = new String[] { "o", "h", "n", "l" };
+            for (final String quality : preferredQualities) {
+                for (final Map<String, Object> version : versions) {
+                    final String name = (String) version.get("name");
+                    if (StringUtils.equalsIgnoreCase(name, quality)) {
+                        dllink = (String) version.get("url");
+                        if (!StringUtils.isEmpty(dllink)) {
+                            break;
+                        }
+                    }
+                }
+                if (!StringUtils.isEmpty(dllink)) {
+                    break;
+                }
+            }
+            /* Fallback: pick the first available version */
+            if (StringUtils.isEmpty(dllink)) {
+                dllink = (String) versions.get(0).get("url");
+            }
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            /* Fallback: try standard XFS format */
+            return super.getDllinkAPI(link, account);
+        }
+        logger.info("Successfully found dllink via API: " + dllink);
+        return dllink;
     }
 
     @Override
@@ -162,30 +201,8 @@ public class DarkiboxCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
-        final AccountInfo ai = super.fetchAccountInfoWebsite(account);
-        if (false && Account.AccountType.PREMIUM.equals(account.getType()) && ai.isUnlimitedTraffic()) {
-            // website only shows limit but not left traffic?!
-            this.getPage("?op=my_account");
-            fetchAccountInfoWebsiteTraffic(br, account, ai);
-        }
-        return ai;
-    }
-
-    @Override
-    protected boolean trustAccountInfoAPI(Browser br, Account account, AccountInfo ai) throws Exception {
-        // api and website does not return available traffic
-        return ai != null;
-    }
-
-    @Override
     protected boolean isVideohoster_enforce_video_filename() {
         return true;
-    }
-
-    @Override
-    protected String[] supportsPreciseExpireDate() {
-        return new String[] { "/?op=payments" };
     }
 
     @Override
